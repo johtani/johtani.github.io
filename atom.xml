@@ -1,0 +1,2526 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[@johtaniの日記 2nd]]></title>
+  <link href="http://blog.johtani.info/atom.xml" rel="self"/>
+  <link href="http://blog.johtani.info/"/>
+  <updated>2014-10-27T16:58:23+09:00</updated>
+  <id>http://blog.johtani.info/</id>
+  <author>
+    <name><![CDATA[johtani]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Sonatypeのバージョン番号で困ったので]]></title>
+    <link href="http://blog.johtani.info/blog/2014/10/15/versioning-of-sonatype/"/>
+    <updated>2014-10-15T15:26:08+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/10/15/versioning-of-sonatype</id>
+    <content type="html"><![CDATA[<p><a href="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">Elasticsearch 1.4.0.Beta1がリリース</a>されました。</p>
+
+<p>個人で<a href="https://github.com/johtani/elasticsearch-extended-analyze">elasticsearch-extended-analyze</a>というプラグインを開発してます。
+こちらも1.4.0.Beta1に対応するべく作業をしてて、少し戸惑ったことがあったので、メモをば。</p>
+
+<!-- more -->
+
+
+<p>ここ最近はプラグインのバージョン番号をElasticsearchのバージョン番号と同じものを利用していました。
+（プラグインの機能追加をサボってる？？）
+その時に、<code>1.4.0.Beta1</code>という番号を指定したのですが、意味不明なエラーに悩まされてしまいまして。</p>
+
+<p>プラグインのリリースでは、以下のコマンドを実行します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ mvn release:prepare
+</span><span class='line'>$ mvn release:perform</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最初のコマンド（prepare）で、パッケージングを実施し、Githubにリリースタグを打ったバージョンがpushされます。
+次のコマンド（perform）で、パッケージングされたzipファイルがsonatypeのサイトに公開するためにアップロードされます。</p>
+
+<p><code>1.4.0.Beta1</code>というバージョン文字列を利用した場合、prepareは問題なく実行できたのですが、
+performで以下の様なエラーが返ってきました。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Return code is: 401, ReasonPhrase: Unauthorized.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>バージョン番号が<code>1.3.0</code>では特に問題はなかったのですが、、、
+結局、バージョン番号を<code>1.4.0-beta1</code>に変更すると問題なくリリースが完了しました。</p>
+
+<p>mike_neckさんと話をしていて、<a href="http://semver.org">Semantic Versioning</a>に関係しているのかなぁという話にはなったのですが、
+詳しく調べていません。。。</p>
+
+<p>そのうち調べようかなぁ。。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[elasticsearch 1.4.0.Beta1のリリース]]></title>
+    <link href="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/"/>
+    <updated>2014-10-02T19:14:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja</id>
+    <content type="html"><![CDATA[<p>※この記事は次のブログを翻訳したものになります。</p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">elasticsearch 1.4.0.beta1 released</a></p>
+
+<p>本日、<em>Lucene 4.10.1</em>をベースにした、<em>Elasticsearch 1.4.0.Beta1</em>をリリースしました。
+<a href="http://www.elasticsearch.org/downloads/1-4-0-Beta1">Elasticsearch 1.4.0.Beta1</a>からダウンロードできます。
+また、すべての変更点に関してもこちらをご覧ください。</p>
+
+<!-- more -->
+
+
+<p>1.4.0のテーマは<em>resiliency(復元性、弾力性)</em>です。
+<em>resiliency</em>とはElasticsearchをより安定し信頼性のあるものにすることを意味します。
+すべての機能が正常に機能している場合は信頼することは簡単です。
+予想外のことが発生した時に難しくなります：ノードでout of memoryの発生、スローGCや重いI/O、ネットワーク障害、不安定なデータの送信によるノードのパフォーマンス低下など。</p>
+
+<p>本ベータリリースは、resiliencyの主な3つの改善を含んでいます。</p>
+
+<ul>
+<li><a href="#memory-mgmt">メモリ使用量の低下</a>によるノードの安定性向上</li>
+<li>discoveryアルゴリズムの改善による<a href="#cluster-stability">クラスタの安定性</a>向上</li>
+<li><a href="#checksums">チェックサム</a>の導入による破損したデータの検知</li>
+</ul>
+
+
+<p>分散システムは複雑です。
+決して想像できないような状況をシミュレーションするために、ランダムなシナリオを作成する広範囲なテストスイートを持っています。
+しかし、無数のエッジケース(特殊なケース)があることも認識しています。
+1.4.0.Beta1はこれまで私たちが行ってきた改善のすべてを含んでいます。
+これらの変更を実際にテストしていただき、<a href="https://github.com/elasticsearch/elasticsearch/issues">何か問題があった場合は私たちに教えてください</a>。</p>
+
+<h2><a name="memory-mgmt">メモリ管理</a></h2>
+
+<p>ヒープ空間は限られたリソースです。
+上限を32GBとし、利用可能なRAMの50%をヒープの上限にすることを推奨します。
+この上限を超えた場合、JVMは圧縮したポインタを使用することができず、GCが非常に遅くなります。
+ノードの不安定性の主な原因は遅いGCです。それは、次のようなことから発生します。</p>
+
+<ul>
+<li>メモリプレッシャー</li>
+<li>スワップ(参照：<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/setup-configuration.html#setup-configuration-memory">memory settings</a>)</li>
+<li>非常に大きなヒープ</li>
+</ul>
+
+
+<p>本リリースは、メモリ管理の改善し、（結果として）ノードの安定性を改善するいくつかの変更を含んでいます。</p>
+
+<h3>doc values</h3>
+
+<p>メモリの利用の最も大きなものの1つは<strong>fielddata</strong>です
+aggregation、ソート、スクリプトがフィールドの値に素早くアクセスするために、フィールドの値をメモリにロードして保持します。
+ヒープは貴重なため、1ビットも無駄にしないためにメモリ内のデータは高度な圧縮と最適化を行っています。
+これは、ヒープスペース以上のデータをもつまでは、非常によく動作します。
+これは、多くのノードを追加することによって常に解決できる問題です。
+しかし、CPUやI/Oが限界に達してしまうずっと前に、ヒープ空間の容量に到達します。</p>
+
+<p>最近のリリースは、<strong>doc values</strong>によるサポートがあります。
+基本的に、doc valuesはin-memory fielddataと同じ機能を提供します。
+doc valuesの提供する利点は、それらが、非常に少量のヒープ空間しか使用しない点です。
+doc valuesはメモリからではなく、ディスクから読み込まれます。
+ディスクアクセスは遅いですが、doc valuesはカーネルのファイルシステムキャッシュの利点を得られます。
+ファイルシステムキャッシュはJVMヒープとはことなり、32GBの制限による束縛がありません。
+ヒープからファイルシステムキャッシュにfielddataを移行することによって、より小さなヒープを使うことができます。これは、GCがより早くなり、ノードが更に安定することを意味します。</p>
+
+<p>本リリースより前は、doc valuesはin-memory fielddataよりもかなり遅かったです。
+本リリースに含まれる変更は、パフォーマンスをかなり向上させ、in-memory fielddataとほぼ同じくらいの速度になっています。</p>
+
+<p>in-memory fielddataの代わりにdoc valuesを利用するために必要なことは、次のように新しいフィールドをマッピングすることです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>PUT /my_index
+</span><span class='line'>{
+</span><span class='line'>  "mappings": {
+</span><span class='line'>    "my_type": {
+</span><span class='line'>      "properties": {
+</span><span class='line'>        "timestamp": {
+</span><span class='line'>          "type":       "date",
+</span><span class='line'>          "doc_values": true
+</span><span class='line'>        }
+</span><span class='line'>      }
+</span><span class='line'>    }
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このマッピングで、このフィールドに対するfielddataの利用は、メモリにフィールドをロードする代わりに、自動的にディスクからdoc valuesを利用します。
+<em>注意：</em>現時点で、doc valuesはanalyzedな<code>string</code>フィールドはサポートしていません。</p>
+
+<h3>request circuit breaker</h3>
+
+<p>fielddata circuit breakerはfielddataによって利用されるメモリの上限を制限するために追加され、OOMEの最も大きな原因の1つを防ぎました。
+そして、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-fielddata.html#request-circuit-breaker">リクエストレベルのcircuit-breaker</a>を提供するために、コンセプトを拡張しました。
+これは、単一のリクエストによって使用されるメモリの上限を制限します。</p>
+
+<h3>bloom filters</h3>
+
+<p><a href="http://en.wikipedia.org/wiki/Bloom_filter">Bloom filters</a> はインデキシング(前のバージョンのドキュメントが存在するかどうかのチェックのため)や、
+IDによるドキュメントの検索(ドキュメントを含むセグメントがどれかを決定するため)に関する重要な性能最適化を提供しました。
+しかし、もちろんそれらはコスト（メモリ）を必要とします。
+現在の改善は、bloom filterの必要性を取り除きました。
+現在では、Elasticsearchはまだ、インデックス時にそれらを構築します(実世界の経験がテストシナリオにそぐわない場合に備えて)。
+しかし、デフォルトではメモリにはロードされません。
+すべてが予定通りに運べば、将来のバージョンで完全にこれらは除去します。</p>
+
+<h2><a name="cluster-stability">クラスタの安定性</a></h2>
+
+<p>クラスタの安定性向上のために私たちができる最も大きなことは、ノードの安定性の向上です。
+もし、ノードが安定しておりタイミングよく反応すれば、クラスタが不安定になる可能性が大いに減少します。
+私たちは不完全な世界に住んでいます。- 物事は予想外にうまく行きません。クラスタはデータを失うことなくこのような状況から回復できる必要があります。</p>
+
+<p>私たちは、<code>improve_zen</code>ブランチ上で、Elasticsearchの障害からの復旧するための能力の向上に数ヶ月費やしてきました。
+まず、複雑なネットワークレベルの障害を繰り返すためのテストを追加しました。
+次に、各テストのための修正を追加しました。
+そこには、より多くの行うことが存在します。しかし、私たちは、<a href="https://github.com/elasticsearch/elasticsearch/issues/2488">issue #2488</a>(&ldquo;分割が交差している場合、minimum_master_nodesはsplit-brainを防げない&rdquo;)に含まれる、ユーザが経験してきた大部分の問題を私たちは解決しました。</p>
+
+<p>私たちはクラスタのresiliencyを非常に真剣に取り組んでいます。
+私たちは、Elasticsearchが何ができるか、その上で何が弱点であるかを理解してほしいと思っています。
+これを考慮して、私たちは<a href="http://www.elasticsearch.org/guide/en/elasticsearch/resiliency/current/index.html">Resiliency Status Document</a>を作成しました。
+このドキュメントは、私たち(または私たちユーザ)が遭遇したresiliencyの問題の、何が修正済みで、何が修正されないまま残っているかを記録します。
+このドキュメントを慎重に読み、あなたのデータを保護するために適切な方法を選択してください。</p>
+
+<h2><a name="checksums">データ破損の検知</a></h2>
+
+<p>ネットワークをまたいだシャードリカバリのチェックサムは、圧縮ライブラリのバグを発見する助けとなりました。
+それは、バージョン1.3.2で修正済みです。
+それ以来、私たちはElasticsearchのいたるところにチェックサムとチェックサムの確認を追加しました。</p>
+
+<ul>
+<li>マージ中に、あるセグメント内すべてのチェックサムの確認(<a href="https://github.com/elasticsearch/elasticsearch/issues/7360">#7360</a>)</li>
+<li>インデックス再オープン時に、あるセグメント内の最も小さなファイルの完全な確認と、より大きなファイルの軽量な打ち切りチェック(<a href="https://issues.apache.org/jira/browse/LUCENE-5842">LUCENE-5842</a>)</li>
+<li>トランザクションログからイベントを再生するとき、各イベントはチェックサムを確認される(<a href="https://github.com/elasticsearch/elasticsearch/issues/6554">#6554</a>)</li>
+<li>シャードのリカバリ中もしくは、スナップショットからのリストア中にElasticsearchはローカルファイルとリモートのコピーが同一であるか確認する必要がある。ファイルの長さとチェックサムのみを使うのは不十分であることが確認された。このため、現在はセグメントのすべてのファイルの同一性を確認(<a href="https://github.com/elasticsearch/elasticsearch/issues/7159">#7159</a>)</li>
+</ul>
+
+
+<h2>その他のハイライト</h2>
+
+<p><a href="http://www.elasticsearch.org/downloads/1-4-0-Beta1">Elasticsearch 1.4.0.Beta1のchangelog</a>に本リリースの多くの機能、改善、バグフィックスについて読むことができます。
+ここでは、特筆すべきいくつかの変更について述べます。</p>
+
+<h3>groovyによるmvelの置き換え</h3>
+
+<p>Groovyは現在、デフォルトのscripting languageです。
+以前のデフォルトはMVELで、古くなってきており、サンドボックス内で実行できないという事実は、セキュリティ問題でした。
+Groovyはサンドボックスであり(それは、ボックスの外へは許可が必要)、メンテナンスされており、速いです！
+詳しくは<a href="http://www.elasticsearch.org/blog/scripting/">scriptingについてのブログ記事</a>をご覧ください。</p>
+
+<h3>デフォルトでcorsはオフ</h3>
+
+<p>Elasticsearchのデフォルト設定はクロスサイトスクリプティングに対して脆弱でした。
+私たちはデフォルトで<a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>をオフにすることで修正しました。
+Elasticsearchにインストールされたサイトプラグインはこれまで同様に機能します。
+しかし、CORSを再度オンにすることがない限り、外部のウェブサイトがリモートのクラスタにアクセスすることはできません。
+ウェブサイトがあなたのクラスタにアクセス可能に制御できるように、さらに<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/modules-http.html#_settings_2">CORS settings</a>を追加しました。
+詳しくは<a href="http://www.elasticsearch.org/community/security">security page</a>をご覧ください。</p>
+
+<h3>クエリキャッシュ</h3>
+
+<p>新しい試験的な<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-shard-query-cache.html">shardレベルのクエリキャッシュ</a>は、静的なインデックスのアグリゲーションをほとんど即座に反応できます。
+ウエブサイトのアクセスの日毎のページビュー数を見るダッシュボードを持っていると想像してみてください。
+これらの数値は古いインデックスでは変更がありません。しかし、アグリゲーションはダッシュボードのリフレッシュのたびに再計算されます。
+新しいクエリキャッシュを利用すると、シャードのデータが変更されない限り、アグリゲーションの結果はキャッシュから直接返却されます。
+キャッシュから古い結果を決して取得することはありません。それは、常に、キャッシュされていないリクエストと同じ結果を返します。</p>
+
+<h3>新しいaggregations</h3>
+
+<p>3つの新しいaggregationsがあります。</p>
+
+<ul>
+<li><p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-filters-aggregation.html"><code>filters</code></a></p>
+
+<ul>
+<li>これは<code>filter</code> aggregationの拡張です。複数のバケットを定義し、バケット毎に異なるフィルタを利用できます。</li>
+</ul>
+</li>
+<li><p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-children-aggregation.html"><code>children</code></a></p>
+
+<ul>
+<li><code>nested</code>アグリゲーションの親子版。<code>children</code> aggは親のドキュメントに属する子のドキュメントを集計できる</li>
+</ul>
+</li>
+<li><p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-metrics-scripted-metric-aggregation.html"><code>scripted_metric</code></a></p>
+
+<ul>
+<li>このaggregationは、データによって計算されたメトリックを完全にコントロールできます。これは、初期化フェーズ、ドキュメント収集フェーズ、shardレベル結合フェーズ、global reduceフェーズを提供します。</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>get /index api</h3>
+
+<p>以前、ある1つのインデックスのaliases、mappings、settings、warmersを取得出来ました。しかし、それらを個別にです。
+<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-get-index.html"><code>get-index</code> API</a> はこれらのすべてもしくは一部を、複数もしくはひとつのインデックスに対して一緒に取得できます。
+これは、既存のインデックスと同一もしくはほぼ同一であるインデックスを作成したいときに非常に役に立ちます。</p>
+
+<h3>登録と更新</h3>
+
+<p>ドキュメントの登録と更新にいくつかの改善があります。</p>
+
+<ul>
+<li>現在、ドキュメントIDの自動生成のために<a href="http://boundary.com/blog/2012/01/12/flake-a-decentralized-k-ordered-unique-id-generator-in-erlang">Flake ID</a>を使用しています。これは、プライマリキー探索時に素晴らしい性能向上を提供します。</li>
+<li><code>detect_noop</code>に<code>true</code>を設定すると、ドキュメントに変更を与えない更新が軽量になります。この設定を有効にすると、<code>_source</code>フィールドのコンテンツを変更する更新リクエストだけ、ドキュメントの新しいバージョンを書き込みます。</li>
+<li>更新はスクリプトから完全に操作できます。以前は、スクリプトはドキュメントがすでに存在しているときだけ実行可能で、それ以外は、<code>upsert</code>ドキュメントで登録しました。<code>script_upsert</code>パラメータでスクリプトから直接ドキュメントの作成が操作できます。</li>
+</ul>
+
+
+<h3>function score</h3>
+
+<p>すでに非常に便利な<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/query-dsl-function-score-query.html"><code>function_score</code>クエリ</a>が、新しく<code>weight</code>パラメータをサポートします。
+これは、それぞれの指定された関数の影響をチューニングするのに使われます。
+これは、人気度よりも更新日時により重みをかけたり、地理情報よりも価格により重みをかけるといったことを可能にします。
+また、<code>random_score</code>機能はセグメントマージによる影響を受けません。これにより、より一貫した順序が提供されます。</p>
+
+<h2>試してみてください。</h2>
+
+<p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-0-Beta1">Elasticsearch 1.4.0.Beta1</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[第6回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
+    <link href="http://blog.johtani.info/blog/2014/09/17/hold-on-6th-elasticsearch-jp/"/>
+    <updated>2014-09-17T13:22:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/09/17/hold-on-6th-elasticsearch-jp</id>
+    <content type="html"><![CDATA[<p><a href="http://elasticsearch.doorkeeper.jp/events/13917">第6回Elsticsearch勉強会</a>を開催しました。
+スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
+次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。
+今回は、スタッフが私を含めて3，4名ということで、ドタバタしてしまってスミマセンでした。</p>
+
+<!-- more -->
+
+
+<p>今回はキャンセルが多く、最終的には90人弱の参加となりましたが、今回も多数の方にお集まりいただきありがとうございました。
+同じ日に他の勉強会もあった影響でしょうか？</p>
+
+<h2>「Aggregationあれこれ」Elasticsearch Inc. Jun Ohtani @johtani</h2>
+
+<p>スライド：<a href="https://speakerdeck.com/johtani/aggregationarekore">Aggregationあれこれ</a></p>
+
+<ul>
+<li>ちょっと長かったですかね。。。</li>
+<li>Aggregationの概要、内部動作、種類などを簡単に紹介してみました。</li>
+<li>個々のAggregationもいろいろなオプションなどがあるので、色々と試してみていただければと思います。</li>
+<li>アニメーション入りのスライドになってましたが、UpしてあるスライドはPDF版になります。</li>
+</ul>
+
+
+<h2>「秒間3万の広告配信ログをElasticSearchでリアルタイム集計してきた戦いの記録」 株式会社サイバーエージェント　山田直行さん　@satully</h2>
+
+<p>スライド：<a href="http://www.slideshare.net/Satully/elasticsearch-study6threaltime20140916">秒間3万の広告配信ログをElasticSearchでリアルタイム集計してきた戦いの記録</a></p>
+
+<ul>
+<li>ディスプレイ広告配信DSPの話</li>
+<li>システム: Fluentd、S3、Elasticsearch、Redis、MySQL</li>
+<li>7月に秒間3万〜4万のリクエストをさばいている。</li>
+<li>なぜElasticsearchを選んだのか、今の構成など</li>
+<li>実際に苦労された点なども交えて話していただき面白かったです。</li>
+<li>7月時点のお話ということで、現時点ではまた違う構成っぽかったので、また話を聞きたいなぁ。</li>
+</ul>
+
+
+<h2>「Elasticsearch 日本語スキーマレス環境構築と、ついでに多言語対応」ナレッジワークス株式会社　木戸国彦さん @9215</h2>
+
+<p>スライド：<a href="https://speakerdeck.com/kunihikokido/elasticsearch-ri-ben-yu-sukimaresuhuan-jing-gou-zhu-to-tuideniduo-yan-yu-dui-ying">Elasticsearch 日本語スキーマレス環境構築と、ついでに多言語対応</a></p>
+
+<ul>
+<li>Dynamic TemplateやIndex Templateの説明</li>
+<li>日本語や多言語化するときのMappingのサンプルになりそうなものがゴロゴロ紹介されてました。</li>
+<li>いくつかの例があって、後で見直したいなと。</li>
+<li>途中で出てきた、fielddata（インデックスに入っている単語区切りのデータ）を見るのに使ってたクエリは<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-fielddata-fields.html">field data fields</a>だったかな。</li>
+</ul>
+
+
+<h2>「elasticsearchソースコードを読みはじめてみた」@furandon_pig さん</h2>
+
+<p>スライド：<a href="http://www.slideshare.net/furandon_pig/elasticsearch-39175134">elasticsearchソースコードを読みはじめてみた</a></p>
+
+<ul>
+<li>リクエストを受けて検索してる部分から読むといいって言われたらしいが、起動スクリプトから読み始めてみた。</li>
+<li>時間かかりそうｗ</li>
+<li>ただ、人がどんな感じでソースを読んだり理解してるかがわかりやすかったので面白かったです。</li>
+<li>定期的に続きを聞いてみたいです。</li>
+</ul>
+
+
+<h2>LT</h2>
+
+<h3>「reroute APIを使用してシャード配置を制御する」 株式会社富士通ソフトウェアテクノロジーズ 滝田聖己さん @pisatoshi</h3>
+
+<p>スライド：<a href="https://speakerdeck.com/pisatoshi/elasticsearch-rerouteapiwoshi-tutasiyadopei-zhi-falsezhi-yu">reroute APIを使用してシャード配置を制御する</a></p>
+
+<ul>
+<li>シャードの再配置が自動で行われるので、それをオフにしないと、せっかく移動しても無駄になることがというあるあるネタ</li>
+<li>Bonsaiロゴを作成するLT</li>
+<li>実際にいくら掛かったのかが知りたかった。</li>
+</ul>
+
+
+<h3>「検索のダウンタイム0でバックアップからIndexをリストアする方法」株式会社ドワンゴモバイル 西田和史さん</h3>
+
+<p>スライド：<a href="http://www.slideshare.net/kbigwheel/0index-39143333">検索のダウンタイム0でバックアップからIndexをリストアする方法</a></p>
+
+<ul>
+<li>擬似無停止のやりかた。</li>
+<li>aliasを活用して、かつ、Restoreで再構築するという方法。</li>
+<li>aliasまで一緒にリストアされるので注意が必要っていうのは、実際にやってみたからわかることという感じですね。</li>
+</ul>
+
+
+<h2>その他、感想などのブログ</h2>
+
+<p>適当に見つけたブログを列挙してあります。これもあるよ！などあれば、教えてください。</p>
+
+<ul>
+<li><a href="http://s-wool.blog.jp/archives/1009404632.html">第6回elasticsearch勉強会に行ってきましたのでそのメモ</a></li>
+<li><a href="http://arika.hateblo.jp/entry/2014/09/17/100921">elasticsearch 勉強会 第6回</a></li>
+</ul>
+
+
+<h3>まとめ</h3>
+
+<p>今回も、ためになる話がいっぱい聞けたかなと。
+個人的な印象としては、いつものメンバーよりも新しい方が多かった印象です。
+また、ほとんどの方が、Elasticsearchをご存知でした。
+そこそこ知名度は上がってきているようで嬉しい限りです。（東京以外での知名度なども知りたいかなと。）</p>
+
+<p>あと、懇親会の部屋の案内が遅くなってしまってスミマセンでした。
+さすがにスタッフ3名はきつかったです。。。</p>
+
+<p>19時半開始にしてみましたが、懇親会の時間がやはり短めになってしまうなぁという印象でした。</p>
+
+<p>次回ももちろん2ヶ月後くらいに行います。
+スピーカー募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。
+よろしくお願いいたします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk]]></title>
+    <link href="http://blog.johtani.info/blog/2014/09/16/book-publication-event/"/>
+    <updated>2014-09-16T13:21:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/09/16/book-publication-event</id>
+    <content type="html"><![CDATA[<p>先日2014年9月9日(火)に<a href="http://eventdots.jp/event/137658">『サーバ/インフラエンジニア養成読本 ログ収集〜可視化編』　出版記念！執筆者が語る大講演会！</a>で、
+<a href="https://speakerdeck.com/johtani/elasticsearchmoutiyotutoru-men">「elasticsearch.もうちょっと入門」</a>というタイトルで発表してきました。
+会場のGMOのみなさま、Treasure Data、技術評論社のみなさま、どうもありがとうございました。</p>
+
+<p>書籍に興味のある方は、右のリンクから購入してもらえるとうれしいです。Kindle版も用意されています。</p>
+
+<!-- more -->
+
+
+<p>提供のTDの方に目をつぶってもらいながらLogstashについての発表となってしまいましたが、楽しんでいただけたかなぁと。
+書籍では主にKibana3をメインにしたElasticsearchの使い方だったので、それ以外の機能ということで、Aggregationについて説明してみました。</p>
+
+<p>そのあとは、おそらく初めてですが、パネルディスカッションにも参加しました。
+<a href="https://twitter.com/naoya_ito">@naoya_ito</a>さんをモデレーターに、rebuild.fm風に進めていただき、話しやすかったかなと。
+（少なくとも私は楽しめました！）
+ただ、私だけバックグラウンドが少し異なることもあり、話をうまく繋げられなかったかもと気にしていたりもしますが。。。</p>
+
+<p>パネルディスカッションでもありましたが、エンジニアが「趣味」で入れて試してみるのにはもってこいのツール群だと思います。
+ちょっと入れてみて、可視化をしてみるといろいろと発見があると思います。
+何かを発見するためにもまず試してみるのが何事も重要かなと最近思ってるのもあるので、気軽に試してみてもらえればと。</p>
+
+<p>不明点などあれば、著者陣に気軽に聞いていただけると良いかと思います（いいですよね、みなさんｗ）。
+Fluentd（もちろん、Logstashも）、Elasticsearch、Kibanaを利用して、データについて試行錯誤してもらって、
+システムやビジネスに必要なものを探索して見てください。</p>
+
+<h3>参考</h3>
+
+<p>他の方々のブログをメモとして。</p>
+
+<ul>
+<li><a href="http://suzuken.hatenablog.jp/entry/2014/09/11/210059">サービス改善とログデータ解析について発表してきました</a></li>
+<li><a href="http://blog.harukasan.jp/entry/2014/09/12/144217">Kibanaではじめるダッシュボードについて発表してきました #gihyo_efk</a></li>
+<li><a href="http://y-ken.hatenablog.com/entry/fluentd-system-design-pattern">Fluentdのお勧めシステム構成パターンについて発表しました</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearchのインデキシングに関するパフォーマンス検討]]></title>
+    <link href="http://blog.johtani.info/blog/2014/09/09/performance-considerations-for-elasticsearch-indexing/"/>
+    <updated>2014-09-09T17:11:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/09/09/performance-considerations-for-elasticsearch-indexing</id>
+    <content type="html"><![CDATA[<p>Elasticsearchのインデキシングに関するパフォーマンス検討</p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/performance-considerations-elasticsearch-indexing/">performance considerations for elasticsearch indexing</a></p>
+
+<p>Elasticsearchユーザは様々な楽しいユースケースを持っています。小さなログを追加することから、Webスケールの大きなドキュメントの集合をインデキシングするようなことまでです。また、インデキシングのスループットを最大化することが重要で一般的な目標となります。
+「典型的な」アプリケーションに対して良いデフォルト値を設定するようにしていますが、次のちょっとした簡単なベストプラクティスによってインデキシングのパフォーマンスをすぐに改善することができます。それらについて記述します。</p>
+
+<p>第一に、制御できないならば、巨大なJavaヒープを使用しない：必要なサイズ（マシンの持つRAMの半分以下）のheapだけを設定しましょう。Elasticsearchの利用方法のために必要な全体量を設定します。これは、OSにIOキャッシュを制御するためのRAMを残すことを意味します。OSが<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-configuration.html">javaプロセスをスワップアウト</a>していないことも確認しましょう。</p>
+
+<p>最新バージョン（<a href="http://www.elasticsearch.org/downloads/1-3-2/">現時点では1.3.2</a>）のElasticsearchにアップグレードしましょう：多数のインデキシングに関連する問題点が最新リリースで修正されています。</p>
+
+<p>詳細に入る前に警告：ここで述べるすべての情報は現時点での最新（<a href="http://www.elasticsearch.org/downloads/1-3-2/">1.3.2</a>）の情報です。しかし、Elasticsearchの更新は日々行われています。この情報をあなたが見た時点では最新ではなく、正確ではなくなっているかもしれません。自信がない場合は<a href="http://www.elasticsearch.org/community">ユーザメーリングリスト</a>で質問してください。</p>
+
+<p>クラスタのインデキシングスループットをチューニングする場合、<a href="http://www.elasticsearch.org/overview/marvel">Marvel</a>は非常に有用なツールです：ここで述べている各設定を継続的に試し、変更の影響がクラスタの挙動をどのように変更されたかを簡単に可視化することが可能です。</p>
+
+<h2>クライアントサイド</h2>
+
+<p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-bulk.html">bulk API</a>を常に使いましょう。1リクエストで複数のドキュメントをインデキシングでき、各バルクリクエストで送るのに良いドキュメント数を試しましょう。最適なサイズは多くの要因に依存しますが、最適サイズからずれるならば多すぎるよりも少なすぎる方が良いでしょう。クライアントサイドのスレッドで並列にbulkリクエストを使うか、個別の非同期リクエストを使ってください。</p>
+
+<p>インデキシングが遅いと結論付ける前に、クラスタのハードウェアの性能を引き出せているかを確認して下さい：すべてのノードでCPUやIOが溢れていないかを確認するために<code>iostat</code>や<code>top</code>、<code>ps</code>といったツールを使いましょう。もし、溢れていなければ、より多くの並列なリクエストが必要です。しかし、javaクライアントからの<code>EsRejectedExecutionException</code>や、RESTリクエストのHTTPレスポンスとして<code>TOO_MANY_REQUESTS (429)</code>が返ってきた場合は並列リクエストを多く送りすぎています。もし<a href="http://www.elasticsearch.org/overview/marvel">Marvel</a>を利用しているなら、<a href="http://www.elasticsearch.org/guide/en/marvel/current/#_node_amp_index_statistics">Node Statistics Dashboard</a>の<code>THREAD POOLS - BULK</code>にリジェクトされた数が表示されます。bulkスレッドプールサイズ（デフォルト値はコア数）を増やすのは得策ではありません。インデキシングスループットを減少させるでしょう。クライアントサイドの並列度を下げるか、ノードを増やすのが良い選択です。</p>
+
+<p>ここでは、1シャードに対してインデキシングスループットを最大化する設定に注目します。1つのLuceneインデックスのドキュメントの容量を測定するために、単一ノード（単一シャード、レプリカなし）で最初にテストをして最適化し、クラスタ全体にスケールする前にチューニングを繰り返します。これはまた、インデキシングスループットの要件を見つけるために、クラスタ全体にどのくらいのノードが必要かをラフに見積もるためのベースラインを与えてくれます。</p>
+
+<p>単一シャードが十分機能したら、Elasticsearchのスケーラビリティの最大の利点や、クラスタでの複数ノードによるレプリカ数やシャード数の増加の利点が得られます。</p>
+
+<p>結論を導き出す前に、ある程度の時間（60分）くらいクラスタ全体の性能を計測しましょう。このテストは、巨大なマージ、GCサイクル、シャードの移動、OSのIOキャッシュ、予期しないスワップの可能性などのイベントのライフサイクルをカバーできます。</p>
+
+<h2>ストレージデバイス</h2>
+
+<p>当然ながらインデックスを保存するストレージデバイスはインデキシングの性能に多大な影響を及ぼします：</p>
+
+<ul>
+<li>SSDを利用する：これらは最も速いHDDよりも速いです。ランダムアクセスのための消費電力が低いだけでなく、シーケンシャルIOアクセスも高いです。また、同時に発生するインデキシング、マージや検索のための並列的なIOも高速です。</li>
+<li>インデックスをリモートマウントされたファイルシステム（例：<a href="http://en.wikipedia.org/wiki/Network_File_System">NFS</a>や<a href="http://en.wikipedia.org/wiki/Server_Message_Block">SMB/CIFS</a>）上に配置しない：代わりにローカルストレージを使う</li>
+<li>仮想化されたストレージ（Amazonの<a href="http://aws.amazon.com/ebs/">Elastic Block Storage</a>など）に注意：仮想化されたストレージはElasticsearchで十分に動作します。また、十分早く簡単に用意できることから魅力的です。しかし、残念なことに、ローカルストレージと比較すると本質的に遅いです。最近の非公式なテストでは、<a href="http://aws.amazon.com/ebs/details/#PIOPS">最高の性能を持つプロビジョニングされたIOPSのSSDオプションのEBS</a>でさえ、ローカルインスタンスにあるSSDよりも遅いです。ローカルインスタンスにあるSSDは物理マシン上のすべての仮想マシンから共有されてアクセスされます。もし他の仮想マシンが急にIOが集中した場合に不可解なスローダウンとなることがあることを覚えておいてください。</li>
+<li>複数のSSDを<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-dir-layout.html">複数の<code>path.data</code>ディレクトリ</a>にインデックスをストライピング（<a href="http://en.wikipedia.org/wiki/RAID_0#RAID_0">RAID0</a>のように）：2つは同様で、ファイルブロックレベルでストライピングする代わりに、個別にインデックスファイルレベルでElasticsearchの&#8221;stripes&#8221;となります。これらのアプローチは、いづれかのSSDの故障によりインデックスが壊れるという、1シャードが故障する(IO性能を高速化することとトレードオフ)というリスクを増加させることに注意してください。これは、一般的に行うのに良いトレードオフです：単一シャードで最大のパフォーマンスを最適化し、異なるノード間でレプリカを追加すると、ノードの故障への冗長化ができます。また、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-snapshots.html">snapshotやrestore</a>を使って保険のためにインデックスのバックアップを取ることもできます。</li>
+</ul>
+
+
+<h2>セグメントとマージ</h2>
+
+<p>新しくインデキシングされたドキュメントは最初にLuceneの<code>IndexWriter</code>によってRAMに保存されます。RAMバッファがいっぱいになった時もしくは、Elasticsearchがflushもしくはrefreshを実行した時など定期的にこれらのドキュメントはディスクに新しいセグメントとして書き込まれます。最後に、セグメントが多くなった時に、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules-merge.html">Merge PolicyとSucheduler</a>によってそれらがマージされます。このプロセスは連続的に生じます：マージされたセグメントはより大きなセグメントとなり、小さなマージが幾つか実行され、また、大きなセグメントにマージされます。これらがどのように動作するかを<a href="http://blog.mikemccandless.com/2011/02/visualizing-lucenes-segment-merges.html">わかりやすく可視化したブログはこちら</a>です。</p>
+
+<p>マージ、特に大きなマージは非常に時間がかかります。これは、通常は問題ありません。そのようなマージはレアで全体のインデックスのコストと比べればささいなものです。しかし、マージすることがインデキシングについていけない場合、インデックスに非常に多くのセグメントがあるような深刻な問題を防ぐために、Elasticsearchはやってくるインデキシングリクエストを単一スレッド(1.2以降)に制限します。</p>
+
+<p>もし、INFOレベルのログメッセージに<code>now throttling indexing</code>と表示されていたり、<a href="http://www.elasticsearch.org/guide/en/marvel/current">Marvel</a>でのセグメント数が増加しているを見た場合、マージが遅れているとわかります。Marvelは<a href="http://www.elasticsearch.org/guide/en/marvel/current/#_node_amp_index_statistics">Index Statistics dashboard</a>の<code>MANAGEMENT EXTENDED</code>の部分にセグメント数をプロットしており、それは、非常にゆっくりと指数対数的に増加しており、大きなマージが終了したところがのこぎりの歯のような形で見て取れます。</p>
+
+<p><img src="http://www.elasticsearch.org/content/uploads/2014/09/segmentCounts.png" title="セグメント数" ></p>
+
+<p>なぜマージが遅れるのでしょう？デフォルトでElasticsearchはすべてのマージの書き込みのバイト数をわずか20MB/secに制限しています。スピニングディスク（HDD）に対して、これはマージによって典型的なドライブのIOキャパシティを飽和させず、並列に検索を十分に実行させることを保証します。しかし、もし、インデキシング中に検索をしない場合や、検索性能がインデキシングのスループットよりも重要でない場合、インデックスの保存にSSDを使用している場合などは、<code>index.store.throttle.type</code>に<code>none</code>を設定して、マージの速度制限を無効化するべきです（詳細は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules-store.html">こちら</a>をご覧ください）。なおバージョン1.2以前には<a href="https://github.com/elasticsearch/elasticsearch/issues/6018">期待以上のマージIO制限の発生</a>といったバグが存在します。アップグレードを！</p>
+
+<p>もし、不幸にもスピニングディスク（それはSSDと同等の並列なIOを扱えません）をまだ使っている場合、<code>index.merge.scheduler.max_thread_count</code>に<code>1</code>を設定しなければなりません。そうでない場合は、（SSDを支持する）デフォルト値が多くのマージを同時に実行させるでしょう。</p>
+
+<p>活発に更新が行われているインデックスで<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-optimize.html"><code>optimize</code></a>を実行しないでください。それは、非常にコストの高い操作(すべてのセグメントをマージ)です。しかし、もし、インデックスにドキュメントを追加が終わった直後はオプティマイズのタイミングとしては良いタイミングです。それは、検索時のリソースを減らすからです。例えば、時間ベースのインデックスを持っており、新しいインデックスに日々のログを追加している場合、過去の日付のインデックスをオプティマイズするのは良い考えです。特に、ノードが多くの日付のインデックスを持っている場合です。</p>
+
+<p>更にチューニングするための設定：</p>
+
+<ul>
+<li>実際に必要のないフィールドをオフにする。例えば<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-all-field.html"><code>_all</code>フィールドをオフ</a>。また、保持したいフィールドでは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-core-types.html"><code>indexed</code>か<code>stored</code>かを検討する</a>。</li>
+<li>もし、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-source-field.html"><code>_source</code>フィールドをオフ</a>にしたくなるかもしれないが、インデキシングコストは小さい(保存するだけで、インデキシングしない)、また、それは、将来の更新や、前のインデックスを再インデキシングするために非常に価値があり、それはディスク使用率の懸念事項がない限り、オフにする価値はあまりない。それは、ディスクが比較的安価であるので価値がない。</li>
+<li>もし、インデックスされたドキュメントの検索までの遅延を許容できるなら、<code>index.refresh_interval</code>を<code>30s</code>に増やすか、<code>-1</code>を設定して、オフにする。これは、巨大なセグメントをフラッシュし、マージのプレッシャーを減らすことができる。</li>
+<li><a href="http://www.elasticsearch.org/downloads/1-3-2/">Elasticsearch 1.3.2</a>(稀に、フラッシュ時に過度のRAMを使用するという<a href="https://github.com/elasticsearch/elasticsearch/issues/6443">問題</a>を<a href="https://github.com/elasticsearch/elasticsearch/issues/6379">修正した</a>)にアップグレードすることで、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules-translog.html"><code>index.translog.flush_threshold_size</code></a>をデフォルト(200mb)から1gbに増加し、インデックスファイルのfsyncの頻度を減らす。
+Marvelに<a href="http://www.elasticsearch.org/guide/en/marvel/current/#_node_amp_index_statistics"><code>Index Statistics dashboard</code></a>の<code>MANAGEMENT</code>にフラッシュの頻度がプロットされている。</li>
+</ul>
+
+
+<h2>インデックスバッファサイズ</h2>
+
+<p>巨大なインデックスを構築中はレプリカ数を0にし、あとから、レプリカを有効にする。レプリカが0ということは、データを失った(ステータスがred)時に冗長性がないので、ノードの故障に注意すること。もし、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-optimize.html"><code>optimize</code></a>(ドキュメントの追加をすることがないので)を計画するなら、インデキシングが終わったあとで、レプリカを作成する前に実行するのが良いでしょう。レプリカはオプティマイズされたセグメントをコピーするだけになります。詳細は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-update-settings.html">インデックス設定更新</a>を参照。</p>
+
+<p>もし、ノードがヘビーなインデキシングを行っているだけなら、アクティブなシャードのインデキシングバッファに多くてい512MBを<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-indices.html">indices.memory.index_buffer_size</a>に与えてください。(超えてもインデキシングのパフォーマンスは一般的には改善されません。)Elasticsearchはその設定(Javaヒープのパーセンテージもしくはバイト数)を受けて、min_index_buffer_sizeとmax_index_buffer_sizeの値を前提にノードのアクティブシャードに均等に割り当てます；大きな値はLuceneが最初のセグメントをより大きくし、将来的なマージのプレッシャーを減らすことを意味します。</p>
+
+<p>デフォルトは10%で、それで十分です；例えば、もし、5つのアクティブなシャードがノードにあり、ヒープが25GBの場合、各シャードは25GBの10%の1/5=512MB（すでに最大値）を持っています。ヘビーなインデキシングのあと、この設定をデフォルトに下げましょう。検索時のデータ構造のために十分なRAMを確保するために。この設定はまだ動的な設定変更はできません。<a href="https://github.com/elasticsearch/elasticsearch/issues/7045">Issueがここに</a>あります。</p>
+
+<p>インデックスバッファによって現在利用されているバイト数は1.3.0の<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-stats.html">indices stats API</a>に追加されています。<code>indices.segments.index_writer_memory</code>の値を見ることができます。これはMarvelではまだプロットされていませんが、将来のバージョンで追加される予定です。しかし、自分でグラフに追加することもできます。(Marvelはデータは収集しています)</p>
+
+<p>1.4.0では、<a href="https://github.com/elasticsearch/elasticsearch/issues/7440"><code>indices.segments.index_writer_max_memory</code></a>として、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-stats.html">indices stats API</a>にアクティブシャードにどのくらいのRAMバッファが割り当てられているかも表示されます。これらの値はインデックスのシャード事の値として見ることができ、<code>http://host:9200/&lt;indexName&gt;/_stats?level=shards</code>を使ってみることができます；これは、全シャードに対する合計と、各シャードごとのstatsを返すでしょう。</p>
+
+<h2>オートIDの利用もしくは良いIDの利用</h2>
+
+<p>もし、ドキュメントの<code>ID</code>がなんでも良い場合、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html#_automatic_id_generation" title="">Elasticsearchで採番すること</a>ができます：これは、(1.2以降)ドキュメントIDをバージョンを探さずに保存できるように<a href="https://github.com/elasticsearch/elasticsearch/pull/5917">最適化</a>され、Elasticsearchの<a href="http://benchmarks.elasticsearch.org/">日毎のベンチマーク</a>で異なるパフォーマンスを見ることができます。(<code>Fast</code>と<code>FastUpdate</code>のグラフを比較)</p>
+
+<p>もし、IDを自身が持っていて、自分の支配下で<a href="http://blog.mikemccandless.com/2014/05/choosing-fast-unique-identifier-uuid.html">Luceneに対して素早く選ぼうとしている</a>なら、1.3.2にアップグレードしましょう、IDのルックアップが<a href="https://github.com/elasticsearch/elasticsearch/issues/6212">さらにオプティマイズ</a>されています。Javaの<a href="http://docs.oracle.com/javase/7/docs/api/java/util/UUID.html">UUID.randomUUID()</a>はやめましょう。それは、セグメントに対してどのようにIDを割り当てるかという予測やパターン性がないため、最悪のケースで<a href="http://blog.mikemccandless.com/2014/05/choosing-fast-unique-identifier-uuid.html">セグメントごとのシーク</a>が発生します。</p>
+
+<p><a href="http://boundary.com/blog/2012/01/12/flake-a-decentralized-k-ordered-unique-id-generator-in-erlang/">Flake IDs</a>を利用した時の<a href="http://www.elasticsearch.org/overview/marvel">Marvel</a>によるインデックス性能の違い：</p>
+
+<p><img src="http://www.elasticsearch.org/content/uploads/2014/09/flakeIDsPerf.png" title="flakeIDsPerf" ></p>
+
+<p>ランダムUUIDを利用した場合：</p>
+
+<p><img src="http://www.elasticsearch.org/content/uploads/2014/09/uuidsPerf.png" title="uuidsPerf" ></p>
+
+<p>次の1.4.0では、ElasticsearchのID自動採番を<a href="https://github.com/elasticsearch/elasticsearch/issues/5941">UUIDからFlake IDに変更</a>します。</p>
+
+<p>もし、Luceneのローレベル操作がインデックスに対してなにをやっているかについて興味があるなら、<a href="https://github.com/elasticsearch/elasticsearch/issues/5891"><code>lucene.iw</code>をTRACEログレベルで出力できるように</a>してみましょう(1.2から利用可能)。これは、多くの出力がありますが、Luceneの<code>IndexWriter</code>レベルで何が起きているかを理解するのに非常に役に立ちます。出力は非常にローレベルです：<a href="http://www.elasticsearch.org/guide/en/marvel/current">Marvel</a>がインデックスに何が起きているかをよりリアルタイムにグラフを描画してくれます。</p>
+
+<h2>スケールアウト</h2>
+
+<p>我々は、単一シャード(Luceneインデックス)性能のチューニングに注目してきました。しかし、一旦それに満足できたならば、Elasticsearchはクラスタ全体にわたってインデキシングや検索を簡単にスケールアウトすることに長けています。シャード数(デフォルトでは5)を増やすのは可能です。それは、マシン全体に対して並列度、巨大なインデックスのサイズ、検索時のレイテンシの低下など得ることができます。また、レプリカを1位上にすることは、ハードウェア故障に対する冗長性を持つことを意味します。</p>
+
+<p>最後に、このドキュメントを見ても問題解決しない場合は<a href="http://www.elasticsearch.org/community">コミュニティに参加</a>しましょう。例えば、<a href="https://groups.google.com/forum/?fromgroups#!forum/elasticsearch">ElasticsearchのユーザML</a>に投稿するなど。おそらく、修正すべきエキサイティングなバグがあるでしょう。(パッチも常に歓迎です！)</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[サーバ/インフラエンジニア養成読本 ログ収集~可視化編 を手伝いました]]></title>
+    <link href="http://blog.johtani.info/blog/2014/08/04/release-magazine-book-of-log-aggs-and-viz/"/>
+    <updated>2014-08-04T21:54:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/08/04/release-magazine-book-of-log-aggs-and-viz</id>
+    <content type="html"><![CDATA[<p>懲りずにまた、執筆してみました。みなさん「買って」から感想をいただけるとうれしいです！</p>
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&nou=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=johtani-22&o=9&p=8&l=as1&m=amazon&f=ifr&ref=tf_til&asins=4774169838" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+
+
+
+<!-- more -->
+
+
+<h2>本書について</h2>
+
+<p>共著者の方々のブログが詳しいので、そちらを読んでもらいつつ。
+実際にログを収集して解析されている方々と一緒に書かせていただくことで色々と勉強させていただいています。</p>
+
+<h3>共著者の方々のブログ</h3>
+
+<ul>
+<li><a href="https://twitter.com/suzu_v">@suzu_v</a>さん：<a href="http://suzuken.hatenablog.jp/entry/2014/07/18/084555">サーバ/インフラエンジニア養成読本 ログ収集~可視化編 を書きました</a></li>
+<li><a href="https://twitter.com/yoshi_ken">@yoshi_ken</a>さん：<a href="http://y-ken.hatenablog.com/entry/published-elasticsearch-fluentd-kibana-book">ログ収集や可視化で話題のFluentd、Elasticsearch、Kibanaを徹底解説したムック本が発売となります</a></li>
+<li><a href="https://twitter.com/harukasan">@harukasan</a>さん：<a href="http://blog.harukasan.jp/entry/2014/07/18/180351">書きました: サーバ/インフラエンジニア養成読本 ログ収集~可視化編</a></li>
+</ul>
+
+
+<h3>どの辺を書いたの？</h3>
+
+<p>「特集３：Elasticsearch入門」（なんか、入門ばっかりだなぁ）を書かせていただきました。
+データストア入門ということで、ほんとうに簡単な他のデータストアを説明し、Elasticsearchってどんなものかを単語の説明をしつつ紹介してみました。</p>
+
+<p>Elasticsearch自体は多くの機能を持っており、それ単体で分厚い書籍がかけるので、ログ検索に関係ありそうな部分をピックアップしてみました。
+あとは、運用時に気をつける点や便利なツール（Curatorなど）の紹介をしています。</p>
+
+<p>また、Hadoopと合わせて利用してみたい、すでにHadoopにあるデータも活用してみたいという話もありそうだということで、<a href="https://github.com/elasticsearch/elasticsearch-hadoop">elasticsearch-hadoop</a>についても簡単ですが紹介してあります。</p>
+
+<h2>その他感想</h2>
+
+<p>個人的に、忙しい時期<a href="http://blog.johtani.info/blog/2014/07/01/join-elasticsearch/">（参考記事）</a>だったので、あんまり力になれてないので大変申し訳なく思っています。。。
+ただ、素晴らしい出来（カラーでKibanaの解説が日本語で読めたり、Fluentdの逆引きのリストがあったり、ログを貯めて可視化する意義を説明してあったり）です。</p>
+
+<p>ぜひ、読んだ感想をいただければと！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[プロキシ環境でのpluginコマンドの実行]]></title>
+    <link href="http://blog.johtani.info/blog/2014/08/01/plugin-using-under-proxy-env/"/>
+    <updated>2014-08-01T15:24:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/08/01/plugin-using-under-proxy-env</id>
+    <content type="html"><![CDATA[<p>Proxy環境で働いている方も結構いると思います。
+Twitter上で、Elasticsearchのpluginコマンドでプラグインがインストールできなくて困っている方がいたので、
+調べてみたのでメモしておきます。</p>
+
+<!-- more -->
+
+
+<h2>プラグインコマンド</h2>
+
+<p>Elasticsearchでは、プラグインという形でいくつかの便利な機能が公開されています。
+<a href="https://github.com/elasticsearch/elasticsearch-analysis-kuromoji">形態素解析ライブラリのKuromoji</a>を使うためのプラグインや、<a href="https://github.com/lmenezes/elasticsearch-kopf">クラスタの管理がGUIで可能なkopf</a>プラグインなどがあります。
+公式、サードパーティいろいろです。</p>
+
+<p>これらのプラグインをElasticsearchにインストールする場合、以下のコマンドを実行すれば
+自動的にダウンロードして<code>plugins</code>ディレクトリにインストールしてくれます。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ここで、<code>elasticsearch/elasticsearch-analysis-kuromoji/2.3.0</code>がプラグインのパスになります（例では、<code>提供元/プラグイン名/プラグインバージョン</code>となっています。）。</p>
+
+<p>この<code>plugin</code>コマンドがダウンロード元にアクセスに行くのですが、プロキシ環境だとプロキシの設定が必要になります。</p>
+
+<h2>プロキシの指定（Mac/LinuxとWindowsでの違い）</h2>
+
+<h3>Mac/Linux(shコマンド)</h3>
+
+<p><a href="http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/">以前の記事</a>でプロキシのポート番号などの指定方法を
+以下のように説明していました。
+（※昔の記事のため、kuromojiプラグインのバージョンが古いです）</p>
+
+<p>ElasticsearchのpluginコマンドはJavaで実装されています。（org.elasticsearch.common.http.client.HttpDownloadHelper）
+プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。</p>
+
+<p>ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>LinuxやMacの環境であれば、こちらのコマンドでプロキシの指定が可能です。
+ただし、Windows環境ではうまくいきません。</p>
+
+<p>Elasticsearchは、環境の違いにより、ダウンロードするファイルが異なります。
+Windows環境の方は、zipファイルをダウンロードしてもらうようになっています。
+elasticsearchコマンドおよびpluginコマンドがbat形式で提供されているのがzipファイルとなるからです。</p>
+
+<h3>Windows(batコマンド)</h3>
+
+<p>Windows環境では次のように指定します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>set JAVA_OPTS="-DproxyHost=ホスト名 -DproxyPort=ポート番号"
+</span><span class='line'>bin\plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>コマンドの実装方法が少し異なるために、このようになっています。</p>
+
+<h2>まとめ</h2>
+
+<p>プロキシ環境で利用される場合は、プラグインコマンドは上記のように実行していただければと。</p>
+
+<p>公式ガイドには、これらの情報を追記するPRを送る予定です。
+また、WindowsのコマンドでもMac/Linuxと同様にできたほうがいい気がするので、Issueをあげようと思います。</p>
+
+<p>不明点などあれば、コメントいただければと。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 1.3.1 リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2014/07/29/elasticsearch-1-3-1-release/"/>
+    <updated>2014-07-29T12:22:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/07/29/elasticsearch-1-3-1-release</id>
+    <content type="html"><![CDATA[<p><a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">原文：Elasticsearch 1.3.1 Released</a>を日本語に翻訳したものです。</p>
+
+<p>バグフィックス版のElasticsearch 1.3.1をリリースしました。
+ダウンロードおよび変更履歴は<a href="http://www.elasticsearch.org/downloads/1-3-1/">Elasticsearch 1.3.1</a>からお願いいたします。</p>
+
+<!-- more -->
+
+
+<p>このリリースはインデックスリカバリ時の後方互換性バグ（<a href="https://github.com/elasticsearch/elasticsearch/pull/7055">#7055</a>）への対応です。
+このバグは<strong>データの欠損は起こりません。</strong> Elasticsearch 1.3.1へアップグレードすることで問題を回避できます。
+このバグは、以下のElasticsearchのバージョンで作成されたセグメントを含むインデックスを1.3.0へアップグレードしようとすると発生します。</p>
+
+<ul>
+<li>Elasticsearch 0.90.7</li>
+<li>Elasticsearch 0.90.2</li>
+<li>Elasticsearch 0.90.0以前のバージョン</li>
+</ul>
+
+
+<p>このバグは、これらの古いインデックスをレプリカからリカバリできなくします。
+これらのバージョンのセグメントを持つインデックスが、レプリカは可能ですが、
+ステータスがYellowのままGreenに決してなりません。
+ログには次のようなExceptionが発生します。</p>
+
+<blockquote><p>IllegalArgumentException[No enum constant org.apache.lucene.util.Version.x.x.x]</p></blockquote>
+
+<p>Luceneの特定のバージョンではLuceneのマイナーバージョンを含んでおらず、誤ったバージョン番号がセグメントに記録されました。
+<a href="https://issues.apache.org/jira/browse/LUCENE-5850">LUCENE-5850</a>のチケットがこの問題に対処するためにオープンされています。
+この問題は我々の後方互換テストで見つかるべき問題ですが、Luceneで不足しているため発見されませんでした。
+テストスイートは今後の可能性のために改良されます。</p>
+
+<p>このリリースはその他に、Aggregationのマイナーバグフィックスも含まれています。
+詳細は<a href="http://www.elasticsearch.org/downloads/1-3-1/">リリースノート</a>をご覧ください</p>
+
+<p><a href="http://www.elasticsearch.org/downloads/1-3-1/">Elasticsearch 1.3.1</a>をダウンロードし、試してください。
+もし問題を見つけた場合は<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHubのIssues</a>へご報告をお願いいたします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Curator 1.2および1.1について]]></title>
+    <link href="http://blog.johtani.info/blog/2014/07/28/curator-2-0-and-1-1/"/>
+    <updated>2014-07-28T14:19:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/07/28/curator-2-0-and-1-1</id>
+    <content type="html"><![CDATA[<p><a href="http://www.elasticsearch.org/blog/curator-1-2-0-released/">Curatorの1.2.0がリリース</a>されました。</p>
+
+<p><a href="http://blog.johtani.info/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/">前回のCuratorの記事</a>が古くなってしまった（1.1.0からコマンドのI/Fが変更された）ので
+1.1.0および1.2.0に関する記事を翻訳しておきます。</p>
+
+<p>ちなみに、<a href="https://github.com/elasticsearch/curator/">Curator</a>とは、Elasticsearchに時系列のインデックス（例：LogstashやFluentdでログを保存）を保存している場合にそれらのインデックスを管理（削除したり、クローズしたり）するための便利なツールです。
+Curatorの概要については、<a href="https://github.com/elasticsearch/curator/">GitHubリポジトリ</a>か<a href="http://blog.johtani.info/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/">前回の記事</a>をご覧ください。</p>
+
+<!-- more -->
+
+
+<h1>Curator 1.1.0リリース (2014/06/13公開)<a name="curator_v110"/></h1>
+
+<p>元記事：<a href="http://www.elasticsearch.org/blog/elasticsearch-curator-version-1-1-0-released/">elasticsearch curator - version 1.1.0 released</a></p>
+
+<p>Elasticsearch 1.0.0がリリースされ、新しい機能、Snapshot &amp; Restoreが利用できるようになりました。
+Snapshotはある時点でのインデックスの写真を撮るように、バックアップを作成することができます。
+1.0.0が発表されてすぐに、この機能に関するリクエストが寄せられるようになりました。
+「Curatorにスナップショットを追加して！」もしくは「いつCuratorでスナップショットが使えるようになる？」といった感じです。
+これがあなたの要望なら、それはついに叶えられました。しかも他の追加機能も一緒にです。</p>
+
+<h2>新機能</h2>
+
+<p>Curatorの新機能は以下のとおりです。</p>
+
+<ul>
+<li>新CLI構造</li>
+<li>スナップショット(Snapshot)</li>
+<li>エイリアス(Aliases)</li>
+<li>パターンによる除外インデックス指定</li>
+<li>配置ルーティング(Allocation Routing)</li>
+<li>インデックスとスナップショットの表示</li>
+<li>リポジトリ管理(個別のスクリプトによる)</li>
+<li><a href="https://github.com/elasticsearch/curator/wiki">ドキュメントWiki</a></li>
+</ul>
+
+
+<h3>新コマンドライン構造</h3>
+
+<p><strong>注意</strong>：コマンドライン構造の変更とは、Curator 1.1.0以前のcron記述が動作しないことを意味します。Curator 1.1.0にアップグレードする場合はコマンドも修正が必要となるので注意してください。</p>
+
+<p>シンプルにするために、<em>commands</em>という概念を追加しました。
+また、ヘルプの出力もわかりやすくなっています。
+前のバージョンと同じタスクをCuratorは実行できますが、異なるフォーマットを用いるようになりました。</p>
+
+<p>旧コマンド：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator -d 30</span></code></pre></td></tr></table></div></figure>
+
+
+<p>新コマンド：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator delete --older-than 30</span></code></pre></td></tr></table></div></figure>
+
+
+<p>コマンドは、フラグとは異なりハイフンを前に付けないことに注意してください。
+また、似たような名前のフラグがあることに気をつけてください。
+例えば、<code>--older-than</code>フラグは多くのコマンドに利用できます。
+指定される値は各ケースにおいて同一です。「指定された数よりも古いインデックス」となります。</p>
+
+<p>新しいコマンドのリストは次のとおりです。</p>
+
+<ul>
+<li>alias</li>
+<li>allocation</li>
+<li>bloom</li>
+<li>close</li>
+<li>delete</li>
+<li>optimize</li>
+<li>show</li>
+<li>snapshot</li>
+</ul>
+
+
+<p>コマンドのヘルプは次のコマンドで表示されます。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator [COMMAND] --help</span></code></pre></td></tr></table></div></figure>
+
+
+<p>コマンドに関係あるフラグがすべて表示されます。</p>
+
+<h3>スナップショット(snapshots)</h3>
+
+<p><code>snapshot</code>コマンドで、存在しているリポジトリにインデックスのスナップショットを保存することができます。</p>
+
+<p>Curatorはインデックス毎に1つのスナップショットを作成し、インデックスから名前をつけます。
+例えば、インデックスの名前が<code>logstash-2014.06.10</code>の場合、スナップショットの名前は<code>logstash-2014.06.10</code>となります。
+指定した条件を元に、シーケンシャルに、1つずつインデックスのスナップショットを作成していきます。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator snapshot --older-than 20 --repository REPOSITORY_NAME</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このコマンドは、20日以上古いインデックスすべてのスナップショットを作成し、<code>REPOSITORY_NAME</code>で指定されたリポジトリに保存します。</p>
+
+<p><code>es_repo_mgr</code>と呼ばれるリポジトリ作成を支援するスクリプトがCuratorには含まれています。
+ファイルシステムおよびS3タイプのリポジトリ両方の作成を支援します。</p>
+
+<p>さらに、古いインデックスのスナップショットを取ることができることに加えて、Curatorは最新のインデックスをアップロードする方法も提供します。
+これは、<a href="http://www.elasticsearch.org/overview/marvel/">Elasticsearch Marvel</a>のインデックスをアップロードするときに便利です。
+トラブルシューティングを目的として、パフォーマンスデータを他の人に見せる場合などです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator snapshot --most-recent 3 --prefix .marvel- --repository REPOSITORY_NAME</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このコマンドでは、最新の3つのMarvelインデックスのスナップショットを指定されたリポジトリに保存できます。</p>
+
+<h3>エイリアス(aliases)</h3>
+
+<p>Curatorはすでに存在するエイリアスにインデックスを追加することも、削除することもできるようになりました。
+ただし、エイリアスがすでに存在している必要があります。エイリアスの作成はできません。</p>
+
+<p><code>last_week</code>という前の一週間のインデックスのエイリアスを保持していること想像してください。
+この場合、次の2つのコマンドを利用することで、エイリアスを管理できます。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator alias --alias-older-than 7 --alias last_week
+</span><span class='line'>curator alias --unalias-older-than 14 --alias last_week</span></code></pre></td></tr></table></div></figure>
+
+
+<p>新しく作られたインデックスが<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html#indices-templates">インデックステンプレート</a>によって
+自動的にエイリアスの一部となるようにElasticsearchに設定しておくと、さらに便利です。
+この場合、新しいインデックスが自動的に<code>this_week</code>というエイリアスの一部になるようにしてあれば、以下のコマンドのみとなります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator alias --unalias-older-than 7 --alias this_week</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>this_week</code>と<code>last_week</code>のエイリアスのアップデートを保持できます。</p>
+
+<h3>パターンによる除外(exclude pattern)</h3>
+
+<p>時には、指定したインデックスを操作から除外したくなる場合もあるでしょう。
+ここまでは、プレフィックスや日付によって選択されたインデックスのみを対象にしてきました。
+そこで、<code>--exclude-pattern</code>オプションです。これは、指定したインデックスを除いて処理を行うことができます。</p>
+
+<p><code>logstash-2014.06.11</code>というインデックスを決して削除したくないとします。
+この場合、次のコマンドのようになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator delete --older-than 15 --exclude-pattern 2014.06.11</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Curatorはデフォルトで<code>logstash-</code>というプレフィックスにマッチしますが、<code>2014.06.11</code>というインデックスは対象外となります。</p>
+
+<h3>配置ルーティング(allocation routing)</h3>
+
+<p>Elasticsearchはノードにタグを付けることができます。
+これらのタグはインデックスやシャードをクラスタのどこに配置するかをコントロールするために役立ちます。
+一般的なユースケースだと、高性能なSSDドライブを持ったノードをインデキシングのために、ハードディスクを持った性能の低いマシンは検索頻度が低い古いインデックスを配置するといった場合です。
+この場合、HDDノードには、<code>elasticsearch.yml</code>に<code>node.tag: hdd</code>、SSDノードには<code>node.tag: ssd</code>と設定されているべきです。
+Curatorはこの時、インデックスをタグに基づいてオフピークの時間帯に再配置させることができます。</p>
+
+<p>コマンド：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator allocation --older-than 2 --rule tag=hdd</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>index.routing.allocation.require.tag=hdd</code>という設定が２日よりも古いインデックスに適用されます。
+これは、インデックスのシャードが<code>node.tag: hdd</code>というノードに再配置される必要があると、Elasticsearchに伝えます。</p>
+
+<h3>インデックスとスナップショットの表示(show indices and snapshots)</h3>
+
+<p>これは、単にあなたの持っているインデックスやスナップショットがどんなものかを表示します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator show --show-indices</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これは、デフォルトプレフィックスの<code>logstash-</code>にマッチするすべてのインデックスを表示します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator show --show-snapshots --repository REPOSITORY_NAME</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これは、指定されたリポジトリにある、デフォルトプレフィックスの<code>logstash-</code>にマッチするすべてのスナップショットを表示します。</p>
+
+<h3>リポジトリ管理(repository management)</h3>
+
+<p>前に説明したとおり、<code>es_repo_mgr</code>と呼ばれるヘルパースクリプトをCuratorは含んでいます。
+現時点では、<code>fs</code>と<code>s3</code>タイプをサポートしています。
+リポジトリを作る前に利用したいタイプのドキュメントを読むようにしてください。
+例えば、<code>fs</code>タイプのリポジトリを各ノードで使う場合は、同じ共有ファイルシステムに、同じパスでアクセスできなければなりません。
+パスの指定は<code>--location</code>です。</p>
+
+<p><code>fs</code>タイプリポジトリの作成</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>es_repo_mgr create_fs --location '/tmp/REPOSITORY_LOCATION' --repository REPOSITORY_NAME</span></code></pre></td></tr></table></div></figure>
+
+
+<p>削除</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>es_repo_mgr delete --repository REPOSITORY_NAME</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>ドキュメントWiki</h3>
+
+<p><a href="https://github.com/elasticsearch/curator/wiki">Curatorのドキュメント</a>が更新され、オンラインにWiki形式でだれでも更新できるようになっています。
+コマンドやフラグのより詳細の情報はこちらで見つけることができます。また、もし、興味があれば、ドキュメントを追加することもできます。</p>
+
+<h2>インストールと更新</h2>
+
+<p>Curator 1.1.0は<a href="https://pypi.python.org/pypi?%3Aaction=pkg_edit&amp;name=elasticsearch-curator">PyPi</a>リポジトリにあります。
+インストールは以下のとおりです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>pip install elasticsearch-curator</span></code></pre></td></tr></table></div></figure>
+
+
+<p>バージョン1.0.0からアップグレードする場合は以下のとおりです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>pip uninstall elasticsearch-curator
+</span><span class='line'>pip install elasticsearch-curator</span></code></pre></td></tr></table></div></figure>
+
+
+<p>バージョン1.0.0よりも古いバージョンからのアップグレードは以下のとおりです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>pip uninstall elasticsearch-curator
+</span><span class='line'>pip uninstall elasticsearch
+</span><span class='line'>pip install elasticsearch-curator</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>pip uninstall elasticsearch</code>で、古いパイションモジュールをを削除します。
+適切なバージョンが依存関係により再インストールされます。</p>
+
+<h2>まとめ</h2>
+
+<p>Curatorの新機能は素晴らしいです！このリリースは大きな改善です。
+もし、トラブルや足りないものを見つけた場合は<a href="http://github.com/elasticsearch/curator/issues">GitHub Issue</a>に報告してください。
+また、Curatorが便利だと思ったら、私たちに伝えてください。<code>#elasticsearch</code>タグを付けてツイートしてください！</p>
+
+<p>Curatorはまだ、始まったばかりです。Curator 2.0のロードマップを作業中です。ここまで読んでいただきありがとうございます。
+Happy Curating!</p>
+
+<hr />
+
+<h1>Curator 1.2.0リリース(2014/07/24)</h1>
+
+<p>元記事：<a href="http://www.elasticsearch.org/blog/curator-1-2-0-released/">curator 1.2.0 released</a></p>
+
+<p><a href="#curator_v110">Curator v1.1.0</a>のリリースから、数週間が経ちました。
+私たちは、Curator 1.2.0をリリースしました。</p>
+
+<h2>新機能(new features)</h2>
+
+<ul>
+<li>ユーザ指定の日付パターン：長い間リクエストされていた機能</li>
+<li>ウィークリーインデックスのサポート：これも長い間リクエストされていた機能</li>
+<li>複数の<a href="https://github.com/elasticsearch/curator/wiki/Logformat">ログフォーマット</a>オプション：Logstashフォーマットが利用可能</li>
+</ul>
+
+
+<p>これらの変更は<a href="https://github.com/elasticsearch/curator/wiki">Curatorドキュメント</a>にも記載されています。</p>
+
+<h2>更新(updates)</h2>
+
+<ul>
+<li>ログ出力の整理：デフォルトのログ出力を整理しました。デバッグログはすべて表示されます。</li>
+<li>ドライランのログ出力の詳細化：テスト実行時に何が起きたかをわかりやすくしました。</li>
+</ul>
+
+
+<h2>日付パターンと<code>--timestring</code>(date patterns and &ndash;timestring)</h2>
+
+<p>前のリリースで、セパレータ文字を利用して、インデックス名のエレメントを分離することで、日付を計算しました。
+この設計の決定は、プログラムが管理するために設計されたLogstashのインデックスを使うのには簡単でした。
+しかし、Curatorは時系列インデックス管理に成長しています。これは、異なる命名規則のインデックスを意味しています。</p>
+
+<p>また、インターバルによって、日付の計算が必要になる場合もあります。
+<code>--time-unit</code>オプションが残っており、<code>weeks</code>という単位を指定することもできます。
+デフォルトの<code>--timestring</code>オプションは、以前のコマンドと同様の動作をしなければなりません。次のようになります。</p>
+
+<table>
+<thead>
+<tr>
+<th> Time Unit </th>
+<th> Timestring </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> days      </td>
+<td> <code>%Y.%m.%d</code></td>
+</tr>
+<tr>
+<td> hours     </td>
+<td> <code>%Y.%m.%d.%H</code></td>
+</tr>
+<tr>
+<td> weeks     </td>
+<td> <code>%Y.%W</code></td>
+</tr>
+</tbody>
+</table>
+
+
+<p>これが意味するものは、もし、単位に<code>hours</code>をした場合、<code>--timestring</code>を指定しなかった場合は<code>%Y.%m.%d.%H</code>となります。
+これは、<a href="https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior">Pythonのstrftimeフォーマット</a>で&#8221;年.月.日.時&#8221;を意味します。
+同様に、<code>weeks</code>を単位に指定した場合、Curatorはデフォルトの<code>--timestring</code>は<code>%Y.%W</code>となります。</p>
+
+<p>この機能は、日付の間にセパレーター文字のないインデックスでも機能します。
+例えば、<code>production-20140724</code>のような日時インデックスがある場合、2日よりも古いインデックスに対する<a href="https://github.com/elasticsearch/curator/wiki/Disable-Bloom-Filter-Cache">ブルームフィルタっキャッシュのオフ</a>のコマンドは次のようになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator bloom --prefix production- --older-than 2 --timestring %Y%m%d</span></code></pre></td></tr></table></div></figure>
+
+
+<p>この例で、デフォルトの単位は<code>days</code>であることに注意してください。<code>hourly-2014072414</code>のような時間インデックスの場合は次のようになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator bloom --prefix hourly- --older-than 2 --time-unit hours --timestring %Y%m%d%H</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><code>--separator</code>の置き換え</h2>
+
+<p>もし、Curatorの前のバージョンでカスタムセパレータ文字を利用していた場合、次のように変更すべきです。
+前のコマンドで<code>cerberus-2014-07-24</code>のようなインデックスがある場合、コマンドを<code>--separator -</code>の用に置き換える必要があります。
+新しいコマンドは次のとおりです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curator delete --prefix cerberus- --older-than 30 --timestring %Y-%m-%d</span></code></pre></td></tr></table></div></figure>
+
+
+<p>年(<code>％Y</code>)と月(<code>%m</code>)と日(&lsquo;%d&rsquo;)の間にセパレータ文字を置くだけです。</p>
+
+<p>これは、また、Curatorで以前は不可能であったことをできるようにもします。
+異なるセパレータ文字の混在です。
+<code>logs-2014.07.24-14</code>というようなインデックスを処理するときに<code>--timestring</code>は<code>%Y.%m.%d-%H</code>のようになります.</p>
+
+<p><code>--timestring</code>の詳細は<a href="https://github.com/elasticsearch/curator/wiki/Timestring">Curatorのドキュメント</a>をご覧ください。</p>
+
+<h2>フィードバック</h2>
+
+<p>これらの新しい機能はユーザのコメントやリクエストから来ています。もし、機能のリクエストやバグを発見したら、<a href="https://github.com/elasticsearch/curator/issues">こちら</a>まで連絡してください。</p>
+
+<p>また、Twitterでもお待ちしています。私たちのTwitter IDは<code>@elasticsearch</code>です。</p>
+
+<p>Happy Curating!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[第5回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
+    <link href="http://blog.johtani.info/blog/2014/07/19/hold-on-5th-elasticsearch-jp/"/>
+    <updated>2014-07-19T21:52:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/07/19/hold-on-5th-elasticsearch-jp</id>
+    <content type="html"><![CDATA[<p><a href="http://elasticsearch.doorkeeper.jp/events/12028">第5回Elasticsearch勉強会</a>を開催しました。
+遅くなってしまいましたが、まとめてみました。</p>
+
+<p>今回は、Elasticsearchに入って初の勉強会でした。タイミングが良いことに、Honza、Igor、Shayの3名がトレーニングのために
+来日していたため、特別回ということにして、話をしてもらいました。</p>
+
+<p>そして、<a href="http://samuraism.com/">サムライズム</a>の<a href="https://twitter.com/yusuke">@yusuke</a>さんにテキスト翻訳してもらいました。
+早くて正確なタイピング＋翻訳、本当にありがとうございました。</p>
+
+<p>開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
+次回もよろしくお願いします！
+参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p>amazing turnout to the elasticsearch at Tokyo <a href="https://twitter.com/hashtag/elasticsearchjp?src=hash">#elasticsearchjp</a> <a href="http://t.co/Aa88eVf5dF">pic.twitter.com/Aa88eVf5dF</a></p>&mdash; Shay Banon (@kimchy) <a href="https://twitter.com/kimchy/statuses/488686274375843841">2014, 7月 14</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+
+
+<!-- more -->
+
+
+<p>動画があとで、アップされる予定です。お楽しみに。</p>
+
+<h2>Honza&rsquo;s talk</h2>
+
+<ul>
+<li>djangoの開発者！であり、ElasticsearchのPythonクライアント、Curatorの開発者</li>
+<li>Python Clientを利用しながら、ライブコーディングのような形で説明する方法が新鮮</li>
+<li>Aggregationの便利さについての説明</li>
+<li>Python Clientがクエリを組み立てるのにすごく便利そうだった</li>
+<li>Pythonユーザが結構いたので助かりましたｗ</li>
+</ul>
+
+
+<h2>Igor&rsquo;s talk</h2>
+
+<p>スライド：<a href="https://speakerdeck.com/imotov/elasticsearch-data">elasticsearch data/</a></p>
+
+<ul>
+<li>Snapshot/Restoreの開発などを行っている開発者</li>
+<li>Elasticsearchのデータ、ディレクトリ構造に関するお話</li>
+<li>シャードの話から、ディレクトリ構造、メタデータに関する説明</li>
+<li>transaction logの挙動の説明</li>
+<li>検索のフェーズの説明</li>
+</ul>
+
+
+<p>Igorは、実は私がElasticsearch社の人とコンタクトがとれた最初の人だと思います。
+第1回Elasticsearch勉強会が開催する当日に帰国されるという不運だったのですが、1年越しでトークしてもらえました！</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/johtani">@johtani</a> I am so bummed! I am leaving Tokyo Thursday morning.</p>&mdash; Igor Motov (@imotov) <a href="https://twitter.com/imotov/statuses/372340973121986560">2013, 8月 27</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<h2>QA</h2>
+
+<p>ShayをメインにいくつかのQAをしてもらいました。
+NetflixなどのMeetupの動画で見てたのですが、こんな形で日本でも実現できるとは。</p>
+
+<ul>
+<li>Q: なんで、ファイルデスクリプタの設定を大きくするの？
+
+<ul>
+<li>A: Luceneのインデックスは複数のセグメントから構成されている。メモリに作られたあと、ファイルにfsyncされる。</li>
+</ul>
+</li>
+<li>Q: KibanaでAggregation使いたいんだけど？
+
+<ul>
+<li>A: Kibana 4で対応するよ！異なるフィールドの値を1つのグラフにすることも出来るよ！</li>
+</ul>
+</li>
+<li>Q: なんでElasticsearch作ったの？
+
+<ul>
+<li>A: 暇だったからｗ奥さんのレシピ検索を作ってみようと思って作り始めて、Luceneを触って感動して。。。検索すげー、Compassってのを触ってこれもすごいと思いつつ、もっとLucene活用できるんじゃないかということでElasticsearch作ったんだ。奥さんのレシピ検索？まだ完成してないよｗ</li>
+</ul>
+</li>
+<li>Q: 2000くらいスナップショット撮ったらパフォーマンスが悪くなっててなんで？
+
+<ul>
+<li>A: 差分でスナップショットを作るんだけど、差分の計算に昔のスナップショットを見るので、定期的に新しくしたほうがいい。もし、気になることがあったらIssue上げたりMLに投げてくれるとうれしい。<br/>
+（あとでちょっと聞いたけど、古いスナップショットを消すのも有効っぽい。差分でスナップショットを作るけど、昔のを消した場合は、新しいスナップショットが利用しているファイルは残る仕組みになっているから。）</li>
+</ul>
+</li>
+<li>Q: Relevancyのチューニングってどうすればいい？ドキュメントが少なくない？
+
+<ul>
+<li>A: ドキュメンテーションは頑張ってるので、応援してねｗあとは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/index.html">definitive guide</a>も参考になるよ。スコアはfunction_scoreクエリがすごいのでいろいろ使ってね。MVELをGroovyに帰る予定。性能もだけど、サンドボックス的な意味もあります。</li>
+</ul>
+</li>
+<li>Q: 次のVisionは？現時点は検索だけど。（最後の質問がとてもナイスで、助かりましたｗ私がしたほうがいい気がするｗｗ）
+
+<ul>
+<li>A: 今後はアナリティクスのプラットフォームに向かってる。Aggregationとかね。メモリ効率よくしたりしてるよ。あとは、Field-collapsionも実装中だよ。あと、マシンラーニングとかもね。データを探索するための機能を色々作ってくよ。障害性にも。チェックサム機能をLuceneに入れて、ESにも入れていく予定。Zenの機能も改善している。</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>まとめ</h2>
+
+<p>今週は、トレーニングがあったり、いろいろな打ち合わせがあったりと、テンパってたので至らない点が多かったかもしれないですが。。。
+楽しんでいただけと思います。
+数日、Shay、Honza、Igorと行動を共にして、本当に情熱のあるチームでユーザのことを気にかけているなと感じることができました。
+少しでもその片鱗を勉強会で感じてもらえたんじゃないかと。特に、QAでのShayによる情熱が伝わったんじゃないかと。</p>
+
+<p>懇親会でも数人の方から、日本語のサポートを望んでいるという声も頂きました。
+興味のある方は私までコンタクトいただければと。</p>
+
+<p>あと、@yusukeさんのテキスト翻訳が素晴らしくて、参加してもらった方たちも絶賛してました。
+次回も英語スピーカーの場合に助けてもらえると嬉しいです（私もそこまで出来るように頑張ります）</p>
+
+<h2>その他のブログ</h2>
+
+<p>ブログ記事ありがとうございます！</p>
+
+<ul>
+<li><a href="http://arika.hateblo.jp/entry/2014/07/15/011241">第5回elasticsearch勉強会にいってきました - はやさがたりない。</a></li>
+<li><a href="http://blog.yoslab.com/entry/2014/07/15/073000">感想戦：aggrigation から見える検索エンジンの次 - 第5回 Elasticsearch勉強会 - よしだのブログ</a></li>
+<li><a href="http://uchimanajet7.hatenablog.com/entry/2014/07/15/114632">「第5回elasticsearch勉強会 #elasticsearch #elasticsearchjp」（2014年07月14日）の参加メモ - uchimanajet7のメモ</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[転職しました]]></title>
+    <link href="http://blog.johtani.info/blog/2014/07/01/join-elasticsearch/"/>
+    <updated>2014-07-01T11:30:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/07/01/join-elasticsearch</id>
+    <content type="html"><![CDATA[<p>ということで、転職しました。
+どーしてもやりたいことが出てきたので、無理を言って転職することにしてみました。</p>
+
+<!-- more -->
+
+
+<p><a href="http://samuraism.com">サムライズム</a>ではなく、<a href="http://www.elasticsearch.com">Elasticsearch</a>にジョインします。（というか、しました。）</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p>初出社 <a href="https://twitter.com/hashtag/%E3%82%B5%E3%83%A0%E3%83%A9%E3%82%A4%E3%82%BA%E3%83%A0?src=hash">#サムライズム</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/statuses/483793778541465600">2014, 7月 1</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>冗談でツイートしたのですが、その前に英語アカウントのツイートがRTされてしまっていまいちでした。。。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20140701/schiphol.jpg" title="スキポール空港" ></p>
+
+<p>先週、アムステルダムに行っていたのも退職前に休みをいただき、Elasticsearchの全社会議に参加していたためです。
+とてもエキサイティングな経験（英語漬けとか）ができ、もっと精進しないとなという気持ちにもなり、ますます頑張らないとなと。</p>
+
+<p>ということで、今後は日本中にElasticsearchやLogstash、Kibanaを広めるべく、いろいろな場所で話をしたいと思います。
+興味のある方は、声をかけていただければと。</p>
+
+<p>あと、東京で<a href="http://purchases.elasticsearch.com/class/elasticsearch/core-elasticsearch/tokyo/2014-05-20">ElasticsearchのCoreトレーニング</a>が行われます。
+通常は2日間ですが、通訳の方が付く関係で3日間の開催となっています。
+開発者2名がトレーナーとして来日します。開発者に質問をできる良い機会ですので、興味のある方は参加してみてはいかがでしょうか。
+<strong>また、CTOのShay Banonも来日する予定です。</strong></p>
+
+<p>トレーナー2名とShayは<a href="http://elasticsearch.doorkeeper.jp/events/12028">7/14の勉強会</a>でも話をしてくれます。
+こちらも興味のある方は参加してみてください。（参加登録はこの後、すぐに開始します。）</p>
+
+<p>まだまだ、勉強しなければいけないことだらけですが、ElasticsearchのいろいろなプロダクトやOSSについて広めていきたいと思いますので、よろしくお願いいたします。</p>
+
+<h2>おまけ</h2>
+
+<p>ということで、一度やってみたかったのでリンクを貼ってみます。</p>
+
+<p><a href="http://www.amazon.co.jp/registry/wishlist/29EMX20UN9P16">ほしい物リストはこちら</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[退職しました]]></title>
+    <link href="http://blog.johtani.info/blog/2014/06/30/resignation/"/>
+    <updated>2014-06-30T23:19:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/06/30/resignation</id>
+    <content type="html"><![CDATA[<p>退職しました。</p>
+
+<!-- more -->
+
+
+<p>色々と書きたいんですが、時差ボケで頭痛いので、このくらいです。
+余裕出たら書くかも。</p>
+
+<p><a href="http://www.amazon.co.jp/registry/wishlist/29EMX20UN9P16">ほしい物リストはこちら</a></p>
+
+<p>新天地についてはまた明日。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch server 2nd editionのファーストインプレッション]]></title>
+    <link href="http://blog.johtani.info/blog/2014/06/16/first-impression-elasticsearch-server-2nd-edition/"/>
+    <updated>2014-06-16T17:47:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/06/16/first-impression-elasticsearch-server-2nd-edition</id>
+    <content type="html"><![CDATA[<p><a href="http://bit.ly/1kbu5Xd">Elasticsearch server 2nd edition</a>が発売されています。</p>
+
+<p>私が翻訳したのは前のバージョンですが。。。
+まずは、目次を元にどのくらい変わってるかを見てみました。
+（全部まだ読んでなくて。。。）</p>
+
+<!-- more -->
+
+
+<h2>1章 Getting Started with the Elasticsearch Cluster</h2>
+
+<p>冒頭に、全文検索とは、転置インデックスとはどんなものか、
+Luceneの簡単なアーキテクチャの仕組みについて説明が追加されています。
+検索の仕組みを知らない人が読んでもわかりやすくなっています。</p>
+
+<p>インストール方法なども少し追記されています。
+バージョニングと簡単なデータ登録と検索方法についてもここで触れられています。
+検索結果の構造の説明もちょっとあります。
+まず簡単に触ってみるというところまでが1章でまとめられた感じです。</p>
+
+<h2>2章 Indexing Your Data</h2>
+
+<p>新しく、切りだされた形です。
+前のバージョンでは1章で説明されていた、Mapping周りが切りだされています。
+シャードやレプリカの説明もこちらです。</p>
+
+<p>IPアドレスタイプ（IPv4のみ）と<code>token_count</code>タイプの説明も追加されてます。
+similarityやpostingsフォーマットなどは新しく追記されています。
+また、メタフィールドと呼ばれる<code>_type</code>などはこちらに移動しているようです。
+マージ処理などの説明も追記されています。このあたりは、<a href="http://www.packtpub.com/mastering-elasticsearch-querying-and-data-handling/book">Mastering ElasticSearch</a>に
+記載されているものが移植された感じでしょうか。</p>
+
+<h2>3章 Searching Your Data</h2>
+
+<p>前のバージョンでは2章だった章です。
+クエリについては1.0で追加された<code>simple_query_string</code>などが追記されています。
+<code>constant_score</code>や<code>dismax</code>などもです。</p>
+
+<p>また、前のバージョンの3章で説明されていたハイライトや8章で触れられていた<code>validate API</code>についても
+移動しています。</p>
+
+<h2>4章 Extending Your Index Structure</h2>
+
+<p>前のバージョンの3章で触れられていた、データの構造に関する部分がこの章になります。
+親子や配列、ネスト等のデータのインデックスや検索の方法です。</p>
+
+<h2>5章 Make Your Search Better</h2>
+
+<p>スクリプティングや言語判定などの仕組みが記載されています。
+また、ブーストについても同様です。Synonymについてもここです。
+スパンクエリについては省略されたのかな？</p>
+
+<h2>6章 Beyond Full-text Searching</h2>
+
+<p>1.0の目玉機能の一つであるAggregationの説明から始まります。
+その後、ファセットやPercolatorについてです。メモリに関する注意点もありそうです。
+また、Geoについての説明がこちらに移動されていました。
+<code>scroll API</code>についてもこちらで説明されています。</p>
+
+<h2>7章 Elasticsearch Cluster in Detail</h2>
+
+<p>前の7章で記載されていたElasticsearchの分散の仕組み（Node Discovery）についての記載があります。
+また、1.0で追加された<code>circuit breaker</code>やスレッドプール、インデックスのリフレッシュレートなど、<a href="http://www.packtpub.com/elasticsearch-server-second-edition/book">Mastering ElasticSearch</a>の
+内容も追記されている気がします。</p>
+
+<p>インデックスやマッピングのテンプレート機能についてもここで説明があるみたいです。</p>
+
+<h2>8章 Administrating Your Cluster</h2>
+
+<p>1.0で追加された<code>snapshot/restore</code>の説明から始まります。
+あとは、前のバージョンの7章で説明されていたクラスタ管理用のAPIについての説明です。
+いくつか（例えば<code>cat API</code>）、1.0で追加されています。</p>
+
+<p>また、シャードのリバランスの話も追加されているようです。
+エイリアスやプラグインの話はこちらに移動してるみたいです。</p>
+
+<h2>感想</h2>
+
+<p>ということで、とりあえず、駆け足で目次ベースで違いを見てみました。
+<a href="http://www.packtpub.com/elasticsearch-server-second-edition/book">Mastering ElasticSearch</a>での
+知見がフィードバックされ、しかも1.0（すでに1.3が出そうな勢いですが。。。）にバージョンアップされた内容になっています。
+冒頭がわかりやすくなっているので、検索をやったことのない方にもおすすめな書籍になった気がします。
+英語が苦にならなければ、おすすめの一冊だと思います。</p>
+
+<p>来月から読み進めるつもりなので、また、面白い内容があったら感想を書いていこうと思います。
+（また翻訳できるといいかもなー）</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[可視化ツール現状確認会に参加してきました。#可視化]]></title>
+    <link href="http://blog.johtani.info/blog/2014/06/04/attending-visualize-study/"/>
+    <updated>2014-06-04T21:15:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/06/04/attending-visualize-study</id>
+    <content type="html"><![CDATA[<p><a href="http://www.zusaar.com/event/7437003">可視化ツール現状確認会</a>に参加して、<strike>カジュアルウォーターじゃなくて</strike>可視化ツールの現状を確認してきました。</p>
+
+<p>ということで、いつものメモです。</p>
+
+<!-- more -->
+
+
+<h2>Mackerel と Graphite について （y_uuk1さん）</h2>
+
+<h3>Graphite</h3>
+
+<ul>
+<li>時系列</li>
+<li>工夫すればスケーラブル</li>
+<li>SensuやCollectdと組み合わせたり</li>
+<li>GrafanaとGrapheneでGUI</li>
+<li>Mackerel素敵だよと。</li>
+<li>架空のわかりやすいグラフが見れた</li>
+</ul>
+
+
+<h2>Kibana &amp; Grafana &amp; Influga （hakoberaさん）</h2>
+
+<ul>
+<li>Kibana
+
+<ul>
+<li>かっこいい。</li>
+<li>JVM大変。
+*</li>
+</ul>
+</li>
+<li>Grafana
+
+<ul>
+<li>Graphiteがカッコ悪いのでKibanaをフォーク</li>
+<li>なぜか、ESが必要。</li>
+<li>InfluxDBに浮気しそう</li>
+</ul>
+</li>
+<li><p>Influga</p>
+
+<ul>
+<li>@haoberaさん作</li>
+<li>InfluxDB Queryサポート</li>
+</ul>
+</li>
+<li><p>迷ったら、Kibana入れとけ。</p></li>
+<li><p>DistinctがKibana出できないけど、それ以外はある程度行けるらしい。</p>
+
+<ul>
+<li>aggregationがサポートされたら、できると思う。</li>
+</ul>
+</li>
+<li><p>Kibana以外は、バックエンドがタイムシリーズなので、縛りがある</p></li>
+</ul>
+
+
+<h2>可視化ツール紹介（仮） （showyouさん）</h2>
+
+<ul>
+<li>誰がチャートを作るの？</li>
+<li>誰が見るの？</li>
+<li>一覧化されてて、あとで眺めたい</li>
+<li>IPython Notebookのデモ</li>
+<li>R shiny Serverのデモ</li>
+<li>Pentaho CE+Saikuのデモはネットワークがダメだったので割愛</li>
+<li>分析側の視点を見せたかったので。</li>
+</ul>
+
+
+<h2>可視化とは何だったのか （harukasanさん）</h2>
+
+<ul>
+<li>インフラ</li>
+<li>モニタリング、アナライズ、可視化どれ？</li>
+<li>可視化は目的ではないよねと。</li>
+<li>熱く、ユーザとサービスプロバイダ間の距離のお話。
+
+<ul>
+<li>ログ</li>
+<li>生ファイルで残すのが重要</li>
+</ul>
+</li>
+</ul>
+
+
+<p>トータルで必要とか考えないといけないことがわかって面白かったｗ</p>
+
+<h2>あなたの知らないrrdtool （shoichimasuharaさん）</h2>
+
+<ul>
+<li>すげー！</li>
+<li>いろいろできるらしい（ノートPCの前にいなかったｗ）</li>
+</ul>
+
+
+<h2>D3.jsとジオマッピング （Takaki_さん）</h2>
+
+<ul>
+<li>時空間推進課！すげー！</li>
+<li>ジオデータのおはなし。</li>
+<li>TopoJSONとかGeoJSONとか</li>
+</ul>
+
+
+<h2>Zipkinについて （synkさん）</h2>
+
+<ul>
+<li>ものすごい数のJVMがThriftで殴りあってるらしい。</li>
+<li>ZipkinはTwitterが作ったもの</li>
+<li>Brave、HTraceというのが、PureJava用のZipkinトレーシングプラグイン</li>
+<li>見積もりする必要がないくらいでかいHBaseがあるので、そこにためてる。</li>
+<li>まとめ
+
+<ul>
+<li>LINEはエンジニアを大募集中</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>Graphiteについて (mickey19821 さん)</h2>
+
+<ul>
+<li>ドリコムさんのGraphiteのおはなし</li>
+<li>Metricsの収集はCollectd</li>
+<li>Graphite-webがスケールできなくて困ってるらしい。</li>
+<li>Graphiteで可視化ツラいｗ</li>
+</ul>
+
+
+<h2>まとめ</h2>
+
+<p><strong>RRDTool最高</strong></p>
+
+<p>あと、クックパッドの技術力がすごいという発表なんかもありました。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[最新インフラエンジニア技術勉強に参加しました。]]></title>
+    <link href="http://blog.johtani.info/blog/2014/05/23/attending-drecom-infra-study/"/>
+    <updated>2014-05-23T19:18:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/05/23/attending-drecom-infra-study</id>
+    <content type="html"><![CDATA[<p>今月2回目の目黒で、初のドリコムさんです。
+「<a href="http://drecom-study.doorkeeper.jp/events/11137">最新インフラエンジニア技術勉強～Fluentd, Elasticsearch,Chefの実践実例～</a>」に参加してきました。
+もちろん、Elasticsearchってキーワードがあったからです。</p>
+
+<p>ざっくりメモです。</p>
+
+<!-- more -->
+
+
+<h2>ドリコムのInfrastructure as Code/ひらしーさん</h2>
+
+<ul>
+<li>CM：jojoss、トレクル、など</li>
+<li>サーバ300台、クラウド○○台。月30〜50台の割合で増加中。</li>
+<li>少人数でいかに回すか。</li>
+</ul>
+
+
+<h4>Chef</h4>
+
+<ul>
+<li>Rubyが書ける人が多いから。</li>
+</ul>
+
+
+<h4>serverspec</h4>
+
+<ul>
+<li>テストだよと。</li>
+</ul>
+
+
+<p>すみません、色々と聞き逃しました。。。</p>
+
+<h2>Winning the metrics battle/mickeyさん</h2>
+
+<ul>
+<li>Graphiteとかを触っている。</li>
+<li>1300台超えたら、色々大変だった。</li>
+</ul>
+
+
+<h4>失敗談</h4>
+
+<ul>
+<li>Cactiを利用して、色々と運用が大変だった。DCが別なのでProxyとか。</li>
+</ul>
+
+
+<h4>成功例？現行システム？</h4>
+
+<ul>
+<li>最大値、平均値、最小値などをプロット</li>
+<li>collectdを収集、送信に採用して、独自で開発？</li>
+<li>受信して保存するのに、Graphite（carbon-relay、carbon-cache、DRBD、graphite-web）ってなってる。</li>
+<li>1300台程度のサーバから、5分間隔で、問題ない。</li>
+<li>Graphite良いツールだよ。</li>
+</ul>
+
+
+<p>Q：過去データはどのくらい？
+A：5分間隔で1年分。</p>
+
+<p>Q：移動平均とかを使ったグラフとか時間かかりませんか？100台だと
+A：100台でもほとんど時間はかからない。</p>
+
+<h2>Fluentd プラグイン開発講座/外山 寛さん</h2>
+
+<ul>
+<li>Fluentdプラグインを作ることができると威力倍増</li>
+<li>Elasticsearchの勉強会の話までしてくれました！</li>
+<li>勉強会スペース貸出しています。</li>
+<li>未公開だけど、sedueのプラグインもあるらしい。</li>
+<li>CHUNKとBUFFERとか覚えときましょう</li>
+<li>プラグインの作り方的なのがなかった気がしたので、今回の発表です。</li>
+<li>gem作らなくてもディレクトリにおけば使えるよと。</li>
+<li>td-agent使ってる人が大多数だよね。（fluentdを素で使ってる人は会場にはいなかった）</li>
+<li>エンジニア募集中</li>
+</ul>
+
+
+<p>Q：エラー処理どうしてますか？
+A：今は、スルーしています</p>
+
+<p>Q：単体テストの書き方は？
+A：人によってバラバラみたいですね。</p>
+
+<h2>MySQLと組み合わせて始める全文検索エンジン「elasticsearch」/yoshi_ken</h2>
+
+<p>スライド：<a href="http://www.slideshare.net/y-ken/introduce-elasticsearch-mysql-importer">http://www.slideshare.net/y-ken/introduce-elasticsearch-mysql-importer</a></p>
+
+<ul>
+<li>Elasticsearch歴は1年位です。</li>
+<li>MySQLを使っていて、モダンな検索がほしいですよね？ね？</li>
+<li>サジェスト、ファセット、位置情報、ネスト検索などなど。</li>
+<li>GoogleトレンドだとSolrに迫る勢いと。</li>
+<li><p>実データを用いて、手軽にElasticsearchと連携。</p></li>
+<li><p>BinaryLogではなく、SQLの結果を同意する方式。yamabiko</p></li>
+<li><p>今日は、新しいものを公開します。</p>
+
+<ul>
+<li><a href="https://github.com/y-ken/elasticsearch_mysql_importer">bulk import file generator as well as nested document from MySQL for elasticsearch bulk api</a></li>
+</ul>
+</li>
+<li><a href="http://purchases.elasticsearch.com/class/elasticsearch/core-elasticsearch/tokyo/2014-05-20">東京トレーニング</a></li>
+<li>Elasticsearch本については、右にあるリンクをクリックしてくれるとうれしいなぁ。</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[「よくわかるAmazon #CloudSearch 」に行ってきました！]]></title>
+    <link href="http://blog.johtani.info/blog/2014/05/15/amazon-cloud-seaarch-study-session/"/>
+    <updated>2014-05-15T17:50:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/05/15/amazon-cloud-seaarch-study-session</id>
+    <content type="html"><![CDATA[<p>どうやら、中身がSolrベース？Luceneベース？になったらしいということで、
+今日は<a href="http://kokucheese.com/event/index/168838/">「AWSプロダクトシリーズ｜よくわかるAmazon CloudSearch」</a>に行ってきました。</p>
+
+<p><strong>※ElasticSearchではありません！</strong></p>
+
+<!-- more -->
+
+
+<p>ということで、いつものメモ。</p>
+
+<h2>CloudSearch Overview</h2>
+
+<h3>Amazon Web Services, Inc. Pravin Muthukumar(Product Manager) / Vivek Sriram (Business Development)</h3>
+
+<h4>Introduction to Search</h4>
+
+<ul>
+<li>検索の紹介。アイアンマンのDVD？のページにいろんな項目（フィールド）があるよねと。（もちろん、Amazonのページ）</li>
+<li>ファセット、Geo、テキスト処理（Analysis処理）、Postings listとか。とかとか</li>
+<li>ランキングも</li>
+</ul>
+
+
+<h4>Amazon CloudSearch</h4>
+
+<ul>
+<li>独自実装orRDB拡張もある。</li>
+<li>OSSもあるよね。</li>
+<li><strong>Legacy</strong> Enterprise SearchとしてFASTとかもある。</li>
+</ul>
+
+
+<h4>Building with CloudSearch</h4>
+
+<ul>
+<li>他のサービス同様、コンソールとかあるし、色々できるし、すぐ起動できるよと。</li>
+</ul>
+
+
+<p>自動で、データが増えたら、パーティションが増えると。</p>
+
+<ul>
+<li>日本語の形態素解析があるらしい。何を使ってるのかな？</li>
+<li>ICUのノーマライズとかもやってくれるらしい。これかな？<a href="http://lucene.apache.org/core/4_8_0/analyzers-icu/index.html">http://lucene.apache.org/core/4_8_0/analyzers-icu/index.html</a></li>
+<li>ユーザが辞書を指定できるのかな？</li>
+</ul>
+
+
+<p>備えてる機能の説明</p>
+
+<ul>
+<li>ファセット</li>
+<li>SimpleQuery</li>
+<li>Autocomplete</li>
+<li>Highlight</li>
+</ul>
+
+
+<p>などなど</p>
+
+<ul>
+<li>Multi-AZにも対応</li>
+</ul>
+
+
+<h4>QA</h4>
+
+<ul>
+<li>Q：NGramありますか？
+
+<ul>
+<li>A：今はないです。</li>
+</ul>
+</li>
+<li>Q：ユーザ辞書対応してますか？
+
+<ul>
+<li>A：今はないです。</li>
+</ul>
+</li>
+<li>Q：lang-detectあるか？
+
+<ul>
+<li>A：今はないので、自分で判定して、適切なフィールドに入れてね。</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>Expectation for CloudSearch</h2>
+
+<h3>Apache Solr contributor　大須賀　稔氏</h3>
+
+<ul>
+<li>Solr本の宣伝ありがとうございます！（右のアイコンから買ってもらえると更に嬉しいですｗ）</li>
+<li>Kinesisとかとの組み合わせとか、自然言語処理とか、いろいろとあるAWSのコンポーネントと組み合わせる例が欲しいと。</li>
+<li>すばらしい、最後はManifoldCFがらみに持っていくとは。ACLがらみのクローリングとかあるといいじゃないでしょうかと。</li>
+</ul>
+
+
+<h2>Impression of using CloudSearch</h2>
+
+<h3>吉田　匠氏　(@yoshi0309　<a href="http://blog.yoslab.com/">http://blog.yoslab.com/</a>)</h3>
+
+<p>スライド：<a href="https://speakerdeck.com/yoshi0309/impression-of-using-cloudsearch">https://speakerdeck.com/yoshi0309/impression-of-using-cloudsearch</a></p>
+
+<ul>
+<li>お見かけしたことある気がするなぁ。</li>
+<li>全部置き換えできる！わけではなさそう。。。</li>
+</ul>
+
+
+<h4>いいところ。</h4>
+
+<ul>
+<li>UIがいいし、セットアップが簡単</li>
+<li>auto scaleがうれしい</li>
+<li>マルチドメイン、マルチスキーマがいい</li>
+<li>Luceneのdismaxサポートがいい。（edismaxじゃないのかな？）</li>
+</ul>
+
+
+<p>dismaxって書いてあるな。</p>
+
+<p><a href="http://docs.aws.amazon.com/cloudsearch/latest/developerguide/search-api.html">http://docs.aws.amazon.com/cloudsearch/latest/developerguide/search-api.html</a></p>
+
+<ul>
+<li><p>フィードの仕方に気をつけて！</p>
+
+<ul>
+<li>バッチサイズで課金されるので、1件ずつじゃなくて、複数件送ったほうがいい。</li>
+</ul>
+</li>
+<li><p>いきなりスケールアウトできるわけじゃない？</p></li>
+<li><p>ウォームアップ機能がない。インスタンス上限がデフォルト50件</p></li>
+<li><p>VPC対応してほしい。</p>
+
+<ul>
+<li>インターネット経由になってしまう</li>
+<li>フィードのスピードが</li>
+<li>セキュリティグループ機能が使えない</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>CloudSearch UseCase - SnapDish</h2>
+
+<h3>Vuzz Inc.　清田　史和氏</h3>
+
+<ul>
+<li>独自辞書をもって、Tokenizeは独自でやって、空白区切りでデータ登録している。</li>
+<li>インデックス更新はSQSを使ってる。</li>
+<li>古いAPIを使ってるらしい。</li>
+<li>移行が結構大変らしい。</li>
+</ul>
+
+
+<h2>感想</h2>
+
+<p>使ったことないんですが、きめ細かい検索したい場合はちょっとテクニックが要るかもと思いました。
+AWS初心者なんで、なんとも言えないんですが。。。</p>
+
+<p>といあえず、テキスト処理（アナライズ処理）で、単語がどうやって区切られるのかってのがわからないのはキツイんじゃなかろうかと。
+ただ、簡単に起動できて、オートスケールできるのは素晴らしいと思います。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[外の世界を知るということ]]></title>
+    <link href="http://blog.johtani.info/blog/2014/05/14/spiritual-entry1/"/>
+    <updated>2014-05-14T01:44:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/05/14/spiritual-entry1</id>
+    <content type="html"><![CDATA[<p>酔っ払ってなんとなく書きたくなったスピリチュアルなブログなので、流していただければと。</p>
+
+<!-- more -->
+
+
+<p>最近、勉強会やTwitterで知り合いになって話をする人が増えたりで、
+その方たちに色々と教えてもらうことが多いなぁと感じてます。
+また、知り合いに恵まれてきたなぁとも。</p>
+
+<p>そもそも私が勉強会に参加し始めたきっかけはSolr勉強会（第1回から参加してて、気づいたら主催者になってた）で、
+そのころは、Solr初心者で色々とやってる人、知ってる人がいて無料で話が聞けるのすごいと興奮したのを覚えてます。
+（もちろん、ぼっちでしたが）</p>
+
+<p>Solr勉強会が定期的に開かれて、それに参加しているうちに少しずつ知り合いもできて、
+面白そうな勉強会（Hadoopとか）が他にもあるんだ、参加してみようかって思うようになってと。</p>
+
+<p>そこにプラスで、関口さんと知りあえてSolr本を書く話が出てきて、本を書いてみたら、
+今度は勉強会で話してみませんかとなって。</p>
+
+<p>スピーカーやると、顔を覚えてもらえるようで、また知り合いが増えてと。</p>
+
+<p>人のつながりって大事だし、自分が発信することで教えてもらえることもあるしと。
+前にも書いた気がするけど、Solr勉強会（当時の主催の方）や関口さんやElasticsearch勉強会のスタッフの方や
+スピーカーやってくれた方、会場提供を心よくしてくれてるVOYAGE GROUP、リクルートテクノロジーズさん、という具合にどんどん頭が上がらなくなってきてるなぁと。</p>
+
+<p>ということで、外の世界を知ると色々とつながりが出来て面白いですよという、個人的な感想でした。
+ま、自分が思ってるだけで、違う意見もいっぱいあると思うけど。</p>
+
+<p>あー、なんか、酔って勢いで書いてしまった。。。
+脈略のない文章なきがするけど、エイヤで公開しちゃおう。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[アジャイルデータサイエンスが届きました]]></title>
+    <link href="http://blog.johtani.info/blog/2014/05/09/reading-agile-data-science/"/>
+    <updated>2014-05-09T00:45:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/05/09/reading-agile-data-science</id>
+    <content type="html"><![CDATA[<p>「アジャイルデータサイエンス」の見本をいただいてしまいました。</p>
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4873116716&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+
+<p>なので、感想文でも書いてみようかと。</p>
+
+<!-- more -->
+
+
+<h2>どんな本？</h2>
+
+<p>想像以上に薄かったです、物理的に。
+なのに、とても幅広い範囲をカバーしています。</p>
+
+<p>データの分析にどんな人が関わっているのか、アジャイルにデータを分析する目的から始まり、
+データから何かを見つけるための手順、考え方などをさらっとですが、
+システムに取り込む流れから取り込んだあとに改良するという流れまで紹介してくれます。
+流れはこんな感じ。</p>
+
+<ol>
+<li>イベント：ログとかのイベントの発生</li>
+<li>コレクタ：イベントの収集</li>
+<li>バルクストレージ：イベントの一時保存</li>
+<li>バッチ処理：ストレージにあるデータに対して処理</li>
+<li>分散ストア：処理結果をWebアプリなどで表示するために保存</li>
+<li>Webアプリ：処理結果をユーザに提供</li>
+</ol>
+
+
+<p>Webアプリでデータを見えるようにして、そこから更にフィードバックを受けることで、データの分析などを進めていくという流れです。</p>
+
+<p>私はデータサイエンス系の人ではないのでこの流れで作業をされているかはわからないのですが、
+検索のシステムについてもこの流れに似ているなと感じました。</p>
+
+<p>検索システムでも、検索したいデータを収集して、加工（検索したい項目の洗い出しやファセットにする項目の選定とか）して、
+インデックスを生成するといった処理が必要になるからです。</p>
+
+<p>この本では、Python、Hadoop（Pig）、MongoDB、ElasticSearch（バージョンが0.90だから）、d3.jsなどが出てきます。
+また、日本語版の付録では、Fluentd、Kibana+Elasticsearchといった組み合わせの紹介もあります。</p>
+
+<p>コードも書かれていますが、すみません、そこまでちゃんと読んでません。。。</p>
+
+<p>後半では、データを活用して行くためには順序があるという話が書かれています。</p>
+
+<ol>
+<li>レコード：レコード1件のアトミックな処理と表示</li>
+<li>グラフ：レコードを元に集計したりグラフ作ったり</li>
+<li>レポート：関係性やトレンドを抽出し、インタラクティブに探求</li>
+<li>予測：構造を利用して、推論やレコメンドとか</li>
+<li>行動：上記の結果を元にユーザに行動を促す</li>
+</ol>
+
+
+<p>前のステップがおろそかだと次のステップがうまくいかないという話です。
+後半はこの流れに沿って、先ほどのシステムの流れを変更していく方法が展開されます。</p>
+
+<h2>注意点</h2>
+
+<p>ちょっとだけ気になる点があったので。</p>
+
+<p>Elasticsearch周りについては少し注意が必要かと。（Pigとかは詳しくないので不明です。）
+紹介されているElasticsearchのバージョンが0.90と少し古いのと、
+Hadoopとの統合（Pigで処理したデータをElasticsearchに出力）に利用されているWondordogというツールも最近更新がされていないみたいです。
+おそらく、1.0系では動かないのではないかと。</p>
+
+<p>1.0系の場合は、Elasticsearchが提供している<a href="http://www.elasticsearch.org/overview/hadoop">elasticsearch-hadoop</a>を利用するのが良いと思います。</p>
+
+<p>付録については1.0系で記載されているので問題ないかと。ただし、Elasticsearchは更新が早いので、公式サイトで最新情報を入手するのが良いと思います。</p>
+
+<h2>感想</h2>
+
+<p>データを解析するシステムってどんなことやってるの？という全体像を
+俯瞰するのに良い本なのではないかと思います。
+また、データの解析を活かすために、必要な順序と疎かにできない点もあって面白かったです。</p>
+
+<p>紹介されているツール類については、OSSのトレンドや開発速度が早いので、参考程度にとどめておいて、
+自分たちで使いやすいものを探してきて検討するのがいいと思います。</p>
+
+<p>付録がとても豪華です。FluentdやKibanaがわかりやすく解説されてます。</p>
+
+<p>あと、薄いのでさらっと読めます。ｗ</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Aggregations - ファセットよりも柔軟な集計]]></title>
+    <link href="http://blog.johtani.info/blog/2014/05/07/aggregation-example/"/>
+    <updated>2014-05-07T18:57:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/05/07/aggregation-example</id>
+    <content type="html"><![CDATA[<p>こんなツイートを見つけたので、Aggregationのサンプルでも書こうかなと。（前から書こうと思ってたんですが。。。）</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/elasticsearch">@elasticsearch</a> Hi, Would you please tell me the way to do &quot;Pivot Faceting&quot; like Solr-4.0 in elasticsearch-1.1.1 or prior version? Thank you.</p>&mdash; Y.Kentaro (@yoshi_ken) <a href="https://twitter.com/yoshi_ken/statuses/462073860062322688">2014, 5月 2</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>ちなみに、Aggregationは1.0.0から導入された機能なので、ElasticSearch Server日本語版には掲載されていない機能になります。（ごめんなさい）</p>
+
+<!-- more -->
+
+
+<p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations.html">公式ガイドのAggregationsのページ</a>はこちらになりますが、実例があったほうがいいかなと。</p>
+
+<p><a href="http://twitter.com/yoshi_ken">@yoshi_ken</a> さんから実例のサンプルの指定もいただいたので、ブログを書くのが非常に楽です。ありがとうございます。</p>
+
+<h2>問題</h2>
+
+<p><a href="https://gist.github.com/y-ken/40d99c3a137247ba8eac">元ネタ（gist）</a></p>
+
+<p>次のような不動産系のデータがあるとします。</p>
+
+<ul>
+<li>id</li>
+<li>物件名</li>
+<li>都道府県（東京、神奈川、&hellip;..）</li>
+<li>物件種別（賃貸、売買、&hellip;..）</li>
+</ul>
+
+
+<p>この時、都道府県別に、物件種別ごとの件数を取得したいという趣旨です。</p>
+
+<ul>
+<li>東京
+
+<ul>
+<li>賃貸: xxx件</li>
+<li>売買: yyy件</li>
+</ul>
+</li>
+<li>神奈川
+
+<ul>
+<li>賃貸: xxx件</li>
+<li>売買: yyy件 &hellip;</li>
+</ul>
+</li>
+</ul>
+
+
+<p>これを、Elasticsearchでどうやって取得するかという問題です。</p>
+
+<h2>インデックスとデータの登録</h2>
+
+<p>まずは、インデックスを作ります。
+あくまでもサンプルなので、全部not_analyzedにしてますが、そのへんは適宜変更してください。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">#</span> <span class="err">create</span> <span class="err">index</span>
+</span><span class='line'><span class="err">PUT</span> <span class="err">/pref_aggs</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;number_of_shards&quot;</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;mappings&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;japan&quot;</span> <span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;_id&quot;</span> <span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;path&quot;</span> <span class="p">:</span> <span class="s2">&quot;id&quot;</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>_id</code>を使用して、データ登録時に<code>id</code>フィールドにある文字列をそのままIDとして登録できるように指定してあります。</p>
+
+<p>登録するデータは次のようなものを適当に100件程度作ってりました。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id0&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name0&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;01_北海道&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id1&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name1&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;09_栃木県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id2&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name2&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;38_愛媛県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id3&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name3&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;40_福岡県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id4&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name4&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;35_山口県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id5&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name5&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;12_千葉県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="err">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>データの登録には、前に紹介した方法「<a href="http://blog.johtani.info/blog/2014/04/24/usage-stream2es/">stream2esと複数データの登録</a>」を用いました。</p>
+
+<h2>ファセット</h2>
+
+<p>このようなデータがある場合に、まず思いつくのはファセットによる取得です。
+いささか強引ですが。。。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/pref_aggs/japan/_search</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;match_all&quot;</span><span class="p">:</span> <span class="p">{}</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;facets&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;type_賃貸&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="s2">&quot;term&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
+</span><span class='line'>      <span class="p">},</span> <span class="nt">&quot;facet_filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span> <span class="p">}}</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nt">&quot;type_売買&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="s2">&quot;term&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
+</span><span class='line'>      <span class="p">},</span> <span class="nt">&quot;facet_filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span> <span class="p">}}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>facet_filter</code>を使用して、<code>type</code>フィールドによる個別の絞込を行っています。
+あとは、<code>pref</code>フィールドのファセットを取得すれば、出力は次のようになります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;took&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;timed_out&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_shards&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;successful&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;failed&quot;</span><span class="p">:</span> <span class="mi">0</span>
+</span><span class='line'>   <span class="p">},</span>
+</span><span class='line'>   <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;max_score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">[]</span>
+</span><span class='line'>   <span class="p">},</span>
+</span><span class='line'>   <span class="nt">&quot;facets&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;type_賃貸&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;terms&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;missing&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">52</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;other&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;01_青森県&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;03_宮城県&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">3</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="err">...</span>
+</span><span class='line'>      <span class="err">}</span><span class="p">,</span>
+</span><span class='line'>      <span class="s2">&quot;type_売買&quot;</span><span class="err">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;terms&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;missing&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;other&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;02_岩手県&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;04_秋田県&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="err">...</span>
+</span><span class='line'><span class="err">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>望んでいた形式とは少し異なりますが、<code>facet_filter</code>する回数を少なくするため、
+ファセットは都道府県のフィールドを指定したためです。
+アプリで頑張って入れ替えてください。。。</p>
+
+<p>この場合、&#8217;type&#8217;の個数がわかっているので、頑張ってこのような記述ができました。
+ただ、<code>type</code>が増えた時にアプリの修正とかが必要になりますよね。</p>
+
+<h2>Aggregations</h2>
+
+<p>ということで、Aggregationsの出番です。
+ファセットよりも柔軟に、検索結果に対していろいろな集計が行える機能になります。
+一見に如かずということで、クエリを紹介します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/pref_aggs/japan/_search</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;match_all&quot;</span><span class="p">:</span> <span class="p">{}</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nt">&quot;_term&quot;</span><span class="p">:</span> <span class="s2">&quot;asc&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">10</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ファセットよりもシンプルですし、<code>賃貸</code>といったような値を指定していません。
+<code>aggs</code>というのが<code>aggregations</code>機能を指定している部分になります。
+検索結果は次のように出力されます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;took&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;timed_out&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_shards&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;successful&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;failed&quot;</span><span class="p">:</span> <span class="mi">0</span>
+</span><span class='line'>   <span class="p">},</span>
+</span><span class='line'>   <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;max_score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">[]</span>
+</span><span class='line'>   <span class="p">},</span>
+</span><span class='line'>   <span class="nt">&quot;aggregations&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>                     <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>                     <span class="p">}</span>
+</span><span class='line'>                  <span class="p">]</span>
+</span><span class='line'>               <span class="p">}</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;01_青森県&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>               <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>                     <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>                     <span class="p">}</span>
+</span><span class='line'>                  <span class="p">]</span>
+</span><span class='line'>               <span class="p">}</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="err">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Aggregationsの結果は、望んでいた通りの出力になっています。</p>
+
+<p>クエリの構成を見てみましょう。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;aggs&quot;</span><span class="err">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">#1</span>
+</span><span class='line'>    <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;_term&quot;</span><span class="p">:</span> <span class="s2">&quot;asc&quot;</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="err">#2</span>
+</span><span class='line'>      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">10</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最初の#1の<code>pref</code>は出力を扱いやすくするためにつけているラベルになります。好きな名前をつけることが可能です。
+次の<code>terms</code>がAggregationのタイプ（どのような集計をして欲しいか）になります。
+今回は、<code>pref</code>フィールドにある単語(term)毎に、集計をしたいので、<code>terms</code>を指定します。
+その他にどんなタイプがあるかは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations.html">公式ガイド</a>をご覧ください。</p>
+
+<p>次に、さらに<code>type</code>フィールドで集計したいので、#2の部分で後続のAggregationを指定しています。
+都道府県同様、<code>type</code>フィールドにある単語毎に集計するために、<code>terms</code>を指定します。</p>
+
+<p>これで、先ほどのような結果が出力できます。
+ちなみに、さらに<code>type</code>の中に他の種別で集計したいという場合は、さらに<code>aggs</code>を追加していけばOKです。</p>
+
+<p>Aggregationは非常に柔軟な集計を可能にする機能です。ただし、検索結果に対して集計処理を行っているため、
+メモリやCPUなどのリソースを消費するので注意が必要です。</p>
+
+<p>Aggregationの説明については、<a href="https://www.found.no/foundation/elasticsearch-aggregations/">こちらのFound.noのブログ（英語）</a>がわかりやすかったので参考にしてみてください。</p>
+
+<h2>まとめ</h2>
+
+<p>非常に簡単ですが、Aggregationsについて紹介しました。
+その他にもAggregationsでできることがあるので、後日別のサンプルを用意して説明しようかと思います。</p>
+
+<p>100件のデータやここまでの操作については、<a href="https://gist.github.com/johtani/08dee5fb4da62037ef9e">gist</a>にあるので、興味がある方はご覧いただければと。
+stream2esの操作以外は、<a href="http://blog.johtani.info/blog/2014/01/29/simple-introduction-and-first-impression-es-marvel/">Marvelに付属のsense</a>を利用しています。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[elasticsearch-kopfの紹介（aliases画面）]]></title>
+    <link href="http://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/"/>
+    <updated>2014-05-04T01:01:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator</id>
+    <content type="html"><![CDATA[<p>今日はelasticsearch-kopfのAnalysis画面の紹介です。</p>
+
+<p>（簡単なところから。。。その３）</p>
+
+<!-- more -->
+
+
+<p>ちょっとあいだが開いてしまいましたが、再開です。
+メニューの<code>aliases</code>を選択すると、次のような画面が表示されます。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20140504/kopf-aliases.jpg" title="Aliases画面" ></p>
+
+<p>Elasticsearchの<code>alias</code>を画面で確認できます。</p>
+
+<p>エイリアスは、インデックスに別名をつけることができるElasticsearchの機能です。
+１エイリアス＝１インデックスでも良いですが、１エイリアスに対して複数のエイリアスを付与することもできます。
+この機能を利用することで、次のようなことが可能となります。</p>
+
+<ul>
+<li>インデックスの切り替えをアプリ側に意識させずに実施（アプリはエイリアス名に対して検索すればOKなので）</li>
+<li>直近１週間のログを検索するためのエイリアスの作成（複数のインデックスを１つのエイリアスに割り当て可能）</li>
+<li>特定のルーティングによる検索（特定のデータに対する検索だけに絞るためにfilterを指定する）</li>
+</ul>
+
+
+<p>エイリアスについて詳しく知りたい方は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html">公式ガイド</a>をご覧いただくのが良いかと。</p>
+
+<p>画面は非常にわかりやすい作りになっているので、特に説明必要ないんですよね。。。</p>
+]]></content>
+  </entry>
+  
+</feed>

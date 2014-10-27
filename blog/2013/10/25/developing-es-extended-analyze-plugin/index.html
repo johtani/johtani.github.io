@@ -1,0 +1,697 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>elasticsearch-extended-analyzeプラグインを開発中 - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="お久しぶりです。
+気づいたらまた、結構ブログを書いてなかったです。。。 今回は、今開発しているElasticsearchのプラグインに関するお話です。 いやぁ、名前決めるの難しいですね。これで英語的に合ってるか不安ですが、elasticsearch-extended- &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Elasticsearch-extended-analyzeプラグインを開発中</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-25T19:06:00+09:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>お久しぶりです。
+気づいたらまた、結構ブログを書いてなかったです。。。</p>
+
+<p>今回は、今開発しているElasticsearchのプラグインに関するお話です。</p>
+
+<p>いやぁ、名前決めるの難しいですね。これで英語的に合ってるか不安ですが、<a href="https://github.com/johtani/elasticsearch-extended-analyze">elasticsearch-extended-analyze</a>というプラグインを作っています。</p>
+
+<!-- more -->
+
+
+<h2>どんなもの？</h2>
+
+<p>Solrの管理画面のanalysisに相当する機能が欲しくて作り始めました。</p>
+
+<p>Elasticsearchには<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-analyze.html">analyze API</a>というAPI（名前あってるのかなぁ?）が存在します。<br/>
+これは、文字列を投げると、指定したアナライザやトークナイザでどのようなトークンに分割されるかを調べることができるAPIです。</p>
+
+<p>例えば、<a href="https://github.com/elasticsearch/elasticsearch-analysis-kuromoji">elasticsearch-analysis-kuromoji</a>をインストールしたElasticsearchに対して、以下のcurlコマンドを実行します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl -XPOST 'localhost:9200/_analyze?tokenizer=kuromoji_tokenizer&filters=kuromoji_baseform&pretty' -d '寿司が美味しい'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>すると、トークナイズされた結果が次のようなJSONで返ってきます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;tokens&quot;</span> <span class="p">:</span> <span class="p">[</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;token&quot;</span> <span class="p">:</span> <span class="s2">&quot;寿司&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;start_offset&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;end_offset&quot;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;word&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;position&quot;</span> <span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;token&quot;</span> <span class="p">:</span> <span class="s2">&quot;が&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;start_offset&quot;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;end_offset&quot;</span> <span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;word&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;position&quot;</span> <span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;token&quot;</span> <span class="p">:</span> <span class="s2">&quot;美味しい&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;start_offset&quot;</span> <span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;end_offset&quot;</span> <span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;word&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;position&quot;</span> <span class="p">:</span> <span class="mi">3</span>
+</span><span class='line'>  <span class="p">}</span> <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>トークナイズの結果がわかるのは嬉しいのですが、どんな品詞なのかといったKuromoji固有のTokenの属性情報がなくなってしまいます。</p>
+
+<p>Solrでは、こんな画面が用意されていて、品詞情報とかが出力されます。あとは、各TokenFilterでどのトークンがなくなっているかなどもわかるようになっています。</p>
+
+<p><img src="/images/entries/20131025/solr_admin_analysis.jpg"></p>
+
+<p>これって結構役立つと思うんですよ。
+ということで、Pluginも作ってみたかったので、いい機会だから作ってみようかと。</p>
+
+<h2>出力サンプル</h2>
+
+<p>まずは、その他のAttribute（品詞とか）を表示するところを実装してみました。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">curl</span> <span class="err">-XPOST</span> <span class="err">&#39;localhost:</span><span class="mi">9200</span><span class="err">/_extended_analyze?tokenizer=kuromoji_tokenizer&amp;filters=kuromoji_baseform&amp;pretty&#39;</span> <span class="err">-d</span> <span class="err">&#39;寿司が美味しい&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>先ほどとほぼ一緒のcurlコマンドを実行します。違う点は<strong>「_analyze」</strong>が<strong>「_extended_analyze」</strong>となっている点です。<br/>
+で、実行結果はこんな感じです。（長いですがそのまま載せてます。続きの文章がしたにあります。）</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;tokens&quot;</span> <span class="p">:</span> <span class="p">[</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;token&quot;</span> <span class="p">:</span> <span class="s2">&quot;寿司&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;start_offset&quot;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;end_offset&quot;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;word&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;position&quot;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;extended_attributes&quot;</span> <span class="p">:</span> <span class="p">[</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute#bytes&quot;</span> <span class="p">:</span> <span class="s2">&quot;[e5 af bf e5 8f b8]&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute#positionLength&quot;</span> <span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.BaseFormAttribute#baseForm&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech&quot;</span> <span class="p">:</span> <span class="s2">&quot;名詞-一般&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;noun-common&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading&quot;</span> <span class="p">:</span> <span class="s2">&quot;スシ&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;sushi&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation&quot;</span> <span class="p">:</span> <span class="s2">&quot;スシ&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;sushi&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType (en)&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm (en)&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.KeywordAttribute#keyword&quot;</span> <span class="p">:</span> <span class="kc">false</span>
+</span><span class='line'>    <span class="p">}</span> <span class="p">]</span>
+</span><span class='line'>  <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;token&quot;</span> <span class="p">:</span> <span class="s2">&quot;が&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;start_offset&quot;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;end_offset&quot;</span> <span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;word&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;position&quot;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;extended_attributes&quot;</span> <span class="p">:</span> <span class="p">[</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute#bytes&quot;</span> <span class="p">:</span> <span class="s2">&quot;[e3 81 8c]&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute#positionLength&quot;</span> <span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.BaseFormAttribute#baseForm&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech&quot;</span> <span class="p">:</span> <span class="s2">&quot;助詞-格助詞-一般&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;particle-case-misc&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading&quot;</span> <span class="p">:</span> <span class="s2">&quot;ガ&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;ga&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation&quot;</span> <span class="p">:</span> <span class="s2">&quot;ガ&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;ga&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType (en)&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm (en)&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.KeywordAttribute#keyword&quot;</span> <span class="p">:</span> <span class="kc">false</span>
+</span><span class='line'>    <span class="p">}</span> <span class="p">]</span>
+</span><span class='line'>  <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;token&quot;</span> <span class="p">:</span> <span class="s2">&quot;美味しい&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;start_offset&quot;</span> <span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;end_offset&quot;</span> <span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;word&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;position&quot;</span> <span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;extended_attributes&quot;</span> <span class="p">:</span> <span class="p">[</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute#bytes&quot;</span> <span class="p">:</span> <span class="s2">&quot;[e7 be 8e e5 91 b3 e3 81 97 e3 81 84]&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute#positionLength&quot;</span> <span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.BaseFormAttribute#baseForm&quot;</span> <span class="p">:</span> <span class="kc">null</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech&quot;</span> <span class="p">:</span> <span class="s2">&quot;形容詞-自立&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;adjective-main&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading&quot;</span> <span class="p">:</span> <span class="s2">&quot;オイシイ&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;oishii&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation&quot;</span> <span class="p">:</span> <span class="s2">&quot;オイシイ&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;oishii&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType&quot;</span> <span class="p">:</span> <span class="s2">&quot;形容詞・イ段&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;adj-group-i&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm&quot;</span> <span class="p">:</span> <span class="s2">&quot;基本形&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm (en)&quot;</span> <span class="p">:</span> <span class="s2">&quot;base&quot;</span>
+</span><span class='line'>    <span class="p">},</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;org.apache.lucene.analysis.tokenattributes.KeywordAttribute#keyword&quot;</span> <span class="p">:</span> <span class="kc">false</span>
+</span><span class='line'>    <span class="p">}</span> <span class="p">]</span>
+</span><span class='line'>  <span class="p">}</span> <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>先ほどの結果に<strong>「extended_attributes」</strong>という配列のオブジェクトが追加された形になっています。
+ちょっと長くなってしまいましたが。。。</p>
+
+<p>Solrの処理を真似して作ったので大したことはやってないんですが、少しは便利になるかもなぁと。</p>
+
+<p>現時点では、最終的な結果しか取得できないですが、今後は次のような機能を作っていこうかと思っています。
+できるかどうかは、やってみてって感じですが。</p>
+
+<ul>
+<li>pluginコマンドでインストール
+
+<ul>
+<li>pom.xmlはありますが、まだMavenとかに登録はされていません。ですので、<code>mvn package</code>してからjarファイルをpluginsフォルダに配置しないといけません。pluginコマンドでインストールできるともっと使ってもらえるはず？</li>
+</ul>
+</li>
+<li>出力したいAttributeの指定
+
+<ul>
+<li>リクエストパラメータで、出力したいAttribute名を指定するとか。</li>
+</ul>
+</li>
+<li>出力形式の変更
+
+<ul>
+<li>今は、Solrの真似をしていますが、せっかくJSONだったりするので、もう少し検討しようかと（同じAttributeの異なる値も1オブジェクトとして出力されてる）</li>
+</ul>
+</li>
+<li>TokenizeChainの出力
+
+<ul>
+<li>Solr同様、CharFilter、Tokenizer、TokenFilterが動作して、最終的なTokenがインデックスに登録されます。ですので、各処理の直後のTokenがどうなっているかもわかったほうが嬉しいと思うので、それらも取得できるようにしたいなぁと</li>
+</ul>
+</li>
+<li>画面の用意
+
+<ul>
+<li>せっかくプラグインなんだし、画面で見れると嬉しいかなと。これは当分先になっちゃうと思いますが、Webページで確認できるような画面を作ると確認しやすくなるかなぁと。上記対応が終わってから取替かかると思いますが。</li>
+</ul>
+</li>
+</ul>
+
+
+<p>とりあえず、思いつくのはこんなかんじです。</p>
+
+<p>Elasticsearchの_analyze APIを真似しただけのコードだし、テストも実装もまだまだですが、とりあえず公開してみました。</p>
+
+<p>要望などあれば、コメント、Issue、ツイート（もちろん、テストコードなども！）なんでも受け付けてますので、お気軽に。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-10-25T19:06:00+09:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>, <a class='category' href='/blog/categories/plugin/'>plugin</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/10/10/solr-meetup-memo/" title="Previous Post: 第12回Solr勉強会を主催しました。#SolrJP">&laquo; 第12回Solr勉強会を主催しました。#SolrJP</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/11/04/improve-output-extended-analyze/" title="Next Post: elasticsearch-extended-analyzeの改良">elasticsearch-extended-analyzeの改良 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>A little something about me.</p>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (41)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (4)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (15)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/15/versioning-of-sonatype/">Sonatypeのバージョン番号で困ったので</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">elasticsearch 1.4.0.Beta1のリリース</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/hold-on-6th-elasticsearch-jp/">第6回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/16/book-publication-event/">elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/09/performance-considerations-for-elasticsearch-indexing/">Elasticsearchのインデキシングに関するパフォーマンス検討</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("johtani", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/johtani">@johtani</a></p>
+  
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/';
+        var disqus_url = 'http://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,755 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>スキーマレスモード？（SOLR-4897）を調べて見ました。 - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="Solr 4.4に取り込まれる予定のチケットで、気になるものを見つけたのでいつものごとく調べてみました。 元となるチケットはこちら。SOLR-4897。 スキーマレス？ Solrはschema.xmlにデータの定義（フィールドタイプやフィールドなど）を記述して、データを登録する全文検索システムです &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2013/07/04/schemaless-example/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">スキーマレスモード？（SOLR-4897）を調べて見ました。</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-04T01:12:00+09:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Solr 4.4に取り込まれる予定のチケットで、気になるものを見つけたのでいつものごとく調べてみました。</p>
+
+<p>元となるチケットは<a href="https://issues.apache.org/jira/browse/SOLR-4897">こちら。SOLR-4897</a>。</p>
+
+<!-- more -->
+
+
+<h2>スキーマレス？</h2>
+
+<p>Solrはschema.xmlにデータの定義（フィールドタイプやフィールドなど）を記述して、データを登録する全文検索システムです。
+これまでのSolrではこの設定ファイルを元にデータを登録するフィールド名を決定しており、
+変更を行う場合はSolrのコアを再起動するなどの手順が必要でした。（※ダイナミックフィールドはすこし特殊）</p>
+
+<p>それだと、Solrを管理するのがめんどくさいですね？という感じで現れたのが<a href="http://wiki.apache.org/solr/SchemaRESTAPI">SchemaREST API</a>です。（たぶん。）</p>
+
+<h2>Schema REST API</h2>
+
+<p>Solr 4.2から導入されたSolrのスキーマに関する情報を提供するためのREST APIです。
+4.2で導入されたのはあくまでもschema.xmlの情報を取得するためのAPIでした。
+たとえば、Fieldの一覧を取得するとか。</p>
+
+<p>4.4から、フィールドの追加（変更、削除はできない）ができるようになりました。あくまでも、フィールドの追加で、フィールドタイプなどの追加はまだできません。（できるようになるのかもわからないですが。）
+フィールドの追加方法などは<a href="http://wiki.apache.org/solr/SchemaRESTAPI?highlight=%28managed%29#Adding_fields_to_a_schema">Wiki</a>に記載がありました。</p>
+
+<p>ということで、簡単に試してみることに。</p>
+
+<h2>起動方法</h2>
+
+<p>exampleディレクトリの下にexample-schemalessというディレクトリが新設されています。
+ここに、スキーマレスモード用の設定がされているファイルが入っているので、こちらを利用します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>cd $SOLR/example
+</span><span class='line'>java -Dsolr.solr.home=example-schemaless/solr -jar start.jar</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ログにいくつかWARNが出ますが、影響の内パス設定ミスなので無視してOKです。</p>
+
+<p>最初に定義されているフィールドは「id」と「_version_」のみになります。（Schema Browserなどで確認できます。あ、REST APIでもいいですね。<a href="http://localhost:8983/solr/schema/fields">http://localhost:8983/solr/schema/fields</a>）</p>
+
+<h2>スキーマの更新</h2>
+
+<p>さて、フィールドを追加してみます。
+PUTを利用すると1フィールドの追加が可能です。
+「fugatext」というフィールド名でフィールドを追加しています。今のところJSONのみ対応みたいです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H 'Content-Type: application/json' -d '{"type":"text_ja","stored":false,"multiValued":true}'
+</span><span class='line'>{
+</span><span class='line'>  "responseHeader":{
+</span><span class='line'>    "status":0,
+</span><span class='line'>    "QTime":18}}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>追加できたかどうかもREST APIで取得してみます。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ curl http://localhost:8983/solr/schema/fields
+</span><span class='line'>{
+</span><span class='line'>  "responseHeader":{
+</span><span class='line'>    "status":0,
+</span><span class='line'>    "QTime":0},
+</span><span class='line'>  "fields":[{
+</span><span class='line'>      "name":"_version_",
+</span><span class='line'>      "type":"long",
+</span><span class='line'>      "indexed":true,
+</span><span class='line'>      "stored":true},
+</span><span class='line'>    {
+</span><span class='line'>      "name":"fugatext",
+</span><span class='line'>      "type":"text_ja",
+</span><span class='line'>      "multiValued":true,
+</span><span class='line'>      "stored":false},
+</span><span class='line'>    {
+</span><span class='line'>      "name":"id",
+</span><span class='line'>      "type":"string",
+</span><span class='line'>      "multiValued":false,
+</span><span class='line'>      "indexed":true,
+</span><span class='line'>      "required":true,
+</span><span class='line'>      "stored":true,
+</span><span class='line'>      "uniqueKey":true}]}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>追加できました。
+ちなみに、同じフィールド名を追加しようとするとエラーが帰ってきます。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H 'Content-Type: application/json' -d '{"type":"text_ja","stored":false,"multiValued":true}'
+</span><span class='line'>{
+</span><span class='line'>  "responseHeader":{
+</span><span class='line'>    "status":400,
+</span><span class='line'>    "QTime":1},
+</span><span class='line'>  "error":{
+</span><span class='line'>    "msg":"Field 'fugatext' already exists.",
+</span><span class='line'>    "code":400}}</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>設定の違い</h2>
+
+<p>example-schemalessのsolrconfig.xmlは以下の設定が通常のexampleとは異なるようです。</p>
+
+<h4>schemaFactoryの設定</h4>
+
+<p>schemaをAPIから変更可能にする設定です。これまでの変更しない設定の場合は<code>ClassicIndexSchemaFactory</code>を指定します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>...
+</span><span class='line'>  <span class="nt">&lt;schemaFactory</span> <span class="na">class=</span><span class="s">&quot;ManagedIndexSchemaFactory&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;bool</span> <span class="na">name=</span><span class="s">&quot;mutable&quot;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/bool&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;managedSchemaResourceName&quot;</span><span class="nt">&gt;</span>managed-schema<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/schemaFactory&gt;</span>
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>update.chainの設定</h4>
+
+<p>更新処理（update関連のリクエストハンドラ「/update」とか）には次のような設定が追加されていました。（1006行目あたり）</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>  <span class="nt">&lt;requestHandler</span> <span class="na">name=</span><span class="s">&quot;/update&quot;</span> <span class="na">class=</span><span class="s">&quot;solr.UpdateRequestHandler&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- See below for information on defining </span>
+</span><span class='line'><span class="c">         updateRequestProcessorChains that can be used by name </span>
+</span><span class='line'><span class="c">         on each Update Request</span>
+</span><span class='line'><span class="c">      --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;lst</span> <span class="na">name=</span><span class="s">&quot;defaults&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;update.chain&quot;</span><span class="nt">&gt;</span>add-unknown-fields-to-the-schema<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/lst&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/requestHandler&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>「add-unknown-fields-to-the-schema」というupdate.chainが指定されています。このchainの定義自体は1669行目くらいに存在します。
+（長い。。。）</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>  <span class="c">&lt;!-- Add unknown fields to the schema </span>
+</span><span class='line'><span class="c">  </span>
+</span><span class='line'><span class="c">       An example field type guessing update processor that will</span>
+</span><span class='line'><span class="c">       attempt to parse string-typed field values as Booleans, Longs,</span>
+</span><span class='line'><span class="c">       Doubles, or Dates, and then add schema fields with the guessed</span>
+</span><span class='line'><span class="c">       field types.  </span>
+</span><span class='line'><span class="c">       </span>
+</span><span class='line'><span class="c">       This requires that the schema is both managed and mutable, by</span>
+</span><span class='line'><span class="c">       declaring schemaFactory as ManagedIndexSchemaFactory, with</span>
+</span><span class='line'><span class="c">       mutable specified as true. </span>
+</span><span class='line'><span class="c">       </span>
+</span><span class='line'><span class="c">       See http://wiki.apache.org/solr/GuessingFieldTypes</span>
+</span><span class='line'><span class="c">    --&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;updateRequestProcessorChain</span> <span class="na">name=</span><span class="s">&quot;add-unknown-fields-to-the-schema&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.RemoveBlankFieldUpdateProcessorFactory&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.ParseBooleanFieldUpdateProcessorFactory&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.ParseLongFieldUpdateProcessorFactory&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.ParseDoubleFieldUpdateProcessorFactory&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.ParseDateFieldUpdateProcessorFactory&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;arr</span> <span class="na">name=</span><span class="s">&quot;format&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mm:ss.SSSZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mm:ss,SSSZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mm:ss.SSS<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mm:ss,SSS<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mm:ssZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mm:ss<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mmZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd&#39;T&#39;HH:mm<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mm:ss.SSSZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mm:ss,SSSZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mm:ss.SSS<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mm:ss,SSS<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mm:ssZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mm:ss<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mmZ<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd HH:mm<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str&gt;</span>yyyy-MM-dd<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/arr&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/processor&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.AddSchemaFieldsUpdateProcessorFactory&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;defaultFieldType&quot;</span><span class="nt">&gt;</span>text_general<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;lst</span> <span class="na">name=</span><span class="s">&quot;typeMapping&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;valueClass&quot;</span><span class="nt">&gt;</span>java.lang.Boolean<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;fieldType&quot;</span><span class="nt">&gt;</span>booleans<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/lst&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;lst</span> <span class="na">name=</span><span class="s">&quot;typeMapping&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;valueClass&quot;</span><span class="nt">&gt;</span>java.util.Date<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;fieldType&quot;</span><span class="nt">&gt;</span>tdates<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/lst&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;lst</span> <span class="na">name=</span><span class="s">&quot;typeMapping&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;valueClass&quot;</span><span class="nt">&gt;</span>java.lang.Long<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;valueClass&quot;</span><span class="nt">&gt;</span>java.lang.Integer<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;fieldType&quot;</span><span class="nt">&gt;</span>tlongs<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/lst&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;lst</span> <span class="na">name=</span><span class="s">&quot;typeMapping&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;valueClass&quot;</span><span class="nt">&gt;</span>java.lang.Number<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;str</span> <span class="na">name=</span><span class="s">&quot;fieldType&quot;</span><span class="nt">&gt;</span>tdoubles<span class="nt">&lt;/str&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/lst&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/processor&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.LogUpdateProcessorFactory&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;processor</span> <span class="na">class=</span><span class="s">&quot;solr.RunUpdateProcessorFactory&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/updateRequestProcessorChain&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使ってるUpdateProcessorはこんな感じみたいです。最後の2つはこれ用じゃないので省略。</p>
+
+<table>
+<tr><th>プロセッサ名</th><th>説明</th></tr>
+<tr><td>RemoveBlankFieldUpdateProcessorFactory</td><td>値がないフィールドは除去</td></tr>
+<tr><td>ParseBooleanFieldUpdateProcessorFactory</td><td>スキーマに定義されていないフィールドで、値がBooleanとしてパースできたら、Boolean型とする。</td></tr>
+<tr><td>ParseLongFieldUpdateProcessorFactory</td><td>スキーマに定義されていないフィールドで、値がLongとしてパースできたら、Long型とする。</td></tr>
+<tr><td>ParseDoubleFieldUpdateProcessorFactory</td><td>スキーマに定義されていないフィールドで、値がDoubleとしてパースできたら、Double型とする。</td></tr>
+<tr><td>ParseDateFieldUpdateProcessorFactory</td><td>スキーマに定義されていないフィールドで、値がDateとしてパースできたら、Date型とする。（パースの形式がformatで列挙されてる）</td></tr>
+<tr><td>AddSchemaFieldsUpdateProcessorFactory</td><td>入力されたドキュメントの中でスキーマに定義されていないフィールド（静的、動的両方）を見つけた時に、フィールドの値の型を元にフィールド型をマッピングする。</td></tr>
+</table>
+
+
+<p>とここまで見てきたところで、スキーマレスという名前の意図がちょっとわかったかも。</p>
+
+<h2>定義されてないフィールドを持ったデータを登録</h2>
+
+<p>起動時には定義されてないフィールドをもったデータを登録してみます。
+boolean型で試してみることに。以下のデータを管理画面のデータ登録画面から登録します。（<a href="http://localhost:8983/solr/#/collection1/documents%EF%BC%89">http://localhost:8983/solr/#/collection1/documents%EF%BC%89</a>
+（タイトルでbooleanってわかりにくいですが）</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>{&quot;id&quot;:&quot;change.me&quot;,&quot;title&quot;:true, &quot;price&quot;:1.25, &quot;fuga&quot;:&quot;100,200&quot;}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>エラーは出ません。で、またフィールド一覧を取得すると。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>$ curl http://localhost:8983/solr/schema/fields
+</span><span class='line'>{
+</span><span class='line'>  &quot;responseHeader&quot;:{
+</span><span class='line'>    &quot;status&quot;:0,
+</span><span class='line'>    &quot;QTime&quot;:1},
+</span><span class='line'>  &quot;fields&quot;:[{
+</span><span class='line'>      &quot;name&quot;:&quot;_version_&quot;,
+</span><span class='line'>      &quot;type&quot;:&quot;long&quot;,
+</span><span class='line'>      &quot;indexed&quot;:true,
+</span><span class='line'>      &quot;stored&quot;:true},
+</span><span class='line'>    {
+</span><span class='line'>      &quot;name&quot;:&quot;fuga&quot;,
+</span><span class='line'>      &quot;type&quot;:&quot;tlongs&quot;},
+</span><span class='line'>    {
+</span><span class='line'>      &quot;name&quot;:&quot;fugatext&quot;,
+</span><span class='line'>      &quot;type&quot;:&quot;text_ja&quot;,
+</span><span class='line'>      &quot;multiValued&quot;:true,
+</span><span class='line'>      &quot;stored&quot;:false},
+</span><span class='line'>    {
+</span><span class='line'>      &quot;name&quot;:&quot;id&quot;,
+</span><span class='line'>      &quot;type&quot;:&quot;string&quot;,
+</span><span class='line'>      &quot;multiValued&quot;:false,
+</span><span class='line'>      &quot;indexed&quot;:true,
+</span><span class='line'>      &quot;required&quot;:true,
+</span><span class='line'>      &quot;stored&quot;:true,
+</span><span class='line'>      &quot;uniqueKey&quot;:true},
+</span><span class='line'>    {
+</span><span class='line'>      &quot;name&quot;:&quot;price&quot;,
+</span><span class='line'>      &quot;type&quot;:&quot;tdoubles&quot;},
+</span><span class='line'>    {
+</span><span class='line'>      &quot;name&quot;:&quot;title&quot;,
+</span><span class='line'>      &quot;type&quot;:&quot;booleans&quot;}]}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>おー、最後にtitleが追加されてます。他にもfugaやpriceも。（日付は手を抜きました。。。）</p>
+
+<h2>感想</h2>
+
+<p>詳細までは追いかけてないですが、こんなかんじです。
+フィールド追加が可能になるのはいいんじゃないでしょうか。SolrCloudの機能との関連もあるのかもしれません。ZooKeeperへの出力も実装されてそうなので。</p>
+
+<p>ただ、機械的に出力されたschema.xml（exampleだとmanaged-schemaというファイル）には<em>「DO NOT EDIT」</em>との記述があるので、修正するとなにかおきてしまうかもしれないですねぇ。
+現時点では、フィールドタイプの変更やフィールドの更新、削除に関してはSolrCoreの再起動などの手順が必要です。
+あと、変なデータ（タイプミスとか）が登録されたりしないかってのは気になりますね。</p>
+
+<p>※ちなみに、別の人が気づいたんですが、ちょっとバグが有ったみたいで、代わりにチケットつくったらキリ番（<a href="https://issues.apache.org/jira/browse/SOLR-5000">SOLR-5000</a>）
+ゲットしましたｗ</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-04T01:12:00+09:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/solr/'>solr</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2013/07/04/schemaless-example/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2013/07/04/schemaless-example/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/06/27/upload-docs-solr-admin/" title="Previous Post: Solrの管理画面でデータ登録">&laquo; Solrの管理画面でデータ登録</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/07/10/riak-meetup-tokyo-no2/" title="Next Post: Riak Meetup Tokyo #2に参加しました。#riakjp">Riak Meetup Tokyo #2に参加しました。#riakjp &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>A little something about me.</p>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (41)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (4)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (15)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/15/versioning-of-sonatype/">Sonatypeのバージョン番号で困ったので</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">elasticsearch 1.4.0.Beta1のリリース</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/hold-on-6th-elasticsearch-jp/">第6回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/16/book-publication-event/">elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/09/performance-considerations-for-elasticsearch-indexing/">Elasticsearchのインデキシングに関するパフォーマンス検討</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("johtani", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/johtani">@johtani</a></p>
+  
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2013/07/04/schemaless-example/';
+        var disqus_url = 'http://blog.johtani.info/blog/2013/07/04/schemaless-example/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+  </div>
+</body>
+</html>

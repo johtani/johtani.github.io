@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>日本語Wikipediaをインデクシング（Kuromojiバージョン） - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="前々回紹介した、日本語Wikipediaのデータをインデックス登録する記事の続きです。 今回は、Kuromojiのアナライザを利用してインデックス登録してみます。 余談（Proxy環境でのプラグインインストール） ElasticSearchのpluginコマンドはJavaで実装されています。（ &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">日本語Wikipediaをインデクシング（Kuromojiバージョン）</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-03T01:15:00+09:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch">前々回紹介した、日本語Wikipediaのデータをインデックス登録する記事</a>の続きです。</p>
+
+<!-- more -->
+
+
+<p>今回は、Kuromojiのアナライザを利用してインデックス登録してみます。</p>
+
+<h2>余談（Proxy環境でのプラグインインストール）</h2>
+
+<p>ElasticSearchのpluginコマンドはJavaで実装されています。（<a href="https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/plugins/PluginManager.java#L315">org.elasticsearch.plugins.PluginManager</a>）
+プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。</p>
+
+<p>ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>elasticsearch-analysis-kuromojiのインストール</h2>
+
+<p>WikipediaのデータをKuromojiを使って、形態素解析ベースの転置インデックスを作成していきます。
+まずは、Kuromojiを利用するために、<a href="https://github.com/elasticsearch/elasticsearch-analysis-kuromoji">Analysisプラグイン</a>のインストールです。
+ElasticSearchのバージョンに対応したプラグインのバージョンがあります。（プラグインのページに対応したバージョンの記載あり）
+今回はElasticSearchの0.90.3を利用しているため、1.5.0をインストールします。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>インストール後は再起動しておきます。
+なお、Kuromojiを利用して、Wikipediaのデータを登録するばあい、デフォルトの設定では、ヒープが足りなくなるおそれがあります。
+ElasticSearchの起動時に以下のオプションを指定して、最大ヒープサイズを2Gとしておきます。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>export ES_HEAP_SIZE=2g;./bin/elasticsearch</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Indexの作成（デフォルトでKuromojiのAnalyzerを利用する）</h2>
+
+<p>Wikipediaのデータを登録する際に、Kuromojiのアナライザを利用したいのが今回の趣旨でした。
+一番ラクな方法として、Wikipediaデータのインデックスの設定として、デフォルトのアナライザをKuromojiにしてしまいます。
+（きちんと設計する場合は、必要に応じてフィールドごとに指定しましょう）</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl -XPUT 'localhost:9200/ja-wikipedia-kuromoji' -d '{
+</span><span class='line'>    "settings": {
+</span><span class='line'>        "analysis": {
+</span><span class='line'>            "analyzer": {
+</span><span class='line'>                "default" : {
+</span><span class='line'>                    "type" : "kuromoji"
+</span><span class='line'>                }
+</span><span class='line'>            }
+</span><span class='line'>        }
+</span><span class='line'>    }
+</span><span class='line'>}'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これでkuromojiのアナライザがデフォルトで利用される形となります。
+あとは、Riverを起動して登録するだけです。</p>
+
+<h2>Riverの実行</h2>
+
+<p>前回と一緒です。
+インデックス名（<strong><em>river/&lt;インデックス名>/</em>meta</strong>）だけは、先ほど作成した「<code>ja-wikipedia-kuromoji</code>」に変更してください。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d '
+</span><span class='line'>{
+</span><span class='line'>    "type" : "wikipedia",
+</span><span class='line'>    "wikipedia" : {
+</span><span class='line'>        "url" : "file:/home/johtani/src/jawiki-latest-pages-articles.xml"
+</span><span class='line'>    },
+</span><span class='line'>    "index" : {
+</span><span class='line'>        "bulk_size" : 10000
+</span><span class='line'>    }
+</span><span class='line'>}'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>あとは、インデックスされるのを待つだけです。</p>
+
+<h2>データ量とか</h2>
+
+<p>5.8gbになりました。Kuromojiを利用したため、形態素解析により単語にきちんとトークないずされた結果でしょう。
+Uni-gramだと、転置インデックスのボキャブラリも単語に対してヒットするドキュメント数も大きくなるため、
+インデックスサイズも大きくなっているのかと。</p>
+
+<p>検索クエリのサンプルなどはまた後日。（夜遅いので。。。）</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-03T01:15:00+09:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>, <a class='category' href='/blog/categories/kuromoji/'>kuromoji</a>, <a class='category' href='/blog/categories/wikipedia/'>wikipedia</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/08/30/hold-first-elasticsearch-meetup-in-japan/" title="Previous Post: 第1回ElasticSearch勉強会を開催しました！ #elasticsearchjp">&laquo; 第1回ElasticSearch勉強会を開催しました！ #elasticsearchjp</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/09/12/question-river-wikipedia/" title="Next Post: elasticsearch-river-wikipediaの疑問点">elasticsearch-river-wikipediaの疑問点 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>A little something about me.</p>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (41)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (4)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (15)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/15/versioning-of-sonatype/">Sonatypeのバージョン番号で困ったので</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">elasticsearch 1.4.0.Beta1のリリース</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/hold-on-6th-elasticsearch-jp/">第6回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/16/book-publication-event/">elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/09/performance-considerations-for-elasticsearch-indexing/">Elasticsearchのインデキシングに関するパフォーマンス検討</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("johtani", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/johtani">@johtani</a></p>
+  
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/';
+        var disqus_url = 'http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+  </div>
+</body>
+</html>

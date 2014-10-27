@@ -1,0 +1,571 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>elasticsearch 1.4.0.Beta1のリリース - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="※この記事は次のブログを翻訳したものになります。 原文：elasticsearch 1.4.0.beta1 released 本日、Lucene 4.10.1をベースにした、Elasticsearch 1.4.0.Beta1をリリースしました。
+Elasticsearch 1.4.0. &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Elasticsearch 1.4.0.Beta1のリリース</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-02T19:14:00+09:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>※この記事は次のブログを翻訳したものになります。</p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">elasticsearch 1.4.0.beta1 released</a></p>
+
+<p>本日、<em>Lucene 4.10.1</em>をベースにした、<em>Elasticsearch 1.4.0.Beta1</em>をリリースしました。
+<a href="http://www.elasticsearch.org/downloads/1-4-0-Beta1">Elasticsearch 1.4.0.Beta1</a>からダウンロードできます。
+また、すべての変更点に関してもこちらをご覧ください。</p>
+
+<!-- more -->
+
+
+<p>1.4.0のテーマは<em>resiliency(復元性、弾力性)</em>です。
+<em>resiliency</em>とはElasticsearchをより安定し信頼性のあるものにすることを意味します。
+すべての機能が正常に機能している場合は信頼することは簡単です。
+予想外のことが発生した時に難しくなります：ノードでout of memoryの発生、スローGCや重いI/O、ネットワーク障害、不安定なデータの送信によるノードのパフォーマンス低下など。</p>
+
+<p>本ベータリリースは、resiliencyの主な3つの改善を含んでいます。</p>
+
+<ul>
+<li><a href="#memory-mgmt">メモリ使用量の低下</a>によるノードの安定性向上</li>
+<li>discoveryアルゴリズムの改善による<a href="#cluster-stability">クラスタの安定性</a>向上</li>
+<li><a href="#checksums">チェックサム</a>の導入による破損したデータの検知</li>
+</ul>
+
+
+<p>分散システムは複雑です。
+決して想像できないような状況をシミュレーションするために、ランダムなシナリオを作成する広範囲なテストスイートを持っています。
+しかし、無数のエッジケース(特殊なケース)があることも認識しています。
+1.4.0.Beta1はこれまで私たちが行ってきた改善のすべてを含んでいます。
+これらの変更を実際にテストしていただき、<a href="https://github.com/elasticsearch/elasticsearch/issues">何か問題があった場合は私たちに教えてください</a>。</p>
+
+<h2><a name="memory-mgmt">メモリ管理</a></h2>
+
+<p>ヒープ空間は限られたリソースです。
+上限を32GBとし、利用可能なRAMの50%をヒープの上限にすることを推奨します。
+この上限を超えた場合、JVMは圧縮したポインタを使用することができず、GCが非常に遅くなります。
+ノードの不安定性の主な原因は遅いGCです。それは、次のようなことから発生します。</p>
+
+<ul>
+<li>メモリプレッシャー</li>
+<li>スワップ(参照：<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/setup-configuration.html#setup-configuration-memory">memory settings</a>)</li>
+<li>非常に大きなヒープ</li>
+</ul>
+
+
+<p>本リリースは、メモリ管理の改善し、（結果として）ノードの安定性を改善するいくつかの変更を含んでいます。</p>
+
+<h3>doc values</h3>
+
+<p>メモリの利用の最も大きなものの1つは<strong>fielddata</strong>です
+aggregation、ソート、スクリプトがフィールドの値に素早くアクセスするために、フィールドの値をメモリにロードして保持します。
+ヒープは貴重なため、1ビットも無駄にしないためにメモリ内のデータは高度な圧縮と最適化を行っています。
+これは、ヒープスペース以上のデータをもつまでは、非常によく動作します。
+これは、多くのノードを追加することによって常に解決できる問題です。
+しかし、CPUやI/Oが限界に達してしまうずっと前に、ヒープ空間の容量に到達します。</p>
+
+<p>最近のリリースは、<strong>doc values</strong>によるサポートがあります。
+基本的に、doc valuesはin-memory fielddataと同じ機能を提供します。
+doc valuesの提供する利点は、それらが、非常に少量のヒープ空間しか使用しない点です。
+doc valuesはメモリからではなく、ディスクから読み込まれます。
+ディスクアクセスは遅いですが、doc valuesはカーネルのファイルシステムキャッシュの利点を得られます。
+ファイルシステムキャッシュはJVMヒープとはことなり、32GBの制限による束縛がありません。
+ヒープからファイルシステムキャッシュにfielddataを移行することによって、より小さなヒープを使うことができます。これは、GCがより早くなり、ノードが更に安定することを意味します。</p>
+
+<p>本リリースより前は、doc valuesはin-memory fielddataよりもかなり遅かったです。
+本リリースに含まれる変更は、パフォーマンスをかなり向上させ、in-memory fielddataとほぼ同じくらいの速度になっています。</p>
+
+<p>in-memory fielddataの代わりにdoc valuesを利用するために必要なことは、次のように新しいフィールドをマッピングすることです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>PUT /my_index
+</span><span class='line'>{
+</span><span class='line'>  "mappings": {
+</span><span class='line'>    "my_type": {
+</span><span class='line'>      "properties": {
+</span><span class='line'>        "timestamp": {
+</span><span class='line'>          "type":       "date",
+</span><span class='line'>          "doc_values": true
+</span><span class='line'>        }
+</span><span class='line'>      }
+</span><span class='line'>    }
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このマッピングで、このフィールドに対するfielddataの利用は、メモリにフィールドをロードする代わりに、自動的にディスクからdoc valuesを利用します。
+<em>注意：</em>現時点で、doc valuesはanalyzedな<code>string</code>フィールドはサポートしていません。</p>
+
+<h3>request circuit breaker</h3>
+
+<p>fielddata circuit breakerはfielddataによって利用されるメモリの上限を制限するために追加され、OOMEの最も大きな原因の1つを防ぎました。
+そして、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-fielddata.html#request-circuit-breaker">リクエストレベルのcircuit-breaker</a>を提供するために、コンセプトを拡張しました。
+これは、単一のリクエストによって使用されるメモリの上限を制限します。</p>
+
+<h3>bloom filters</h3>
+
+<p><a href="http://en.wikipedia.org/wiki/Bloom_filter">Bloom filters</a> はインデキシング(前のバージョンのドキュメントが存在するかどうかのチェックのため)や、
+IDによるドキュメントの検索(ドキュメントを含むセグメントがどれかを決定するため)に関する重要な性能最適化を提供しました。
+しかし、もちろんそれらはコスト（メモリ）を必要とします。
+現在の改善は、bloom filterの必要性を取り除きました。
+現在では、Elasticsearchはまだ、インデックス時にそれらを構築します(実世界の経験がテストシナリオにそぐわない場合に備えて)。
+しかし、デフォルトではメモリにはロードされません。
+すべてが予定通りに運べば、将来のバージョンで完全にこれらは除去します。</p>
+
+<h2><a name="cluster-stability">クラスタの安定性</a></h2>
+
+<p>クラスタの安定性向上のために私たちができる最も大きなことは、ノードの安定性の向上です。
+もし、ノードが安定しておりタイミングよく反応すれば、クラスタが不安定になる可能性が大いに減少します。
+私たちは不完全な世界に住んでいます。- 物事は予想外にうまく行きません。クラスタはデータを失うことなくこのような状況から回復できる必要があります。</p>
+
+<p>私たちは、<code>improve_zen</code>ブランチ上で、Elasticsearchの障害からの復旧するための能力の向上に数ヶ月費やしてきました。
+まず、複雑なネットワークレベルの障害を繰り返すためのテストを追加しました。
+次に、各テストのための修正を追加しました。
+そこには、より多くの行うことが存在します。しかし、私たちは、<a href="https://github.com/elasticsearch/elasticsearch/issues/2488">issue #2488</a>(&ldquo;分割が交差している場合、minimum_master_nodesはsplit-brainを防げない&rdquo;)に含まれる、ユーザが経験してきた大部分の問題を私たちは解決しました。</p>
+
+<p>私たちはクラスタのresiliencyを非常に真剣に取り組んでいます。
+私たちは、Elasticsearchが何ができるか、その上で何が弱点であるかを理解してほしいと思っています。
+これを考慮して、私たちは<a href="http://www.elasticsearch.org/guide/en/elasticsearch/resiliency/current/index.html">Resiliency Status Document</a>を作成しました。
+このドキュメントは、私たち(または私たちユーザ)が遭遇したresiliencyの問題の、何が修正済みで、何が修正されないまま残っているかを記録します。
+このドキュメントを慎重に読み、あなたのデータを保護するために適切な方法を選択してください。</p>
+
+<h2><a name="checksums">データ破損の検知</a></h2>
+
+<p>ネットワークをまたいだシャードリカバリのチェックサムは、圧縮ライブラリのバグを発見する助けとなりました。
+それは、バージョン1.3.2で修正済みです。
+それ以来、私たちはElasticsearchのいたるところにチェックサムとチェックサムの確認を追加しました。</p>
+
+<ul>
+<li>マージ中に、あるセグメント内すべてのチェックサムの確認(<a href="https://github.com/elasticsearch/elasticsearch/issues/7360">#7360</a>)</li>
+<li>インデックス再オープン時に、あるセグメント内の最も小さなファイルの完全な確認と、より大きなファイルの軽量な打ち切りチェック(<a href="https://issues.apache.org/jira/browse/LUCENE-5842">LUCENE-5842</a>)</li>
+<li>トランザクションログからイベントを再生するとき、各イベントはチェックサムを確認される(<a href="https://github.com/elasticsearch/elasticsearch/issues/6554">#6554</a>)</li>
+<li>シャードのリカバリ中もしくは、スナップショットからのリストア中にElasticsearchはローカルファイルとリモートのコピーが同一であるか確認する必要がある。ファイルの長さとチェックサムのみを使うのは不十分であることが確認された。このため、現在はセグメントのすべてのファイルの同一性を確認(<a href="https://github.com/elasticsearch/elasticsearch/issues/7159">#7159</a>)</li>
+</ul>
+
+
+<h2>その他のハイライト</h2>
+
+<p><a href="http://www.elasticsearch.org/downloads/1-4-0-Beta1">Elasticsearch 1.4.0.Beta1のchangelog</a>に本リリースの多くの機能、改善、バグフィックスについて読むことができます。
+ここでは、特筆すべきいくつかの変更について述べます。</p>
+
+<h3>groovyによるmvelの置き換え</h3>
+
+<p>Groovyは現在、デフォルトのscripting languageです。
+以前のデフォルトはMVELで、古くなってきており、サンドボックス内で実行できないという事実は、セキュリティ問題でした。
+Groovyはサンドボックスであり(それは、ボックスの外へは許可が必要)、メンテナンスされており、速いです！
+詳しくは<a href="http://www.elasticsearch.org/blog/scripting/">scriptingについてのブログ記事</a>をご覧ください。</p>
+
+<h3>デフォルトでcorsはオフ</h3>
+
+<p>Elasticsearchのデフォルト設定はクロスサイトスクリプティングに対して脆弱でした。
+私たちはデフォルトで<a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>をオフにすることで修正しました。
+Elasticsearchにインストールされたサイトプラグインはこれまで同様に機能します。
+しかし、CORSを再度オンにすることがない限り、外部のウェブサイトがリモートのクラスタにアクセスすることはできません。
+ウェブサイトがあなたのクラスタにアクセス可能に制御できるように、さらに<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/modules-http.html#_settings_2">CORS settings</a>を追加しました。
+詳しくは<a href="http://www.elasticsearch.org/community/security">security page</a>をご覧ください。</p>
+
+<h3>クエリキャッシュ</h3>
+
+<p>新しい試験的な<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-shard-query-cache.html">shardレベルのクエリキャッシュ</a>は、静的なインデックスのアグリゲーションをほとんど即座に反応できます。
+ウエブサイトのアクセスの日毎のページビュー数を見るダッシュボードを持っていると想像してみてください。
+これらの数値は古いインデックスでは変更がありません。しかし、アグリゲーションはダッシュボードのリフレッシュのたびに再計算されます。
+新しいクエリキャッシュを利用すると、シャードのデータが変更されない限り、アグリゲーションの結果はキャッシュから直接返却されます。
+キャッシュから古い結果を決して取得することはありません。それは、常に、キャッシュされていないリクエストと同じ結果を返します。</p>
+
+<h3>新しいaggregations</h3>
+
+<p>3つの新しいaggregationsがあります。</p>
+
+<ul>
+<li><p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-filters-aggregation.html"><code>filters</code></a></p>
+
+<ul>
+<li>これは<code>filter</code> aggregationの拡張です。複数のバケットを定義し、バケット毎に異なるフィルタを利用できます。</li>
+</ul>
+</li>
+<li><p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-children-aggregation.html"><code>children</code></a></p>
+
+<ul>
+<li><code>nested</code>アグリゲーションの親子版。<code>children</code> aggは親のドキュメントに属する子のドキュメントを集計できる</li>
+</ul>
+</li>
+<li><p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-metrics-scripted-metric-aggregation.html"><code>scripted_metric</code></a></p>
+
+<ul>
+<li>このaggregationは、データによって計算されたメトリックを完全にコントロールできます。これは、初期化フェーズ、ドキュメント収集フェーズ、shardレベル結合フェーズ、global reduceフェーズを提供します。</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>get /index api</h3>
+
+<p>以前、ある1つのインデックスのaliases、mappings、settings、warmersを取得出来ました。しかし、それらを個別にです。
+<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-get-index.html"><code>get-index</code> API</a> はこれらのすべてもしくは一部を、複数もしくはひとつのインデックスに対して一緒に取得できます。
+これは、既存のインデックスと同一もしくはほぼ同一であるインデックスを作成したいときに非常に役に立ちます。</p>
+
+<h3>登録と更新</h3>
+
+<p>ドキュメントの登録と更新にいくつかの改善があります。</p>
+
+<ul>
+<li>現在、ドキュメントIDの自動生成のために<a href="http://boundary.com/blog/2012/01/12/flake-a-decentralized-k-ordered-unique-id-generator-in-erlang">Flake ID</a>を使用しています。これは、プライマリキー探索時に素晴らしい性能向上を提供します。</li>
+<li><code>detect_noop</code>に<code>true</code>を設定すると、ドキュメントに変更を与えない更新が軽量になります。この設定を有効にすると、<code>_source</code>フィールドのコンテンツを変更する更新リクエストだけ、ドキュメントの新しいバージョンを書き込みます。</li>
+<li>更新はスクリプトから完全に操作できます。以前は、スクリプトはドキュメントがすでに存在しているときだけ実行可能で、それ以外は、<code>upsert</code>ドキュメントで登録しました。<code>script_upsert</code>パラメータでスクリプトから直接ドキュメントの作成が操作できます。</li>
+</ul>
+
+
+<h3>function score</h3>
+
+<p>すでに非常に便利な<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/query-dsl-function-score-query.html"><code>function_score</code>クエリ</a>が、新しく<code>weight</code>パラメータをサポートします。
+これは、それぞれの指定された関数の影響をチューニングするのに使われます。
+これは、人気度よりも更新日時により重みをかけたり、地理情報よりも価格により重みをかけるといったことを可能にします。
+また、<code>random_score</code>機能はセグメントマージによる影響を受けません。これにより、より一貫した順序が提供されます。</p>
+
+<h2>試してみてください。</h2>
+
+<p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-0-Beta1">Elasticsearch 1.4.0.Beta1</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-02T19:14:00+09:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/17/hold-on-6th-elasticsearch-jp/" title="Previous Post: 第6回Elasticsearch勉強会を開催しました。#elasticsearchjp">&laquo; 第6回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/10/15/versioning-of-sonatype/" title="Next Post: Sonatypeのバージョン番号で困ったので">Sonatypeのバージョン番号で困ったので &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>A little something about me.</p>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (41)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (4)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (15)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/15/versioning-of-sonatype/">Sonatypeのバージョン番号で困ったので</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">elasticsearch 1.4.0.Beta1のリリース</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/hold-on-6th-elasticsearch-jp/">第6回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/16/book-publication-event/">elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/09/performance-considerations-for-elasticsearch-indexing/">Elasticsearchのインデキシングに関するパフォーマンス検討</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("johtani", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/johtani">@johtani</a></p>
+  
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/';
+        var disqus_url = 'http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+  </div>
+</body>
+</html>

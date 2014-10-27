@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: plugin | @johtaniの日記 2nd]]></title>
+  <link href="http://blog.johtani.info/blog/categories/plugin/atom.xml" rel="self"/>
+  <link href="http://blog.johtani.info/"/>
+  <updated>2014-10-27T16:59:33+09:00</updated>
+  <id>http://blog.johtani.info/</id>
+  <author>
+    <name><![CDATA[johtani]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Sonatypeのバージョン番号で困ったので]]></title>
+    <link href="http://blog.johtani.info/blog/2014/10/15/versioning-of-sonatype/"/>
+    <updated>2014-10-15T15:26:08+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/10/15/versioning-of-sonatype</id>
+    <content type="html"><![CDATA[<p><a href="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">Elasticsearch 1.4.0.Beta1がリリース</a>されました。</p>
+
+<p>個人で<a href="https://github.com/johtani/elasticsearch-extended-analyze">elasticsearch-extended-analyze</a>というプラグインを開発してます。
+こちらも1.4.0.Beta1に対応するべく作業をしてて、少し戸惑ったことがあったので、メモをば。</p>
+
+<!-- more -->
+
+
+<p>ここ最近はプラグインのバージョン番号をElasticsearchのバージョン番号と同じものを利用していました。
+（プラグインの機能追加をサボってる？？）
+その時に、<code>1.4.0.Beta1</code>という番号を指定したのですが、意味不明なエラーに悩まされてしまいまして。</p>
+
+<p>プラグインのリリースでは、以下のコマンドを実行します。</p>
+
+<pre><code>$ mvn release:prepare
+$ mvn release:perform
+</code></pre>
+
+<p>最初のコマンド（prepare）で、パッケージングを実施し、Githubにリリースタグを打ったバージョンがpushされます。
+次のコマンド（perform）で、パッケージングされたzipファイルがsonatypeのサイトに公開するためにアップロードされます。</p>
+
+<p><code>1.4.0.Beta1</code>というバージョン文字列を利用した場合、prepareは問題なく実行できたのですが、
+performで以下の様なエラーが返ってきました。</p>
+
+<pre><code>Return code is: 401, ReasonPhrase: Unauthorized.
+</code></pre>
+
+<p>バージョン番号が<code>1.3.0</code>では特に問題はなかったのですが、、、
+結局、バージョン番号を<code>1.4.0-beta1</code>に変更すると問題なくリリースが完了しました。</p>
+
+<p>mike_neckさんと話をしていて、<a href="http://semver.org">Semantic Versioning</a>に関係しているのかなぁという話にはなったのですが、
+詳しく調べていません。。。</p>
+
+<p>そのうち調べようかなぁ。。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[プロキシ環境でのpluginコマンドの実行]]></title>
+    <link href="http://blog.johtani.info/blog/2014/08/01/plugin-using-under-proxy-env/"/>
+    <updated>2014-08-01T15:24:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/08/01/plugin-using-under-proxy-env</id>
+    <content type="html"><![CDATA[<p>Proxy環境で働いている方も結構いると思います。
+Twitter上で、Elasticsearchのpluginコマンドでプラグインがインストールできなくて困っている方がいたので、
+調べてみたのでメモしておきます。</p>
+
+<!-- more -->
+
+
+<h2>プラグインコマンド</h2>
+
+<p>Elasticsearchでは、プラグインという形でいくつかの便利な機能が公開されています。
+<a href="https://github.com/elasticsearch/elasticsearch-analysis-kuromoji">形態素解析ライブラリのKuromoji</a>を使うためのプラグインや、<a href="https://github.com/lmenezes/elasticsearch-kopf">クラスタの管理がGUIで可能なkopf</a>プラグインなどがあります。
+公式、サードパーティいろいろです。</p>
+
+<p>これらのプラグインをElasticsearchにインストールする場合、以下のコマンドを実行すれば
+自動的にダウンロードして<code>plugins</code>ディレクトリにインストールしてくれます。</p>
+
+<pre><code>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0
+</code></pre>
+
+<p>ここで、<code>elasticsearch/elasticsearch-analysis-kuromoji/2.3.0</code>がプラグインのパスになります（例では、<code>提供元/プラグイン名/プラグインバージョン</code>となっています。）。</p>
+
+<p>この<code>plugin</code>コマンドがダウンロード元にアクセスに行くのですが、プロキシ環境だとプロキシの設定が必要になります。</p>
+
+<h2>プロキシの指定（Mac/LinuxとWindowsでの違い）</h2>
+
+<h3>Mac/Linux(shコマンド)</h3>
+
+<p><a href="http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/">以前の記事</a>でプロキシのポート番号などの指定方法を
+以下のように説明していました。
+（※昔の記事のため、kuromojiプラグインのバージョンが古いです）</p>
+
+<p>ElasticsearchのpluginコマンドはJavaで実装されています。（org.elasticsearch.common.http.client.HttpDownloadHelper）
+プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。</p>
+
+<p>ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。</p>
+
+<pre><code>./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+</code></pre>
+
+<p>LinuxやMacの環境であれば、こちらのコマンドでプロキシの指定が可能です。
+ただし、Windows環境ではうまくいきません。</p>
+
+<p>Elasticsearchは、環境の違いにより、ダウンロードするファイルが異なります。
+Windows環境の方は、zipファイルをダウンロードしてもらうようになっています。
+elasticsearchコマンドおよびpluginコマンドがbat形式で提供されているのがzipファイルとなるからです。</p>
+
+<h3>Windows(batコマンド)</h3>
+
+<p>Windows環境では次のように指定します。</p>
+
+<pre><code>set JAVA_OPTS="-DproxyHost=ホスト名 -DproxyPort=ポート番号"
+bin\plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0
+</code></pre>
+
+<p>コマンドの実装方法が少し異なるために、このようになっています。</p>
+
+<h2>まとめ</h2>
+
+<p>プロキシ環境で利用される場合は、プラグインコマンドは上記のように実行していただければと。</p>
+
+<p>公式ガイドには、これらの情報を追記するPRを送る予定です。
+また、WindowsのコマンドでもMac/Linuxと同様にできたほうがいい気がするので、Issueをあげようと思います。</p>
+
+<p>不明点などあれば、コメントいただければと。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[elasticsearch-kopfの紹介（aliases画面）]]></title>
+    <link href="http://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/"/>
+    <updated>2014-05-04T01:01:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator</id>
+    <content type="html"><![CDATA[<p>今日はelasticsearch-kopfのAnalysis画面の紹介です。</p>
+
+<p>（簡単なところから。。。その３）</p>
+
+<!-- more -->
+
+
+<p>ちょっとあいだが開いてしまいましたが、再開です。
+メニューの<code>aliases</code>を選択すると、次のような画面が表示されます。</p>
+
+<p>{% img /images/entries/20140504/kopf-aliases.jpg Aliases画面 %}</p>
+
+<p>Elasticsearchの<code>alias</code>を画面で確認できます。</p>
+
+<p>エイリアスは、インデックスに別名をつけることができるElasticsearchの機能です。
+１エイリアス＝１インデックスでも良いですが、１エイリアスに対して複数のエイリアスを付与することもできます。
+この機能を利用することで、次のようなことが可能となります。</p>
+
+<ul>
+<li>インデックスの切り替えをアプリ側に意識させずに実施（アプリはエイリアス名に対して検索すればOKなので）</li>
+<li>直近１週間のログを検索するためのエイリアスの作成（複数のインデックスを１つのエイリアスに割り当て可能）</li>
+<li>特定のルーティングによる検索（特定のデータに対する検索だけに絞るためにfilterを指定する）</li>
+</ul>
+
+
+<p>エイリアスについて詳しく知りたい方は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html">公式ガイド</a>をご覧いただくのが良いかと。</p>
+
+<p>画面は非常にわかりやすい作りになっているので、特に説明必要ないんですよね。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[elasticsearch-kopfの紹介（analysis画面）]]></title>
+    <link href="http://blog.johtani.info/blog/2014/04/09/intro-elasticsearch-kopf-analysis/"/>
+    <updated>2014-04-09T11:41:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/04/09/intro-elasticsearch-kopf-analysis</id>
+    <content type="html"><![CDATA[<p>今日はelasticsearch-kopfのAnalysis画面の紹介です。</p>
+
+<p>（簡単なところから。。。その２）</p>
+
+<!-- more -->
+
+
+<p>メニューの<code>analysis</code>を選択すると、次のような画面が表示されます。</p>
+
+<p>{% img /images/entries/20140409/kopf-analysis.jpg Analysis画面 %}</p>
+
+<p>Elasticsearchの<code>_analyze</code> APIを画面で確認できます。
+画面で動作の確認ができるのは嬉しいですよね。</p>
+
+<ol>
+<li>入力文字列：入力となるドキュメントに含まれる文字列や検索キーワードを入力</li>
+<li>フィールドの指定：対象とするインデックス名、タイプ名、フィールド名を選択</li>
+<li>analyze：ボタンを押す</li>
+<li>トークナイズされた結果：入力文字列がどのようなトークンに分割されるか
+
+<ul>
+<li>start、end：入力文字列中の文字列の位置</li>
+<li>pos：トークンの位置</li>
+</ul>
+</li>
+</ol>
+
+
+<p>という形でElasticsearchが指定されたフィールドで入力文字をどのようにトークナイズしたかを確認することができます。</p>
+
+<p>Elasticsearchは内部でこのトークナイズされた単語を元に転置インデックスを作成し、検索に利用します。
+ですので、特定のデータが検索に上手くヒットしないときに、この画面でデータの文字列をトークナイズしてみるといった用途に使えます。</p>
+
+<p>フィールドの設定がどのようにして入力文字列をトークンにしているかといった点については、今度のElasticsearch勉強会で話す予定です。</p>
+
+<p>フィールドの設定を利用する以外に、アナライザを指定してどのようにトークナイズされるかを見ることもできます。
+「ANALYZE BYANALYZER」をクリックすると利用できます。</p>
+
+<p>{% img /images/entries/20140409/kopf-analysis-analyzer.jpg ANALYZE BY ANALYZER %}</p>
+
+<p>トークナイズしたい文字列を入力し、インデックス名と、インデックスに設定されているアナライザ名を選択してanalyzeボタンを押すと
+結果が表示されます。
+（例では、kuromojiアナライザを利用して出力になっています。また、出力結果のposの表示位置がFIELD TYPEの時と違うのが少し気になりました。）</p>
+
+<p>ただ、残念ながら、インデックスのマッピングで指定したアナライザしか利用できないみたいなので、
+どのアナライザがどんな挙動かを調べたい場合は、以前紹介した<a href="http://blog.johtani.info/blog/2013/09/23/intro-elasticsearch-inquisitor/">elasticsearch-inquisitor</a>を
+利用したほうが良さそうです。</p>
+
+<p>ということで、今日はanalysis画面の説明でした。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[elasticsearch-kopfの紹介（rest画面）]]></title>
+    <link href="http://blog.johtani.info/blog/2014/04/07/intro-elasticsearch-kopf-rest/"/>
+    <updated>2014-04-07T11:24:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/04/07/intro-elasticsearch-kopf-rest</id>
+    <content type="html"><![CDATA[<p>今日はelasticsearch-kopfのREST画面の紹介です。</p>
+
+<p>（簡単なところから。。。）</p>
+
+<!-- more -->
+
+
+<p>メニューの<code>rest</code>を選択すると、次のような画面が表示されます。</p>
+
+<p>Elasticsearch自体が、さまざまな操作をRESTでできる仕組みになっています。
+検索にも利用しますが、それ以外の設定などにつてもリクエストを送ればOKです。</p>
+
+<p>ですので、リクエストや設定を自分で組み立てて送ることができる画面が用意されているととても便利です。
+（もちろん、curlコマンドでもいいのですが、画面があると便利ですよね）</p>
+
+<p>{% img /images/entries/20140407/kopf-rest.jpg REST画面 %}</p>
+
+<h2>History</h2>
+
+<p>履歴表示画面です。
+これまで、kopfのrest画面を利用して送信したリクエストが一覧で表示されます。</p>
+
+<p><code>History</code>という文字をクリックすることで、表示/非表示の切り替えが可能です。（最初は非表示）
+マウスオーバーすると、リクエストボディがポップアップで表示されます。</p>
+
+<p>{% img /images/entries/20140407/kopf-history.jpg History %}</p>
+
+<p>履歴にあるURLはクリック可能で、クリックすると実行されます。
+履歴は<code>localStorage</code>に保存されるみたいです。（ブラウザの仕様？あんまり詳しくないので。。。）
+たぶん、30件が上限かと（ソースで確認しただけ）</p>
+
+<h2>URL</h2>
+
+<p>rest画面でリクエストを送信する先のURLを指定します。
+メソッドは右側のSELECTで選択可能です。</p>
+
+<p>リクエストパラメータも指定が可能です。</p>
+
+<h2>リクエストボディ</h2>
+
+<p>検索や設定のJSONを記述するところです。
+一応、JSON的にエラーがある場合は行数の左側にバツ印が出てきておかしなところもわかるようになっています。</p>
+
+<p>インデントなどは行ってくれますが、senseみたいな補完などはないので、少し辛いところです。</p>
+
+<h2>レスポンス</h2>
+
+<p>送信したリクエストに対するレスポンスが返ってきます。
+インデントされた状態で表示されるので読みやすいかと。
+また、入れ子になっているJSONについては、閉じたり開いたりすることも可能です。
+（開始のカッコの右側に<code>-</code>が表示されていて、クリックすると閉じることができます。閉じると<code>+</code>に変わります）</p>
+
+<p>簡単ですが、rest画面の説明でした。
+KOPFを使っていて、ちょっとしたクエリを送ったりするのには便利だと思います。</p>
+
+<p>複雑な検索クエリなどについては、やはりsenseを使うのが良いかと思いますが。。。</p>
+]]></content>
+  </entry>
+  
+</feed>

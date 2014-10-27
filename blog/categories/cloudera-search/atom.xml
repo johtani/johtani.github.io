@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: cloudera search | @johtaniの日記 2nd]]></title>
+  <link href="http://blog.johtani.info/blog/categories/cloudera-search/atom.xml" rel="self"/>
+  <link href="http://blog.johtani.info/"/>
+  <updated>2014-10-27T16:59:33+09:00</updated>
+  <id>http://blog.johtani.info/</id>
+  <author>
+    <name><![CDATA[johtani]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[MorphlinesのloadSolrをちょっとだけ調べてみた]]></title>
+    <link href="http://blog.johtani.info/blog/2013/08/02/morphlines-loadsolr/"/>
+    <updated>2013-08-02T18:02:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2013/08/02/morphlines-loadsolr</id>
+    <content type="html"><![CDATA[<p>宿題その2？かな。Solr勉強会でCloudera Searchのスキーマ周りってどうなってるの？という質問が出てて、
+なんか調べることになってたので、関係しそうなMorphlinesの<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/LoadSolrBuilder.java">LoadSolr</a>コマンドを調べてみました。
+こいつが、Solrへの書き込みを実行するコマンドみたいだったので。<br/>
+（※Cloudera Searchのスキーマの設定方法とかは調べてないです。）<br/>
+（※めんどくさかったので、パッケージ名すっ飛ばしてクラス名書いてます。githubへのリンクを代わりに貼ってます。）</p>
+
+<!-- more -->
+
+
+<h2>Record＝Solrのドキュメント</h2>
+
+<p>convert()メソッドにて、MorphlinesのRecord（コマンドの処理するデータの１単位）に格納されているKey-ValueデータをSolrInputDocumentクラスのフィールドとして格納しています。
+Recordにもフィールドという概念があり、Recordのフィールド＝Solrのフィールドという事みたいです。</p>
+
+<p>ということで、Solrのフィールドは事前に定義しておき、Morphlinesの処理内部でSolrのフィールド名に値を詰めていく感じでしょうか。
+別途、<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SanitizeUnknownSolrFieldsBuilder.java">sanitizeUnknownSolrFilds</a>というコマンドが用意されていて、Solrのスキーマにないものはこのコマンドを使って、無視するフィールド名に変えたり、雑多なデータを入れるためのフィールド名にするといった処理ができるようです。このコマンド内部で、Solrのスキーマ設定を元に、Solrのフィールドに合致する物があるかをチェックして処理しています。</p>
+
+<h2>Solrへの登録処理は？</h2>
+
+<p>Solrへの登録処理自体はLoadSolrクラス内部でDocumentLoaderというクラスのload()メソッドを呼び出しているだけでした。ということで、<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/DocumentLoader.java">DocumentBuilder</a>クラスを少し調査。</p>
+
+<h3>DocumentLoader</h3>
+
+<p>IFでした。。。実クラスは次の条件</p>
+
+<ol>
+<li>SolrMorphlineContextにDocumentLoaderがあればそちらを採用（他の種類はなにがあるんだろ？）</li>
+<li>なければ、<a href="https://github.com/cloudera/cdk/blob/b6f98cff4a027af04f97fdec9abf729785d74cf5/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SolrServerDocumentLoader.java">SolrServerDocumentLoader</a>をnewしたものを利用</li>
+</ol>
+
+
+<p>2.の場合がおそらくMapReduceではないパターンのloadSolrだと思われます。SolrServerDocumentBuilderはSolrJのAPIを利用して、Solrへデータ登録していく普通のアプリです。（対象とするSolrは外部に起動しているもののはず＝FlumeのSolrSinkではこちらを採用かな？）<br/>
+Solrへの接続情報とか設定ファイルとかSolrCloud用のZooKeeperとかは<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SolrLocator.java">SolrLocatorクラス</a>に設定される内容が利用されます。</p>
+
+<p>1.のパターンは、どうやら、<a href="https://github.com/cloudera/search/blob/master/search-mr/src/main/java/org/apache/solr/hadoop/morphline/MorphlineMapper.java">Cloudera SearchのMapReduceIndexerToolのクラス</a>にあるMyDocumentLoaderかなぁと。
+こちらは、MapReduceを利用する場合に、利用されてるっぽいです（ちゃんと見てないけど）
+内部処理は、HadoopのContext.writeメソッドにでSolrInputDocument（＝MorphlinesのRecord）を書きだして、ReducerでSolrOutputFormatでインデックス作成の流れかなと。たぶん、<a href="https://github.com/cloudera/search/blob/master/search-mr/src/main/java/org/apache/solr/hadoop/morphline/MorphlineMapRunner.java">MorphlineMapRunner</a>あたりを読みこめば解読できるかと。
+ちなみに、こちらは、2.とは異なり、SolrLocatorの設定は無視されそう。</p>
+
+<h2>感想＋妄想？</h2>
+
+<p>ということで、Morphlinesのデータ流れを考える上で、現時点ではSolrのスキーマを頭の片隅に置きつつ、
+Recordの中にあるデータをゴニョゴニョしてデータを形成していくって感じになりそうです。
+うまく処理できなかったものとかのカウントとかもとれたりするのかなぁ？とか、また色々と気になるところが出てきますが、一旦ここまでで。。。（だれか、続きを調べて書いてみてくれてもいいんですよ！コマンドもいっぱいあるし！）</p>
+
+<p>とまぁ、こんなかんじでMorphlinesをちょっとだけ読みました。
+よくよく考えたら、こんなの作ったことあるなぁと（こんなに汎用的じゃないけど）。
+みんな同じ事考えるんですねぇ。
+コマンドパターン？みたいな感じで、I/F決めてSolrとか別のシステムとかにデータ入れる処理を順番に記述できる的なバッチ処理良くかいてます（書いてましたのほうが正解かなぁ）。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Morphlines入門？]]></title>
+    <link href="http://blog.johtani.info/blog/2013/07/31/introduction-morphlines/"/>
+    <updated>2013-07-31T19:12:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2013/07/31/introduction-morphlines</id>
+    <content type="html"><![CDATA[<p>Morphlinesについてちょっとだけ、さらに調べました。</p>
+
+<h2>誤解</h2>
+
+<p>Solr勉強会でなんとなく私の認識を話しましたが、ちょっと誤解してたみたいです。スミマセン。</p>
+
+<!-- more -->
+
+
+<h3>誤解：Morphlineというプラットフォーム/ミドルウェアがありそうなイメージ</h3>
+
+<p>まぁ、書いてあるのでちゃんと読めって話ですが、Morphlineはあくまでライブラリだということでした。
+私はなんとなくManifoldCFのようなミドルウェアorプラットフォームが存在して、
+そこにFlumeのSinkとかMapReduceによるIndexerが動作するのかと思ってました。</p>
+
+<p>{% img /images/entries/20130731/wrong_image.jpg 300 間違ってたイメージ %}</p>
+
+<p>まぁ、これが間違いでした。正解のイメージはこっちですね。</p>
+
+<p>{% img /images/entries/20130731/correct_image.jpg 300 たぶんこれが正解 %}</p>
+
+<p>各プラットフォーム（FlumeとかHadoopとか）に組み込んむライブラリで、
+それぞれ組み込んだ先でMorphlineの設定を記述することで、パイプライン処理ができるっぽいです。</p>
+
+<p>Flumeについては、MorphlineSolrSinkというクラスでMorphlineの設定ファイルを読み込み、いろいろ処理出来ます。</p>
+
+<p>Map/ReduceだとCloudera Searchに含まれてる<a href="https://github.com/cloudera/search">MapReduceIndexerTool</a>がMorphlineの設定を読み込んでコマンド実行してくれるみたいです。
+MapReduceIndexerToolはまだちゃんと読んでないのですが、MapperとしてMorphlineのコマンドが実行されるのかなぁ？という感じです。
+（結構入り組んでるので、ちゃんと読まないとわからない。。。）</p>
+
+<p>ということで、Morphlineというプラットフォームがあって、一元的にFlumeやMap/Reduceに対するコマンドをパイプライン化するという話でありませんでした。</p>
+
+<p>※ちなみに、上の画像ですが、愛用しているNUBoardを使って書いてます。
+考えをまとめるのにすごく役立つ一品です。持ち運び可能なノート型ホワイトボードです。</p>
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS1=1&nou=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=johtani-22&o=9&p=8&l=as1&m=amazon&f=ifr&ref=qf_sp_asin_til&asins=B00A08IVT4" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+
+<h3>疑問点</h3>
+
+<p>ただ、読んでてまだ不明な点があります。まぁ、ぼちぼち調べるかなぁと。。。</p>
+
+<ul>
+<li>Solrのschemaはどーなってんの？</li>
+<li>MorphlineにSolrへロードするコマンド（loadSolr）があるけど、FlumeのMorphlineSolrSinkってのもSolrに書き込みそうだけど？</li>
+<li>Map/ReduceでSolrに書き込むもMorphlineのコマンドとの違いは？（前にソースを見たときはSOLR-1301がベースになっていて、SolrOutputFormatってクラスがEmbeddedSolrServer起動してインデクシングしてた）</li>
+<li>GoLiveってなんだろ？（MapReduceIndexerToolに入ってて、M/Rでインデックス作ったあとにSolrのクラスタに配布＋マージするやつっぽい）</li>
+<li>どんなコマンドがあるの？（<a href="http://cloudera.github.io/cdk/docs/0.4.1/cdk-morphlines/morphlinesReferenceGuide.html">Cloudera Morphlines Ref Guide</a>）</li>
+</ul>
+
+
+<p>以下は、参考資料と参考資料にあるSlideshareの資料を一部訳したものになります。</p>
+
+<h3>参考資料</h3>
+
+<ul>
+<li><a href="http://www.slideshare.net/cloudera/using-morphlines-for-onthefly-etl">Using Morphlines for On-the-Fly ETL(slideshare)</a></li>
+<li><a href="https://github.com/cloudera/cdk/tree/master/cdk-morphlines">cloudera/cdk/cdk-morphlines(github)</a></li>
+</ul>
+
+
+<h2>メモ</h2>
+
+<h3>現在のコマンドライブラリ（スライド 18-19ページ）</h3>
+
+<ul>
+<li>Solrへのインテグレートとロード</li>
+<li>フレキシブルなログファイル解析</li>
+<li>1行、複数行、CSVファイル</li>
+<li>正規表現ベースのパターンマッチと展開</li>
+<li>Avro、JSON、XML、HTMLのインテグレーション</li>
+<li>Hadoop シーケンスファイルのインテグレーション</li>
+<li>SolrCellとApache Tikaパーサすべてのインテグレーション</li>
+<li>Tikaを利用したバイナリデータからMIMEタイプの自動判別</li>
+<li>動的Javaコードのスクリプティングサポート</li>
+<li>フィールドの割り当て処理、比較処理</li>
+<li>リストやセット書式のフィールド処理</li>
+<li>if-then-else条件分岐</li>
+<li>簡易ルールエンジン（tryRules）</li>
+<li>文字列とタイムスタンプの変換</li>
+<li>slf4jロギング</li>
+<li>Yammerメトリックとカウンター</li>
+<li>ネストされたファイルフォーマットコンテナの解凍</li>
+<li>などなど</li>
+</ul>
+
+
+<h3>プラグインコマンド（スライド　20ページ）</h3>
+
+<ul>
+<li>簡単に新しいI/Oや変換コマンドが追加可能</li>
+<li>サードパーティや既存機能のインテグレード</li>
+<li>CommandインタフェースかAbstractCommandのサブクラスを実装</li>
+<li>Javaクラスパスに新規作成したものを追加</li>
+<li>登録処理などは必要ない</li>
+</ul>
+
+
+<h3>新しいプラグインコマンドとして考えられるもの（22ページ）</h3>
+
+<ul>
+<li>RDBやKVSやローカルファイルなどの外部データソースをレコードにjoin</li>
+<li>DNS名前解決とか短縮URLの展開とか</li>
+<li>ソーシャル・ネットワークからリンクされたメタデータのフェッチ（？？）</li>
+<li>レコードの感情分析とアノテーション？</li>
+</ul>
+
+
+<p>31ページの図がわかりやすいかも</p>
+
+<p>以上。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[第11回Solr勉強会を主催しました。#SolrJP]]></title>
+    <link href="http://blog.johtani.info/blog/2013/07/29/study-of-solr/"/>
+    <updated>2013-07-29T23:15:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2013/07/29/study-of-solr</id>
+    <content type="html"><![CDATA[<p>不定期開催ですが<a href="http://atnd.org/events/41368/">第11回Solr勉強会</a>を主催しました。</p>
+
+<p>今回も大入り90人くらい？の参加者の皆さんがいらっしゃいました。ありがたいことです！（20時時点で最終的に補欠17人でした。）</p>
+
+<p><strike>とりあえず、第一報です。このあと懇親会なので。</strike></p>
+
+<p>ということで、帰りの電車でいくつか感想を（忘れちゃうから）。</p>
+
+<!--  more -->
+
+
+<p>小林さんの苦労話は細かいですが、結構はまりがちな点を共有していただいたので良かったかなぁと。
+Solrのexampleの設定とか、ManifoldCFとかちょっとずつ罠があったりするので、あるあるネタはありがたいと思いますｗ</p>
+
+<p>Cloudera Searchについては、安定の嶋内さんの喋りに圧巻でした。検索だけの視点とは異なる観点についての
+話は私には足りないしてんだったりするので参考になります。
+なんか、気づいたらMorphlineやスキーマ周りを調べてブログ書くことになっちゃったけど。。。
+一つ質問しそこねたのがあって、Cloudera社は基本的に公開したOSSについてのトレーニングも立ち上げているイメージです。Cloudera Searchについてもトレーニングが立ち上がるのかなぁと密かに期待をしてみたり（予算の関係上参加できるかは不明ですが。。。）</p>
+
+<p>牧野さんの話は画像系について、私は詳しくないので、また関口さんのalikeと比較とかしてもらえると面白いかなぁと。とりあえず、青いロボットがちゃんと検索できるようになるといいですねｗｗ</p>
+
+<p>秀野さんの空間検索は緯度経度以外のPOLYGONなどを利用した検索で、実は私も知らない機能でしたｗ<br/>
+なとなくは知ってたんですが、そこまでちゃんと検索できるとは！地図以外にも活用できるような気がします（想像つかないんだけど。。。）</p>
+
+<p>最後は私の発表で、簡単な資料ですみませんでした。しかも発表よりも宣伝が。。。（ブログの宣伝だったりとか。。。）
+最後に宣伝した「<a href="http://www.ipsj.or.jp/dp/cfp/copy_of_copy_of_dp0502s.html">「ビッグデータ活用を支えるOSS」特集への論文投稿のご案内</a>」もご検討ください！</p>
+
+<p>懇親会も楽しかったです。また思いついたら開催しますー<br/>
+最後に、今回の発表者の皆様、会場提供していただいたVOYAGE GROUPの皆様ありがとうございました！</p>
+
+<p>以下はいつものメモです。</p>
+
+<h2>ManifoldCFのとSolrの組み合わせ（仮）株式会社 ロンウイット　大須賀さん</h2>
+
+<p>残念ながら、発熱のため発表は次回に持ち越しに。</p>
+
+<h2>社内ファイル及びWEBコンテンツの検索システム構築時に苦労したこと ソフトバンクBB㈱　小林さん</h2>
+
+<ul>
+<li>ManifoldCF＋Solrを使って社内ファイルの検索システム構築</li>
+<li>約1000万ドキュメント</li>
+<li>さまざまなDCにドキュメントがある</li>
+</ul>
+
+
+<h4>クロールジョブのハング。。。</h4>
+
+<ul>
+<li>ログをDEBUGにしたら。。。ログファイル150GB。。。</li>
+<li>一定時間ごとにAgentをリスタートするバッチを。。。（力技）</li>
+</ul>
+
+
+<h4>MCFエラーによるジョブの停止</h4>
+
+<ul>
+<li>CONNECTORS-590</li>
+<li>エラーが発生して止まったジョブを起動するバッチをcronで。。。</li>
+</ul>
+
+
+<h4>自作リアルタイムインデクシングの問題</h4>
+
+<ul>
+<li>MCF使わないでSlaveにインデックス</li>
+<li>openSearcher=falseだとautoCommitが実行されてもSearcherを再起動しないので検索にでてこない</li>
+</ul>
+
+
+<h4>リプリケーションのNW負荷</h4>
+
+<ul>
+<li>別DCからのレプリケーションが複数が一度に実施される→ネットワーク負荷が。。。</li>
+<li>cronで別々にレプリすることでNW負荷を分散できてるかな。。。
+　　</li>
+</ul>
+
+
+<h2>Cloudera Search 入門(仮) Cloudera 株式会社　嶋内さん</h2>
+
+<ul>
+<li>マサカリ画像がｗ</li>
+<li>SolrのコミッターMark Millerさんもジョインしてる</li>
+</ul>
+
+
+<h4>ClouderaとHadoop入門とか。</h4>
+
+<ul>
+<li>いろいろあるよ、エコシステム</li>
+<li>4つの分類。
+
+<ul>
+<li>データの取り込み</li>
+<li>データの保存</li>
+<li>データの活用</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>Search</h4>
+
+<ul>
+<li>検索エンジンなら数十億人が使い方を知ってる（Clouderaのチャールズ・ゼドルースキ）</li>
+</ul>
+
+
+<h4>Cloudera Search</h4>
+
+<ul>
+<li>Hadoopのためのインタラクティブな検索</li>
+<li>CDHとSolrの統合</li>
+<li><p>OSS！</p></li>
+<li><p>利点とか。</p>
+
+<ul>
+<li>データ解析にも使えるよね、検索</li>
+<li>非構造化データの検索にもいいよね</li>
+<li>単一プラットフォームによるコスパ</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>Cloudera Searchの事例</h4>
+
+<ul>
+<li>バイオテクノロジー企業で画像検索とか</li>
+<li>医療系企業でいろんなログイベントの管理とか</li>
+</ul>
+
+
+<h4>Cloudera Searchのアーキテクチャ</h4>
+
+<ul>
+<li>Flumeでストリーミングで登録</li>
+<li>HBaseデータの登録</li>
+<li>M/Rでバッチ登録</li>
+<li>HueのWebインタフェース</li>
+</ul>
+
+
+<p>Morphlines、HBaseはLinyプロジェクトのもの</p>
+
+<p>Solr使うならCDH！！</p>
+
+<h4>QA</h4>
+
+<ul>
+<li>Q：デモで使われたTwitterの検索のデータ料とかは？</li>
+<li><p>A：デモ環境ですので小さい。</p></li>
+<li><p>Q：スキーマってどうするの？</p></li>
+<li>A：スキーマは。。。私が書こうかなぁ、ブログ。。。</li>
+</ul>
+
+
+<h2>コンピュータビジョン　株式会社 Curious Vehicle　牧野さん</h2>
+
+<ul>
+<li>色々やってます</li>
+<li>コンピュータビジョンの説明（某ネコ型ロボットのいろんな画像がｗ）</li>
+</ul>
+
+
+<h4>画像検索の流れ</h4>
+
+<ol>
+<li>特徴情報の抽出</li>
+<li>特徴情報のクラスタリングによるword化</li>
+<li>Solrによる画像情報の検索</li>
+</ol>
+
+
+<h5>1. 特徴情報の抽出</h5>
+
+<ul>
+<li>SIFT特徴点解析</li>
+<li>グレースケールしてからSIFT</li>
+<li>注意！SIFTは商用ライセンスが必要です</li>
+</ul>
+
+
+<h5>2. 特徴情報のクラスタリングによるword化</h5>
+
+<ul>
+<li>K-meansでクラスタリング</li>
+<li>クラスタ情報をヒストグラム化してSolrへ</li>
+</ul>
+
+
+<h5>3. Solrによる画像情報の検索</h5>
+
+<ul>
+<li>物体認識ベンチマークセット（ケンタッキー大）を使って。</li>
+<li>やっぱり良し悪しある。データセットに特化したチューニングしてます。</li>
+</ul>
+
+
+<h4>つぎのステップ</h4>
+
+<ul>
+<li>文字認識とか顔認識</li>
+<li>つぎはドラえもんじゃねぇ、検索とかも。。。</li>
+</ul>
+
+
+<h5>ガウシアンによる画像ぼかしの例</h5>
+
+<h4>QA</h4>
+
+<p>マイク回しててメモ取れず。。。</p>
+
+<h2>国土交通省のデータをSolrで検索　株式会社ネクスト　秀野さん</h2>
+
+<p><a href="https://speakerdeck.com/ryo0301/guo-jiao-sheng-falsedetawosolrdejian-suo">スライドはこちら</a></p>
+
+<ul>
+<li>評価の関係で。。。</li>
+<li>Spatial検索の話</li>
+</ul>
+
+
+<h4>デモの想定機能</h4>
+
+<ul>
+<li>地図上の小学校を起点に物件検索</li>
+<li>地図上をクリックしたところを中心に検索</li>
+</ul>
+
+
+<h4>デモ環境</h4>
+
+<ul>
+<li>Solr4.3.0、PostGIS 2.0.3、東京都のデータ</li>
+</ul>
+
+
+<h4>事前知識</h4>
+
+<ul>
+<li>ジオメトリーデータ（点、線、面がある）</li>
+<li>WKB/WKT、Intersects（しらなかった。こんなのもあるのか）</li>
+</ul>
+
+
+<h4>環境</h4>
+
+<ul>
+<li>EC2上にPostGIS＋Solrで構築</li>
+<li>WKT形式でDIHでインポートできるらしい。</li>
+<li>Solr＋S3をJSでGoogleMapへ</li>
+</ul>
+
+
+<h2>Solr 4.4新機能をちょっと紹介　@johtani</h2>
+
+<p>紹介というよりも宣伝。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cloudera Searchメモ（妄想版）]]></title>
+    <link href="http://blog.johtani.info/blog/2013/06/06/cloudera-search-memo2/"/>
+    <updated>2013-06-06T12:26:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2013/06/06/cloudera-search-memo2</id>
+    <content type="html"><![CDATA[<p>ざっとインストールガイドとかCloudera Searchのソース眺めて、テキトーにメモを書いてみました。
+（ユーザガイドはまだ読んでないです。）</p>
+
+<!-- more -->
+
+
+<h2>ざっくりメモ</h2>
+
+<ul>
+<li>ストリーム処理でインデックス作るときはFlume経由でSolrに
+
+<ul>
+<li>SinkとEventの両方が用意されてる？（Flumeを良く知らないので、違いがわからない）</li>
+<li>FluemeからはリモートのSolrに対してインデックス登録するクラスがある。SolrServerDocumentLoaderがソレだと思う。</li>
+</ul>
+</li>
+<li>バッチ処理でインデックス作るときはMapReduceIndexerToolsってのを使ってSolrに
+
+<ul>
+<li><a href="https://issues.apache.org/jira/browse/SOLR-1301">SOLR-1301</a>がベースになっている。色々と改良されてるようだけど、コアとなってる処理はSOLR-1301。</li>
+<li>GoLiveってクラスの処理の中で、現在動作してるSolrに配布したバッチで作成されたIndexをマージする処理が書いてある。</li>
+<li>HDFSへ出力されたインデックスはリモートのSolrからアクセスするとオーバヘッドとかどーなるのかなぁ？</li>
+</ul>
+</li>
+<li>検索処理自体はHueでもできるけど、基本的にSolrCloud任せ</li>
+<li>インデキシングの処理のフローについてはCloudera Mrophlinesで定義</li>
+</ul>
+
+
+<p>ということで、
+2つの流れがありそう。</p>
+
+<ul>
+<li>HDFS→Flume→Solr</li>
+<li>HDFS→MapReduce→Solr</li>
+</ul>
+
+
+<p>で、まだ、わかってないですが、構成要素として</p>
+
+<ul>
+<li>Hadoop（HDFS）：データソース</li>
+<li>Hadoop（MapReduce）：データ変換処理、バッチインデキシング</li>
+<li>Zookeeper：SolrCloudのクラスタ管理</li>
+<li>Solr：インデキシング、検索エンジン</li>
+<li>Flume：データをストリーミングでSolrへ</li>
+<li>Coudera Morphlines：HDFSからSolrまでのETLデータ処理を定義実行する環境</li>
+</ul>
+
+
+<p>って感じでしょうか。
+SolrCloudのクラスタとHadoopのクラスタが同一マシン上なのか、別なのかとか。組み合わせがどんなものができるのかがまだわかってないです。
+ユーザガイド読んでみたらなにか出てくるかなぁ。</p>
+
+<p>ちなみに、Cloudera SearchのgithubリポジトリにあるソースはCloudera Morphlinesのコードがメインで、SolrのHDFS対応版のソースがあるわけでは無かったです。</p>
+
+<ul>
+<li>SolrのHdfsDirectoryってのがClouderaのリポジトリにあるSolrには追加されていて、これが、HDFSのインデックスを読み込んだりする処理が出来る仕組みっぽい。</li>
+<li>一応、SolrCloud以外（分散検索）も考慮された形になってるっぽい。</li>
+</ul>
+
+
+<p>ってとこでしょうか。</p>
+
+<h2>感想</h2>
+
+<p>読んでて思ったんですが、Cloudera Searchの肝はじつは、検索じゃなくて、Morphlinesにあるんじゃないかなぁと。今はSolrが出力先ですが、
+その他のデータ変換処理とかが増えてくると、処理の流れがMorphlinesで定義できてデータ変換処理が簡便になりそうな気が。</p>
+
+<h2>その他に気になる観点</h2>
+
+<ul>
+<li>CDH経由でSolrCloudのクラスタの管理するのかな？</li>
+<li>SolrCloud用のクラスタとCDHのクラスタって同一マシンに載るの？別マシンにもできるの？
+
+<ul>
+<li>併存したらIOがキツそうだけど</li>
+</ul>
+</li>
+<li>Hueで検索アプリとか組めるの？（そもそもHueがわかってないんだけど。。。）</li>
+</ul>
+
+
+<p>ま、とりあえず、こんなとこで。
+つぎは余力があれば、ユーザガイドかなぁ。
+英語力。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cloudera Searchのモジュールたち]]></title>
+    <link href="http://blog.johtani.info/blog/2013/06/05/cloudera-search-modules/"/>
+    <updated>2013-06-05T15:12:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2013/06/05/cloudera-search-modules</id>
+    <content type="html"><![CDATA[<p>Cloudera Searchは次のようなモジュールから構成されています。
+これはCloudera Searchのモジュールで、さらにこれらがSolrとかを使ってるみたいですね。pom.xmlを見たら何を使ってるかがわかるかな。</p>
+
+<ul>
+<li>cdk-morphlines</li>
+<li>search-contrib</li>
+<li>search-core</li>
+<li>search-flume</li>
+<li>search-mr</li>
+<li>search-solrcell</li>
+</ul>
+
+
+<p>てきとーに、README.mdみながらメモを残してみました。ソースとかはまだ読んでないです。
+ざっと眺めたけど、インデキシング処理の話がメインで、検索側がどうやって動くかってのがわからなかったなぁ。
+<a href="http://www.cloudera.com/content/cloudera-content/cloudera-docs/Search/latest/PDF/Cloudera-Search-User-Guide.pdf">ユーザガイド（注：PDF）</a>ってのがあるから、これを読んでみるか。。。</p>
+
+<p>各モジュールについては、以下。</p>
+
+<!-- more -->
+
+
+<h2>cdk-morphlines（Cloudera Morphlines）</h2>
+
+<p>Cloudera Morphlinesという名前みたい。
+検インデキシングアプリの構築、変更をラクにするためのフレームワーク。
+ETLの処理チェインを簡単にCloudera Searchにデータを入れる設定（Extract/Transform/Load処理）がかけると。
+バッチ処理、Near Real Timeのために使えるみたい。検索結果をさらに入れるとかもできるんかなぁ。？</p>
+
+<p>Unixパイプラインのの進化版みたいなもので、一般的なレコードに対するStream処理から、Flueme、MapReduce、Pig、Hie、SqoopのようなHadoopコンポーネントも使えるみたい。</p>
+
+<p>Hadoop ETLアプリケーションのプロトタイピングにも使えて、リアルタイムで複雑なStreamやイベント処理やログファイル解析とかに使えるの？</p>
+
+<p>設定ファイルのフォーマットは<a href="https://github.com/typesafehub/config/blob/master/HOCON.md">HOCONフォーマット</a>。AkkaやPlayで使われてる。</p>
+
+<h3>cdk-morphlines-core</h3>
+
+<p>Cloudera Morphlinesのコンパイラ、実行環境、コマンドのライブラリを含んでる。
+ログファイル解析やsingle-lineレコード、multi-lineレコード、CSVファイル、正規表現パターンマッチ、フィールドごとの比較とか条件分岐とか、文字列変換とか色々なコマンドを含んでる。</p>
+
+<h3>cdk-morphlines-avro</h3>
+
+<p>Avroファイルやオブジェクトの抽出、変換、読み込み処理コマンド</p>
+
+<h3>cdk-morphlines-tika</h3>
+
+<p>バイナリデータからMIMEタイプを検出して、解凍するコマンド。Tikaに依存</p>
+
+<h4>雑感</h4>
+
+<p>Cloudera Searchへのデータの流し込みを設定ファイルに記述して実行するとデータの変換処理とかが記述できるって感じかな？
+Morphlinesのコマンドとして独自処理や使えそうな処理を作ることで、いろんな処理ができるって感じかなぁ。</p>
+
+<h2>search-core</h2>
+
+<p>Solrに対するMorphlineコマンドの上位モジュール</p>
+
+<h3>search-solrcell</h3>
+
+<p>Tikaパーサを使ったSolrCellを使うためのMorphlineコマンド。
+HTML、XML、PDF、Wordなど、Tikaがサポートしてるものがサポート対象。</p>
+
+<h3>search-flume</h3>
+
+<p>Flueme Morphline Solr Sink。
+Apache Flumeのイベントから検索ドキュメントを抽出、変換し、SolrにNearRealTimeで読み込むためのコマンド</p>
+
+<h3>search-mr</h3>
+
+<p>HDFSに保存されたファイルに含まれる大量データをMapReduceで処理してHDFS上の検索インデックスに焼きこむモジュール。</p>
+
+<p><code>MapReduceIndexerTool</code>は入力ファイルの集合からSolrのインデックスシャードの集合を作るためのmorphlineのタスクで、MapReduceのバッチジョブドライバー。
+HDFSにインデックスを書き込む。
+動作してるSolrサーバに対して出力されたデータをマージするのもサポートしてる。</p>
+
+<p>とりあえず、Near Real Time検索するにはFlueme使って、バッチ処理でインデックス焼くのはMapReduceIndexerToolみたいだなぁ。</p>
+]]></content>
+  </entry>
+  
+</feed>

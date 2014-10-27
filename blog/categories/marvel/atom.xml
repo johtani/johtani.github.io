@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: marvel | @johtaniの日記 2nd]]></title>
+  <link href="http://blog.johtani.info/blog/categories/marvel/atom.xml" rel="self"/>
+  <link href="http://blog.johtani.info/"/>
+  <updated>2014-10-27T16:59:33+09:00</updated>
+  <id>http://blog.johtani.info/</id>
+  <author>
+    <name><![CDATA[johtani]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[すずけんさんのメモを元にVagrantでElasticsearchクラスタを起動してみた]]></title>
+    <link href="http://blog.johtani.info/blog/2014/02/06/es-cluster-start-using-vagrant-and-puppet/"/>
+    <updated>2014-02-06T23:09:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/02/06/es-cluster-start-using-vagrant-and-puppet</id>
+    <content type="html"><![CDATA[<p>すずけんさんがVagrant+puppet使って、VM起動してElasticsearchのクラスタを組んでる記事を書いているのを見て、試してみたくなりました。
+ということで、VagrantとかPuppetなに？くらいの私ですが、クラスタを起動するところまで行ったので、その時のメモを残しておきます。</p>
+
+<!-- more -->
+
+
+<h2>元記事とか参考</h2>
+
+<ul>
+<li><a href="http://suzuken.hatenablog.jp/entry/2014/02/04/215959">Vagrant環境にpuppet moduleを利用してさくっとelasticsearchをインストールする</a></li>
+<li><a href="http://suzuken.hatenablog.jp/entry/2014/02/05/232543">Vagrant環境にpuppetを利用してさくっとelasticsearchのclusterを作成する</a></li>
+<li><a href="https://github.com/elasticsearch/puppet-elasticsearch">puppet-elasticsearch</a></li>
+</ul>
+
+
+<h2>なんとなくの理解</h2>
+
+<p>VagrantやPuppetについては、何度か勉強会で話を聞いてはいたのですが、
+想像していたレベルだったので良い機会でした。
+今のところの認識はこんな感じです。</p>
+
+<h3>Vagrant</h3>
+
+<p>VMを起動したり、VM周りの設定をあれこれできるツール。
+VMのネットワーク設定や、インスタンス名？などを指定できる。</p>
+
+<h3>Puppet</h3>
+
+<p>起動後のVM（VMとは限らないか。）のゲストOS側の設定周りやアプリのインストールなどを
+実行できるツール。</p>
+
+<h2>詰まった箇所</h2>
+
+<p>すずけんさんのブログを元に作業をしましたが、自分がVagrantやPuppetに疎いため、以下の部分で躓いたので、備忘録のために残しておきました。</p>
+
+<h3>その１：Puppetのファイルの場所</h3>
+
+<p><code>search01.vm.local</code>のVMを設定（というか、elasticsearchのインストール？）するときに、<code>manifests/search.app</code>と<code>roles/search/manifests/init.pp</code>ファイルが必要で作成します。</p>
+
+<p>このファイルの配置場所は<code>/vagrant</code>配下に作成する必要がありました。
+<code>ssh search01.vm.local</code>でVMにログインした場合は<code>/home/vagrant</code>にログインしており、この場所でファイルを作ってもPuppetがエラーを吐いたためです。</p>
+
+<p><strong>と思ったのですが</strong>、あれ？これひょっとしてVagrantfileがあるところにディレクトリとファイル作ると勝手にVMにコピーしてくれるんですか？destroyして、upしたら、ファイルが勝手にコピーされてる。ひょっとして、<code>/vagrant</code>ってディレクトリはVagrantfileがあるディレクトリを共有してたりするのかな？そのうち、Vagrantについても調べてみようかな。</p>
+
+<h3>その２：ネットワーク周り</h3>
+
+<pre><code>curl http://192.168.10.114:9200/
+</code></pre>
+
+<p>をホストOSから実行してみましたがうまく行きませんでした。。。
+ネットワーク周りの設定だと思うんですが。
+少なくとも「sshによるログイン」「ping」コマンドの応答は返ってきてます。</p>
+
+<p>また、VM内でcurlコマンドを実行したらレスポンスが返ってきました。</p>
+
+<p>なんで？ってツイートしたら各所から「iptables」という単語が飛んできて、
+service止めたら大正解でした。まぁ、そうですよね。基本ですよね。。。</p>
+
+<p>ということで、Puppetがよくわかっていませんが、ググって変更してみました。</p>
+
+<p><code>manifests/search.app</code>に以下を追加</p>
+
+<pre><code>include iptables
+</code></pre>
+
+<p><code>roles/iptables/manifests/init.pp</code></p>
+
+<pre><code>class iptables {
+  service { 'iptables':
+    enable =&gt; false,
+    ensure =&gt; stopped,
+  }
+}
+</code></pre>
+
+<p>iptablesを停止するmanifests？です（良くないことなんですが、よくわかってない）。</p>
+
+<p>ということで、ローカルで1個のVM起動して、elasticsearchにアクセスできることは確認できました。</p>
+
+<p>と、書いてるそばから、元記事が修正されてしまいましたｗ</p>
+
+<h2>クラスタ編（変更点）</h2>
+
+<p>クラスタを組むときに、追加でプラグインを入れたので<code>roles/search/manifests/init.pp</code>は次のようにしました。</p>
+
+<pre><code>class search {
+  class { 'elasticsearch':
+    package_url =&gt; 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.0.RC2.noarch.rpm',
+    java_install =&gt; true,
+    config =&gt; {
+      'cluster' =&gt; {
+        'name' =&gt; 'test-es-cluster'
+      },
+      'network.host' =&gt; '_eth1:ipv4_',,
+      'marvel.agent.exporter.es.hosts' =&gt; ['192.168.10.114:9200','192.168.10.115:9200']
+    }
+  }
+
+  elasticsearch::plugin{'elasticsearch/marvel/latest':
+    module_dir =&gt; 'marvel'
+  }
+
+  elasticsearch::plugin{'mobz/elasticsearch-head':
+    module_dir =&gt; 'head'
+  }
+
+  elasticsearch::plugin{'royrusso/elasticsearch-HQ':
+    module_dir =&gt; 'HQ'
+  }
+
+  elasticsearch::plugin{'elasticsearch/elasticsearch-analysis-kuromoji/2.0.0.RC1':
+    module_dir =&gt; 'analysis-kuromoji'
+  }
+
+  elasticsearch::plugin{'info.johtani/elasticsearch-extended-analyze/1.0.0.RC1':
+    module_dir =&gt; 'extended-analyze'
+  }
+
+  elasticsearch::plugin{'polyfractal/elasticsearch-inquisitor':
+    module_dir =&gt; 'inquisitor'
+  }
+}
+</code></pre>
+
+<p>とりあえず、今日はクラスタ組んでMarvelやプラグインの動作確認でおしまいです。</p>
+
+<h2>疑問点</h2>
+
+<p>いくつか疑問点が。試してみてもないんでなんとも言えませんが。気が向いたら、調べて追記するかも。</p>
+
+<ul>
+<li><code>:private_network</code>はVirtualBox内で完結する（Macから外には影響しない）ネットワークが構築される？たぶん、VagrantというよりはVM、仮想化周りの知識なんだろうけど</li>
+<li>どこから再開可能？elasticsearch.ymlの設定を書き換えた場合に、最後のコマンドだけ実行するとちゃんとやりなしてくれたりするのかな？</li>
+<li>VMのディスク増やすのもVagrantでできるんかな？まぁ、できると思うけど。</li>
+<li><code>:forwarded_port</code>のauto_correctとかわかってない。</li>
+<li>JVMをSunのJVMでかつ、7u25に変更したいのだがどうしたものか？(現時点での推奨バージョン)</li>
+</ul>
+
+
+<h2>感想</h2>
+
+<p>Vagrantって便利ですね。あれ？って思ったら、destroyして、やり直すのがすごく簡単です。
+元記事があるので、なんとなくですが、構成とかどうすればいいかがわかるのは本当に助かりました。
+これで、あれこれと検証する環境が簡単に構築できることがわかったので、色々と楽できるかも。ありがとうございます、すずけんさん！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch Marvelの紹介と第一印象]]></title>
+    <link href="http://blog.johtani.info/blog/2014/01/29/simple-introduction-and-first-impression-es-marvel/"/>
+    <updated>2014-01-29T17:14:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/01/29/simple-introduction-and-first-impression-es-marvel</id>
+    <content type="html"><![CDATA[<p>昨晩、Elasticsearchから初のプロダクトとなるMarvelがリリースされました。ということで、さっそく触ってみて、簡単な紹介と感想を書いてみました。</p>
+
+<!-- more -->
+
+
+<h2>Marvelって？</h2>
+
+<p>Elasticsearch社が初のプロダクトとしてリリースした、Elasticsearchクラスタモニタリングツールです。
+次のような特徴があります。</p>
+
+<ul>
+<li>plugin形式で提供</li>
+<li>GUIがKibana
+
+<ul>
+<li>メトリックスはElasticsearchに保存</li>
+</ul>
+</li>
+<li>SenseがChrome以外でも使える</li>
+</ul>
+
+
+<p>プロダクション環境で利用する場合は有料ですが、開発用途では無料で利用できます。
+現時点(2014/01/29)では、<code>0.90.9</code>以上のバージョン(1.0.0.RC1含む)で利用が可能です。</p>
+
+<h2>なにができるの？</h2>
+
+<p>Elasticsearchクラスタに関するメトリックスを保存、可視化できるプロダクトです。
+ドキュメント数やJVMの状況、クラスタの状態など、いろいろなメトリックスが保存されます。</p>
+
+<p>保存先は、別のElasticsearchクラスタにすることも可能です。
+お試しでインストールして見る場合は、同一クラスタにサービスに利用するインデックスとMarvel用のメトリックス保存先インデックスを入れても良いです。</p>
+
+<p>ただ、プロダクション環境では、Marvel用インデックスはあくまでもモニタリングに使用するため、サービスのクラスタへの影響を最小にしたくなります。</p>
+
+<p>このような場合、Marvelのプラグインの設定を変更することで、メトリックス送信用のエージェントとして動作させることができます。</p>
+
+<p>詳しくは、Marvelのドキュメントにある<a href="http://www.elasticsearch.org/guide/en/marvel/current/#_installing_a_secondary_monitoring_cluster">installing a secondary monitoring cluster</a>を御覧ください。</p>
+
+<blockquote><p><del>1/29 16時時点で、上記ドキュメントのエージェントの送信先の設定に関する部分に誤記がありました。</del>
+<del>おそらく、<a href="http://www.elasticsearch.org/guide/en/marvel/current/#_statistics_exporting">configuration options</a>の記述が正だと思います。</del>
+もう、なおってました。(1/30朝時点)</p></blockquote>
+
+<h2>キャプチャいろいろ</h2>
+
+<p>日本語WikipediaのデータをRiverで登録しながら各画面の動作などを見てみました。</p>
+
+<h4>Marvel Overview</h4>
+
+<p>日本語WikipediaをRiverで登録してる途中。Loadが高くなってることなどがわかります。</p>
+
+<p>{% img /images/entries/20140129/Marvel_Overview_indexing_wikipedia_river.jpg %}</p>
+
+<h4>Overview (クラスタの状態が変化)</h4>
+
+<p>クラスタの状態が変化したところに、タグが付くみたいです。
+ここでは、ノードの一つを停止、起動しました。</p>
+
+<p>{% img /images/entries/20140129/tgged_event.jpg %}</p>
+
+<p>インデックス終了後に、クラスタを再起動してしまい、クラスタ内のシャードの再配置が実行されてしまったため、クラスタの状態がYellowになってしまうとこんな感じ。ちょっとわかりにくいです。</p>
+
+<p>{% img /images/entries/20140129/cluster_yellow.jpg %}</p>
+
+<h4>Sense</h4>
+
+<p>Chromeプラグインとしてリリースされていたクエリ実行コンソールがMarvelのサイトプラグインとして提供されています。これがあるだけで、Elasticsearchへのクエリの実行が格段に効率良くなります。</p>
+
+<p>{% img /images/entries/20140129/Marvel_sense.jpg %}</p>
+
+<h4>Index Statistics</h4>
+
+<p>インデックスに関する情報のグラフが見れるページです。ドキュメント数の他に、容量やリクエスト数なども見れます。</p>
+
+<p>{% img /images/entries/20140129/Marvel_Index_Statistics.jpg %}</p>
+
+<p>インデックス終了後のグラフはこんな感じ。</p>
+
+<p>{% img /images/entries/20140129/after_twice_indexing_ja_wikipedia.jpg %}</p>
+
+<p>インデックス終了後のOverviewはこんなかんじです。</p>
+
+<p>{% img /images/entries/20140129/after_indexing_ja_wikipedia.jpg %}</p>
+
+<h4>Cluster Pulse</h4>
+
+<p>クラスタで発生したイベントとイベントの詳細を見ることができるページです。各種インデックスがYELLOWからGREENに変わっていっているのがmessageで分かります。</p>
+
+<p>{% img /images/entries/20140129/after_reboot_cluster_pulse.jpg %}</p>
+
+<p>すべて再配置が終わったらGREENになりました。</p>
+
+<p>{% img /images/entries/20140129/finish_recovering_all_indices.jpg %}</p>
+
+<h4>Node Statistics</h4>
+
+<p>各ノードに関する情報を見ることができる画面です。
+ノードごとにグラフの色を分けることもできます。</p>
+
+<p>{% img /images/entries/20140129/two_node_in_nodes_stats.jpg %}</p>
+
+<h4>その他</h4>
+
+<p>Marvelプラグインにブラウザから接続できなくなるとこんなメッセージが出ました。</p>
+
+<p>{% img /images/entries/20140129/connect_error.jpg %}</p>
+
+<p>参考までに、<a href="https://github.com/mobz/elasticsearch-head">elasticsearch-head</a>の画面も。こちらのほうが、シャードの再配置中であるのがひと目で分かります。</p>
+
+<p>{% img /images/entries/20140129/elasticsearch-head.jpg %}</p>
+
+<h2>感想</h2>
+
+<p>綺麗です。まぁ、Kibanaが綺麗ですから。
+クラスタ内で発生したイベントが時系列で保存されるため、あとからどんなことが発生したのかといった原因の追求などには非常に役に立ちそうです。</p>
+
+<p>ただ、インデックスの状態や状況（クラスタ再起動やノード追加時にshard再配置などが実行されている状況とか）はelasticsearch-headのほうがわかりやすかったです。
+インデックス単位でのStatusがMarvelの画面ではわからないため、shard再配置が完了したかどうかなどのタイミングがわかりにくかったです。</p>
+
+<p>ある程度、多くのノードを利用したクラスタを利用する場合に、モニタリングツールとして利用するのは便利なのではないでしょうか？
+時系列でログやイベントが保存されるので、ノードが追加されたり外れたりといった状況があとからでも追跡可能なのが便利です。</p>
+
+<h2>疑問点</h2>
+
+<p>インデックスの情報などは、5s毎にMarvelのインデックスに保存されているようです。ただ、GUI上では5分毎のデータしか表示されません。
+どうやって変更するんだろう？</p>
+
+<p>また、Marvelのクラスタへの接続が切れた時のデータはどうなるのか？という部分も気になります。Marvelのクラスタを更新している時や、ネットワークが遮断されてしまった場合のデータがどうなるのかという点です。</p>
+
+<h2>疑問点への回答(2014/01/30追記)</h2>
+
+<p>疑問点に対して中の人から回答を頂いたので、追記です。</p>
+
+<ul>
+<li>Q：GUI上で5分毎のデータしか表示されないんですが？
+
+<ul>
+<li>A：ブラウザの負荷を高くしないようにするために、1つのグラフに20のプロットしてるだけです。ズームしたりすると、もっと細かなデータが見れますよ。</li>
+</ul>
+</li>
+<li>Q：Marvelのクラスタへの接続が切れた時のデータはどうなるんだろう？
+
+<ul>
+<li>A：接続が切れた場合は、ローカルに保存されるけどデータは無視されます。接続が戻ると、戻った後のデータは記録されていきます。将来的には改善するかも。</li>
+</ul>
+</li>
+</ul>
+
+
+<p>ちなみに、昨日試してた環境が、足元Linux環境（監視対象のクラスタ）＋手元Mac環境（Marvelモニタリングデータ格納クラスタ）という環境でした。
+確かに、出社してから、手元Mac環境を起動すると、データが流れてくるようになりました。
+ただ、監視対象のクラスタでは、socket timeoutのログがずっと出てましたが。</p>
+
+<h2>参考文献</h2>
+
+<ul>
+<li><a href="http://www.elasticsearch.com/blog/introducing-elasticsearch-marvel-native-monitoring-deployments/">リリースブログ</a></li>
+<li><a href="http://www.elasticsearch.com/marvel">プロダクトページ</a></li>
+<li><a href="http://www.elasticsearch.org/guide/en/marvel/current/">ドキュメント</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

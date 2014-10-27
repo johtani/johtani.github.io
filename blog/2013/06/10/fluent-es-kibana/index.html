@@ -1,0 +1,559 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>apache-loggen + fluentd + elasticsearch + kibana = ログ検索デモ - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="もう何番煎じだ？ってくらい書かれてますが、コリもせず書いてみました。
+Elasticsearch＋Kibanaの環境を作って、タムタムさんのログ生成ツールからApacheのダミーログを流しこんで入れてみました。 参考URL memorycraftさんのブログ
+Kibana &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2013/06/10/fluent-es-kibana/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Apache-loggen + Fluentd + Elasticsearch + Kibana = ログ検索デモ</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-10T23:34:00+09:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>もう何番煎じだ？ってくらい書かれてますが、コリもせず書いてみました。
+Elasticsearch＋Kibanaの環境を作って、タムタムさんのログ生成ツールからApacheのダミーログを流しこんで入れてみました。</p>
+
+<!-- more -->
+
+
+<h2>参考URL</h2>
+
+<ul>
+<li><a href="http://memocra.blogspot.jp/2013/04/kibanakibanaelasticsearchfluentd.html">memorycraftさんのブログ</a></li>
+<li><a href="http://kibana.org/">Kibana</a></li>
+<li><a href="http://wwwelasticsearch.org">Elasticsearch</a></li>
+<li><a href="http://fluentd.org">fluentd</a></li>
+<li><a href="http://mt.orz.at/archives/2012/11/apacherubygems.html">apache-loggen</a></li>
+</ul>
+
+
+<h2>インストールと起動</h2>
+
+<p>今回はCentOSへのインストールです。
+基本的にはmemorycraftさんのブログの流れのままです。</p>
+
+<h3>elasticserchのインストールと起動</h3>
+
+<p>ダウンロードして、起動するだけ。
+お試しということで、-fオプションにてコンソールにログ出力。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl -OL https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.1.tar.gz
+</span><span class='line'>tar zxvf elasticsearch-0.90.1.tar.gz
+</span><span class='line'>cd elasticsearch-0.90.1
+</span><span class='line'>./bin/elasticsearch -f</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Kibanaのインストールと起動</h3>
+
+<p><code>git clone</code>してbundleインストール</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone --branch=kibana-ruby https://github.com/rashidkpc/Kibana.git
+</span><span class='line'>cd Kibana
+</span><span class='line'>bundle install
+</span><span class='line'>ruby kibana.rb</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これで、Kibana＋ESのインストール＋起動が完了。
+下地が完了。</p>
+
+<h3>td-agentのインストールと起動</h3>
+
+<p>ログの流し込みはlogstashなのですが、fluentdのelasticsearchプラグインにて流しこむこともできます。
+td.repoとしてtd-agentのリポジトリを登録してから以下を実行します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>yum install td-agent -y
+</span><span class='line'>/usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-elasticsearch
+</span><span class='line'>vim　/etc/td-agent/td-agent.conf
+</span><span class='line'>/etc/init.d/td-agent start</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これで、td-agentがインストール出来ました。
+次は設定です。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;source&gt;
+</span><span class='line'>  type tail
+</span><span class='line'>  format apache
+</span><span class='line'>  path /var/log/httpd/dummy_access_log
+</span><span class='line'>  tag dummy.apache.access
+</span><span class='line'>&lt;/source&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;match *.apache.*&gt;
+</span><span class='line'>  index_name adminpack
+</span><span class='line'>  type_name apache
+</span><span class='line'>  type elasticsearch
+</span><span class='line'>  include_tag_key true
+</span><span class='line'>  tag_key @log_name
+</span><span class='line'>  host localhost
+</span><span class='line'>  port 9200
+</span><span class='line'>  logstash_format true
+</span><span class='line'>  flush_interval 10s
+</span><span class='line'>&lt;/match&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<p>以上が設定です。td-agentはtd-agentというユーザで起動されるので、/var/log/httpdディレクトリにアクセスできるかだけ確認が必要です。<br/>
+いくつかの設定値について気になったので調べました。</p>
+
+<ul>
+<li>index_name：adminpackとなってるが、elasticsearchではlogstash-xxxとなってる。
+
+<ul>
+<li>これは、logstash_formatがtrueの場合は、利用されないので、指定しなくてもいい。</li>
+</ul>
+</li>
+<li>type_name：Elasticsearchのタイプ名
+  *　これはlogstash_formatを指定しても有効。ただし、Kibana側で画面からのtype指定は不可能。KibanaConfig.rbにて指定することは可能。</li>
+<li>logstash_format：Kibana用にlogstashフォーマットで出力するオプション
+
+<ul>
+<li>この指定があるときは、index名が「logstash-YYYY.mm.dd」となる</li>
+<li>record（ログ）に@timestampとして時刻が追加される。</li>
+</ul>
+</li>
+<li>tag_key：include_tag_keyがtrueと指定されているため、record（ログ）にtag_keyで指定した文字列をキー、値としてtagの値（上記例だとdummy.apache.access）が付与されて登録される。</li>
+</ul>
+
+
+<h2>apache-loggenのインストールと起動</h2>
+
+<p>タムタムさんが作成されたApacheのログのダミーを生成するツールです。<br/>
+gem化されてるので、インストールは非常に簡単です。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>gem install apache-loggen</span></code></pre></td></tr></table></div></figure>
+
+
+<p>で、ログを出力します。出力先は先程設定したdummy_access_logです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>apache-loggen --rate=10 --progress /var/log/httpd/dummy_access_log</span></code></pre></td></tr></table></div></figure>
+
+
+<p>秒間10アクセスログを出力してくれます。
+これで、Kibanaでログが見れるようになりました。
+なんて簡単なんでしょう。。。
+簡単なログの検索ができてしまいました。
+他の形式のログがどうなるのかとかは、また時間があれば。。。</p>
+
+<h2>感想とか</h2>
+
+<p>非常に簡単でした。素敵です。いくつかこうなるのかな？というのを試してみたのでメモを。</p>
+
+<p>いくつか疑問点です。</p>
+
+<ul>
+<li>溜まったログの削除は手動？
+
+<ul>
+<li>おそらく。日付ごとにindexが出来上がっているので、削除は楽そう。「logstash-年月日」なので。</li>
+</ul>
+</li>
+<li>認証とかかけれるの？
+
+<ul>
+<li>ログ検索は内部でするだろうから、まぁ、なくていいのかな。ログインすらないし。</li>
+</ul>
+</li>
+<li>複数行のログとかってどーすんだろう？（JavaのExceptionとかが混ざるやつ）</li>
+</ul>
+
+
+<p>本格的に触るようになれば調べるかなぁ。。。</p>
+
+<p>あと、ログが増えてきた時にどういった分割構成ができるだろう？って思って考えてみたのが以下になります。</p>
+
+<h3>構成パターン</h3>
+
+<p>ログを複数扱う場合は次のようなパターンがありそうかと。</p>
+
+<h4>タグ（fluentdのタグ）で識別</h4>
+
+<p>「@log_name」という名前＝fluentdのタグにてログを識別することで、異なるログを検索することができそうです。
+タグであれば、プラグインによってはログ出力時に制御も可能だと思うので、td-agentの設定を変更したりすることもなく対応が可能かと。
+ただ、ログの種別ごとにKibanaのプロセスを別にして起動したいといった用途には向いてなさそうです。</p>
+
+<h4>type_nameによる識別</h4>
+
+<p>ElasticSearchの機能であるtypeを利用したログの識別パターンです。<br/>
+fluent-plugin-elasticsearchの設定で<code>type_name</code>を指定しました。
+ここを別の名前にすることで、識別することも可能です。</p>
+
+<p><strike>ただし、この場合はKibanaの画面から指定して検索することができません。</strike>
+<strong><em>→コメント頂きました。検索条件に「_type:タイプ名」と検索することでtypeを利用した検索が可能です。</em></strong><br/>
+タグ（@log_name）でも識別できるようにするなどの工夫が必要です。
+その代わり、タグ識別ではできなかったKibanaのプロセスを別にして起動することは可能になります。<br/>
+KibanaConfig.rbのTypeに値を設定することで、起動したKibanaが対象とするログを絞り込むことが可能です。
+こうすることで例えば、apache用のKibanaとtomcat用のKibanaは別プロセスにして、ElasticSearchのクラスタは1つという構成も可能になります。</p>
+
+<h4>ElasticSearchサーバを別立て</h4>
+
+<p>ElasticSearchサーバをそもそも別のプロセスor別のサーバで起動し、Kibanaも別々にすればログの識別も可能です。
+可能ですが、色々と管理するものが増えてめんどくさそうですね。。。</p>
+
+<h4>インデックス名変更</h4>
+
+<p>最後は、fluent-plugin-elasticsearchの設定で「logstash_format」をfalseにすれば、好きなindex_nameを付与できるので、
+ログ種別ごとに名前を変更することで識別できます。<br/>
+ただ、logstash形式でないインデックス名の場合、日付ローテーションができなかったり、Kibana内部で検索時に日付で検索対象を絞り込んで検索することで高速化するといった処理など、使えない機能が多々出てきてしまうのであまりおすすめじゃないかと。。。</p>
+
+<p>ということで、流行りものは触っておこうということで、さわってブログ書いてみました。<br/>
+開発中に立てておいて、各サーバのログを流しこんでおくなどにも利用できるかもしれないです。
+アラート通知などの機能が出てくるともっと便利かもしれないです。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-10T23:34:00+09:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>, <a class='category' href='/blog/categories/fluentd/'>fluentd</a>, <a class='category' href='/blog/categories/kibana/'>kibana</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2013/06/10/fluent-es-kibana/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2013/06/10/fluent-es-kibana/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/06/06/aws-summit-tokyo-day2/" title="Previous Post: AWS Summit Tokyo 2013に行って来ました。(Day2) #awssummit">&laquo; AWS Summit Tokyo 2013に行って来ました。(Day2) #awssummit</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/06/11/new-solr-xml/" title="Next Post: 新しいsolr.xmlとCore探索ロジック">新しいsolr.xmlとCore探索ロジック &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>A little something about me.</p>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (41)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (4)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (15)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/15/versioning-of-sonatype/">Sonatypeのバージョン番号で困ったので</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">elasticsearch 1.4.0.Beta1のリリース</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/hold-on-6th-elasticsearch-jp/">第6回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/16/book-publication-event/">elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/09/performance-considerations-for-elasticsearch-indexing/">Elasticsearchのインデキシングに関するパフォーマンス検討</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("johtani", , );
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <p>Follow <a href="http://twitter.com/johtani">@johtani</a></p>
+  
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2013/06/10/fluent-es-kibana/';
+        var disqus_url = 'http://blog.johtani.info/blog/2013/06/10/fluent-es-kibana/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+  </div>
+</body>
+</html>
