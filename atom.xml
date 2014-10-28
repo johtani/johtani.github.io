@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2014-10-27T18:19:24+09:00</updated>
+  <updated>2014-10-28T18:41:16+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,396 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[validate APIの利用]]></title>
+    <link href="http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api/"/>
+    <updated>2014-10-27T18:42:31+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api</id>
+    <content type="html"><![CDATA[<p>久しぶりに翻訳ではないブログを。書こうと思いながらかけてなかったので。。。</p>
+
+<p>今回は<a href="http://www.elasticsearch.org/guide/ep/elasticsearch/reference/current/search-validate.html">validate API</a>の紹介です。</p>
+
+<!-- more -->
+
+
+<h2>背景</h2>
+
+<p>Elasticsearchのクエリは<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html">Query DSL</a>というJSONで
+クエリを定義できるものを提供しています。
+これは、様々な<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-queries.html">クエリ</a>、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-filters.html">フィルタ</a>を定義するために必要です。</p>
+
+<p>自分の望んでいる条件を記述するために、JSONのネストと格闘することも必要となります。。。
+また、クエリ、フィルタには様々なパラメータが用意されています。
+これらのパラメータをすべて覚えるのは無理でしょうし、タイプミスなどもありますよね。
+タイプミスやカッコのミスマッチなどで格闘して1時間が経過してしまったなどもあると思います。</p>
+
+<p>そんな時に便利なAPIとして用意されているのが<a href="http://www.elasticsearch.org/guide/ep/elasticsearch/reference/current/search-validate.html">validate API</a>です。</p>
+
+<h2>利用方法</h2>
+
+<p>APIが用意されています。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>http://ホスト名:ポート番号/インデックス名/タイプ名/_validate/query</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>インデックス名</code>や<code>タイプ名</code>は省略可能ですが、マッピングが異なると思うので、タイプ名まで指定するほうが良いと思います。
+上記のAPIに対してクエリを送信するだけです。</p>
+
+<h3>クエリの確認</h3>
+
+<p>たとえば、<a href="https://gist.github.com/johtani/08dee5fb4da62037ef9e">こちらのGist</a>にあるようなマッピングのインデックスに対して
+検索クエリを組み立てていて、エラーが出るとします。
+※このクエリは<code>match_all</code>のところを<code>match_al</code>と、<code>l</code>が1文字足りないクエリになっています。</p>
+
+<p><strong><em>検索クエリのリクエスト（エラーあり）</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_search
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "match_al": {}
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>実行結果のレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "error": "SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[rwkb01chTZq2V7FD0Tlwrw][pref_aggs][0]: SearchParseException[[pref_aggs][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n  \"query\": {\n    \"match_al\": { }\n  }\n}\n]]]; nested: QueryParsingException[[pref_aggs] No query registered for [match_al]]; }{[rwkb01chTZq2V7FD0Tlwrw][pref_aggs][1]: SearchParseException[[pref_aggs][1]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n  \"query\": {\n    \"match_al\": { }\n  }\n}\n]]]; nested: QueryParsingException[[pref_aggs] No query registered for [match_al]]; }]",
+</span><span class='line'>   "status": 400
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>とこんなかんじで、エラーが帰っては来るのですが、非常に読みづらいです。</p>
+
+<p>そこで、<code>validate API</code>を利用します。
+リクエスト先を<code>/_search</code>から<code>/_validate/query</code>に変更します。</p>
+
+<p><strong><em>validate API</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_validate/query
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "match_al": {}
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": false,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>すると、非常にシンプルな結果が返ってきます。
+<code>"valid": false</code>となっているため、クエリに問題があることがわかります。</p>
+
+<h3>エラーの詳細</h3>
+
+<p>問題がある事自体はわかりましたが、エラーの内容も知りたいですよね？
+その場合は、<code>explain</code>というパラメータを追加します。
+（正しくは<code>explain=true</code>を追加しますが、<code>=true</code>を省略可能です。）</p>
+
+<p><strong><em>validate API(explainあり、クエリ自体は省略)</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_validate/query?explain
+</span><span class='line'>{...}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": false,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "pref_aggs",
+</span><span class='line'>         "valid": false,
+</span><span class='line'>         "error": "org.elasticsearch.index.query.QueryParsingException: [pref_aggs] No query registered for [match_al]"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>explanations</code>という項目が追加されました。
+ここに<code>error</code>という項目として、エラーの詳細が返ってきます。<code>_search</code>の時よりも見やすいですね。
+今回のエラーは、<code>match_all</code>が正しいクエリですの、<em><code>match_al</code>というクエリは登録されていないというエラー</em>でした。
+では、クエリを修正して実行しましょう。</p>
+
+<p><strong><em>validate API(エラー無し)</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_validate/query?explain
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "match_all": {}
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": true,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "pref_aggs",
+</span><span class='line'>         "valid": true,
+</span><span class='line'>         "explanation": "ConstantScore(*:*)"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>今度はクエリに問題はありません。<code>"valid": true</code>です。
+そして、<code>explanations</code>の項目には、<code>error</code>の代わりに<code>explanation</code>という項目が返ってきました。
+これが、実際にElasticsearch内部で実行されるクエリになります。</p>
+
+<h3>実際のクエリに利用される単語の確認</h3>
+
+<p>この機能はこの他に、クエリの解析にも利用できます。
+思ったとおりに検索にヒットしない場合があって、困ったことはないですか？
+フィールドに指定されたアナライザによっては、単語を変形したりするものが存在します。</p>
+
+<p><strong><em>サンプルマッピング</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>PUT /validate_sample
+</span><span class='line'>{
+</span><span class='line'>  "mappings": {
+</span><span class='line'>    "several_analyzer": {
+</span><span class='line'>      "properties": {
+</span><span class='line'>        "title": {"type": "string"},
+</span><span class='line'>        "body_ja": {"type": "string", "analyzer": "kuromoji"},
+</span><span class='line'>        "body_en": {"type": "string", "analyzer": "english"}
+</span><span class='line'>      }
+</span><span class='line'>    }
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>例えば、このように<code>kuromoji</code>、<code>english</code>、デフォルト(<code>standard</code>)アナライザを利用したマッピングがあるとします。
+このフィールドに対して<code>powerful</code>という単語で検索したとします。</p>
+
+<p><strong><em>validate API</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET /validate_sample/_validate/query?explain
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "multi_match": {
+</span><span class='line'>      "fields": ["body_en","body_ja","title"],
+</span><span class='line'>      "query": "powerful"
+</span><span class='line'>    }
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>この場合、レスポンスは次のとおりです。</p>
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": true,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "validate_sample",
+</span><span class='line'>         "valid": true,
+</span><span class='line'>         "explanation": "(title:powerful | body_en:power | body_ja:powerful)"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>title</code>、<code>body_ja</code>については入力された単語がそのままクエリとして利用されています。
+<code>body_en</code>については、<code>power</code>という単語に変換されて実行されています。
+これは、<code>english</code>アナライザがステミングを行った結果がクエリとして利用されるという意味です。
+また、<code>powerful</code>を<code>秋葉原</code>といった日本語に変更して実行すると次のようになります。
+日本語は<code>standard</code>アナライザなどでは、1文字ずつ区切られてしまうことがわかります。</p>
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": true,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "validate_sample",
+</span><span class='line'>         "valid": true,
+</span><span class='line'>         "explanation": "((title:秋 title:葉 title:原) | (body_en:秋 body_en:葉 body_en:原) | ((body_ja:秋葉 body_ja:秋葉原) body_ja:原))"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このように、クエリの単語がどのような単語に変換されてクエリに利用されているかなども知ることが可能です。</p>
+
+<p>また、クエリを組み立てて、ヒットするはずが、0件となってしまうという場合にも、どのようなクエリが組み立てられているかを確認するという点で、
+<code>validate API</code>が役立ちます。
+検索がヒットするが、望んだクエリになっていないのでは？という場合は<code>_search API</code>の<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-explain.html"><code>explain</code>パラメータ</a>を
+利用すれば、クエリの構成がわかるのですが、検索結果が0件の場合はクエリの構成は表示されません。</p>
+
+<h2>解決できない問題は？</h2>
+
+<p>便利なvalidate APIですが、以下の問題に対しては残念ながら確認できません。</p>
+
+<ul>
+<li><code>query</code>以外の項目のvalidate不可
+
+<ul>
+<li>たとえば、<code>_search API</code>の<code>size</code>などの項目についてはチェックできないです。</li>
+</ul>
+</li>
+<li>存在しないフィールドの指定
+
+<ul>
+<li>上記<code>validate_sample</code>のマッピングの例でクエリに<code>body_eng</code>という存在しないフィールドを指定してもエラーとはなりません。</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>まとめ</h2>
+
+<p>書いたクエリがうまく動かない、JSONのタグがおかしいといった場合は、
+まずはこの<code>validate API</code>で確認してみるのがオススメです。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Sonatypeのバージョン番号で困ったので]]></title>
@@ -2484,42 +2874,6 @@ Hadoopとの統合（Pigで処理したデータをElasticsearchに出力）に�
 
 <p>100件のデータやここまでの操作については、<a href="https://gist.github.com/johtani/08dee5fb4da62037ef9e">gist</a>にあるので、興味がある方はご覧いただければと。
 stream2esの操作以外は、<a href="http://blog.johtani.info/blog/2014/01/29/simple-introduction-and-first-impression-es-marvel/">Marvelに付属のsense</a>を利用しています。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[elasticsearch-kopfの紹介（aliases画面）]]></title>
-    <link href="http://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/"/>
-    <updated>2014-05-04T01:01:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator</id>
-    <content type="html"><![CDATA[<p>今日はelasticsearch-kopfのAnalysis画面の紹介です。</p>
-
-<p>（簡単なところから。。。その３）</p>
-
-<!-- more -->
-
-
-<p>ちょっとあいだが開いてしまいましたが、再開です。
-メニューの<code>aliases</code>を選択すると、次のような画面が表示されます。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20140504/kopf-aliases.jpg" title="Aliases画面" ></p>
-
-<p>Elasticsearchの<code>alias</code>を画面で確認できます。</p>
-
-<p>エイリアスは、インデックスに別名をつけることができるElasticsearchの機能です。
-１エイリアス＝１インデックスでも良いですが、１エイリアスに対して複数のエイリアスを付与することもできます。
-この機能を利用することで、次のようなことが可能となります。</p>
-
-<ul>
-<li>インデックスの切り替えをアプリ側に意識させずに実施（アプリはエイリアス名に対して検索すればOKなので）</li>
-<li>直近１週間のログを検索するためのエイリアスの作成（複数のインデックスを１つのエイリアスに割り当て可能）</li>
-<li>特定のルーティングによる検索（特定のデータに対する検索だけに絞るためにfilterを指定する）</li>
-</ul>
-
-
-<p>エイリアスについて詳しく知りたい方は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html">公式ガイド</a>をご覧いただくのが良いかと。</p>
-
-<p>画面は非常にわかりやすい作りになっているので、特に説明必要ないんですよね。。。</p>
 ]]></content>
   </entry>
   

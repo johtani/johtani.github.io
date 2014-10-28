@@ -1,0 +1,771 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>validate APIの利用 - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="久しぶりに翻訳ではないブログを。書こうと思いながらかけてなかったので。。。 今回はvalidate APIの紹介です。 背景 ElasticsearchのクエリはQuery DSLというJSONで
+クエリを定義できるものを提供しています。
+これは、様々なクエリ、フィルタを定義するために必要です。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Validate APIの利用</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-10-27T18:42:31+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-10-27T18:42:31+09:00'><span class='date'>2014-10-27</span></time></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>久しぶりに翻訳ではないブログを。書こうと思いながらかけてなかったので。。。</p>
+
+<p>今回は<a href="http://www.elasticsearch.org/guide/ep/elasticsearch/reference/current/search-validate.html">validate API</a>の紹介です。</p>
+
+<!-- more -->
+
+
+<h2>背景</h2>
+
+<p>Elasticsearchのクエリは<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html">Query DSL</a>というJSONで
+クエリを定義できるものを提供しています。
+これは、様々な<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-queries.html">クエリ</a>、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-filters.html">フィルタ</a>を定義するために必要です。</p>
+
+<p>自分の望んでいる条件を記述するために、JSONのネストと格闘することも必要となります。。。
+また、クエリ、フィルタには様々なパラメータが用意されています。
+これらのパラメータをすべて覚えるのは無理でしょうし、タイプミスなどもありますよね。
+タイプミスやカッコのミスマッチなどで格闘して1時間が経過してしまったなどもあると思います。</p>
+
+<p>そんな時に便利なAPIとして用意されているのが<a href="http://www.elasticsearch.org/guide/ep/elasticsearch/reference/current/search-validate.html">validate API</a>です。</p>
+
+<h2>利用方法</h2>
+
+<p>APIが用意されています。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>http://ホスト名:ポート番号/インデックス名/タイプ名/_validate/query</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>インデックス名</code>や<code>タイプ名</code>は省略可能ですが、マッピングが異なると思うので、タイプ名まで指定するほうが良いと思います。
+上記のAPIに対してクエリを送信するだけです。</p>
+
+<h3>クエリの確認</h3>
+
+<p>たとえば、<a href="https://gist.github.com/johtani/08dee5fb4da62037ef9e">こちらのGist</a>にあるようなマッピングのインデックスに対して
+検索クエリを組み立てていて、エラーが出るとします。
+※このクエリは<code>match_all</code>のところを<code>match_al</code>と、<code>l</code>が1文字足りないクエリになっています。</p>
+
+<p><strong><em>検索クエリのリクエスト（エラーあり）</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_search
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "match_al": {}
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>実行結果のレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "error": "SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[rwkb01chTZq2V7FD0Tlwrw][pref_aggs][0]: SearchParseException[[pref_aggs][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n  \"query\": {\n    \"match_al\": { }\n  }\n}\n]]]; nested: QueryParsingException[[pref_aggs] No query registered for [match_al]]; }{[rwkb01chTZq2V7FD0Tlwrw][pref_aggs][1]: SearchParseException[[pref_aggs][1]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n  \"query\": {\n    \"match_al\": { }\n  }\n}\n]]]; nested: QueryParsingException[[pref_aggs] No query registered for [match_al]]; }]",
+</span><span class='line'>   "status": 400
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>とこんなかんじで、エラーが帰っては来るのですが、非常に読みづらいです。</p>
+
+<p>そこで、<code>validate API</code>を利用します。
+リクエスト先を<code>/_search</code>から<code>/_validate/query</code>に変更します。</p>
+
+<p><strong><em>validate API</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_validate/query
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "match_al": {}
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": false,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>すると、非常にシンプルな結果が返ってきます。
+<code>"valid": false</code>となっているため、クエリに問題があることがわかります。</p>
+
+<h3>エラーの詳細</h3>
+
+<p>問題がある事自体はわかりましたが、エラーの内容も知りたいですよね？
+その場合は、<code>explain</code>というパラメータを追加します。
+（正しくは<code>explain=true</code>を追加しますが、<code>=true</code>を省略可能です。）</p>
+
+<p><strong><em>validate API(explainあり、クエリ自体は省略)</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_validate/query?explain
+</span><span class='line'>{...}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": false,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "pref_aggs",
+</span><span class='line'>         "valid": false,
+</span><span class='line'>         "error": "org.elasticsearch.index.query.QueryParsingException: [pref_aggs] No query registered for [match_al]"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>explanations</code>という項目が追加されました。
+ここに<code>error</code>という項目として、エラーの詳細が返ってきます。<code>_search</code>の時よりも見やすいですね。
+今回のエラーは、<code>match_all</code>が正しいクエリですの、<em><code>match_al</code>というクエリは登録されていないというエラー</em>でした。
+では、クエリを修正して実行しましょう。</p>
+
+<p><strong><em>validate API(エラー無し)</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET pref_aggs/_validate/query?explain
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "match_all": {}
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": true,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "pref_aggs",
+</span><span class='line'>         "valid": true,
+</span><span class='line'>         "explanation": "ConstantScore(*:*)"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>今度はクエリに問題はありません。<code>"valid": true</code>です。
+そして、<code>explanations</code>の項目には、<code>error</code>の代わりに<code>explanation</code>という項目が返ってきました。
+これが、実際にElasticsearch内部で実行されるクエリになります。</p>
+
+<h3>実際のクエリに利用される単語の確認</h3>
+
+<p>この機能はこの他に、クエリの解析にも利用できます。
+思ったとおりに検索にヒットしない場合があって、困ったことはないですか？
+フィールドに指定されたアナライザによっては、単語を変形したりするものが存在します。</p>
+
+<p><strong><em>サンプルマッピング</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>PUT /validate_sample
+</span><span class='line'>{
+</span><span class='line'>  "mappings": {
+</span><span class='line'>    "several_analyzer": {
+</span><span class='line'>      "properties": {
+</span><span class='line'>        "title": {"type": "string"},
+</span><span class='line'>        "body_ja": {"type": "string", "analyzer": "kuromoji"},
+</span><span class='line'>        "body_en": {"type": "string", "analyzer": "english"}
+</span><span class='line'>      }
+</span><span class='line'>    }
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>例えば、このように<code>kuromoji</code>、<code>english</code>、デフォルト(<code>standard</code>)アナライザを利用したマッピングがあるとします。
+このフィールドに対して<code>powerful</code>という単語で検索したとします。</p>
+
+<p><strong><em>validate API</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>GET /validate_sample/_validate/query?explain
+</span><span class='line'>{
+</span><span class='line'>  "query": {
+</span><span class='line'>    "multi_match": {
+</span><span class='line'>      "fields": ["body_en","body_ja","title"],
+</span><span class='line'>      "query": "powerful"
+</span><span class='line'>    }
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>この場合、レスポンスは次のとおりです。</p>
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": true,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "validate_sample",
+</span><span class='line'>         "valid": true,
+</span><span class='line'>         "explanation": "(title:powerful | body_en:power | body_ja:powerful)"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>title</code>、<code>body_ja</code>については入力された単語がそのままクエリとして利用されています。
+<code>body_en</code>については、<code>power</code>という単語に変換されて実行されています。
+これは、<code>english</code>アナライザがステミングを行った結果がクエリとして利用されるという意味です。
+また、<code>powerful</code>を<code>秋葉原</code>といった日本語に変更して実行すると次のようになります。
+日本語は<code>standard</code>アナライザなどでは、1文字ずつ区切られてしまうことがわかります。</p>
+
+<p><strong><em>validate APIのレスポンス</em></strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{
+</span><span class='line'>   "valid": true,
+</span><span class='line'>   "_shards": {
+</span><span class='line'>      "total": 1,
+</span><span class='line'>      "successful": 1,
+</span><span class='line'>      "failed": 0
+</span><span class='line'>   },
+</span><span class='line'>   "explanations": [
+</span><span class='line'>      {
+</span><span class='line'>         "index": "validate_sample",
+</span><span class='line'>         "valid": true,
+</span><span class='line'>         "explanation": "((title:秋 title:葉 title:原) | (body_en:秋 body_en:葉 body_en:原) | ((body_ja:秋葉 body_ja:秋葉原) body_ja:原))"
+</span><span class='line'>      }
+</span><span class='line'>   ]
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このように、クエリの単語がどのような単語に変換されてクエリに利用されているかなども知ることが可能です。</p>
+
+<p>また、クエリを組み立てて、ヒットするはずが、0件となってしまうという場合にも、どのようなクエリが組み立てられているかを確認するという点で、
+<code>validate API</code>が役立ちます。
+検索がヒットするが、望んだクエリになっていないのでは？という場合は<code>_search API</code>の<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-explain.html"><code>explain</code>パラメータ</a>を
+利用すれば、クエリの構成がわかるのですが、検索結果が0件の場合はクエリの構成は表示されません。</p>
+
+<h2>解決できない問題は？</h2>
+
+<p>便利なvalidate APIですが、以下の問題に対しては残念ながら確認できません。</p>
+
+<ul>
+<li><code>query</code>以外の項目のvalidate不可
+
+<ul>
+<li>たとえば、<code>_search API</code>の<code>size</code>などの項目についてはチェックできないです。</li>
+</ul>
+</li>
+<li>存在しないフィールドの指定
+
+<ul>
+<li>上記<code>validate_sample</code>のマッピングの例でクエリに<code>body_eng</code>という存在しないフィールドを指定してもエラーとはなりません。</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>まとめ</h2>
+
+<p>書いたクエリがうまく動かない、JSONのタグがおかしいといった場合は、
+まずはこの<code>validate API</code>で確認してみるのがオススメです。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-10-27T18:42:31+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-10-27T18:42:31+09:00'><span class='date'>2014-10-27</span></time></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elaticsearch/'>elaticsearch</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
+      data-hatena-bookmark-layout="standard"
+      data-hatena-bookmark-url="http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api/">
+    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
+        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
+        style="border: none">
+  </a>
+</div>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog after sharing */
+google_ad_slot = "2760031654";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/10/15/versioning-of-sonatype/" title="Previous Post: Sonatypeのバージョン番号で困ったので">&laquo; Sonatypeのバージョン番号で困ったので</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <a href="http://twitter.com/johtani"><img class="about_me" src="/images/about_me2.jpg" alt="後頭部"/></a>
+  <p>Elasticsearch関連の仕事をしているエンジニアです。Elasticsearch、Kibana、Logstashに興味のある方は連絡をください。<br/><br/>
+最近は自然言語処理、DataVisualizationに興味があります。<br/>
+Elasticsearch勉強会の主催をしています。<br/>
+<a href="http://code.google.com/p/lucene-gosen/">lucene-gosen</a>のコミッターもやっています。</p>
+↓ログ可視化本も出てます！<br/>
+　Elasticsearch本も出てます！↓<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=B00MPDUQQI&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4048662023&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+↓Solr本改訂版、出ました！<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4774161632&IS1=1&nou=1&ref=qf_sp_asin_til&fc1=000000&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+    <script type="text/javascript" src="http://widget.booklog.jp/blogparts/js/booklog_minishelf.js?metal" id="booklog_minishelf"></script>
+    <script type="text/javascript" src="http://api.booklog.jp/json/johtani?category=0&count=15&callback=booklog_minishelf"></script>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (41)</a></li><li><a href='/blog/categories/elaticsearch/'>elaticsearch (1)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (4)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (15)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/27/how-to-use-validate-api/">validate APIの利用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/15/versioning-of-sonatype/">Sonatypeのバージョン番号で困ったので</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">elasticsearch 1.4.0.Beta1のリリース</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/hold-on-6th-elasticsearch-jp/">第6回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/16/book-publication-event/">elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>On Twitter:</h1>
+  <div>
+    <p><br /><a href="http://twitter.com/johtani" target="_blank">My Tweets, on Twitter.</a></p>
+    <a href="http://twitter.com/johtani" class="twitter-follow-button" data-show-count="">Follow @johtani</a>
+  </div>
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api/';
+        var disqus_url = 'http://blog.johtani.info/blog/2014/10/27/how-to-use-validate-api/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+(function(w,d){
+    var c,e=d.createDocumentFragment(),f=d.getElementsByTagName("script")[0],
+    a=function(a,b){if(!d.getElementById(b)){c=d.createElement("script");
+    c.src=a;c.id=b||null;c.async=true;e.appendChild(c);}};
+
+    w.___gcfg={lang:"ja"};
+    a("https://apis.google.com/js/plusone.js");
+
+
+    a("//platform.twitter.com/widgets.js");
+
+
+    a("//connect.facebook.net/ja_JP/all.js#xfbml=1","facebook-jssdk");
+
+    a("//b.st-hatena.com/js/bookmark_button_wo_al.js");
+    f.parentNode.insertBefore(e,f);
+})(this,document);
+</script>
+
+
+  </div>
+</body>
+</html>
