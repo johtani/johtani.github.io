@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: zoomdata - @johtaniの日記 2nd</title>
+  <title>Elasticsearch 1.4.0および1.3.5リリース（日本語訳） - @johtaniの日記 2nd</title>
   <meta name="author" content="johtani">
 
   
-  <meta name="description" content="Category: zoomdata">
+  <meta name="description" content="※この記事は次のブログを翻訳したものになります。 原文：elasticsearch-1.4.0 and 1.3.5 released 本日、Lucene 4.10.2をベースにしたElasticsearch 1.4.0と、バグフィックスリリースである、Elasticsearch 1.3. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://blog.johtani.info/blog/categories/zoomdata/">
+  <link rel="canonical" href="http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
@@ -85,36 +85,184 @@ $(document).ready( function () {
     <div id="main">
       <div id="content">
         <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Zoomdata</h1>
+    
+      <h1 class="entry-title">Elasticsearch 1.4.0および1.3.5リリース（日本語訳）</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-11-06T01:30:33+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-11-06T01:30:33+09:00'><span class='date'>2014-11-06</span></time></time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
 
-  
-  <h2>2013</h2>
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">elasticsearch-1.4.0 and 1.3.5 released</a></p>
 
-<article>
-  
-<h1><a href="/blog/2013/06/03/fluent-plugin-zoomdata-0-0-1/">fluent-plugin-zoomdata作りました＋悩み事とか</a></h1>
-<time datetime="2013-06-03T13:43:00+09:00" pubdate><span class='month'>Jun</span> <span class='day'>03</span> <span class='year'>2013</span></time>
+<p>本日、<strong>Lucene 4.10.2</strong>をベースにした<strong>Elasticsearch 1.4.0</strong>と、バグフィックスリリースである、<strong>Elasticsearch 1.3.5</strong>をリリースしました。
+ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/fluentd/'>fluentd</a>, <a class='category' href='/blog/categories/zoomdata/'>zoomdata</a></span>
-</footer>
+<ul>
+<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-0">Elasticsearch 1.4.0</a></li>
+<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-5">Elasticsearch 1.3.5</a></li>
+</ul>
 
 
-</article>
+<p>1.3ブランチに関する過去のリリースについてのブログは次のとおりです：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-4-released/">1.3.4</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-3-released/">1.3.3</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-2-released/">1.3.2</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">1.3.1</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/">1.3.0</a>.</p>
 
+<!-- more -->
+
+
+<p>Beta1リリースでも言及しましたが、1.4.0の主なテーマは<em>resiliency(復元性、弾力性)</em>です。
+Elasticsearchをより安定し信頼性のあるものにし、メモリ管理を改善し、ディスカバリアルゴリズムを改善し、破損したデータの検知を改善しました。
+Beta1リリースからのハイライトも含んでいます。</p>
+
+<ul>
+<li>Doc values (インデックス時にディスクに保存される<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/fielddata-formats.html#fielddata-formats">fielddata</a>)がヒープ利用率を激減</li>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-fielddata.html#request-circuit-breaker">Request circuit breaker</a>:
+メモリを消費しすぎる検索リクエストの中断</li>
+<li>Bloom filterの<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-update-settings.html#codec-bloom-load">デフォルト無効</a>、高速なインデキシングのためにもはや必要とされないため。</li>
+<li>ノードディスカバリ、シャードリカバリの数多くのバグフィックス及び改善</li>
+<li>データ破損の早期検知のためのチェックサムのさらなる利用</li>
+<li>GroovyをMVELの代わりに<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/modules-scripting.html#modules-scripting">デフォルトスクリプト言語に</a></li>
+<li>CORSを<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/modules-http.html#_settings_2">デフォルト無効</a>に。XSS攻撃防止の為。</li>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-shard-query-cache.html#index-modules-shard-query-cache">クエリキャッシュ</a>、変更されていないシャードからすぐにaggregation結果を返す</li>
+<li>新しいAggregation：<code>filter</code>(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-filters-aggregation.html#search-aggregations-bucket-filters-aggregation">ドキュメント</a>)、<code>children</code>(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-children-aggregation.html#search-aggregations-bucket-children-aggregation">ドキュメント</a>)、<code>scripted_metric</code>(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-metrics-scripted-metric-aggregation.html#search-aggregations-metrics-scripted-metric-aggregation">ドキュメント</a>)</li>
+<li>新しい<code>GET /index</code>API。インデックスのsettings、mappings、warmers、aliasesを1回のリクエストで返却(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-get-index.html#indices-get-index">ドキュメント</a>)</li>
+<li>自動付与ドキュメントIDのためのFlake ID。プライマリキーの探索パフォーマンスの改善。</li>
+<li>ドキュメントに変更のない更新によるドキュメントの再インデックスの防止</li>
+<li><code>function_score</code>クエリの関数で<code>weight</code>パラメータによる個別の改善を可能に。(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/query-dsl-function-score-query.html#_weight">ドキュメント</a>)</li>
+</ul>
+
+
+<p>詳細については<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1のブログ(英語)</a>(<a href="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">日本語訳</a>)をご覧ください。</p>
+
+<p>Beta1以降の1.4.0の変更の全てについては、<a href="http://www.elasticsearch.org/downloads/1-4-0">1.4.0 release notes</a>でご覧いただけます。
+以下では、2つの主な変更について紹介します。</p>
+
+<h2>HTTP Pipelining</h2>
+
+<p>HTTP pipeliningは複数のリクエストを1回のコネクションで、関連するレスポンスを待つことなく送信することができます。
+そして、レスポンスは、受け取ったリクエストと同じ順序で返却されます。
+HTTP/1.1の仕様で、pipeliningのサポートが必要です。ElasticsearchはHTTP/1.1であるとしてきましたが、pipeliningはサポートしていませんでした。この問題は.NETユーザで問題を引き起こしました。</p>
+
+<p>現在、HTTP pipeliningは公式にサポート済みで、デフォルトで利用できます。<a href="https://github.com/elasticsearch/elasticsearch/pull/8299">#8299</a>をご覧ください。</p>
+
+<h2>Upgrade API</h2>
+
+<p>Luceneのすべてのリリースではバグフィックスや最適化が提供されます。しかし、多くのユーザは古いバージョンのLuceneで作成されたインデックスを持っており、より最新の改善による利点を利用できないことがあります。
+新しい<code>upgrade</code>APIは、あなたのインデックスすべてもしくは一部を最新のLuceneフォーマットに透過的にアップグレードできます。</p>
+
+<p><code>GET _upgrade</code>リクエストは、インデックスのアップグレードが必要かどうかを提示し、アップグレードに必要なセグメントのサイズをリポートすることによって、どのくらいの時間が必要かの目安を提供します。
+<code>POST _upgrade</code>コマンドはバックグラウンドでインデックスを最新のLuceneフォーマットに書き換えます。</p>
+
+<p>より詳しい情報は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-upgrade.html"><code>upgrade</code>APIドキュメント</a>をご覧ください。</p>
+
+<h2>試してみてください。</h2>
+
+<p>Beta1リリースを利用し、経験・体験を報告していただいたベータテスターの方々に感謝します。
+1.4.0がこれまでの最高のリリースになると確信しています。
+ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-0">Elasticsearch 1.4.0</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-11-06T01:30:33+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-11-06T01:30:33+09:00'><span class='date'>2014-11-06</span></time></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
+      data-hatena-bookmark-layout="standard"
+      data-hatena-bookmark-url="http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/">
+    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
+        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
+        style="border: none">
+  </a>
+</div>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog after sharing */
+google_ad_slot = "2760031654";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/10/27/how-to-use-validate-api/" title="Previous Post: validate APIの利用">&laquo; validate APIの利用</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -236,7 +384,10 @@ src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
       var disqus_shortname = 'johtaniblog2nd';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/';
+        var disqus_url = 'http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

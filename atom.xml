@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2014-10-29T18:10:30+09:00</updated>
+  <updated>2014-11-06T01:19:02+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,84 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 1.4.0および1.3.5リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/"/>
+    <updated>2014-11-06T01:30:33+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">elasticsearch-1.4.0 and 1.3.5 released</a></p>
+
+<p>本日、<strong>Lucene 4.10.2</strong>をベースにした<strong>Elasticsearch 1.4.0</strong>と、バグフィックスリリースである、<strong>Elasticsearch 1.3.5</strong>をリリースしました。
+ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
+
+<ul>
+<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-0">Elasticsearch 1.4.0</a></li>
+<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-5">Elasticsearch 1.3.5</a></li>
+</ul>
+
+
+<p>1.3ブランチに関する過去のリリースについてのブログは次のとおりです：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-4-released/">1.3.4</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-3-released/">1.3.3</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-2-released/">1.3.2</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">1.3.1</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/">1.3.0</a>.</p>
+
+<!-- more -->
+
+
+<p>Beta1リリースでも言及しましたが、1.4.0の主なテーマは<em>resiliency(復元性、弾力性)</em>です。
+Elasticsearchをより安定し信頼性のあるものにし、メモリ管理を改善し、ディスカバリアルゴリズムを改善し、破損したデータの検知を改善しました。
+Beta1リリースからのハイライトも含んでいます。</p>
+
+<ul>
+<li>Doc values (インデックス時にディスクに保存される<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/fielddata-formats.html#fielddata-formats">fielddata</a>)がヒープ利用率を激減</li>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-fielddata.html#request-circuit-breaker">Request circuit breaker</a>:
+メモリを消費しすぎる検索リクエストの中断</li>
+<li>Bloom filterの<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-update-settings.html#codec-bloom-load">デフォルト無効</a>、高速なインデキシングのためにもはや必要とされないため。</li>
+<li>ノードディスカバリ、シャードリカバリの数多くのバグフィックス及び改善</li>
+<li>データ破損の早期検知のためのチェックサムのさらなる利用</li>
+<li>GroovyをMVELの代わりに<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/modules-scripting.html#modules-scripting">デフォルトスクリプト言語に</a></li>
+<li>CORSを<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/modules-http.html#_settings_2">デフォルト無効</a>に。XSS攻撃防止の為。</li>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/index-modules-shard-query-cache.html#index-modules-shard-query-cache">クエリキャッシュ</a>、変更されていないシャードからすぐにaggregation結果を返す</li>
+<li>新しいAggregation：<code>filter</code>(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-filters-aggregation.html#search-aggregations-bucket-filters-aggregation">ドキュメント</a>)、<code>children</code>(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-children-aggregation.html#search-aggregations-bucket-children-aggregation">ドキュメント</a>)、<code>scripted_metric</code>(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-metrics-scripted-metric-aggregation.html#search-aggregations-metrics-scripted-metric-aggregation">ドキュメント</a>)</li>
+<li>新しい<code>GET /index</code>API。インデックスのsettings、mappings、warmers、aliasesを1回のリクエストで返却(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-get-index.html#indices-get-index">ドキュメント</a>)</li>
+<li>自動付与ドキュメントIDのためのFlake ID。プライマリキーの探索パフォーマンスの改善。</li>
+<li>ドキュメントに変更のない更新によるドキュメントの再インデックスの防止</li>
+<li><code>function_score</code>クエリの関数で<code>weight</code>パラメータによる個別の改善を可能に。(<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/query-dsl-function-score-query.html#_weight">ドキュメント</a>)</li>
+</ul>
+
+
+<p>詳細については<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1のブログ(英語)</a>(<a href="http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/">日本語訳</a>)をご覧ください。</p>
+
+<p>Beta1以降の1.4.0の変更の全てについては、<a href="http://www.elasticsearch.org/downloads/1-4-0">1.4.0 release notes</a>でご覧いただけます。
+以下では、2つの主な変更について紹介します。</p>
+
+<h2>HTTP Pipelining</h2>
+
+<p>HTTP pipeliningは複数のリクエストを1回のコネクションで、関連するレスポンスを待つことなく送信することができます。
+そして、レスポンスは、受け取ったリクエストと同じ順序で返却されます。
+HTTP/1.1の仕様で、pipeliningのサポートが必要です。ElasticsearchはHTTP/1.1であるとしてきましたが、pipeliningはサポートしていませんでした。この問題は.NETユーザで問題を引き起こしました。</p>
+
+<p>現在、HTTP pipeliningは公式にサポート済みで、デフォルトで利用できます。<a href="https://github.com/elasticsearch/elasticsearch/pull/8299">#8299</a>をご覧ください。</p>
+
+<h2>Upgrade API</h2>
+
+<p>Luceneのすべてのリリースではバグフィックスや最適化が提供されます。しかし、多くのユーザは古いバージョンのLuceneで作成されたインデックスを持っており、より最新の改善による利点を利用できないことがあります。
+新しい<code>upgrade</code>APIは、あなたのインデックスすべてもしくは一部を最新のLuceneフォーマットに透過的にアップグレードできます。</p>
+
+<p><code>GET _upgrade</code>リクエストは、インデックスのアップグレードが必要かどうかを提示し、アップグレードに必要なセグメントのサイズをリポートすることによって、どのくらいの時間が必要かの目安を提供します。
+<code>POST _upgrade</code>コマンドはバックグラウンドでインデックスを最新のLuceneフォーマットに書き換えます。</p>
+
+<p>より詳しい情報は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/indices-upgrade.html"><code>upgrade</code>APIドキュメント</a>をご覧ください。</p>
+
+<h2>試してみてください。</h2>
+
+<p>Beta1リリースを利用し、経験・体験を報告していただいたベータテスターの方々に感謝します。
+1.4.0がこれまでの最高のリリースになると確信しています。
+ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-0">Elasticsearch 1.4.0</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[validate APIの利用]]></title>
@@ -2342,541 +2420,6 @@ Hadoopとの統合（Pigで処理したデータをElasticsearchに出力）に�
 <p>付録がとても豪華です。FluentdやKibanaがわかりやすく解説されてます。</p>
 
 <p>あと、薄いのでさらっと読めます。ｗ</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Aggregations - ファセットよりも柔軟な集計]]></title>
-    <link href="http://blog.johtani.info/blog/2014/05/07/aggregation-example/"/>
-    <updated>2014-05-07T18:57:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/05/07/aggregation-example</id>
-    <content type="html"><![CDATA[<p>こんなツイートを見つけたので、Aggregationのサンプルでも書こうかなと。（前から書こうと思ってたんですが。。。）</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/elasticsearch">@elasticsearch</a> Hi, Would you please tell me the way to do &quot;Pivot Faceting&quot; like Solr-4.0 in elasticsearch-1.1.1 or prior version? Thank you.</p>&mdash; Y.Kentaro (@yoshi_ken) <a href="https://twitter.com/yoshi_ken/statuses/462073860062322688">2014, 5月 2</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>ちなみに、Aggregationは1.0.0から導入された機能なので、ElasticSearch Server日本語版には掲載されていない機能になります。（ごめんなさい）</p>
-
-<!-- more -->
-
-
-<p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations.html">公式ガイドのAggregationsのページ</a>はこちらになりますが、実例があったほうがいいかなと。</p>
-
-<p><a href="http://twitter.com/yoshi_ken">@yoshi_ken</a> さんから実例のサンプルの指定もいただいたので、ブログを書くのが非常に楽です。ありがとうございます。</p>
-
-<h2>問題</h2>
-
-<p><a href="https://gist.github.com/y-ken/40d99c3a137247ba8eac">元ネタ（gist）</a></p>
-
-<p>次のような不動産系のデータがあるとします。</p>
-
-<ul>
-<li>id</li>
-<li>物件名</li>
-<li>都道府県（東京、神奈川、&hellip;..）</li>
-<li>物件種別（賃貸、売買、&hellip;..）</li>
-</ul>
-
-
-<p>この時、都道府県別に、物件種別ごとの件数を取得したいという趣旨です。</p>
-
-<ul>
-<li>東京
-
-<ul>
-<li>賃貸: xxx件</li>
-<li>売買: yyy件</li>
-</ul>
-</li>
-<li>神奈川
-
-<ul>
-<li>賃貸: xxx件</li>
-<li>売買: yyy件 &hellip;</li>
-</ul>
-</li>
-</ul>
-
-
-<p>これを、Elasticsearchでどうやって取得するかという問題です。</p>
-
-<h2>インデックスとデータの登録</h2>
-
-<p>まずは、インデックスを作ります。
-あくまでもサンプルなので、全部not_analyzedにしてますが、そのへんは適宜変更してください。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">#</span> <span class="err">create</span> <span class="err">index</span>
-</span><span class='line'><span class="err">PUT</span> <span class="err">/pref_aggs</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;settings&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;number_of_shards&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>  <span class="p">},</span>
-</span><span class='line'>  <span class="nt">&quot;mappings&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;japan&quot;</span> <span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;_id&quot;</span> <span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;path&quot;</span> <span class="p">:</span> <span class="s2">&quot;id&quot;</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>_id</code>を使用して、データ登録時に<code>id</code>フィールドにある文字列をそのままIDとして登録できるように指定してあります。</p>
-
-<p>登録するデータは次のようなものを適当に100件程度作ってりました。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id0&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name0&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;01_北海道&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id1&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name1&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;09_栃木県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id2&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name2&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;38_愛媛県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id3&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name3&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;40_福岡県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id4&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name4&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;35_山口県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id5&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name5&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;12_千葉県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="err">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>データの登録には、前に紹介した方法「<a href="http://blog.johtani.info/blog/2014/04/24/usage-stream2es/">stream2esと複数データの登録</a>」を用いました。</p>
-
-<h2>ファセット</h2>
-
-<p>このようなデータがある場合に、まず思いつくのはファセットによる取得です。
-いささか強引ですが。。。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/pref_aggs/japan/_search</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;match_all&quot;</span><span class="p">:</span> <span class="p">{}</span>
-</span><span class='line'>  <span class="p">},</span>
-</span><span class='line'>  <span class="nt">&quot;facets&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;type_賃貸&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="s2">&quot;term&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>      <span class="p">},</span> <span class="nt">&quot;facet_filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span> <span class="p">}}</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="nt">&quot;type_売買&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="s2">&quot;term&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>      <span class="p">},</span> <span class="nt">&quot;facet_filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span> <span class="p">}}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>facet_filter</code>を使用して、<code>type</code>フィールドによる個別の絞込を行っています。
-あとは、<code>pref</code>フィールドのファセットを取得すれば、出力は次のようになります。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="nt">&quot;took&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;timed_out&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;_shards&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;successful&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;failed&quot;</span><span class="p">:</span> <span class="mi">0</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;max_score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">[]</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;facets&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;type_賃貸&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>         <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;terms&quot;</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;missing&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">52</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;other&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;01_青森県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;03_宮城県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">3</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="err">...</span>
-</span><span class='line'>      <span class="err">}</span><span class="p">,</span>
-</span><span class='line'>      <span class="s2">&quot;type_売買&quot;</span><span class="err">:</span> <span class="p">{</span>
-</span><span class='line'>         <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;terms&quot;</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;missing&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;other&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;02_岩手県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;04_秋田県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="err">...</span>
-</span><span class='line'><span class="err">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>望んでいた形式とは少し異なりますが、<code>facet_filter</code>する回数を少なくするため、
-ファセットは都道府県のフィールドを指定したためです。
-アプリで頑張って入れ替えてください。。。</p>
-
-<p>この場合、&#8217;type&#8217;の個数がわかっているので、頑張ってこのような記述ができました。
-ただ、<code>type</code>が増えた時にアプリの修正とかが必要になりますよね。</p>
-
-<h2>Aggregations</h2>
-
-<p>ということで、Aggregationsの出番です。
-ファセットよりも柔軟に、検索結果に対していろいろな集計が行える機能になります。
-一見に如かずということで、クエリを紹介します。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/pref_aggs/japan/_search</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;match_all&quot;</span><span class="p">:</span> <span class="p">{}</span>
-</span><span class='line'>  <span class="p">},</span>
-</span><span class='line'>  <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;_term&quot;</span><span class="p">:</span> <span class="s2">&quot;asc&quot;</span>
-</span><span class='line'>        <span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>            <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">10</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>ファセットよりもシンプルですし、<code>賃貸</code>といったような値を指定していません。
-<code>aggs</code>というのが<code>aggregations</code>機能を指定している部分になります。
-検索結果は次のように出力されます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="nt">&quot;took&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;timed_out&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;_shards&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;successful&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;failed&quot;</span><span class="p">:</span> <span class="mi">0</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;max_score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">[]</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;aggregations&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>         <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>                  <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>                     <span class="p">{</span>
-</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">,</span>
-</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>                     <span class="p">},</span>
-</span><span class='line'>                     <span class="p">{</span>
-</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">,</span>
-</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>                     <span class="p">}</span>
-</span><span class='line'>                  <span class="p">]</span>
-</span><span class='line'>               <span class="p">}</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;01_青森県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>                  <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>                     <span class="p">{</span>
-</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">,</span>
-</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>                     <span class="p">}</span>
-</span><span class='line'>                  <span class="p">]</span>
-</span><span class='line'>               <span class="p">}</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="err">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Aggregationsの結果は、望んでいた通りの出力になっています。</p>
-
-<p>クエリの構成を見てみましょう。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;aggs&quot;</span><span class="err">:</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">#1</span>
-</span><span class='line'>    <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;_term&quot;</span><span class="p">:</span> <span class="s2">&quot;asc&quot;</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="err">#2</span>
-</span><span class='line'>      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">10</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>最初の#1の<code>pref</code>は出力を扱いやすくするためにつけているラベルになります。好きな名前をつけることが可能です。
-次の<code>terms</code>がAggregationのタイプ（どのような集計をして欲しいか）になります。
-今回は、<code>pref</code>フィールドにある単語(term)毎に、集計をしたいので、<code>terms</code>を指定します。
-その他にどんなタイプがあるかは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations.html">公式ガイド</a>をご覧ください。</p>
-
-<p>次に、さらに<code>type</code>フィールドで集計したいので、#2の部分で後続のAggregationを指定しています。
-都道府県同様、<code>type</code>フィールドにある単語毎に集計するために、<code>terms</code>を指定します。</p>
-
-<p>これで、先ほどのような結果が出力できます。
-ちなみに、さらに<code>type</code>の中に他の種別で集計したいという場合は、さらに<code>aggs</code>を追加していけばOKです。</p>
-
-<p>Aggregationは非常に柔軟な集計を可能にする機能です。ただし、検索結果に対して集計処理を行っているため、
-メモリやCPUなどのリソースを消費するので注意が必要です。</p>
-
-<p>Aggregationの説明については、<a href="https://www.found.no/foundation/elasticsearch-aggregations/">こちらのFound.noのブログ（英語）</a>がわかりやすかったので参考にしてみてください。</p>
-
-<h2>まとめ</h2>
-
-<p>非常に簡単ですが、Aggregationsについて紹介しました。
-その他にもAggregationsでできることがあるので、後日別のサンプルを用意して説明しようかと思います。</p>
-
-<p>100件のデータやここまでの操作については、<a href="https://gist.github.com/johtani/08dee5fb4da62037ef9e">gist</a>にあるので、興味がある方はご覧いただければと。
-stream2esの操作以外は、<a href="http://blog.johtani.info/blog/2014/01/29/simple-introduction-and-first-impression-es-marvel/">Marvelに付属のsense</a>を利用しています。</p>
 ]]></content>
   </entry>
   
