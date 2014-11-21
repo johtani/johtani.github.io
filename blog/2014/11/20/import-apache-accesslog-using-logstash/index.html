@@ -1,0 +1,845 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Logstashを利用したApacheアクセスログのインポート - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="JJUG CCCや第7回Elasticsearch勉強会のKibana4のデモにアクセスログを利用しました。 ただ、セッションでは、どうやってElasticsearchに投入したのかという詳しい話をしていませんでした。
+本記事では、 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Logstashを利用したApacheアクセスログのインポート</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-11-20T17:30:39+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-11-20T17:30:39+09:00'><span class='date'>2014-11-20</span></time></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>JJUG CCCや第7回Elasticsearch勉強会のKibana4のデモにアクセスログを利用しました。</p>
+
+<p>ただ、セッションでは、どうやってElasticsearchに投入したのかという詳しい話をしていませんでした。
+本記事では、データ取り込み時に利用したLogstashの設定ファイルについて説明します。</p>
+
+<!-- more -->
+
+
+<p>Logstashの設定の説明に入る前に、全体の流れを。
+「ApacheアクセスログをKibana4により可視化」です。</p>
+
+<h2>材料の準備</h2>
+
+<p>「ApacheアクセスログをKibana4により可視化」に必要な材料は次の通りです。
+（今回は起動するところまでいかないので、実際に必要なのは次回以降になります。）</p>
+
+<ul>
+<li>Java 7（u55以上を1つ）</li>
+<li>Logstash 1.4.2（1つ）</li>
+<li>Elasticsearch 1.4.0（1つ）</li>
+<li>Kibana4 Beta2（1つ）</li>
+<li>Apacheのアクセスログ（適量）</li>
+</ul>
+
+
+<p>Apacheのアクセスログ以外は、公式サイトからダウンロードできます。
+それぞれをダウンロードして、起動できるようにしておきましょう。</p>
+
+<p>※1台のマシン上で行う場合は、アクセスログの量を少なめにするなどの対策をとりましょう。
+※今回は、1台のマシン（Mac）上で、VMなどを利用せず、それぞれ直接起動するものとします。</p>
+
+<h2>可視化の手順と流れ</h2>
+
+<p>可視化の流れとしては、</p>
+
+<ol>
+<li>Logstashでファイルを読み込み、各種処理（パースしたり、情報を追加したり、切り出したり）</li>
+<li>Elasticsearchに保存</li>
+<li>Kibanaでグラフを作ったり、検索してみたり</li>
+</ol>
+
+
+<p>です。</p>
+
+<p>今回は、1のLogstashでファイルを読み込んだりする設定ファイルの説明です。</p>
+
+<h3>Logstashの設定</h3>
+
+<h4>Logstashの基本</h4>
+
+<p>まずは、Logstashの設定ですが、簡単にLogstashの説明を。
+Logstashは大きく3つのパーツに分かれています。</p>
+
+<ol>
+<li>input：データの入力処理</li>
+<li>filter：inputで読み込んだデータに対する操作など</li>
+<li>output：データの出力処理</li>
+</ol>
+
+
+<p>inputでデータを読み込み（複数可）、filterでデータに対して各種処理を行い、outputでデータを指定されたところに出力（複数可）します。</p>
+
+<h4>アクセスログの読み込み設定</h4>
+
+<p>アクセスログの読み込み処理は大まかに次のようなものとなります。</p>
+
+<ol>
+<li>アクセスログを読み込む（input/file）</li>
+<li>読み取ったアクセスログを各フィールド（IPアドレス、ユーザエージェントなど）に分割（filter/grok）</li>
+<li>日付のパース（filter/date）</li>
+<li>クライアントIPアドレスにgeoipの情報を付加（filter/geoip）</li>
+<li>リクエストのパスの第1階層の抽出（filter/grok）</li>
+<li>ユーザエージェントのパース（filter/useragent）</li>
+<li>Elasticsearchへの出力（output/elasticsearch）</li>
+</ol>
+
+
+<p>設定ファイルは次のようなものになります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">input</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">file</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">path</span> <span class="o">=&gt;</span> <span class="s2">&quot;/Users/johtani/demo_access_log/*/*.log&quot;</span>
+</span><span class='line'>    <span class="n">start_position</span> <span class="o">=&gt;</span> <span class="s2">&quot;beginning&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">filter</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">grok</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">match</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="s2">&quot;message&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;%{COMBINEDAPACHELOG}&quot;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">break_on_match</span> <span class="o">=&gt;</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="n">tag_on_failure</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;_message_parse_failure&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">date</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">match</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;dd/MMM/YYYY:HH:mm:ss Z&quot;</span><span class="o">]</span>
+</span><span class='line'>    <span class="n">locale</span> <span class="o">=&gt;</span> <span class="n">en</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">geoip</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">source</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;clientip&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">grok</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">match</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="s2">&quot;request&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;^/%{WORD:first_path}/%{GREEDYDATA}$&quot;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">tag_on_failure</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;_request_parse_failure&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">useragent</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">source</span> <span class="o">=&gt;</span> <span class="s2">&quot;agent&quot;</span>
+</span><span class='line'>    <span class="n">target</span> <span class="o">=&gt;</span> <span class="s2">&quot;useragent&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">output</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">elasticsearch</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">host</span> <span class="o">=&gt;</span> <span class="s2">&quot;localhost&quot;</span>
+</span><span class='line'>    <span class="n">index</span> <span class="o">=&gt;</span> <span class="s2">&quot;new_demo_access_log-%{year}&quot;</span>
+</span><span class='line'>    <span class="n">cluster</span> <span class="o">=&gt;</span> <span class="s2">&quot;demo_cluster&quot;</span>
+</span><span class='line'>    <span class="n">protocol</span> <span class="o">=&gt;</span> <span class="s2">&quot;http&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>1. アクセスログを読み込む（input/file）</h5>
+
+<p>inputの<a href="http://logstash.net/docs/1.4.2/inputs/file">fileモジュール(a)</a>を使用してアクセスログのファイルを読み込みます。
+<code>path</code>でアクセスログのファイルのパスを指定します。
+今回利用したアクセスログは<code>demo_access_log/2010/access20100201.log</code>といった日毎のファイルに分割されていたため、
+<code>*</code>を利用してファイルのパスを指定しました。
+また、今回は既存のファイルの読み込みだけのため、<code>start_position</code>に<code>beginning</code>を指定してあります。
+デフォルトでは<code>end</code>が指定されるため、Logstashを起動後に追記されたログから対象になってしまうためです。
+その他の設定については、公式ガイドをご覧ください。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">input</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">file</span> <span class="p">{</span> <span class="c1"># a</span>
+</span><span class='line'>    <span class="n">path</span> <span class="o">=&gt;</span> <span class="s2">&quot;/Users/johtani/demo_access_log/*/*.log&quot;</span> <span class="c1"># b</span>
+</span><span class='line'>    <span class="n">start_position</span> <span class="o">=&gt;</span> <span class="s2">&quot;beginning&quot;</span> <span class="c1"># c</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>Logstashでは、ファイルをどこまで読み込んだかという情報を保持するために、<a href="http://logstash.net/docs/1.4.2/inputs/file#sincedb_path">sincedb</a>を利用しています。
+設定変更後に同じファイルを最初から読み込みたい場合などは、こちらのファイルを一旦削除するなどの対応が必要です。</p></blockquote>
+
+<p>ちなみに、読み込んだデータは次のようなJSONになっています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;読み込んだアクセスログ&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;@version&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;@timestamp&quot;</span><span class="p">:</span><span class="s2">&quot;2014-11-21T06:16:21.644Z&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="s2">&quot;jupiter.local&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="s2">&quot;/Users/johtani/demo_access_log/2010/access20100201.log&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="err">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>特に指定がない場合は、<code>message</code>に読み込んだデータが入ってきます。
+<code>@timestamp</code>がLogstashが読み込んだ時刻、<code>host</code>はLogstashが動作しているホスト名です。
+<code>path</code>はfileモジュールが読み込んだファイルのパスを設定しています。
+この後の処理で、どこの項目に対して処理を行うかといったことが重要になるので、</p>
+
+<h5>2. 読み取ったアクセスログを各フィールド（IPアドレス、ユーザエージェントなど）に分割（filter/grok）</h5>
+
+<p>2.〜6.の処理は、inputで読み込んだ1アクセスログに対する処理となります。</p>
+
+<p>ここでは、<a href="http://logstash.net/docs/1.4.2/filters/grok">grokフィルタ</a>を使用して
+Apacheのアクセスログを各フィールドに分割します。
+Logastashでは、簡単に使えるようにいくつかの<a href="https://github.com/elasticsearch/logstash/tree/v1.4.2/patterns">パターン</a>が用意されています。
+Apacheのログのために、<a href="https://github.com/elasticsearch/logstash/blob/v1.4.2/patterns/grok-patterns#L91"><code>COMBINEDAPACHELOG</code></a>というのが用意されています。
+今回はこちらを使用しています。その他にも日付などパターンが用意されているので、試してみてください。</p>
+
+<p><code>message</code>にアクセスログが入っているので、こちらの項目に対して<code>COMBINEDAPACHELOG</code>のパターンを
+<code>match</code>で適用してフィールドに抜き出します。
+<code>tag_on_failure</code>は、<code>match</code>でパースに失敗した場合に、<code>tag</code>というフィールドに指定した文字列を出力する機能になります。
+デフォルトだと<code>_grokparsefailure</code>が付与されますが、ここでは、どの処理で失敗したがを判別するために文字列を変更しています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">filter</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">grok</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">match</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="s2">&quot;message&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;%{COMBINEDAPACHELOG}&quot;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">break_on_match</span> <span class="o">=&gt;</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="n">tag_on_failure</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;_message_parse_failure&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>clientip</code>、<code>ident</code>、<code>auth</code>、<code>timestamp</code>、<code>verb</code>、<code>request</code>、<code>httpversion</code>、<code>response</code>、<code>bytes</code>、<code>referrer</code>、<code>agent</code>がgrokフィルタにより抜き出された項目です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="s2">&quot;アクセスログ&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;@version&quot;</span><span class="p">:</span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;@timestamp&quot;</span><span class="p">:</span><span class="s2">&quot;2014-11-21T07:20:54.387Z&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="s2">&quot;jupiter.local&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="s2">&quot;/Users/johtani/demo_access_log/2010/access20100201.log&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;clientip&quot;</span><span class="p">:</span><span class="s2">&quot;クライアントのIPアドレス&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;ident&quot;</span><span class="p">:</span><span class="s2">&quot;-&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;auth&quot;</span><span class="p">:</span><span class="s2">&quot;-&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="s2">&quot;01/Feb/2010:00:00:26 +0900&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;verb&quot;</span><span class="p">:</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;request&quot;</span><span class="p">:</span><span class="s2">&quot;/images/favicon.ico&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;httpversion&quot;</span><span class="p">:</span><span class="s2">&quot;1.1&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;response&quot;</span><span class="p">:</span><span class="s2">&quot;200&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;bytes&quot;</span><span class="p">:</span><span class="s2">&quot;318&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;referrer&quot;</span><span class="p">:</span><span class="s2">&quot;\&quot;-\&quot;&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;agent&quot;</span><span class="p">:</span><span class="s2">&quot;\&quot;Mozilla/5.0 (Windows; U; Windows NT 5.1; ja; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7 (.NET CLR 3.5.30729)\&quot;&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>3. 日付のパース（filter/date）</h5>
+
+<p>Logstashは特に指定がない場合、inputでデータを取り出した日付が<code>@timestamp</code>となります。
+そして、このフィールドが特に指定がない場合は、Elasticsearchのデータの日付となり、Kibanaで利用する日付となります。</p>
+
+<p>リアルタイムにアクセスログを読み込む場合は、読み込んだ日時でもほぼ問題はありませんが、過去データの場合はそうもいきません。
+そこで、<a href="http://logstash.net/docs/1.4.2/filters/date"><code>dateフィルタ</code></a>を使用して、<code>@timestamp</code>の値を書き換えます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">date</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">match</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;dd/MMM/YYYY:HH:mm:ss Z&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">locale</span> <span class="o">=&gt;</span> <span class="n">en</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上記では、<code>timestamp</code>という項目に対して<code>dd/MMM/YYYY:HH:mm:ss Z</code>という日付パターンの場合に値を書き換える設定となります。
+なお、日付の月の部分が<code>Feb</code>となっているため、<code>locale</code>に<code>en</code>を指定しています。Logstashが動作するマシンの<code>locale</code>が<code>ja</code>などの場合にパースに失敗するためです。</p>
+
+<h5>4. クライアントIPアドレスにgeoipの情報を付加（filter/geoip）</h5>
+
+<p>どの国からのアクセスかなどを判別したいので、IPアドレスを元にgeoipを利用してより詳細な情報を付与します。
+Logstashでもこの機能が用意されており、簡単に利用ができます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">geoip</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">source</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;clientip&quot;</span><span class="o">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これだけです。対象とするIPアドレスのフィールドを指定しているだけです。
+<code>geoip</code>というフィールドが追加され、次のような情報が付与されます。
+国名、緯度経度、タイムゾーンなどです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="err">...</span>
+</span><span class='line'>  <span class="nt">&quot;geoip&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;ip&quot;</span><span class="p">:</span> <span class="s2">&quot;IPアドレス&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;country_code2&quot;</span><span class="p">:</span> <span class="s2">&quot;JP&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;country_code3&quot;</span><span class="p">:</span> <span class="s2">&quot;JPN&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;country_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Japan&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;continent_code&quot;</span><span class="p">:</span> <span class="s2">&quot;AS&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;latitude&quot;</span><span class="p">:</span> <span class="mi">36</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;longitude&quot;</span><span class="p">:</span> <span class="mi">138</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;timezone&quot;</span><span class="p">:</span> <span class="s2">&quot;Asia/Tokyo&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>      <span class="mi">138</span><span class="p">,</span>
+</span><span class='line'>      <span class="mi">36</span>
+</span><span class='line'>    <span class="p">]</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>5. リクエストのパスの第1階層の抽出（filter/grok）</h5>
+
+<p>リクエストされたURLは<code>request</code>フィールドにありますが、個別のURLだと、大まかな集計が大変です。
+もちろん、クエリで処理することもできますが、Logstashで処理するついでに、第1階層のディレクトリ名を抽出しておくことで、
+検索や集計を行いやすくしておきます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">grok</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">match</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="s2">&quot;request&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;^/%{WORD:first_path}/%{GREEDYDATA}$&quot;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">tag_on_failure</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;_request_parse_failure&quot;</span><span class="o">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>また、grokフィルタの登場です。
+今回は、<code>WORD:first_path</code>という記述方法で、<code>WORD</code>パターンにマッチした文字列を<code>first_path</code>というフィールドに展開する指定をしています。</p>
+
+<p>例えば、サイトのスクリプトなどが<code>scripts</code>というディレクトリにある場合は、<code>first_path</code>の値を利用して、
+後続のフィルタでログデータを出力しないといった処理にも使えます。</p>
+
+<h5>6. ユーザエージェントのパース（filter/useragent）</h5>
+
+<p>Logstashではユーザエージェントの文字列から、いくつかの情報を付与するフィルタも用意されています。
+<a href="http://logstash.net/docs/1.4.2/filters/useragent"><code>useragent</code>フィルタです。</a></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">useragent</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">source</span> <span class="o">=&gt;</span> <span class="s2">&quot;agent&quot;</span>
+</span><span class='line'>  <span class="n">target</span> <span class="o">=&gt;</span> <span class="s2">&quot;useragent&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>agent</code>というフィールドにユーザエージェントの文字列があるので、このフィールドに対してフィルタを適用します。
+元の文字列も取っておきたいので、<code>useragent</code>という別のフィールドに出力するように指定してあります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;useragent&quot;</span><span class="err">:</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Firefox&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;os&quot;</span><span class="p">:</span> <span class="s2">&quot;Windows XP&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;os_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Windows XP&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;Other&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;major&quot;</span><span class="p">:</span> <span class="s2">&quot;17&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;minor&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span>
+</span><span class='line'><span class="p">}</span><span class="err">,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このように、OS名やバージョン名などが抽出できます。</p>
+
+<h5>7. Elasticsearchへの出力（output/elasticsearch）</h5>
+
+<p>最後は、<a href="http://logstash.net/docs/1.4.2/outputs/elasticsearch">Elasticsearchへのデータの出力設定</a>です。</p>
+
+<p><code>index</code>にて、出力するindex名を指定してあります。
+また、年毎のインデックス名にするために<code>%{year}</code>を利用しています。
+<a href="http://logstash.net/docs/1.4.2/configuration#sprintf">sprintf format</a>です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">elasticsearch</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">host</span> <span class="o">=&gt;</span> <span class="s2">&quot;localhost&quot;</span>
+</span><span class='line'>  <span class="n">index</span> <span class="o">=&gt;</span> <span class="s2">&quot;new_demo_access_log-%{year}&quot;</span>
+</span><span class='line'>  <span class="n">cluster</span> <span class="o">=&gt;</span> <span class="s2">&quot;demo_cluster&quot;</span>
+</span><span class='line'>  <span class="n">protocol</span> <span class="o">=&gt;</span> <span class="s2">&quot;http&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>まとめ</h2>
+
+<p>ということで、今回はアクセスログをLogstashにて読み込む時の設定について説明してきました。
+次回は、実際にLogstashを起動してElasticsearchにデータを登録するところまでを説明します。</p>
+
+<p>JJUG CCCや勉強会のデモに用いたデータは、
+Elasticsearchにデータを登録する前にテンプレートも設定してありました。こちらについても、次回説明しようと思います。</p>
+
+<p>不明な点、誤植などありましたら、コメント欄へお願いします。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-11-20T17:30:39+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-11-20T17:30:39+09:00'><span class='date'>2014-11-20</span></time></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>, <a class='category' href='/blog/categories/kibana/'>kibana</a>, <a class='category' href='/blog/categories/logstash/'>logstash</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
+      data-hatena-bookmark-layout="standard"
+      data-hatena-bookmark-url="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/">
+    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
+        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
+        style="border: none">
+  </a>
+</div>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog after sharing */
+google_ad_slot = "2760031654";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/11/19/hold-on-7th-elasticsearch-jp/" title="Previous Post: 第7回Elasticsearch勉強会を開催しました。#elasticsearchjp">&laquo; 第7回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <a href="http://twitter.com/johtani"><img class="about_me" src="/images/about_me2.jpg" alt="後頭部"/></a>
+  <p>Elasticsearch関連の仕事をしているエンジニアです。Elasticsearch、Kibana、Logstashに興味のある方は連絡をください。<br/><br/>
+最近は自然言語処理、DataVisualizationに興味があります。<br/>
+Elasticsearch勉強会の主催をしています。<br/>
+<a href="http://code.google.com/p/lucene-gosen/">lucene-gosen</a>のコミッターもやっています。</p>
+↓ログ可視化本も出てます！<br/>
+　Elasticsearch本も出てます！↓<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=B00MPDUQQI&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4048662023&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+↓Solr本改訂版、出ました！<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4774161632&IS1=1&nou=1&ref=qf_sp_asin_til&fc1=000000&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+    <script type="text/javascript" src="http://widget.booklog.jp/blogparts/js/booklog_minishelf.js?metal" id="booklog_minishelf"></script>
+    <script type="text/javascript" src="http://api.booklog.jp/json/johtani?category=0&count=15&callback=booklog_minishelf"></script>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (44)</a></li><li><a href='/blog/categories/elaticsearch/'>elaticsearch (1)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (5)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (1)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (16)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/20/import-apache-accesslog-using-logstash/">Logstashを利用したApacheアクセスログのインポート</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/19/hold-on-7th-elasticsearch-jp/">第7回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/06/elasticsearch-1-4-0-ja/">Elasticsearch 1.4.0および1.3.5リリース（日本語訳）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/27/how-to-use-validate-api/">validate APIの利用</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/15/versioning-of-sonatype/">Sonatypeのバージョン番号で困ったので</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>On Twitter:</h1>
+  <div>
+    <p><br /><a href="http://twitter.com/johtani" target="_blank">My Tweets, on Twitter.</a></p>
+    <a href="http://twitter.com/johtani" class="twitter-follow-button" data-show-count="">Follow @johtani</a>
+  </div>
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/';
+        var disqus_url = 'http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+(function(w,d){
+    var c,e=d.createDocumentFragment(),f=d.getElementsByTagName("script")[0],
+    a=function(a,b){if(!d.getElementById(b)){c=d.createElement("script");
+    c.src=a;c.id=b||null;c.async=true;e.appendChild(c);}};
+
+    w.___gcfg={lang:"ja"};
+    a("https://apis.google.com/js/plusone.js");
+
+
+    a("//platform.twitter.com/widgets.js");
+
+
+    a("//connect.facebook.net/ja_JP/all.js#xfbml=1","facebook-jssdk");
+
+    a("//b.st-hatena.com/js/bookmark_button_wo_al.js");
+    f.parentNode.insertBefore(e,f);
+})(this,document);
+</script>
+
+
+  </div>
+</body>
+</html>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2014-11-19T14:46:12+09:00</updated>
+  <updated>2014-11-21T17:39:20+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,336 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Logstashを利用したApacheアクセスログのインポート]]></title>
+    <link href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/"/>
+    <updated>2014-11-20T17:30:39+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash</id>
+    <content type="html"><![CDATA[<p>JJUG CCCや第7回Elasticsearch勉強会のKibana4のデモにアクセスログを利用しました。</p>
+
+<p>ただ、セッションでは、どうやってElasticsearchに投入したのかという詳しい話をしていませんでした。
+本記事では、データ取り込み時に利用したLogstashの設定ファイルについて説明します。</p>
+
+<!-- more -->
+
+
+<p>Logstashの設定の説明に入る前に、全体の流れを。
+「ApacheアクセスログをKibana4により可視化」です。</p>
+
+<h2>材料の準備</h2>
+
+<p>「ApacheアクセスログをKibana4により可視化」に必要な材料は次の通りです。
+（今回は起動するところまでいかないので、実際に必要なのは次回以降になります。）</p>
+
+<ul>
+<li>Java 7（u55以上を1つ）</li>
+<li>Logstash 1.4.2（1つ）</li>
+<li>Elasticsearch 1.4.0（1つ）</li>
+<li>Kibana4 Beta2（1つ）</li>
+<li>Apacheのアクセスログ（適量）</li>
+</ul>
+
+
+<p>Apacheのアクセスログ以外は、公式サイトからダウンロードできます。
+それぞれをダウンロードして、起動できるようにしておきましょう。</p>
+
+<p>※1台のマシン上で行う場合は、アクセスログの量を少なめにするなどの対策をとりましょう。
+※今回は、1台のマシン（Mac）上で、VMなどを利用せず、それぞれ直接起動するものとします。</p>
+
+<h2>可視化の手順と流れ</h2>
+
+<p>可視化の流れとしては、</p>
+
+<ol>
+<li>Logstashでファイルを読み込み、各種処理（パースしたり、情報を追加したり、切り出したり）</li>
+<li>Elasticsearchに保存</li>
+<li>Kibanaでグラフを作ったり、検索してみたり</li>
+</ol>
+
+
+<p>です。</p>
+
+<p>今回は、1のLogstashでファイルを読み込んだりする設定ファイルの説明です。</p>
+
+<h3>Logstashの設定</h3>
+
+<h4>Logstashの基本</h4>
+
+<p>まずは、Logstashの設定ですが、簡単にLogstashの説明を。
+Logstashは大きく3つのパーツに分かれています。</p>
+
+<ol>
+<li>input：データの入力処理</li>
+<li>filter：inputで読み込んだデータに対する操作など</li>
+<li>output：データの出力処理</li>
+</ol>
+
+
+<p>inputでデータを読み込み（複数可）、filterでデータに対して各種処理を行い、outputでデータを指定されたところに出力（複数可）します。</p>
+
+<h4>アクセスログの読み込み設定</h4>
+
+<p>アクセスログの読み込み処理は大まかに次のようなものとなります。</p>
+
+<ol>
+<li>アクセスログを読み込む（input/file）</li>
+<li>読み取ったアクセスログを各フィールド（IPアドレス、ユーザエージェントなど）に分割（filter/grok）</li>
+<li>日付のパース（filter/date）</li>
+<li>クライアントIPアドレスにgeoipの情報を付加（filter/geoip）</li>
+<li>リクエストのパスの第1階層の抽出（filter/grok）</li>
+<li>ユーザエージェントのパース（filter/useragent）</li>
+<li>Elasticsearchへの出力（output/elasticsearch）</li>
+</ol>
+
+
+<p>設定ファイルは次のようなものになります。</p>
+
+<pre><code class="ruby">input {
+  file {
+    path =&gt; "/Users/johtani/demo_access_log/*/*.log"
+    start_position =&gt; "beginning"
+  }
+}
+
+filter {
+  grok {
+    match =&gt; { "message" =&gt; "%{COMBINEDAPACHELOG}" }
+    break_on_match =&gt; false
+    tag_on_failure =&gt; ["_message_parse_failure"]
+  }
+  date {
+    match =&gt; ["timestamp", "dd/MMM/YYYY:HH:mm:ss Z"]
+    locale =&gt; en
+  }
+  geoip {
+    source =&gt; ["clientip"]
+  }
+  grok {
+    match =&gt; { "request" =&gt; "^/%{WORD:first_path}/%{GREEDYDATA}$" }
+    tag_on_failure =&gt; ["_request_parse_failure"]
+  }
+  useragent {
+    source =&gt; "agent"
+    target =&gt; "useragent"
+  }
+}
+
+output {
+  elasticsearch {
+    host =&gt; "localhost"
+    index =&gt; "new_demo_access_log-%{year}"
+    cluster =&gt; "demo_cluster"
+    protocol =&gt; "http"
+  }
+}
+</code></pre>
+
+<h5>1. アクセスログを読み込む（input/file）</h5>
+
+<p>inputの<a href="http://logstash.net/docs/1.4.2/inputs/file">fileモジュール(a)</a>を使用してアクセスログのファイルを読み込みます。
+<code>path</code>でアクセスログのファイルのパスを指定します。
+今回利用したアクセスログは<code>demo_access_log/2010/access20100201.log</code>といった日毎のファイルに分割されていたため、
+<code>*</code>を利用してファイルのパスを指定しました。
+また、今回は既存のファイルの読み込みだけのため、<code>start_position</code>に<code>beginning</code>を指定してあります。
+デフォルトでは<code>end</code>が指定されるため、Logstashを起動後に追記されたログから対象になってしまうためです。
+その他の設定については、公式ガイドをご覧ください。</p>
+
+<pre><code class="ruby">input {
+  file { # a
+    path =&gt; "/Users/johtani/demo_access_log/*/*.log" # b
+    start_position =&gt; "beginning" # c
+  }
+}
+</code></pre>
+
+<blockquote><p>Logstashでは、ファイルをどこまで読み込んだかという情報を保持するために、<a href="http://logstash.net/docs/1.4.2/inputs/file#sincedb_path">sincedb</a>を利用しています。
+設定変更後に同じファイルを最初から読み込みたい場合などは、こちらのファイルを一旦削除するなどの対応が必要です。</p></blockquote>
+
+<p>ちなみに、読み込んだデータは次のようなJSONになっています。</p>
+
+<pre><code class="json">{
+  "message": "読み込んだアクセスログ",
+  "@version": "1",
+  "@timestamp":"2014-11-21T06:16:21.644Z",
+  "host":"jupiter.local",
+  "path":"/Users/johtani/demo_access_log/2010/access20100201.log"}
+}
+</code></pre>
+
+<p>特に指定がない場合は、<code>message</code>に読み込んだデータが入ってきます。
+<code>@timestamp</code>がLogstashが読み込んだ時刻、<code>host</code>はLogstashが動作しているホスト名です。
+<code>path</code>はfileモジュールが読み込んだファイルのパスを設定しています。
+この後の処理で、どこの項目に対して処理を行うかといったことが重要になるので、</p>
+
+<h5>2. 読み取ったアクセスログを各フィールド（IPアドレス、ユーザエージェントなど）に分割（filter/grok）</h5>
+
+<p>2.〜6.の処理は、inputで読み込んだ1アクセスログに対する処理となります。</p>
+
+<p>ここでは、<a href="http://logstash.net/docs/1.4.2/filters/grok">grokフィルタ</a>を使用して
+Apacheのアクセスログを各フィールドに分割します。
+Logastashでは、簡単に使えるようにいくつかの<a href="https://github.com/elasticsearch/logstash/tree/v1.4.2/patterns">パターン</a>が用意されています。
+Apacheのログのために、<a href="https://github.com/elasticsearch/logstash/blob/v1.4.2/patterns/grok-patterns#L91"><code>COMBINEDAPACHELOG</code></a>というのが用意されています。
+今回はこちらを使用しています。その他にも日付などパターンが用意されているので、試してみてください。</p>
+
+<p><code>message</code>にアクセスログが入っているので、こちらの項目に対して<code>COMBINEDAPACHELOG</code>のパターンを
+<code>match</code>で適用してフィールドに抜き出します。
+<code>tag_on_failure</code>は、<code>match</code>でパースに失敗した場合に、<code>tag</code>というフィールドに指定した文字列を出力する機能になります。
+デフォルトだと<code>_grokparsefailure</code>が付与されますが、ここでは、どの処理で失敗したがを判別するために文字列を変更しています。</p>
+
+<pre><code class="ruby">filter {
+  grok {
+    match =&gt; { "message" =&gt; "%{COMBINEDAPACHELOG}" }
+    break_on_match =&gt; false
+    tag_on_failure =&gt; ["_message_parse_failure"]
+  }
+  ...
+</code></pre>
+
+<p><code>clientip</code>、<code>ident</code>、<code>auth</code>、<code>timestamp</code>、<code>verb</code>、<code>request</code>、<code>httpversion</code>、<code>response</code>、<code>bytes</code>、<code>referrer</code>、<code>agent</code>がgrokフィルタにより抜き出された項目です。</p>
+
+<pre><code class="json">{
+  "message":"アクセスログ",
+  "@version":"1",
+  "@timestamp":"2014-11-21T07:20:54.387Z",
+  "host":"jupiter.local",
+  "path":"/Users/johtani/demo_access_log/2010/access20100201.log",
+  "clientip":"クライアントのIPアドレス",
+  "ident":"-",
+  "auth":"-",
+  "timestamp":"01/Feb/2010:00:00:26 +0900",
+  "verb":"GET",
+  "request":"/images/favicon.ico",
+  "httpversion":"1.1",
+  "response":"200",
+  "bytes":"318",
+  "referrer":"\"-\"",
+  "agent":"\"Mozilla/5.0 (Windows; U; Windows NT 5.1; ja; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7 (.NET CLR 3.5.30729)\""
+}
+</code></pre>
+
+<h5>3. 日付のパース（filter/date）</h5>
+
+<p>Logstashは特に指定がない場合、inputでデータを取り出した日付が<code>@timestamp</code>となります。
+そして、このフィールドが特に指定がない場合は、Elasticsearchのデータの日付となり、Kibanaで利用する日付となります。</p>
+
+<p>リアルタイムにアクセスログを読み込む場合は、読み込んだ日時でもほぼ問題はありませんが、過去データの場合はそうもいきません。
+そこで、<a href="http://logstash.net/docs/1.4.2/filters/date"><code>dateフィルタ</code></a>を使用して、<code>@timestamp</code>の値を書き換えます。</p>
+
+<pre><code class="ruby">date {
+  match =&gt; ["timestamp", "dd/MMM/YYYY:HH:mm:ss Z"]
+  locale =&gt; en
+}
+</code></pre>
+
+<p>上記では、<code>timestamp</code>という項目に対して<code>dd/MMM/YYYY:HH:mm:ss Z</code>という日付パターンの場合に値を書き換える設定となります。
+なお、日付の月の部分が<code>Feb</code>となっているため、<code>locale</code>に<code>en</code>を指定しています。Logstashが動作するマシンの<code>locale</code>が<code>ja</code>などの場合にパースに失敗するためです。</p>
+
+<h5>4. クライアントIPアドレスにgeoipの情報を付加（filter/geoip）</h5>
+
+<p>どの国からのアクセスかなどを判別したいので、IPアドレスを元にgeoipを利用してより詳細な情報を付与します。
+Logstashでもこの機能が用意されており、簡単に利用ができます。</p>
+
+<pre><code class="ruby">geoip {
+  source =&gt; ["clientip"]
+}
+</code></pre>
+
+<p>これだけです。対象とするIPアドレスのフィールドを指定しているだけです。
+<code>geoip</code>というフィールドが追加され、次のような情報が付与されます。
+国名、緯度経度、タイムゾーンなどです。</p>
+
+<pre><code class="json">{
+  ...  
+  "geoip": {
+    "ip": "IPアドレス",
+    "country_code2": "JP",
+    "country_code3": "JPN",
+    "country_name": "Japan",
+    "continent_code": "AS",
+    "latitude": 36,
+    "longitude": 138,
+    "timezone": "Asia/Tokyo",
+    "location": [
+      138,
+      36
+    ]
+  }
+  ...
+}
+</code></pre>
+
+<h5>5. リクエストのパスの第1階層の抽出（filter/grok）</h5>
+
+<p>リクエストされたURLは<code>request</code>フィールドにありますが、個別のURLだと、大まかな集計が大変です。
+もちろん、クエリで処理することもできますが、Logstashで処理するついでに、第1階層のディレクトリ名を抽出しておくことで、
+検索や集計を行いやすくしておきます。</p>
+
+<pre><code class="ruby">grok {
+  match =&gt; { "request" =&gt; "^/%{WORD:first_path}/%{GREEDYDATA}$" }
+  tag_on_failure =&gt; ["_request_parse_failure"]
+}
+</code></pre>
+
+<p>また、grokフィルタの登場です。
+今回は、<code>WORD:first_path</code>という記述方法で、<code>WORD</code>パターンにマッチした文字列を<code>first_path</code>というフィールドに展開する指定をしています。</p>
+
+<p>例えば、サイトのスクリプトなどが<code>scripts</code>というディレクトリにある場合は、<code>first_path</code>の値を利用して、
+後続のフィルタでログデータを出力しないといった処理にも使えます。</p>
+
+<h5>6. ユーザエージェントのパース（filter/useragent）</h5>
+
+<p>Logstashではユーザエージェントの文字列から、いくつかの情報を付与するフィルタも用意されています。
+<a href="http://logstash.net/docs/1.4.2/filters/useragent"><code>useragent</code>フィルタです。</a></p>
+
+<pre><code>useragent {
+  source =&gt; "agent"
+  target =&gt; "useragent"
+}
+</code></pre>
+
+<p><code>agent</code>というフィールドにユーザエージェントの文字列があるので、このフィールドに対してフィルタを適用します。
+元の文字列も取っておきたいので、<code>useragent</code>という別のフィールドに出力するように指定してあります。</p>
+
+<pre><code class="json">"useragent": {
+  "name": "Firefox",
+  "os": "Windows XP",
+  "os_name": "Windows XP",
+  "device": "Other",
+  "major": "17",
+  "minor": "0"
+},
+</code></pre>
+
+<p>このように、OS名やバージョン名などが抽出できます。</p>
+
+<h5>7. Elasticsearchへの出力（output/elasticsearch）</h5>
+
+<p>最後は、<a href="http://logstash.net/docs/1.4.2/outputs/elasticsearch">Elasticsearchへのデータの出力設定</a>です。</p>
+
+<p><code>index</code>にて、出力するindex名を指定してあります。
+また、年毎のインデックス名にするために<code>%{year}</code>を利用しています。
+<a href="http://logstash.net/docs/1.4.2/configuration#sprintf">sprintf format</a>です。</p>
+
+<pre><code class="ruby">elasticsearch {
+  host =&gt; "localhost"
+  index =&gt; "new_demo_access_log-%{year}"
+  cluster =&gt; "demo_cluster"
+  protocol =&gt; "http"
+}
+</code></pre>
+
+<h2>まとめ</h2>
+
+<p>ということで、今回はアクセスログをLogstashにて読み込む時の設定について説明してきました。
+次回は、実際にLogstashを起動してElasticsearchにデータを登録するところまでを説明します。</p>
+
+<p>JJUG CCCや勉強会のデモに用いたデータは、
+Elasticsearchにデータを登録する前にテンプレートも設定してありました。こちらについても、次回説明しようと思います。</p>
+
+<p>不明な点、誤植などありましたら、コメント欄へお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第7回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
@@ -493,124 +823,6 @@ Elasticsearchにインストールされたサイトプラグインはこれま�
 <p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-0-Beta1">Elasticsearch 1.4.0.Beta1</a>をダウンロードして、試してみてください。
 そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
 また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第6回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2014/09/17/hold-on-6th-elasticsearch-jp/"/>
-    <updated>2014-09-17T13:22:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/09/17/hold-on-6th-elasticsearch-jp</id>
-    <content type="html"><![CDATA[<p><a href="http://elasticsearch.doorkeeper.jp/events/13917">第6回Elsticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。
-今回は、スタッフが私を含めて3，4名ということで、ドタバタしてしまってスミマセンでした。</p>
-
-<!-- more -->
-
-
-<p>今回はキャンセルが多く、最終的には90人弱の参加となりましたが、今回も多数の方にお集まりいただきありがとうございました。
-同じ日に他の勉強会もあった影響でしょうか？</p>
-
-<h2>「Aggregationあれこれ」Elasticsearch Inc. Jun Ohtani @johtani</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/johtani/aggregationarekore">Aggregationあれこれ</a></p>
-
-<ul>
-<li>ちょっと長かったですかね。。。</li>
-<li>Aggregationの概要、内部動作、種類などを簡単に紹介してみました。</li>
-<li>個々のAggregationもいろいろなオプションなどがあるので、色々と試してみていただければと思います。</li>
-<li>アニメーション入りのスライドになってましたが、UpしてあるスライドはPDF版になります。</li>
-</ul>
-
-
-<h2>「秒間3万の広告配信ログをElasticSearchでリアルタイム集計してきた戦いの記録」 株式会社サイバーエージェント　山田直行さん　@satully</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/Satully/elasticsearch-study6threaltime20140916">秒間3万の広告配信ログをElasticSearchでリアルタイム集計してきた戦いの記録</a></p>
-
-<ul>
-<li>ディスプレイ広告配信DSPの話</li>
-<li>システム: Fluentd、S3、Elasticsearch、Redis、MySQL</li>
-<li>7月に秒間3万〜4万のリクエストをさばいている。</li>
-<li>なぜElasticsearchを選んだのか、今の構成など</li>
-<li>実際に苦労された点なども交えて話していただき面白かったです。</li>
-<li>7月時点のお話ということで、現時点ではまた違う構成っぽかったので、また話を聞きたいなぁ。</li>
-</ul>
-
-
-<h2>「Elasticsearch 日本語スキーマレス環境構築と、ついでに多言語対応」ナレッジワークス株式会社　木戸国彦さん @9215</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/kunihikokido/elasticsearch-ri-ben-yu-sukimaresuhuan-jing-gou-zhu-to-tuideniduo-yan-yu-dui-ying">Elasticsearch 日本語スキーマレス環境構築と、ついでに多言語対応</a></p>
-
-<ul>
-<li>Dynamic TemplateやIndex Templateの説明</li>
-<li>日本語や多言語化するときのMappingのサンプルになりそうなものがゴロゴロ紹介されてました。</li>
-<li>いくつかの例があって、後で見直したいなと。</li>
-<li>途中で出てきた、fielddata（インデックスに入っている単語区切りのデータ）を見るのに使ってたクエリは<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-fielddata-fields.html">field data fields</a>だったかな。</li>
-</ul>
-
-
-<h2>「elasticsearchソースコードを読みはじめてみた」@furandon_pig さん</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/furandon_pig/elasticsearch-39175134">elasticsearchソースコードを読みはじめてみた</a></p>
-
-<ul>
-<li>リクエストを受けて検索してる部分から読むといいって言われたらしいが、起動スクリプトから読み始めてみた。</li>
-<li>時間かかりそうｗ</li>
-<li>ただ、人がどんな感じでソースを読んだり理解してるかがわかりやすかったので面白かったです。</li>
-<li>定期的に続きを聞いてみたいです。</li>
-</ul>
-
-
-<h2>LT</h2>
-
-<h3>「reroute APIを使用してシャード配置を制御する」 株式会社富士通ソフトウェアテクノロジーズ 滝田聖己さん @pisatoshi</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/pisatoshi/elasticsearch-rerouteapiwoshi-tutasiyadopei-zhi-falsezhi-yu">reroute APIを使用してシャード配置を制御する</a></p>
-
-<ul>
-<li>シャードの再配置が自動で行われるので、それをオフにしないと、せっかく移動しても無駄になることがというあるあるネタ</li>
-<li>Bonsaiロゴを作成するLT</li>
-<li>実際にいくら掛かったのかが知りたかった。</li>
-</ul>
-
-
-<h3>「検索のダウンタイム0でバックアップからIndexをリストアする方法」株式会社ドワンゴモバイル 西田和史さん</h3>
-
-<p>スライド：<a href="http://www.slideshare.net/kbigwheel/0index-39143333">検索のダウンタイム0でバックアップからIndexをリストアする方法</a></p>
-
-<ul>
-<li>擬似無停止のやりかた。</li>
-<li>aliasを活用して、かつ、Restoreで再構築するという方法。</li>
-<li>aliasまで一緒にリストアされるので注意が必要っていうのは、実際にやってみたからわかることという感じですね。</li>
-</ul>
-
-
-<h2>その他、感想などのブログ</h2>
-
-<p>適当に見つけたブログを列挙してあります。これもあるよ！などあれば、教えてください。</p>
-
-<ul>
-<li><a href="http://s-wool.blog.jp/archives/1009404632.html">第6回elasticsearch勉強会に行ってきましたのでそのメモ</a></li>
-<li><a href="http://arika.hateblo.jp/entry/2014/09/17/100921">elasticsearch 勉強会 第6回</a></li>
-</ul>
-
-
-<h3>まとめ</h3>
-
-<p>今回も、ためになる話がいっぱい聞けたかなと。
-個人的な印象としては、いつものメンバーよりも新しい方が多かった印象です。
-また、ほとんどの方が、Elasticsearchをご存知でした。
-そこそこ知名度は上がってきているようで嬉しい限りです。（東京以外での知名度なども知りたいかなと。）</p>
-
-<p>あと、懇親会の部屋の案内が遅くなってしまってスミマセンでした。
-さすがにスタッフ3名はきつかったです。。。</p>
-
-<p>19時半開始にしてみましたが、懇親会の時間がやはり短めになってしまうなぁという印象でした。</p>
-
-<p>次回ももちろん2ヶ月後くらいに行います。
-スピーカー募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。
-よろしくお願いいたします。</p>
 ]]></content>
   </entry>
   
