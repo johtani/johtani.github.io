@@ -4,7 +4,7 @@
   <title><![CDATA[Category: kibana | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/kibana/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2014-11-21T17:39:20+09:00</updated>
+  <updated>2014-11-25T23:23:38+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -14,10 +14,300 @@
 
   
   <entry>
+    <title type="html"><![CDATA[インデックステンプレートとLogstash]]></title>
+    <link href="http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/"/>
+    <updated>2014-11-25T16:25:46+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2</id>
+    <content type="html"><![CDATA[<p>前回の「<a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/">Logstashを利用したApacheアクセスログのインポート</a>」の続きです。
+前回の記事では、Logstashの設定ファイルについて説明しました。
+今回は「Elasticsearchに設定するインデックステンプレート」について説明します。</p>
+
+<!-- more -->
+
+
+<h2>テンプレートの設定</h2>
+
+<p>Elasticsearchでは、登録するデータの特性に合わせてMappingを定義する方がデータを効率良く扱うことができる場合があります。
+この場合、通常ですと、インデックス作成時にMappingを指定します。</p>
+
+<p>ただ、今回は、<a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/#output-elasticsearch">インデックス名に「年」を含める形</a>で指定してあります。
+「年」はLogstashで処理したデータによって決まります。このため、あらかじめMappingを指定してインデックスを作成するのは難しいです。</p>
+
+<p>このような場合に便利な機能として、「<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html#indices-templates">インデックステンプレート</a>」があります。</p>
+
+<h3>インデックステンプレートとは</h3>
+
+<p>実際のテンプレートの説明に入る前に、少しだけ説明を。
+インデックステンプレートとは、インデックスが作成されるタイミングで自動的に適用される設定をテンプレートとして登録できる機能のことです。
+実際にテンプレートが適用されるかどうかは、インデックス名で判断されます。</p>
+
+<p>例えば、大して重要でもなく、データ量も少ないインデックス用のテンプレートとして、シャード数が1、レプリカ数が0、&#8221;_source&#8221;を保存しない設定のテンプレートを登録する場合、
+次のようになります。</p>
+
+<pre><code class="yaml">curl -XPUT localhost:9200/_template/template_1 -d '
+{
+  "template" : "te*",
+  "settings" : {
+    "number_of_shards" : 1,
+    "number_of_replicas" : 0
+  },
+  "mappings" : {
+    "type1" : {
+      "_source" : { "enabled" : false }
+    }
+  }
+}
+'
+</code></pre>
+
+<p><code>_template</code>がインデックステンプレートを登録するためのエンドポイントです。
+<code>template_1</code>がこのテンプレートのIDです。削除などについては、このIDを利用します。</p>
+
+<p>そして、重要なのは、&#8221;<code>template</code>&ldquo;の設定です。
+&rdquo;<code>template</code>&ldquo;には、このテンプレートが適用されるべきインデックス名を記載します。
+上記サンプルでは<code>te*</code>となっているため、<code>te</code>で始まる名前のインデックスを作成した場合にテンプレートにある設定が適用されます。</p>
+
+<h3>今回利用するテンプレート</h3>
+
+<p>私がJJUG CCCや第7回Elasticsearch勉強会のKibana4のデモで利用したインデックスのテンプレートは次のものになります。
+&ldquo;<code>template</code>&#8220;には、<a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/#output-elasticsearch">前回の記事で紹介したoutput/elasticsearchの設定</a> に合致する<code>new_demo_access_log-*</code>を指定しています。</p>
+
+<pre><code class="yaml">curl -XPUT localhost:9200/_template/new_access_log_for_demo -d '
+{
+  "template": "new_demo_access_log-*",
+  "settings": {
+    "number_of_shards": "2",
+    "number_of_replicas": "0"
+  },
+  "mappings": {
+    "_default_": {
+      "dynamic_templates": [
+        {
+          "string_template": {
+            "mapping": {
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "match_mapping_type": "string",
+            "match": "*"
+          }
+        }
+      ],
+      "properties": {
+        "path": {
+          "type": "multi_field",
+          "fields": {
+            "no_analyzed": {
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "analyzed": {
+              "index": "analyzed",
+              "type": "string"
+            }
+          }
+        },
+        "referer": {
+          "type": "multi_field",
+          "fields": {
+            "no_analyzed": {
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "analyzed": {
+              "index": "analyzed",
+              "type": "string"
+            }
+          }
+        },
+        "agent": {
+          "type": "multi_field",
+          "fields": {
+            "no_analyzed": {
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "analyzed": {
+              "index": "analyzed",
+              "type": "string"
+            }
+          }
+        },
+        "geoip": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "geohash": true,
+              "geohash_precision": 10,
+              "type": "geo_point",
+              "lat_lon": true,
+              "geohash_prefix": true
+            }
+          }
+        },
+        "response": {
+          "copy_to": "response_int",
+          "type": "string"
+        },
+        "bytes": {
+          "type": "long"
+        },
+        "response_int": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+'
+</code></pre>
+
+<h4>settings設定</h4>
+
+<p>デモ用であり、手元で2台のノードを起動するということもあり、<code>number_of_shards</code>に<code>2</code>を、<code>number_of_replicas</code>に<code>0</code>を指定してあります。</p>
+
+<h4>mappings設定</h4>
+
+<h5>インデックスのタイプ</h5>
+
+<p>Mappingsの指定は通常、特定の<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/glossary.html#glossary-type">タイプ</a>を指定します。
+今回のデモでは、1種類しかないのですが、タイプ名を特に意識しないために、<code>_default_</code>を使用しました。
+この場合、任意のタイプに適用されることとなります。
+タイプを指定してMappingの設定を行う場合は<code>_default_</code>の部分に特定のタイプ名を記入します。</p>
+
+<pre><code class="yaml">"mappings": {
+  "_default_": {
+    ...
+</code></pre>
+
+<h5>ダイナミックテンプレート</h5>
+
+<p>次は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-root-object-type.html#_dynamic_templates">ダイナミックテンプレート</a>です。
+インデックステンプレートはインデックスの設定をテンプレート化しました。ダイナミックテンプレートはフィールドに対してテンプレートを設定できます。</p>
+
+<p>以下のダイナミックテンプレートでは、<code>string</code>タイプのフィールドのデフォルト設定を変更しています。
+通常、<code>string</code>タイプのフィールドは<code>analyzed</code>となりますが、<code>not_analyzed</code>に変更してあります。
+詳しく検索したいフィールドの方が少ないためです。</p>
+
+<pre><code class="yaml">...
+"dynamic_templates": [
+  {
+    "string_template": {
+      "mapping": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "match_mapping_type": "string",
+      "match": "*"
+    }
+  }
+],
+...  
+</code></pre>
+
+<h5>multi_field指定</h5>
+
+<p>検索もしたいし、Terms Aggregationでも利用したいフィールドについては、<code>multi_field</code>を利用して、
+<code>analyzed</code>と<code>not_analyzed</code>の2種類のフィールドを用意しています。
+<code>multi_field</code>設定を用いることで、1つのJSONのデータから、異なる形のフィールドを用意することが可能です。</p>
+
+<p>今回のテンプレートでは、<code>path</code>、<code>referer</code>、<code>agent</code>に<code>multi_field</code>を指定しました。</p>
+
+<pre><code class="yaml">...
+"path": {
+  "type": "multi_field",
+  "fields": {
+    "no_analyzed": {
+      "index": "not_analyzed",
+      "type": "string"
+    },
+    "analyzed": {
+      "index": "analyzed",
+      "type": "string"
+    }
+  }
+},
+...
+</code></pre>
+
+<p>例えば、上記の設定の場合、入力のJSONは<code>path</code>というデータのみですが、インデックス上には<code>path.no_analyzed</code>と
+<code>path.analyzed</code>というフィールドができあがります。
+実際に検索する場合は、<code>path.analyzed:検索したい文字列</code>という形で検索をすることで、いわゆる部分一致のような検索が可能です。
+また、完全一致をしたい場合は<code>path.no_analyzed:検索したい文字列</code>という指定になります。
+用途を考えると、<code>request</code>も指定したほうが良いかもしれません。</p>
+
+<h5>geoip</h5>
+
+<p><a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/#filter-geoip">Logstashでgeoipデータ</a>を付与していました。
+このgeoipのデータをKibana4で利用するために、geoデータとして登録する必要があります。</p>
+
+<pre><code class="yaml">"geoip": {
+  "type": "object",
+  "properties": {
+    "location": {
+      "geohash": true,
+      "geohash_precision": 10,
+      "type": "geo_point",
+      "lat_lon": true,
+      "geohash_prefix": true
+    }
+  }
+},
+</code></pre>
+
+<p>上記の設定がgeoデータの指定です。
+<code>type</code>に<code>object</code>が指定してありますが、これは、geoipのデータがネストしているためです。
+geoipオブジェクトのうち、緯度経度のデータは<code>location</code>に入っているため、こちらに緯度経度関係の設定を指定します。</p>
+
+<ul>
+<li><code>"type": "geo_point"</code>：<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-geo-point-type.html#mapping-geo-point-type"><code>geo_point</code></a>タイプであることを指定</li>
+<li><code>"geohash": true</code>：緯度経度のデータをもとに、geohashの値もインデックス</li>
+<li><code>"geohash_precision": 10</code>：geohashの精度の指定</li>
+<li><code>"lat_lon": true</code>：緯度経度を個別の<code>.lat</code>、<code>.lon</code>というフィールドにもインデックス</li>
+<li><code>"geohash_prefix": true</code>：該当するgeohashのみでなく、その親にあたるgeohashについてもインデックスする</li>
+</ul>
+
+
+<h5>response、response_int、bytes</h5>
+
+<p>最後は、response、response_int、bytesです。</p>
+
+<p>responseには、HTTPステータスコードが入ります。
+文字列としても扱いたいですが、integerとして、Renge Aggregationなどを行いたいので、
+response_intというフィールドにも値を入れています。
+<code>multi_field</code>でも可能ですが、ここでは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-core-types.html#copy-to"><code>copy_to</code></a>を利用しました。
+<code>copy_to</code>を用いることで、異なるフィールドに値をコピーすることができます。</p>
+
+<p>bytesについては、longで扱いたいとういう理由だけです。</p>
+
+<pre><code class="yaml">
+"response": {
+  "copy_to": "response_int",
+  "type": "string"
+},
+"bytes": {
+  "type": "long"
+},
+"response_int": {
+  "type": "integer"
+}
+</code></pre>
+
+<h2>まとめ</h2>
+
+<p>今回はデモに利用したインデックスてプレートについて説明しました。
+前回の、Logstashの設定とこのインデックステンプレートを用いることで、Kibanaで解析するデータの準備ができます。
+実際の操作などについては、また次回の記事で説明しようかと思います。</p>
+
+<p>不明な点、誤植などありましたら、コメント欄へお願いします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Logstashを利用したApacheアクセスログのインポート]]></title>
-    <link href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/"/>
-    <updated>2014-11-20T17:30:39+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash</id>
+    <link href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash/"/>
+    <updated>2014-11-21T17:30:39+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash</id>
     <content type="html"><![CDATA[<p>JJUG CCCや第7回Elasticsearch勉強会のKibana4のデモにアクセスログを利用しました。</p>
 
 <p>ただ、セッションでは、どうやってElasticsearchに投入したのかという詳しい話をしていませんでした。
@@ -724,200 +1014,6 @@ logstash形式のインデックスを用意するのが前提になってるの
 （たとえば、特定のフィールドの値について「A、B、その他」みたいなグラフの描画とかをどうするかとか）</p>
 
 <p>地図の描画は試してみたいかなぁ。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[apache-loggen + fluentd + elasticsearch + kibana = ログ検索デモ]]></title>
-    <link href="http://blog.johtani.info/blog/2013/06/10/fluent-es-kibana/"/>
-    <updated>2013-06-10T23:34:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2013/06/10/fluent-es-kibana</id>
-    <content type="html"><![CDATA[<p>もう何番煎じだ？ってくらい書かれてますが、コリもせず書いてみました。
-Elasticsearch＋Kibanaの環境を作って、タムタムさんのログ生成ツールからApacheのダミーログを流しこんで入れてみました。</p>
-
-<!-- more -->
-
-
-<h2>参考URL</h2>
-
-<ul>
-<li><a href="http://memocra.blogspot.jp/2013/04/kibanakibanaelasticsearchfluentd.html">memorycraftさんのブログ</a></li>
-<li><a href="http://kibana.org/">Kibana</a></li>
-<li><a href="http://wwwelasticsearch.org">Elasticsearch</a></li>
-<li><a href="http://fluentd.org">fluentd</a></li>
-<li><a href="http://mt.orz.at/archives/2012/11/apacherubygems.html">apache-loggen</a></li>
-</ul>
-
-
-<h2>インストールと起動</h2>
-
-<p>今回はCentOSへのインストールです。
-基本的にはmemorycraftさんのブログの流れのままです。</p>
-
-<h3>elasticserchのインストールと起動</h3>
-
-<p>ダウンロードして、起動するだけ。
-お試しということで、-fオプションにてコンソールにログ出力。</p>
-
-<pre><code>curl -OL https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.1.tar.gz
-tar zxvf elasticsearch-0.90.1.tar.gz
-cd elasticsearch-0.90.1
-./bin/elasticsearch -f
-</code></pre>
-
-<h3>Kibanaのインストールと起動</h3>
-
-<p><code>git clone</code>してbundleインストール</p>
-
-<pre><code>git clone --branch=kibana-ruby https://github.com/rashidkpc/Kibana.git
-cd Kibana
-bundle install
-ruby kibana.rb
-</code></pre>
-
-<p>これで、Kibana＋ESのインストール＋起動が完了。
-下地が完了。</p>
-
-<h3>td-agentのインストールと起動</h3>
-
-<p>ログの流し込みはlogstashなのですが、fluentdのelasticsearchプラグインにて流しこむこともできます。
-td.repoとしてtd-agentのリポジトリを登録してから以下を実行します。</p>
-
-<pre><code>yum install td-agent -y
-/usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-elasticsearch
-vim　/etc/td-agent/td-agent.conf
-/etc/init.d/td-agent start
-</code></pre>
-
-<p>これで、td-agentがインストール出来ました。
-次は設定です。</p>
-
-<pre><code>&lt;source&gt;
-  type tail
-  format apache
-  path /var/log/httpd/dummy_access_log
-  tag dummy.apache.access
-&lt;/source&gt;
-
-&lt;match *.apache.*&gt;
-  index_name adminpack
-  type_name apache
-  type elasticsearch
-  include_tag_key true
-  tag_key @log_name
-  host localhost
-  port 9200
-  logstash_format true
-  flush_interval 10s
-&lt;/match&gt;
-</code></pre>
-
-<p>以上が設定です。td-agentはtd-agentというユーザで起動されるので、/var/log/httpdディレクトリにアクセスできるかだけ確認が必要です。<br/>
-いくつかの設定値について気になったので調べました。</p>
-
-<ul>
-<li>index_name：adminpackとなってるが、elasticsearchではlogstash-xxxとなってる。
-
-<ul>
-<li>これは、logstash_formatがtrueの場合は、利用されないので、指定しなくてもいい。</li>
-</ul>
-</li>
-<li>type_name：Elasticsearchのタイプ名
-  *　これはlogstash_formatを指定しても有効。ただし、Kibana側で画面からのtype指定は不可能。KibanaConfig.rbにて指定することは可能。</li>
-<li>logstash_format：Kibana用にlogstashフォーマットで出力するオプション
-
-<ul>
-<li>この指定があるときは、index名が「logstash-YYYY.mm.dd」となる</li>
-<li>record（ログ）に@timestampとして時刻が追加される。</li>
-</ul>
-</li>
-<li>tag_key：include_tag_keyがtrueと指定されているため、record（ログ）にtag_keyで指定した文字列をキー、値としてtagの値（上記例だとdummy.apache.access）が付与されて登録される。</li>
-</ul>
-
-
-<h2>apache-loggenのインストールと起動</h2>
-
-<p>タムタムさんが作成されたApacheのログのダミーを生成するツールです。<br/>
-gem化されてるので、インストールは非常に簡単です。</p>
-
-<pre><code>gem install apache-loggen
-</code></pre>
-
-<p>で、ログを出力します。出力先は先程設定したdummy_access_logです。</p>
-
-<pre><code>apache-loggen --rate=10 --progress /var/log/httpd/dummy_access_log
-</code></pre>
-
-<p>秒間10アクセスログを出力してくれます。
-これで、Kibanaでログが見れるようになりました。
-なんて簡単なんでしょう。。。
-簡単なログの検索ができてしまいました。
-他の形式のログがどうなるのかとかは、また時間があれば。。。</p>
-
-<h2>感想とか</h2>
-
-<p>非常に簡単でした。素敵です。いくつかこうなるのかな？というのを試してみたのでメモを。</p>
-
-<p>いくつか疑問点です。</p>
-
-<ul>
-<li>溜まったログの削除は手動？
-
-<ul>
-<li>おそらく。日付ごとにindexが出来上がっているので、削除は楽そう。「logstash-年月日」なので。</li>
-</ul>
-</li>
-<li>認証とかかけれるの？
-
-<ul>
-<li>ログ検索は内部でするだろうから、まぁ、なくていいのかな。ログインすらないし。</li>
-</ul>
-</li>
-<li>複数行のログとかってどーすんだろう？（JavaのExceptionとかが混ざるやつ）</li>
-</ul>
-
-
-<p>本格的に触るようになれば調べるかなぁ。。。</p>
-
-<p>あと、ログが増えてきた時にどういった分割構成ができるだろう？って思って考えてみたのが以下になります。</p>
-
-<h3>構成パターン</h3>
-
-<p>ログを複数扱う場合は次のようなパターンがありそうかと。</p>
-
-<h4>タグ（fluentdのタグ）で識別</h4>
-
-<p>「@log_name」という名前＝fluentdのタグにてログを識別することで、異なるログを検索することができそうです。
-タグであれば、プラグインによってはログ出力時に制御も可能だと思うので、td-agentの設定を変更したりすることもなく対応が可能かと。
-ただ、ログの種別ごとにKibanaのプロセスを別にして起動したいといった用途には向いてなさそうです。</p>
-
-<h4>type_nameによる識別</h4>
-
-<p>ElasticSearchの機能であるtypeを利用したログの識別パターンです。<br/>
-fluent-plugin-elasticsearchの設定で<code>type_name</code>を指定しました。
-ここを別の名前にすることで、識別することも可能です。</p>
-
-<p><strike>ただし、この場合はKibanaの画面から指定して検索することができません。</strike>
-<strong><em>→コメント頂きました。検索条件に「_type:タイプ名」と検索することでtypeを利用した検索が可能です。</em></strong><br/>
-タグ（@log_name）でも識別できるようにするなどの工夫が必要です。
-その代わり、タグ識別ではできなかったKibanaのプロセスを別にして起動することは可能になります。<br/>
-KibanaConfig.rbのTypeに値を設定することで、起動したKibanaが対象とするログを絞り込むことが可能です。
-こうすることで例えば、apache用のKibanaとtomcat用のKibanaは別プロセスにして、ElasticSearchのクラスタは1つという構成も可能になります。</p>
-
-<h4>ElasticSearchサーバを別立て</h4>
-
-<p>ElasticSearchサーバをそもそも別のプロセスor別のサーバで起動し、Kibanaも別々にすればログの識別も可能です。
-可能ですが、色々と管理するものが増えてめんどくさそうですね。。。</p>
-
-<h4>インデックス名変更</h4>
-
-<p>最後は、fluent-plugin-elasticsearchの設定で「logstash_format」をfalseにすれば、好きなindex_nameを付与できるので、
-ログ種別ごとに名前を変更することで識別できます。<br/>
-ただ、logstash形式でないインデックス名の場合、日付ローテーションができなかったり、Kibana内部で検索時に日付で検索対象を絞り込んで検索することで高速化するといった処理など、使えない機能が多々出てきてしまうのであまりおすすめじゃないかと。。。</p>
-
-<p>ということで、流行りものは触っておこうということで、さわってブログ書いてみました。<br/>
-開発中に立てておいて、各サーバのログを流しこんでおくなどにも利用できるかもしれないです。
-アラート通知などの機能が出てくるともっと便利かもしれないです。</p>
 ]]></content>
   </entry>
   

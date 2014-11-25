@@ -1,0 +1,833 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>インデックステンプレートとLogstash - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="前回の「Logstashを利用したApacheアクセスログのインポート」の続きです。
+前回の記事では、Logstashの設定ファイルについて説明しました。
+今回は「Elasticsearchに設定するインデックステンプレート」について説明します。 テンプレートの設定 Elasticsearchでは &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">インデックステンプレートとLogstash</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-11-25T16:25:46+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-11-25T16:25:46+09:00'><span class='date'>2014-11-25</span></time></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>前回の「<a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/">Logstashを利用したApacheアクセスログのインポート</a>」の続きです。
+前回の記事では、Logstashの設定ファイルについて説明しました。
+今回は「Elasticsearchに設定するインデックステンプレート」について説明します。</p>
+
+<!-- more -->
+
+
+<h2>テンプレートの設定</h2>
+
+<p>Elasticsearchでは、登録するデータの特性に合わせてMappingを定義する方がデータを効率良く扱うことができる場合があります。
+この場合、通常ですと、インデックス作成時にMappingを指定します。</p>
+
+<p>ただ、今回は、<a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/#output-elasticsearch">インデックス名に「年」を含める形</a>で指定してあります。
+「年」はLogstashで処理したデータによって決まります。このため、あらかじめMappingを指定してインデックスを作成するのは難しいです。</p>
+
+<p>このような場合に便利な機能として、「<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html#indices-templates">インデックステンプレート</a>」があります。</p>
+
+<h3>インデックステンプレートとは</h3>
+
+<p>実際のテンプレートの説明に入る前に、少しだけ説明を。
+インデックステンプレートとは、インデックスが作成されるタイミングで自動的に適用される設定をテンプレートとして登録できる機能のことです。
+実際にテンプレートが適用されるかどうかは、インデックス名で判断されます。</p>
+
+<p>例えば、大して重要でもなく、データ量も少ないインデックス用のテンプレートとして、シャード数が1、レプリカ数が0、&#8221;_source&#8221;を保存しない設定のテンプレートを登録する場合、
+次のようになります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">curl -XPUT localhost:9200/_template/template_1 -d &#39;</span>
+</span><span class='line'><span class="l-Scalar-Plain">{</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">&quot;template&quot;</span> <span class="p-Indicator">:</span> <span class="s">&quot;te*&quot;</span><span class="err">,</span>
+</span><span class='line'>  <span class="s">&quot;settings&quot;</span> <span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="s">&quot;number_of_shards&quot;</span> <span class="p-Indicator">:</span> <span class="nv">1</span><span class="p-Indicator">,</span>
+</span><span class='line'>    <span class="s">&quot;number_of_replicas&quot;</span> <span class="p-Indicator">:</span> <span class="nv">0</span>
+</span><span class='line'>  <span class="p-Indicator">}</span><span class="err">,</span>
+</span><span class='line'>  <span class="s">&quot;mappings&quot;</span> <span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="s">&quot;type1&quot;</span> <span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>      <span class="s">&quot;_source&quot;</span> <span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="s">&quot;enabled&quot;</span> <span class="p-Indicator">:</span> <span class="nv">false</span> <span class="p-Indicator">}</span>
+</span><span class='line'>    <span class="p-Indicator">}</span>
+</span><span class='line'>  <span class="p-Indicator">}</span>
+</span><span class='line'><span class="err">}</span>
+</span><span class='line'><span class="s">&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>_template</code>がインデックステンプレートを登録するためのエンドポイントです。
+<code>template_1</code>がこのテンプレートのIDです。削除などについては、このIDを利用します。</p>
+
+<p>そして、重要なのは、&#8221;<code>template</code>&ldquo;の設定です。
+&rdquo;<code>template</code>&ldquo;には、このテンプレートが適用されるべきインデックス名を記載します。
+上記サンプルでは<code>te*</code>となっているため、<code>te</code>で始まる名前のインデックスを作成した場合にテンプレートにある設定が適用されます。</p>
+
+<h3>今回利用するテンプレート</h3>
+
+<p>私がJJUG CCCや第7回Elasticsearch勉強会のKibana4のデモで利用したインデックスのテンプレートは次のものになります。
+&ldquo;<code>template</code>&#8220;には、<a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/#output-elasticsearch">前回の記事で紹介したoutput/elasticsearchの設定</a> に合致する<code>new_demo_access_log-*</code>を指定しています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">curl -XPUT localhost:9200/_template/new_access_log_for_demo -d &#39;</span>
+</span><span class='line'><span class="l-Scalar-Plain">{</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">&quot;template&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;new_demo_access_log-*&quot;</span><span class="err">,</span>
+</span><span class='line'>  <span class="s">&quot;settings&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="s">&quot;number_of_shards&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;2&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>    <span class="s">&quot;number_of_replicas&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;0&quot;</span>
+</span><span class='line'>  <span class="p-Indicator">}</span><span class="err">,</span>
+</span><span class='line'>  <span class="s">&quot;mappings&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="s">&quot;_default_&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>      <span class="s">&quot;dynamic_templates&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span>
+</span><span class='line'>        <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;string_template&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>            <span class="s">&quot;mapping&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;not_analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>            <span class="p-Indicator">},</span>
+</span><span class='line'>            <span class="s">&quot;match_mapping_type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>            <span class="s">&quot;match&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;*&quot;</span>
+</span><span class='line'>          <span class="p-Indicator">}</span>
+</span><span class='line'>        <span class="p-Indicator">}</span>
+</span><span class='line'>      <span class="p-Indicator">],</span>
+</span><span class='line'>      <span class="s">&quot;properties&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>        <span class="s">&quot;path&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;multi_field&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>          <span class="s">&quot;fields&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>            <span class="s">&quot;no_analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;not_analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>            <span class="p-Indicator">},</span>
+</span><span class='line'>            <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>            <span class="p-Indicator">}</span>
+</span><span class='line'>          <span class="p-Indicator">}</span>
+</span><span class='line'>        <span class="p-Indicator">},</span>
+</span><span class='line'>        <span class="s">&quot;referer&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;multi_field&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>          <span class="s">&quot;fields&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>            <span class="s">&quot;no_analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;not_analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>            <span class="p-Indicator">},</span>
+</span><span class='line'>            <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>            <span class="p-Indicator">}</span>
+</span><span class='line'>          <span class="p-Indicator">}</span>
+</span><span class='line'>        <span class="p-Indicator">},</span>
+</span><span class='line'>        <span class="s">&quot;agent&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;multi_field&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>          <span class="s">&quot;fields&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>            <span class="s">&quot;no_analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;not_analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>            <span class="p-Indicator">},</span>
+</span><span class='line'>            <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>            <span class="p-Indicator">}</span>
+</span><span class='line'>          <span class="p-Indicator">}</span>
+</span><span class='line'>        <span class="p-Indicator">},</span>
+</span><span class='line'>        <span class="s">&quot;geoip&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;object&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>          <span class="s">&quot;properties&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>            <span class="s">&quot;location&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>              <span class="s">&quot;geohash&quot;</span><span class="p-Indicator">:</span> <span class="nv">true</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;geohash_precision&quot;</span><span class="p-Indicator">:</span> <span class="nv">10</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;geo_point&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;lat_lon&quot;</span><span class="p-Indicator">:</span> <span class="nv">true</span><span class="p-Indicator">,</span>
+</span><span class='line'>              <span class="s">&quot;geohash_prefix&quot;</span><span class="p-Indicator">:</span> <span class="nv">true</span>
+</span><span class='line'>            <span class="p-Indicator">}</span>
+</span><span class='line'>          <span class="p-Indicator">}</span>
+</span><span class='line'>        <span class="p-Indicator">},</span>
+</span><span class='line'>        <span class="s">&quot;response&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;copy_to&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;response_int&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>          <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>        <span class="p-Indicator">},</span>
+</span><span class='line'>        <span class="s">&quot;bytes&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;long&quot;</span>
+</span><span class='line'>        <span class="p-Indicator">},</span>
+</span><span class='line'>        <span class="s">&quot;response_int&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>          <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;integer&quot;</span>
+</span><span class='line'>        <span class="p-Indicator">}</span>
+</span><span class='line'>      <span class="p-Indicator">}</span>
+</span><span class='line'>    <span class="p-Indicator">}</span>
+</span><span class='line'>  <span class="p-Indicator">}</span>
+</span><span class='line'><span class="err">}</span>
+</span><span class='line'><span class="s">&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>settings設定</h4>
+
+<p>デモ用であり、手元で2台のノードを起動するということもあり、<code>number_of_shards</code>に<code>2</code>を、<code>number_of_replicas</code>に<code>0</code>を指定してあります。</p>
+
+<h4>mappings設定</h4>
+
+<h5>インデックスのタイプ</h5>
+
+<p>Mappingsの指定は通常、特定の<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/glossary.html#glossary-type">タイプ</a>を指定します。
+今回のデモでは、1種類しかないのですが、タイプ名を特に意識しないために、<code>_default_</code>を使用しました。
+この場合、任意のタイプに適用されることとなります。
+タイプを指定してMappingの設定を行う場合は<code>_default_</code>の部分に特定のタイプ名を記入します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="s">&quot;mappings&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>  <span class="s">&quot;_default_&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="nv">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>ダイナミックテンプレート</h5>
+
+<p>次は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-root-object-type.html#_dynamic_templates">ダイナミックテンプレート</a>です。
+インデックステンプレートはインデックスの設定をテンプレート化しました。ダイナミックテンプレートはフィールドに対してテンプレートを設定できます。</p>
+
+<p>以下のダイナミックテンプレートでは、<code>string</code>タイプのフィールドのデフォルト設定を変更しています。
+通常、<code>string</code>タイプのフィールドは<code>analyzed</code>となりますが、<code>not_analyzed</code>に変更してあります。
+詳しく検索したいフィールドの方が少ないためです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="nn">...</span>
+</span><span class='line'><span class="s">&quot;dynamic_templates&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span>
+</span><span class='line'>  <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="s">&quot;string_template&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>      <span class="s">&quot;mapping&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>        <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;not_analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>        <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>      <span class="p-Indicator">},</span>
+</span><span class='line'>      <span class="s">&quot;match_mapping_type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>      <span class="s">&quot;match&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;*&quot;</span>
+</span><span class='line'>    <span class="p-Indicator">}</span>
+</span><span class='line'>  <span class="p-Indicator">}</span>
+</span><span class='line'><span class="p-Indicator">]</span><span class="err">,</span>
+</span><span class='line'><span class="nn">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>multi_field指定</h5>
+
+<p>検索もしたいし、Terms Aggregationでも利用したいフィールドについては、<code>multi_field</code>を利用して、
+<code>analyzed</code>と<code>not_analyzed</code>の2種類のフィールドを用意しています。
+<code>multi_field</code>設定を用いることで、1つのJSONのデータから、異なる形のフィールドを用意することが可能です。</p>
+
+<p>今回のテンプレートでは、<code>path</code>、<code>referer</code>、<code>agent</code>に<code>multi_field</code>を指定しました。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="nn">...</span>
+</span><span class='line'><span class="s">&quot;path&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>  <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;multi_field&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>  <span class="s">&quot;fields&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="s">&quot;no_analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>      <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;not_analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>      <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>    <span class="p-Indicator">},</span>
+</span><span class='line'>    <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>      <span class="s">&quot;index&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;analyzed&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>      <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'>    <span class="p-Indicator">}</span>
+</span><span class='line'>  <span class="p-Indicator">}</span>
+</span><span class='line'><span class="p-Indicator">}</span><span class="err">,</span>
+</span><span class='line'><span class="nn">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>例えば、上記の設定の場合、入力のJSONは<code>path</code>というデータのみですが、インデックス上には<code>path.no_analyzed</code>と
+<code>path.analyzed</code>というフィールドができあがります。
+実際に検索する場合は、<code>path.analyzed:検索したい文字列</code>という形で検索をすることで、いわゆる部分一致のような検索が可能です。
+また、完全一致をしたい場合は<code>path.no_analyzed:検索したい文字列</code>という指定になります。
+用途を考えると、<code>request</code>も指定したほうが良いかもしれません。</p>
+
+<h5>geoip</h5>
+
+<p><a href="http://blog.johtani.info/blog/2014/11/20/import-apache-accesslog-using-logstash/#filter-geoip">Logstashでgeoipデータ</a>を付与していました。
+このgeoipのデータをKibana4で利用するために、geoデータとして登録する必要があります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="s">&quot;geoip&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>  <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;object&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>  <span class="s">&quot;properties&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>    <span class="s">&quot;location&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>      <span class="s">&quot;geohash&quot;</span><span class="p-Indicator">:</span> <span class="nv">true</span><span class="p-Indicator">,</span>
+</span><span class='line'>      <span class="s">&quot;geohash_precision&quot;</span><span class="p-Indicator">:</span> <span class="nv">10</span><span class="p-Indicator">,</span>
+</span><span class='line'>      <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;geo_point&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>      <span class="s">&quot;lat_lon&quot;</span><span class="p-Indicator">:</span> <span class="nv">true</span><span class="p-Indicator">,</span>
+</span><span class='line'>      <span class="s">&quot;geohash_prefix&quot;</span><span class="p-Indicator">:</span> <span class="nv">true</span>
+</span><span class='line'>    <span class="p-Indicator">}</span>
+</span><span class='line'>  <span class="p-Indicator">}</span>
+</span><span class='line'><span class="p-Indicator">}</span><span class="err">,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上記の設定がgeoデータの指定です。
+<code>type</code>に<code>object</code>が指定してありますが、これは、geoipのデータがネストしているためです。
+geoipオブジェクトのうち、緯度経度のデータは<code>location</code>に入っているため、こちらに緯度経度関係の設定を指定します。</p>
+
+<ul>
+<li><code>"type": "geo_point"</code>：<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-geo-point-type.html#mapping-geo-point-type"><code>geo_point</code></a>タイプであることを指定</li>
+<li><code>"geohash": true</code>：緯度経度のデータをもとに、geohashの値もインデックス</li>
+<li><code>"geohash_precision": 10</code>：geohashの精度の指定</li>
+<li><code>"lat_lon": true</code>：緯度経度を個別の<code>.lat</code>、<code>.lon</code>というフィールドにもインデックス</li>
+<li><code>"geohash_prefix": true</code>：該当するgeohashのみでなく、その親にあたるgeohashについてもインデックスする</li>
+</ul>
+
+
+<h5>response、response_int、bytes</h5>
+
+<p>最後は、response、response_int、bytesです。</p>
+
+<p>responseには、HTTPステータスコードが入ります。
+文字列としても扱いたいですが、integerとして、Renge Aggregationなどを行いたいので、
+response_intというフィールドにも値を入れています。
+<code>multi_field</code>でも可能ですが、ここでは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-core-types.html#copy-to"><code>copy_to</code></a>を利用しました。
+<code>copy_to</code>を用いることで、異なるフィールドに値をコピーすることができます。</p>
+
+<p>bytesについては、longで扱いたいとういう理由だけです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="s">&quot;response&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>  <span class="s">&quot;copy_to&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;response_int&quot;</span><span class="p-Indicator">,</span>
+</span><span class='line'>  <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;string&quot;</span>
+</span><span class='line'><span class="p-Indicator">}</span><span class="err">,</span>
+</span><span class='line'><span class="s">&quot;bytes&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>  <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;long&quot;</span>
+</span><span class='line'><span class="p-Indicator">}</span><span class="err">,</span>
+</span><span class='line'><span class="s">&quot;response_int&quot;</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span>
+</span><span class='line'>  <span class="s">&quot;type&quot;</span><span class="p-Indicator">:</span> <span class="s">&quot;integer&quot;</span>
+</span><span class='line'><span class="p-Indicator">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>まとめ</h2>
+
+<p>今回はデモに利用したインデックスてプレートについて説明しました。
+前回の、Logstashの設定とこのインデックステンプレートを用いることで、Kibanaで解析するデータの準備ができます。
+実際の操作などについては、また次回の記事で説明しようかと思います。</p>
+
+<p>不明な点、誤植などありましたら、コメント欄へお願いします。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2014-11-25T16:25:46+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-11-25T16:25:46+09:00'><span class='date'>2014-11-25</span></time></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>, <a class='category' href='/blog/categories/kibana/'>kibana</a>, <a class='category' href='/blog/categories/logstash/'>logstash</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
+      data-hatena-bookmark-layout="standard"
+      data-hatena-bookmark-url="http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/">
+    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
+        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
+        style="border: none">
+  </a>
+</div>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog after sharing */
+google_ad_slot = "2760031654";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/11/21/import-apache-accesslog-using-logstash/" title="Previous Post: Logstashを利用したApacheアクセスログのインポート">&laquo; Logstashを利用したApacheアクセスログのインポート</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <a href="http://twitter.com/johtani"><img class="about_me" src="/images/about_me2.jpg" alt="後頭部"/></a>
+  <p>Elasticsearch関連の仕事をしているエンジニアです。Elasticsearch、Kibana、Logstashに興味のある方は連絡をください。<br/><br/>
+最近は自然言語処理、DataVisualizationに興味があります。<br/>
+Elasticsearch勉強会の主催をしています。<br/>
+<a href="http://code.google.com/p/lucene-gosen/">lucene-gosen</a>のコミッターもやっています。</p>
+↓ログ可視化本も出てます！<br/>
+　Elasticsearch本も出てます！↓<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=B00MPDUQQI&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4048662023&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+↓Solr本改訂版、出ました！<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4774161632&IS1=1&nou=1&ref=qf_sp_asin_til&fc1=000000&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+    <script type="text/javascript" src="http://widget.booklog.jp/blogparts/js/booklog_minishelf.js?metal" id="booklog_minishelf"></script>
+    <script type="text/javascript" src="http://api.booklog.jp/json/johtani?category=0&count=15&callback=booklog_minishelf"></script>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (45)</a></li><li><a href='/blog/categories/elaticsearch/'>elaticsearch (1)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (6)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (2)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (2)</a></li><li><a href='/blog/categories/misc/'>misc (2)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (16)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (1)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/25/import-apache-accesslog-using-logstash-2/">インデックステンプレートとLogstash</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/21/import-apache-accesslog-using-logstash/">Logstashを利用したApacheアクセスログのインポート</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/19/hold-on-7th-elasticsearch-jp/">第7回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/06/elasticsearch-1-4-0-ja/">Elasticsearch 1.4.0および1.3.5リリース（日本語訳）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/27/how-to-use-validate-api/">validate APIの利用</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>On Twitter:</h1>
+  <div>
+    <p><br /><a href="http://twitter.com/johtani" target="_blank">My Tweets, on Twitter.</a></p>
+    <a href="http://twitter.com/johtani" class="twitter-follow-button" data-show-count="">Follow @johtani</a>
+  </div>
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/';
+        var disqus_url = 'http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+(function(w,d){
+    var c,e=d.createDocumentFragment(),f=d.getElementsByTagName("script")[0],
+    a=function(a,b){if(!d.getElementById(b)){c=d.createElement("script");
+    c.src=a;c.id=b||null;c.async=true;e.appendChild(c);}};
+
+    w.___gcfg={lang:"ja"};
+    a("https://apis.google.com/js/plusone.js");
+
+
+    a("//platform.twitter.com/widgets.js");
+
+
+    a("//connect.facebook.net/ja_JP/all.js#xfbml=1","facebook-jssdk");
+
+    a("//b.st-hatena.com/js/bookmark_button_wo_al.js");
+    f.parentNode.insertBefore(e,f);
+})(this,document);
+</script>
+
+
+  </div>
+</body>
+</html>
