@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2014-11-27T15:15:36+09:00</updated>
+  <updated>2014-12-01T16:27:07+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,207 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[2014年のElasticsearch]]></title>
+    <link href="http://blog.johtani.info/blog/2014/12/01/about-elasticsearch-in-2014/"/>
+    <updated>2014-12-01T18:05:48+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/12/01/about-elasticsearch-in-2014</id>
+    <content type="html"><![CDATA[<p>早いもので、師走です。今年もあと少しとなりました。ということで、Advent Calendarの季節が始まりました。</p>
+
+<p>この記事は<a href="http://qiita.com/advent-calendar/2014/elasticsearch">Elasticsearch Advent Calndar 2014</a>の1日目のエントリです。</p>
+
+<p>1日目ということで、簡単に今年の変遷を振り返りつつ、今年導入された新機能についてピックアップしてみようかと思います。</p>
+
+<!-- more -->
+
+
+<h2>1.0リリース(Lucene 4.6.0)</h2>
+
+<p>今年一番の目玉と思いますが、1月にRCが公開されて、1.0.0が2月にリリースされました。
+（ElasticSearch Serverの翻訳が昨年末に終わってレビューをしていた段階での発表だったので個人的にはきついタイミングでした）
+1.0の主な変更点はこちら。</p>
+
+<h3>Elasticsearch（Sが小文字に）</h3>
+
+<p>1.0からSが小文字になりました。(<a href="https://github.com/elasticsearch/elasticsearch/issues/4634">#4634</a>)
+0.90以前のバージョンについては、Sが大文字になっています。
+ややこしいですが、今年の3月に出版された黒い<a href="http://www.amazon.co.jp/dp/4048662023/ref=as_sl_pc_tf_lc?tag=johtani-22&amp;camp=243&amp;creative=1615&amp;linkCode=as1&amp;creativeASIN=4048662023&amp;adid=0YAE2J8RE36SX7N3R06Z&amp;&amp;ref-refURL=http%3A%2F%2Fblog.johtani.info%2F">ElasticSearch Server日本語版</a>は原著が0.20で日本語版にするタイミングで0.90に対応しました。
+このため、こちらの書籍のタイトルはSが大文字となっています。
+（なお、<a href="https://www.packtpub.com/big-data-and-business-intelligence/elasticsearch-server-second-edition">原著の2nd Edition</a>は小文字になっています）</p>
+
+<h3>Snapshot/Restoreの導入とGatewayの廃止</h3>
+
+<p>0.90以前のバージョンでは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/0.90/modules-gateway.html#modules-gateway">gatewayというモジュール</a>で、S3などにインデックスのメタデータなどを保存する機能がありました。
+この機能は、0.20からlocal以外はdeprecatedとなりました。</p>
+
+<p>インデックスのバックアップ、リストアのために、1.0で実装されたのが<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-snapshots.html#modules-snapshots">Snapshot/Restore</a>です。
+Snapshot/Restoreでは、インデックスごと、もしくはクラスタ全体をリモートにあるリポジトリにスナップショットを取ることが可能となりました。
+初期リリースの段階では、共有ファイルシステムのみでしたが、現在は、S3やHDFSなどに保存が可能となっています。</p>
+
+<h3>Aggregation</h3>
+
+<p>Facetをより強力にしたものです。Facetでは、指定したフィールドの集計のみでした。
+データの解析などを行うには、独自で集計する必要がありました。
+この機能をより柔軟に行えるように実装したのが<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations.html">Aggregation</a>です。</p>
+
+<p>たとえば、アクセスログを日毎に集計し、さらに日毎の集計に対して国別の集計やユーザエージェントごとの集計をさらに行うといった感じです。
+Facetの場合は、日毎の検索結果に対して個別に集計するのみでしたが、Aggregationを使うことで、1週間の検索結果に対して、
+日毎に国別の集計を行うといったことが可能になっっています。</p>
+
+<h3>cat API</h3>
+
+<p>&ldquo;=^.^=&#8221;猫が出てくるAPIです。(違う)</p>
+
+<p>Elasticsearchでは、クラスタの状態などが全てREST APIで取得でき、JSONで結果が帰ってきていました。
+JSONはプログラムなどで処理を行う場合は便利ですが、コンソールで確認したり、管理系のツールでメールで通知する場合などは見にくいことがあります。
+これを解消したのが<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/cat.html"><code>_cat</code> API</a>です。（<a href="http://www.elasticsearch.org/blog/introducing-cat-api/">公式の紹介ブログはこちら</a>）</p>
+
+<h3>Circuit Breaker</h3>
+
+<p>OOMが発生しそうなfielddataの読み込みを検知して、事前に防ぐ機構になります。
+初期段階ではFielddataに対してのものから実装されました。</p>
+
+<h2>1.1リリース(Lucene 4.6.1)</h2>
+
+<p>3月にリリースされました。Elasticsearchはまだまだ発展しているため、リリースのサイクルが短いのが特徴です。</p>
+
+<p>1.x系では、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/setup-upgrade.html#setup-upgrade">Rolling Upgrade</a>が導入されました。このため、クラスタ全体を停止することなく、クラスタのアップグレードが可能になりました。</p>
+
+<h3>search templates</h3>
+
+<p>検索クエリをテンプレートとして登録することができる<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-template.html#search-template">search templates</a>です。
+JSONでクエリを記述できるのは便利ですが、毎回組み立てるのは大変かもしれません。
+特に、固定のクエリをプログラムから利用するような場合などです。
+テンプレートとして登録しておくことで、検索時に値を埋め込むだけで検索ができるようになりました。</p>
+
+<h3>Aggregationの強化</h3>
+
+<p>Aggregationの種類が増えました。</p>
+
+<ul>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html#search-aggregations-metrics-cardinality-aggregation">cardinality</a>：ユニークユーザ数の集計などが行えるaggregationです。HyperLogLog++アルゴリズムを利用した実装になっています。</li>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-bucket-significantterms-aggregation.html">significant_terms</a>：単語の数による集計ではなく、コレクション全体に対する単語の頻度と、検索結果に対する単語の頻度を計算することで、重要度を計ることができます。</li>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-metrics-percentile-aggregation.html#search-aggregations-metrics-percentile-aggregation">percentiles</a>：パーセンタイル値を計算できます。</li>
+</ul>
+
+
+<h2>1.2リリース(Lucene 4.8系)</h2>
+
+<h3>Java 7必須</h3>
+
+<p>利用しているLuceneがJava 7必須となったためです。また、Java 6のEOLも切れてますし。</p>
+
+<h3>dynamic scriptingがデフォルトオフ</h3>
+
+<p>採用していたMVELがサンドボックス化に対応していないため、危険を回避するためにオフとなりました。</p>
+
+<h3>インデキシングとマージング</h3>
+
+<p>インデキシングとマージ処理に関するさまざまな改善。</p>
+
+<ul>
+<li>flushのthreasholdを操作回数ではなく、サイズや時間によるものに変更</li>
+<li>デフォルトをConcurrentMergeSchedulerに変更</li>
+</ul>
+
+
+<h2>1.3リリース(Lucene 4.9.0系)</h2>
+
+<h3>セキュリティ関連</h3>
+
+<ul>
+<li>JSONPのデフォルトオフ</li>
+<li>MVELの非推奨化とgroovyをデフォルトに</li>
+</ul>
+
+
+<h3>aggregationの強化</h3>
+
+<ul>
+<li><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-metrics-top-hits-aggregation.html#search-aggregations-metrics-top-hits-aggregation">top hits</a>：Field Collapsing/combiningと呼ばれる機能です。たとえば、いくつかのサイトのHTMLを収集して検索機能を提供する場合に、ドメインごとに1件ずつ検索結果に出したい場合などに利用できる機能です。</li>
+</ul>
+
+
+<p>その他にも以下のaggregationが追加されています。
+* <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-metrics-percentile-rank-aggregation.html">percentile ranks</a>
+* <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations-metrics-geobounds-aggregation.html">geo bounds</a></p>
+
+<h3>mappingのtransform</h3>
+
+<p>Mappingに<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-transform.html#mapping-transform">transform</a>機能が追加されました。
+mappingにドキュメントの値を元に、インデキシング時に変換処理を記述できます。
+たとえば、特定のフィールドにある値がある場合にだけ、あるフィールドに値を入れるなどといったことが可能になります。</p>
+
+<h3>ディスク関連</h3>
+
+<ul>
+<li>disk based shard allocation deciderが導入されました。ノードのディスクの使用率を元に、シャードを配置しても良いかといった決定を行う機構です。</li>
+<li>チェックサムによるファイルのチェック（Lucene4.9で導入されたコードへの切り替え）</li>
+</ul>
+
+
+<h2>1.4リリース(Lucene 4.10系)</h2>
+
+<p>ベータ版が出されるほど、多くの改善が入っています。</p>
+
+<h3>resiliency</h3>
+
+<ul>
+<li><a href="#memory-mgmt">メモリ使用量の低下</a>によるノードの安定性向上
+
+<ul>
+<li>DocValues、リクエストごとのcircuit breakerなど</li>
+</ul>
+</li>
+<li>discoveryアルゴリズムの改善による<a href="#cluster-stability">クラスタの安定性</a>向上</li>
+<li><a href="#checksums">チェックサム</a>の導入による破損したデータの検知</li>
+</ul>
+
+
+<h3>セキュリティ関連</h3>
+
+<ul>
+<li>CORSをデフォルト無効</li>
+<li>Groovyがデフォルトスクリプト言語</li>
+</ul>
+
+
+<h3>Aggregationの強化</h3>
+
+<p>以下のaggregationが追加されています。
+* <a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-filters-aggregation.html#search-aggregations-bucket-filters-aggregation">filter</a>、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.4/search-aggregations-bucket-children-aggregation.html#search-aggregations-bucket-children-aggregation">children</a>、<a href="%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88">scripted_metric</a></p>
+
+<h3>Upgrade API</h3>
+
+<p>インデックスを最新のバージョンのものにアップグレードするためのAPIです。
+Luceneは下位互換を保ってくれているため、古いバージョンのインデックスも読み込むことが可能です。
+ただ、最新バージョンで使える機能が制限されていたりということもあります。
+クラスタにあるインデックスをアップグレードするのにかかる時間や必要かどうかといったことを取得できる仕組みも提供します。</p>
+
+<p>また、Lucene自体は、1つ前のメジャーバージョン（4.x系だと3.x系まで）までの互換性は提供していますが、
+2つ前のメジャーバージョンの互換性がなくなります。
+Luceneも5.x系のブランチが作成されており、5系のリリースにより、3系との互換性がなくなります。
+5系のリリースに対応する場合にも、こちらのAPIが助けになるかと。</p>
+
+<h3>1.4.1</h3>
+
+<p>11/27に<a href="http://blog.johtani.info/blog/2014/11/27/elasticsearch-1-4-1-released-ja/">1.4.1がリリース</a>されました。
+シャードの配置やparent/child、nestedドキュメントの改善などが行われています。</p>
+
+<h2>まとめ</h2>
+
+<p>ということで、駆け足で、1月から11月までのElasticsearchの流れを追ってみました。
+1.0で大きな機能追加、改善が行われ、その後も活発に開発が行われています。
+要望などがあれば、MLで聞いてみたりやGitHubに登録するなどを行っていただければと。</p>
+
+<p>あと、今年から来年にかけての大きなイベントとして、
+<a href="http://www.elasticon.com/">Elasticsearch初のユーザカンファレンスのサイトがオープン</a>しました。
+Elasticsearchに関するいろいろな話が聞ける機会だと思うので、興味のある方は見ていただければと。</p>
+
+<p>では、また次のAdvent Calendarで！（最終日の予定ですが、空きがあるのでなにか書くかも）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Elasticsearch 1.4.1および1.3.6リリース（日本語訳）]]></title>
@@ -2989,151 +3190,6 @@ similarityやpostingsフォーマットなどは新しく追記されていま�
 
 <p>来月から読み進めるつもりなので、また、面白い内容があったら感想を書いていこうと思います。
 （また翻訳できるといいかもなー）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[可視化ツール現状確認会に参加してきました。#可視化]]></title>
-    <link href="http://blog.johtani.info/blog/2014/06/04/attending-visualize-study/"/>
-    <updated>2014-06-04T21:15:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/06/04/attending-visualize-study</id>
-    <content type="html"><![CDATA[<p><a href="http://www.zusaar.com/event/7437003">可視化ツール現状確認会</a>に参加して、<strike>カジュアルウォーターじゃなくて</strike>可視化ツールの現状を確認してきました。</p>
-
-<p>ということで、いつものメモです。</p>
-
-<!-- more -->
-
-
-<h2>Mackerel と Graphite について （y_uuk1さん）</h2>
-
-<h3>Graphite</h3>
-
-<ul>
-<li>時系列</li>
-<li>工夫すればスケーラブル</li>
-<li>SensuやCollectdと組み合わせたり</li>
-<li>GrafanaとGrapheneでGUI</li>
-<li>Mackerel素敵だよと。</li>
-<li>架空のわかりやすいグラフが見れた</li>
-</ul>
-
-
-<h2>Kibana &amp; Grafana &amp; Influga （hakoberaさん）</h2>
-
-<ul>
-<li>Kibana
-
-<ul>
-<li>かっこいい。</li>
-<li>JVM大変。
-*</li>
-</ul>
-</li>
-<li>Grafana
-
-<ul>
-<li>Graphiteがカッコ悪いのでKibanaをフォーク</li>
-<li>なぜか、ESが必要。</li>
-<li>InfluxDBに浮気しそう</li>
-</ul>
-</li>
-<li><p>Influga</p>
-
-<ul>
-<li>@haoberaさん作</li>
-<li>InfluxDB Queryサポート</li>
-</ul>
-</li>
-<li><p>迷ったら、Kibana入れとけ。</p></li>
-<li><p>DistinctがKibana出できないけど、それ以外はある程度行けるらしい。</p>
-
-<ul>
-<li>aggregationがサポートされたら、できると思う。</li>
-</ul>
-</li>
-<li><p>Kibana以外は、バックエンドがタイムシリーズなので、縛りがある</p></li>
-</ul>
-
-
-<h2>可視化ツール紹介（仮） （showyouさん）</h2>
-
-<ul>
-<li>誰がチャートを作るの？</li>
-<li>誰が見るの？</li>
-<li>一覧化されてて、あとで眺めたい</li>
-<li>IPython Notebookのデモ</li>
-<li>R shiny Serverのデモ</li>
-<li>Pentaho CE+Saikuのデモはネットワークがダメだったので割愛</li>
-<li>分析側の視点を見せたかったので。</li>
-</ul>
-
-
-<h2>可視化とは何だったのか （harukasanさん）</h2>
-
-<ul>
-<li>インフラ</li>
-<li>モニタリング、アナライズ、可視化どれ？</li>
-<li>可視化は目的ではないよねと。</li>
-<li>熱く、ユーザとサービスプロバイダ間の距離のお話。
-
-<ul>
-<li>ログ</li>
-<li>生ファイルで残すのが重要</li>
-</ul>
-</li>
-</ul>
-
-
-<p>トータルで必要とか考えないといけないことがわかって面白かったｗ</p>
-
-<h2>あなたの知らないrrdtool （shoichimasuharaさん）</h2>
-
-<ul>
-<li>すげー！</li>
-<li>いろいろできるらしい（ノートPCの前にいなかったｗ）</li>
-</ul>
-
-
-<h2>D3.jsとジオマッピング （Takaki_さん）</h2>
-
-<ul>
-<li>時空間推進課！すげー！</li>
-<li>ジオデータのおはなし。</li>
-<li>TopoJSONとかGeoJSONとか</li>
-</ul>
-
-
-<h2>Zipkinについて （synkさん）</h2>
-
-<ul>
-<li>ものすごい数のJVMがThriftで殴りあってるらしい。</li>
-<li>ZipkinはTwitterが作ったもの</li>
-<li>Brave、HTraceというのが、PureJava用のZipkinトレーシングプラグイン</li>
-<li>見積もりする必要がないくらいでかいHBaseがあるので、そこにためてる。</li>
-<li>まとめ
-
-<ul>
-<li>LINEはエンジニアを大募集中</li>
-</ul>
-</li>
-</ul>
-
-
-<h2>Graphiteについて (mickey19821 さん)</h2>
-
-<ul>
-<li>ドリコムさんのGraphiteのおはなし</li>
-<li>Metricsの収集はCollectd</li>
-<li>Graphite-webがスケールできなくて困ってるらしい。</li>
-<li>Graphiteで可視化ツラいｗ</li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<p><strong>RRDTool最高</strong></p>
-
-<p>あと、クックパッドの技術力がすごいという発表なんかもありました。</p>
 ]]></content>
   </entry>
   
