@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2014-12-01T17:06:30+09:00</updated>
+  <updated>2014-12-12T23:52:40+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,157 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Logstash 1.5.0 Beta1リリース(日本語訳)]]></title>
+    <link href="http://blog.johtani.info/blog/2014/12/12/logstash-1-5-0-beta1-released-ja/"/>
+    <updated>2014-12-12T17:17:26+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/12/12/logstash-1-5-0-beta1-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/logstash-1-5-0-beta1-released/">logstash 1.5.0.beta1 released</a></p>
+
+<p>Logstash 1.5.0 Beta1をリリースしました。<a href="http://www.elasticsearch.org/overview/logstash/download/">こちらのページ</a>からダウンロードできます。</p>
+
+<p><strong>Note: ベータリリースです。本番環境では使用しないでください。</strong></p>
+
+<!-- more -->
+
+
+<h2>1.5.0の主な変更点は？</h2>
+
+<p>1.5.0の主なテーマはプラグイン管理、パフォーマンス改善、<a href="http://kafka.apache.org/">Apache Kafka</a>インテグレーションです。Logstashの主な特徴の1つは
+プラグインを利用できることであり、パイプラインの動作を拡張するためにプラグインを追加するのが簡単なことです。
+このリリースで、プラグインの開発、管理、公開がより簡単になります。
+また、Logstashの速度をより良くしたため、より多くのデータを短時間に処理することができます。
+興味ありませんか？では、詳細を見ていきましょう。</p>
+
+<h2>plugin ecosystemの変更</h2>
+
+<p>Logstashは165ものプラグイン(inputs、filters、outputs、codecs)を持っており、
+これらはElasticsearchとコミュニティからのコントリビュートで開発されています。
+多くのプラグインを管理することは、使いやすさと素早さの間のトレードオフがあります。
+Logstashの全てのプラグインをまとめることは使いやすさがある一方、プラグインの更新を取り込むために
+Logstashの新しいリリースを待ってもらうことになります。
+Logstashからプラグインを分離して個別に配布する場合、更新は簡単になりますが、使いやすさ（特に新しいユーザに）に影響が出ます。</p>
+
+<p>私たちは、プロジェクトを前進させるために、これらのバランスをとることを考えました。
+これまで、全ての利用可能なプラグインは’core’と&#8217;contrib&#8217;の2つに分割していました。
+&lsquo;core&#8217;にあるよく使われるプラグインは、Logstashに含めていました。
+コミュニティによりコントリビュートされたプラグインは&#8217;contrib&#8217;パッケージとして分離して配布していました。
+1.5.0のリリースで、ユーザに対してより良いプラグイン管理をできるように変更しました。
+全てのプラグインは、それ自身によるパッケージに移行しました。
+パッケージングフレームワークとしてrubygemsを使い、<a href="http://rubygems.org/">rubygem.org</a>経由でこれらのプラグインを配布、公開します。
+また、Logstashにプラグインのインストール、更新、削除を簡単にするための構造も追加しました。</p>
+
+<p>例えば、S3 output pluginをインストールするには、以下のコマンドを実行します。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$LS_HOME/bin/plugin install logstash-output-s3</span></code></pre></td></tr></table></div></figure>
+
+
+<p>それだけです！Logstashがgemと依存するgemをrubygems.orgからダウンロードし、インストールします。
+あなたは、S3にデータを送ることができるようになります。</p>
+
+<p>ダウンロード可能なLogstashリリースはプラグインをまだ多く含んでいますが、
+いつでも、個別にプラグインをアップグレードし、インストールすることができます。
+プラグインエコシステムの変更に関する詳細のブログ記事をお待ち下さい。</p>
+
+<h2>パフォーマンス改善</h2>
+
+<p>Logstash 1.5.0はより高速になっています。パフォーマンスが改善された2カ所について説明します。</p>
+
+<h3>grok filter</h3>
+
+<p>Grok filterはLogstashで、構造化データを抽出するためにパターンを記述するのに使われます。
+本リリースで、人気のある幾つかのパターンのgrok filterのスループットを100%に改善しました。
+言い換えると、grok filterを使うときに、Logstashを通してより多くのデータを処理することができます。</p>
+
+<p>私たちのベンチマークテストで、1.5.0と1.4.2のスループットの比較をしました。
+利用したデータは690万件のApache Webアクセスlogで、<code>COMBINEDAPACHELOG</code>のgrok patternです。
+1.5.0で、スループットは34,000 event per sec(eps)から50,000 epsに増加しました。
+両方のテストを8コアのマシンでLogstashで8つのワーカーを実行しました。
+これらのテストで、一つのgrok filterを実行し、
+<code>stdin</code>と<code>stdout</code>を使ったパイプラインでイベントのスループットを計測しました。
+全体的なパフォーマンスは、様々なハードウェアやLogstashのコンフィグによって変化することに注意してください。</p>
+
+<h3>json serialization / deserialization</h3>
+
+<p>JSONのシリアライズ/でシリアライズを<a href="https://github.com/guyboertje/jrjackson">JrJackson</a>ライブラリを利用して実装しました。
+これにより、100%以上のスループットの改善がありました。
+先ほど説明したパフォーマンステストにおいて、1.3KBのサイズの500,00 JSONイベントを送信し、
+16,000 epsから30,000 epsにスループットが改善しました。
+45,000サイズのイベントで、850 epsから3500 epsにスループットが増加しました。
+すばらしいです。</p>
+
+<h2>apache kafka integration</h2>
+
+<p>いまでは、Apache Kafkaが大規模スケールデータ処理システムでよく利用されます。
+Logstashの配備のスケーリングにおいて、Kafkaもまた、shippingインスタンスとindexingインスタンス間の
+データを保存するための中間メッセージバッファとして使うことができます。</p>
+
+<p>1.5.0で、Logstash Kafkaのinputとoutputのプラグインのビルトインサポートを追加しました。
+これは、<a href="https://github.com/joekiller/logstash-kafka">Joseph Lawson</a>によって最初に開発されました。
+私たちは、これらのプラグインにインテグレーションテストとドキュメントを追加することにより改良し、
+新しいKafkaの機能を開発し続けます。
+また、<a href="http://avro.apache.org/">Apache Avro</a> codecを追加することで、Kafkaに保存されたイベントを
+簡単に取得でき、ELKスタックを使ってそれらを解析できるようにしました。</p>
+
+<p>Kafka inputを追加するのは次のコマンドです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$LS_HOME/bin/plugin install logstash-input-kafka</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Kafka outputは次のコマンドです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$LS_HOME/bin/plugin install logstash-output-kafka</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>セキュリティに関する改善</h2>
+
+<p>認証と経路暗号化のサポートを追加し、Elasticsearchのoutput、input、filterのセキュリティを改良しました。
+例えば、HTTPプロトコルでSSL/TLSにより暗号化を有効にでき、
+HTTPベーシック認証をユーザ名とパスワードをリクエストに与えることで設定できます。
+これらの機能は、時期にリリースされる<a href="http://www.elasticsearch.org/overview/shield/">Elasticsearch Shield</a>セキュリティプロダクトとLogstashを統合できます。</p>
+
+<h2>ドキュメント</h2>
+
+<p>これまで、Logstashのドキュメントは[logstash.net])(<a href="http://logstash.net/">http://logstash.net/</a>)に置いてあり、
+他のELKスタックと一緒に動かす時に、情報を探すのが厄介でした。
+1.5.0および、今後のバージョンのドキュメントはelasticsearch.orgの<a href="http://www.elasticsearch.org/guide/en/logstash/current/index.html">Logstash Guide</a>に移行します。
+この移行で<a href="http://elasticsearch.org/guide">elasticsearch.org/guide</a>にELKスタックを利用、
+学習するためにドキュメントが1つになりました。
+このベータリリースのイテレーションで、私たちはプレゼンテーションとドキュメントの品質を改善することに活発に取り組んでいきます。
+(過去のLogstashのドキュメントの全てはいままでの<a href="http://logstash.net/docs/1.4.2/">logstash.net</a>で引き続き公開していく予定です。)</p>
+
+<h2>バグフィックスと改善</h2>
+
+<p>ここまでの新しい機能に加えて、Logstash 1.5.0では、多くのバグフィックスと多くの機能改善があります。
+ここで、これらのいくつかを紹介します。</p>
+
+<ul>
+<li>出力しない&#8217;metadata&#8217;をイベントに格納可能に。これは、例えば、date filterに使う中間フィールドのために必要。(<a href="https://github.com/elasticsearch/logstash/issues/1834">#1834</a>,<a href="https://logstash.jira.com/browse/LOGSTASH-1798"> #LOGSTASH-1798</a>)</li>
+<li>HTTPを利用しているときのファイルデスクリプタリークの修正。Logstashがストールするのを防ぎ、OOMエラーからクラッシュするケースも防ぎます。(<a href="https://github.com/elasticsearch/logstash/issues/1604">#1604</a>)</li>
+<li>Twitter input:<code>full_tweet</code>オプションの追加、Twitter rate limitingエラーのハンドリング(<a href="https://github.com/elasticsearch/logstash/issues/1471">#1471</a>)</li>
+<li>イベントを生成するfilter(multiline、clone、split、metrics)により、
+後続の条件文にこれらのイベントを正しく伝搬(<a href="https://github.com/elasticsearch/logstash/issues/1431">#1431</a>)</li>
+<li>Elasticsearch output:Logstashはデフォルトで<code>message.raw</code>フィールドを作成しない。messageフィールドはElasticsearch
+により<code>not_analyzed</code>でマルチフィールドとして追加される。マルチフィールドはディスクスペースが2倍必要だが、利点がない。</li>
+<li>bin/logstashの複数のサブコマンドを除去(<a href="https://github.com/elasticsearch/logstash/issues/1797">#1797</a>)</li>
+</ul>
+
+
+<p>これらの機能、改善、バグフィックスについては、Logstash 1.5.0.Beta1 の<a href="https://github.com/elasticsearch/logstash/blob/master/CHANGELOG">changelog</a>をごらんください。</p>
+
+<h2>試してみてください！</h2>
+
+<p>ぜひ、Logstash 1.5.0 Beta 1をダウンロードして試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/logstash/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[2014年のElasticsearch]]></title>
@@ -3096,100 +3247,6 @@ NetflixなどのMeetupの動画で見てたのですが、こんな形で日本�
 <p><a href="http://www.amazon.co.jp/registry/wishlist/29EMX20UN9P16">ほしい物リストはこちら</a></p>
 
 <p>新天地についてはまた明日。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch server 2nd editionのファーストインプレッション]]></title>
-    <link href="http://blog.johtani.info/blog/2014/06/16/first-impression-elasticsearch-server-2nd-edition/"/>
-    <updated>2014-06-16T17:47:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/06/16/first-impression-elasticsearch-server-2nd-edition</id>
-    <content type="html"><![CDATA[<p><a href="http://bit.ly/1kbu5Xd">Elasticsearch server 2nd edition</a>が発売されています。</p>
-
-<p>私が翻訳したのは前のバージョンですが。。。
-まずは、目次を元にどのくらい変わってるかを見てみました。
-（全部まだ読んでなくて。。。）</p>
-
-<!-- more -->
-
-
-<h2>1章 Getting Started with the Elasticsearch Cluster</h2>
-
-<p>冒頭に、全文検索とは、転置インデックスとはどんなものか、
-Luceneの簡単なアーキテクチャの仕組みについて説明が追加されています。
-検索の仕組みを知らない人が読んでもわかりやすくなっています。</p>
-
-<p>インストール方法なども少し追記されています。
-バージョニングと簡単なデータ登録と検索方法についてもここで触れられています。
-検索結果の構造の説明もちょっとあります。
-まず簡単に触ってみるというところまでが1章でまとめられた感じです。</p>
-
-<h2>2章 Indexing Your Data</h2>
-
-<p>新しく、切りだされた形です。
-前のバージョンでは1章で説明されていた、Mapping周りが切りだされています。
-シャードやレプリカの説明もこちらです。</p>
-
-<p>IPアドレスタイプ（IPv4のみ）と<code>token_count</code>タイプの説明も追加されてます。
-similarityやpostingsフォーマットなどは新しく追記されています。
-また、メタフィールドと呼ばれる<code>_type</code>などはこちらに移動しているようです。
-マージ処理などの説明も追記されています。このあたりは、<a href="http://www.packtpub.com/mastering-elasticsearch-querying-and-data-handling/book">Mastering ElasticSearch</a>に
-記載されているものが移植された感じでしょうか。</p>
-
-<h2>3章 Searching Your Data</h2>
-
-<p>前のバージョンでは2章だった章です。
-クエリについては1.0で追加された<code>simple_query_string</code>などが追記されています。
-<code>constant_score</code>や<code>dismax</code>などもです。</p>
-
-<p>また、前のバージョンの3章で説明されていたハイライトや8章で触れられていた<code>validate API</code>についても
-移動しています。</p>
-
-<h2>4章 Extending Your Index Structure</h2>
-
-<p>前のバージョンの3章で触れられていた、データの構造に関する部分がこの章になります。
-親子や配列、ネスト等のデータのインデックスや検索の方法です。</p>
-
-<h2>5章 Make Your Search Better</h2>
-
-<p>スクリプティングや言語判定などの仕組みが記載されています。
-また、ブーストについても同様です。Synonymについてもここです。
-スパンクエリについては省略されたのかな？</p>
-
-<h2>6章 Beyond Full-text Searching</h2>
-
-<p>1.0の目玉機能の一つであるAggregationの説明から始まります。
-その後、ファセットやPercolatorについてです。メモリに関する注意点もありそうです。
-また、Geoについての説明がこちらに移動されていました。
-<code>scroll API</code>についてもこちらで説明されています。</p>
-
-<h2>7章 Elasticsearch Cluster in Detail</h2>
-
-<p>前の7章で記載されていたElasticsearchの分散の仕組み（Node Discovery）についての記載があります。
-また、1.0で追加された<code>circuit breaker</code>やスレッドプール、インデックスのリフレッシュレートなど、<a href="http://www.packtpub.com/elasticsearch-server-second-edition/book">Mastering ElasticSearch</a>の
-内容も追記されている気がします。</p>
-
-<p>インデックスやマッピングのテンプレート機能についてもここで説明があるみたいです。</p>
-
-<h2>8章 Administrating Your Cluster</h2>
-
-<p>1.0で追加された<code>snapshot/restore</code>の説明から始まります。
-あとは、前のバージョンの7章で説明されていたクラスタ管理用のAPIについての説明です。
-いくつか（例えば<code>cat API</code>）、1.0で追加されています。</p>
-
-<p>また、シャードのリバランスの話も追加されているようです。
-エイリアスやプラグインの話はこちらに移動してるみたいです。</p>
-
-<h2>感想</h2>
-
-<p>ということで、とりあえず、駆け足で目次ベースで違いを見てみました。
-<a href="http://www.packtpub.com/elasticsearch-server-second-edition/book">Mastering ElasticSearch</a>での
-知見がフィードバックされ、しかも1.0（すでに1.3が出そうな勢いですが。。。）にバージョンアップされた内容になっています。
-冒頭がわかりやすくなっているので、検索をやったことのない方にもおすすめな書籍になった気がします。
-英語が苦にならなければ、おすすめの一冊だと思います。</p>
-
-<p>来月から読み進めるつもりなので、また、面白い内容があったら感想を書いていこうと思います。
-（また翻訳できるといいかもなー）</p>
 ]]></content>
   </entry>
   
