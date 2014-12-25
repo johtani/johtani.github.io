@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2014-12-18T20:49:59+09:00</updated>
+  <updated>2014-12-25T18:07:53+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,98 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 2.0系のIssueの紹介]]></title>
+    <link href="http://blog.johtani.info/blog/2014/12/25/pickup-elasticsearch-2-0-0-labels/"/>
+    <updated>2014-12-25T15:53:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2014/12/25/pickup-elasticsearch-2-0-0-labels</id>
+    <content type="html"><![CDATA[<p>この記事は<a href="http://qiita.com/advent-calendar/2014/elasticsearch">Elasticsearch Advent Calndar 2014</a>の25日目のエントリです。</p>
+
+<p>あっという間に最終日です。来年につなげるという意味で、Elasticsearchの2系のIssueをいくつかピックアップして紹介してみます。</p>
+
+<!-- more -->
+
+
+<p>現在、ElasticsearchのGitHubリポジトリは、大きく3つのブランチで作業しています。
+<code>master</code>、<code>1.x</code>、<code>1.4</code>です。<code>master</code>と<code>1.x</code>の大きな違いとしては、<code>master</code>はLuceneの5.x系を採用している点です。</p>
+
+<p>なお、これから紹介するIssueは現在、確定していない項目も含んでいます。実際に2.0がリリースされるタイミングでは
+採用されない場合もあります。</p>
+
+<h2>Upgrade master to lucene 5.0 snapshot #8347 (closed)</h2>
+
+<p><a href="https://github.com/elasticsearch/elasticsearch/pull/8347">https://github.com/elasticsearch/elasticsearch/pull/8347</a></p>
+
+<p>先ほど書きましたが、Luceneの5に対応するためのPRです。
+Lucene 5に関してはLuceneのコミッターのMikeさんの<a href="http://blog.mikemccandless.com/2014/11/apache-lucene-500-is-coming.html">ブログ記事</a>も参考になります。</p>
+
+<p>Lucene 5に変更することで、BitSetに関する改善が多く含まれることになります。
+メモリの利用量、圧縮などの改善が多く含まれています。
+もう1点大事な点としては、Lucene 5系ではLucene 3系のインデックスを読み込むことができなくなる点です。
+Luceneの下位互換の範囲は1つ前のメジャーバージョン（5.x系の場合は4.xまでが対象）となっています。</p>
+
+<h2>Filter cache: add a <code>_cache: auto</code> option and make it the default.（closed）</h2>
+
+<p><a href="https://github.com/elasticsearch/elasticsearch/pull/8573">https://github.com/elasticsearch/elasticsearch/pull/8573</a></p>
+
+<p>Filter cacheは、<code>true</code>もしくは<code>false</code>の設定が利用できますが、filterの種類にも依存します。
+その辺りの条件を加味しつつ、よしなにCacheをコントロールしてくれます。</p>
+
+<h2>Remove and/or/not in favour of <code>bool</code> filter #8960（open / discuss）</h2>
+
+<p><a href="https://github.com/elasticsearch/elasticsearch/issues/8960">https://github.com/elasticsearch/elasticsearch/issues/8960</a></p>
+
+<p>似ているが少し異なる<code>and</code>、<code>or</code>、<code>not</code>フィルタと<code>bool</code>フィルタが存在しています。
+これらをわかりやすくするために、<code>bool</code>フィルタに統一しましょうという話し合いをしています。</p>
+
+<h2>Input validation #9059（open / discuss）</h2>
+
+<p><a href="https://github.com/elasticsearch/elasticsearch/issues/9059">https://github.com/elasticsearch/elasticsearch/issues/9059</a></p>
+
+<p>色々な入力に関するチェックを追加しようというIssueです。
+たとえば、ディレクトリ名やファイル名、URLのパスやクエリストリング、フィールドのパスやスクリプトなどです。
+Validationがあると、変な設定をして頭をかかえることもなくなるかなぁと。</p>
+
+<h2>Refactor analysis framework #8961（open）</h2>
+
+<p><a href="https://github.com/elasticsearch/elasticsearch/issues/8961">https://github.com/elasticsearch/elasticsearch/issues/8961</a></p>
+
+<p>新しくAnalyzerを作った場合に、色々な場所に登録必要があったりします。インデックスレベルとノードレベルです。（Kuromojiプラグインなどが参考になります。）
+また、インデックスごとにカスタムのAnalyzerを設定するので、1つのノードに同じAnalyzerを何度も設定しないといけません。
+よりシンプルにするために、Analyzerをノード単位で設定しようという提案です。</p>
+
+<h2>Remove possibility for conflicting field definitions and ambiguous field resolution #8870（open）</h2>
+
+<p><a href="https://github.com/elasticsearch/elasticsearch/issues/8870">https://github.com/elasticsearch/elasticsearch/issues/8870</a></p>
+
+<p>同じインデックスに、異なるtypeで、同じフィールド名があった場合、いろいろと良くないことがあったりします。
+たとえば、フィールドのタイプがintegerとstringと異なる場合に、インデックスレベルで検索を行うとうまく検索できなかったりと。
+この問題を解消するために、より明確にしようというIssueです。
+たとえば、フィールド名を指定するためには、フルパスで記述をするだとか、フィールドマッピングに関してはインデックスレベルで内部で保持をするなど。</p>
+
+<h2>Validation of mappings request to reject unsupported fields #7205（closed）</h2>
+
+<p><a href="https://github.com/elasticsearch/elasticsearch/issues/7205">https://github.com/elasticsearch/elasticsearch/issues/7205</a></p>
+
+<p>1.xでも取り込まれますが、嬉しい機能なので紹介します。
+これまでは、mappingsでスペルミスをした場合（たとえば、field設定で&#8221;indexx&#8221;といったミス）には、その項目は単に無視されるだけでした。
+これが、v1.xでは、エラーに</p>
+
+<h2>まとめ</h2>
+
+<p>ということで、簡単ですが、v2.0.0に向けたIssueをピックアップして紹介してみました。
+上記以外にも多くの改善、提案が2.0に向けて行われています。
+興味のある方は、<a href="https://github.com/elasticsearch/elasticsearch/issues?q=is%3Aopen+is%3Aissue+label%3Av2.0.0">v2.0.0</a>ラベルでIssueを検索してみてはいかがでしょうか？</p>
+
+<p>今年もあとわずかとなりました。
+今年の2月にElasticsearchの1.0がリリースされ、あっという間に1.4なりました。まだまだ改善しています。</p>
+
+<p>来年もElasticsearchに興味をもっていただければ嬉しいです。
+<a href="http://www.elasticon.com/">Elasticsearch初のユーザカンファレンスのサイトもオープン</a>しました。
+Elasticsearchに関するいろいろな話が聞ける機会だと思います。登録をお待ちしています。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Marvel 1.3.0リリース（日本語訳）]]></title>
@@ -3173,82 +3265,6 @@ Marvelに<a href="http://www.elasticsearch.org/guide/en/marvel/current/#_node_am
 ただ、素晴らしい出来（カラーでKibanaの解説が日本語で読めたり、Fluentdの逆引きのリストがあったり、ログを貯めて可視化する意義を説明してあったり）です。</p>
 
 <p>ぜひ、読んだ感想をいただければと！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[プロキシ環境でのpluginコマンドの実行]]></title>
-    <link href="http://blog.johtani.info/blog/2014/08/01/plugin-using-under-proxy-env/"/>
-    <updated>2014-08-01T15:24:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/08/01/plugin-using-under-proxy-env</id>
-    <content type="html"><![CDATA[<p>Proxy環境で働いている方も結構いると思います。
-Twitter上で、Elasticsearchのpluginコマンドでプラグインがインストールできなくて困っている方がいたので、
-調べてみたのでメモしておきます。</p>
-
-<!-- more -->
-
-
-<h2>プラグインコマンド</h2>
-
-<p>Elasticsearchでは、プラグインという形でいくつかの便利な機能が公開されています。
-<a href="https://github.com/elasticsearch/elasticsearch-analysis-kuromoji">形態素解析ライブラリのKuromoji</a>を使うためのプラグインや、<a href="https://github.com/lmenezes/elasticsearch-kopf">クラスタの管理がGUIで可能なkopf</a>プラグインなどがあります。
-公式、サードパーティいろいろです。</p>
-
-<p>これらのプラグインをElasticsearchにインストールする場合、以下のコマンドを実行すれば
-自動的にダウンロードして<code>plugins</code>ディレクトリにインストールしてくれます。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0</span></code></pre></td></tr></table></div></figure>
-
-
-<p>ここで、<code>elasticsearch/elasticsearch-analysis-kuromoji/2.3.0</code>がプラグインのパスになります（例では、<code>提供元/プラグイン名/プラグインバージョン</code>となっています。）。</p>
-
-<p>この<code>plugin</code>コマンドがダウンロード元にアクセスに行くのですが、プロキシ環境だとプロキシの設定が必要になります。</p>
-
-<h2>プロキシの指定（Mac/LinuxとWindowsでの違い）</h2>
-
-<h3>Mac/Linux(shコマンド)</h3>
-
-<p><a href="http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/">以前の記事</a>でプロキシのポート番号などの指定方法を
-以下のように説明していました。
-（※昔の記事のため、kuromojiプラグインのバージョンが古いです）</p>
-
-<p>ElasticsearchのpluginコマンドはJavaで実装されています。（org.elasticsearch.common.http.client.HttpDownloadHelper）
-プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。</p>
-
-<p>ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0</span></code></pre></td></tr></table></div></figure>
-
-
-<p>LinuxやMacの環境であれば、こちらのコマンドでプロキシの指定が可能です。
-ただし、Windows環境ではうまくいきません。</p>
-
-<p>Elasticsearchは、環境の違いにより、ダウンロードするファイルが異なります。
-Windows環境の方は、zipファイルをダウンロードしてもらうようになっています。
-elasticsearchコマンドおよびpluginコマンドがbat形式で提供されているのがzipファイルとなるからです。</p>
-
-<h3>Windows(batコマンド)</h3>
-
-<p>Windows環境では次のように指定します。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>set JAVA_OPTS="-DproxyHost=ホスト名 -DproxyPort=ポート番号"
-</span><span class='line'>bin\plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0</span></code></pre></td></tr></table></div></figure>
-
-
-<p>コマンドの実装方法が少し異なるために、このようになっています。</p>
-
-<h2>まとめ</h2>
-
-<p>プロキシ環境で利用される場合は、プラグインコマンドは上記のように実行していただければと。</p>
-
-<p>公式ガイドには、これらの情報を追記するPRを送る予定です。
-また、WindowsのコマンドでもMac/Linuxと同様にできたほうがいい気がするので、Issueをあげようと思います。</p>
-
-<p>不明点などあれば、コメントいただければと。</p>
 ]]></content>
   </entry>
   
