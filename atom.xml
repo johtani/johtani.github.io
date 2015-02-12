@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-01-30T15:01:22+09:00</updated>
+  <updated>2015-02-12T15:07:27+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,88 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch　1.4.3および1.3.8リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/02/12/elasticsearch-1-4-3-and-1-3-8-released-ja/"/>
+    <updated>2015-02-12T12:39:53+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/02/12/elasticsearch-1-4-3-and-1-3-8-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-and-1-3-8-released/">elasticsearch 1.4.3 and 1.3.8 released</a></p>
+
+<p>本日、<strong>Lucene 4.10.3</strong>をベースにした<strong>Elasticsearch 1.4.3</strong>と、<strong>セキュリティ</strong>とバグフィックスリリースである、<strong>Elasticsearch 1.3.8</strong>をリリースしました。
+ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
+
+<ul>
+<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a></li>
+<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-8">Elasticsearch 1.3.8</a></li>
+</ul>
+
+
+<p>過去のリリースに関するブログ（公式）はこちら。</p>
+
+<ul>
+<li>1.4:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.4.2</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
+<li>1.3:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.3.7</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.3.6</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.3.5</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-4-released/">1.3.4</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-3-released/">1.3.3</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-2-released/">1.3.2</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">1.3.1</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/">1.3.0</a>.</li>
+</ul>
+
+
+<p>すべての変更については<a href="http://www.elasticsearch.org/downloads/1-4-3">1.4.3のリリースノート</a>および<a href="http://www.elasticsearch.org/downloads/1-3-8">1.3.8のリリースノート</a>をごらんください。
+以下では、セキュリティの問題について紹介します。</p>
+
+<!-- more -->
+
+
+<h2>groovy scripting の脆弱性</h2>
+
+<p>Elasticsearchのバージョン1.3.0から1.3.7および1.4.0から1.4.2で、Groovyスクリプトエンジンに脆弱性が発見されました。
+脆弱性は、攻撃者がGroovyスクリプトをサンドボックスを避けて構築でき、
+ElasticsearchのJava VMを実行しているユーザとしてシェルコマンドを実行できます。</p>
+
+<p>この問題をCVE-2015-1427として報告済みです。</p>
+
+<p>バージョン1.3.8と1.4.3では、デフォルトで、Groovyに対してのサンドボックスをオフにしました。
+結果として、<strong>ダイナミックスクリプトの実行はGroovyに対してもオフとなります。</strong></p>
+
+<p>もし、脆弱性のあるバージョンで実行している場合、v1.3.8かv1.4.3にアップグレードするか、ダイナミックなGroovyスクリプトをクラスタの
+すべてのノードに対して次の設定を追加することで、オフにします。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>script.groovy.sandbox.enabled: false</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これは、Groovyのサンドボックスをオフにし、リクエストの一部としてインラインで受け付けるダイナミックなGroovyスクリプトや
+特殊な<code>.scripts</code>インデックスに保存されているスクリプトを実行しません。</p>
+
+<p>それまでは、各データノードの<code>config/scripts</code>ディレクトリにファイルとして保存されたGroovyスクリプトは
+まだ、利用可能です。詳細の情報については<a href="http://www.elasticsearch.org/blog/running-groovy-scripts-without-dynamic-scripting/">Running scripts without dynamic scripting</a>をごらんください。</p>
+
+<h2>future scripting plans</h2>
+
+<p>安全なダイナミックスクリプティング言語としてGroovyを失うことは、Elasticsearchにとって痛手です。
+update APIやsearch APIやaggregationsフレームワークの一部としてScriptを使います。
+それらは、静的なAPIでは簡単に表現できない、カスタムなトリックをユーザに実行できるようにします。</p>
+
+<p>残念ながら、Groovyチームとこの問題を議論した後、Groovy言語もサンドボックスによってきちんと保護されている
+というにはあまりにもダイナミックであるという結論に達しました。
+Groovyは、デフォルトでは利用できなくなります。
+利用可能なダイナミックスクリプト言語としては<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_lucene_expressions_scripts">Lucene Expressions言語</a>のみとなります。
+Expressionsははやいですが、それらは非常に限定されています。数値のフィールドでのみ実行可能で、ループをサポートしていません。</p>
+
+<p>より強力で（しかし安全な）ミニ言語になるようにExpressionsを拡張することを調査しています。
+これは、Scriptユーザが現在持っている最も一般的なユースケースを少なくとも助けるでしょう。
+この拡張は長期間のプロジェクトであり、進化には時間がかかるでしょう。</p>
+
+<p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[CROSS 2015で話をしてきました #cross2015]]></title>
@@ -440,14 +522,14 @@ Senseのナレッジベースは最新のAPIを含むものに拡張されてい
     <id>http://blog.johtani.info/blog/2014/12/18/elasticsearch-1-4-2-released-ja</id>
     <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
 
-<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">elasticsearch 1.4.2 and 1.3.7 released</a></p>
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-and-1-3-8-released/">elasticsearch 1.4.3 and 1.3.8 released</a></p>
 
-<p>本日、<strong>Lucene 4.10.2</strong>をベースにした<strong>Elasticsearch 1.4.2</strong>と、バグフィックスリリースである、<strong>Elasticsearch 1.3.7</strong>をリリースしました。
+<p>本日、<strong>Lucene 4.10.3</strong>をベースにした<strong>Elasticsearch 1.4.3</strong>と、<strong>セキュリティ</strong>フィックスとバグフィックスリリースである、<strong>Elasticsearch 1.3.8</strong>をリリースしました。
 ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
 
 <ul>
-<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-2">Elasticsearch 1.4.2</a></li>
-<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-7">Elasticsearch 1.3.7</a></li>
+<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a></li>
+<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-8">Elasticsearch 1.3.8</a></li>
 </ul>
 
 
@@ -3257,49 +3339,6 @@ Elasticsearchにインストールされたサイトプラグインはこれま�
 <p>次回ももちろん2ヶ月後くらいに行います。
 スピーカー募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。
 よろしくお願いいたします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[elasticsearch.もうちょっと入門という話をしてきました #gihyo_efk]]></title>
-    <link href="http://blog.johtani.info/blog/2014/09/16/book-publication-event/"/>
-    <updated>2014-09-16T13:21:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/09/16/book-publication-event</id>
-    <content type="html"><![CDATA[<p>先日2014年9月9日(火)に<a href="http://eventdots.jp/event/137658">『サーバ/インフラエンジニア養成読本 ログ収集〜可視化編』　出版記念！執筆者が語る大講演会！</a>で、
-<a href="https://speakerdeck.com/johtani/elasticsearchmoutiyotutoru-men">「elasticsearch.もうちょっと入門」</a>というタイトルで発表してきました。
-会場のGMOのみなさま、Treasure Data、技術評論社のみなさま、どうもありがとうございました。</p>
-
-<p>書籍に興味のある方は、右のリンクから購入してもらえるとうれしいです。Kindle版も用意されています。</p>
-
-<!-- more -->
-
-
-<p>提供のTDの方に目をつぶってもらいながらLogstashについての発表となってしまいましたが、楽しんでいただけたかなぁと。
-書籍では主にKibana3をメインにしたElasticsearchの使い方だったので、それ以外の機能ということで、Aggregationについて説明してみました。</p>
-
-<p>そのあとは、おそらく初めてですが、パネルディスカッションにも参加しました。
-<a href="https://twitter.com/naoya_ito">@naoya_ito</a>さんをモデレーターに、rebuild.fm風に進めていただき、話しやすかったかなと。
-（少なくとも私は楽しめました！）
-ただ、私だけバックグラウンドが少し異なることもあり、話をうまく繋げられなかったかもと気にしていたりもしますが。。。</p>
-
-<p>パネルディスカッションでもありましたが、エンジニアが「趣味」で入れて試してみるのにはもってこいのツール群だと思います。
-ちょっと入れてみて、可視化をしてみるといろいろと発見があると思います。
-何かを発見するためにもまず試してみるのが何事も重要かなと最近思ってるのもあるので、気軽に試してみてもらえればと。</p>
-
-<p>不明点などあれば、著者陣に気軽に聞いていただけると良いかと思います（いいですよね、みなさんｗ）。
-Fluentd（もちろん、Logstashも）、Elasticsearch、Kibanaを利用して、データについて試行錯誤してもらって、
-システムやビジネスに必要なものを探索して見てください。</p>
-
-<h3>参考</h3>
-
-<p>他の方々のブログをメモとして。</p>
-
-<ul>
-<li><a href="http://suzuken.hatenablog.jp/entry/2014/09/11/210059">サービス改善とログデータ解析について発表してきました</a></li>
-<li><a href="http://blog.harukasan.jp/entry/2014/09/12/144217">Kibanaではじめるダッシュボードについて発表してきました #gihyo_efk</a></li>
-<li><a href="http://y-ken.hatenablog.com/entry/fluentd-system-design-pattern">Fluentdのお勧めシステム構成パターンについて発表しました</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-01-30T15:01:22+09:00</updated>
+  <updated>2015-02-12T15:07:27+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,87 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch　1.4.3および1.3.8リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/02/12/elasticsearch-1-4-3-and-1-3-8-released-ja/"/>
+    <updated>2015-02-12T12:39:53+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/02/12/elasticsearch-1-4-3-and-1-3-8-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-and-1-3-8-released/">elasticsearch 1.4.3 and 1.3.8 released</a></p>
+
+<p>本日、<strong>Lucene 4.10.3</strong>をベースにした<strong>Elasticsearch 1.4.3</strong>と、<strong>セキュリティ</strong>とバグフィックスリリースである、<strong>Elasticsearch 1.3.8</strong>をリリースしました。
+ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
+
+<ul>
+<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a></li>
+<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-8">Elasticsearch 1.3.8</a></li>
+</ul>
+
+
+<p>過去のリリースに関するブログ（公式）はこちら。</p>
+
+<ul>
+<li>1.4:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.4.2</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
+<li>1.3:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.3.7</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.3.6</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.3.5</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-4-released/">1.3.4</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-3-released/">1.3.3</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-2-released/">1.3.2</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">1.3.1</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/">1.3.0</a>.</li>
+</ul>
+
+
+<p>すべての変更については<a href="http://www.elasticsearch.org/downloads/1-4-3">1.4.3のリリースノート</a>および<a href="http://www.elasticsearch.org/downloads/1-3-8">1.3.8のリリースノート</a>をごらんください。
+以下では、セキュリティの問題について紹介します。</p>
+
+<!-- more -->
+
+
+<h2>groovy scripting の脆弱性</h2>
+
+<p>Elasticsearchのバージョン1.3.0から1.3.7および1.4.0から1.4.2で、Groovyスクリプトエンジンに脆弱性が発見されました。
+脆弱性は、攻撃者がGroovyスクリプトをサンドボックスを避けて構築でき、
+ElasticsearchのJava VMを実行しているユーザとしてシェルコマンドを実行できます。</p>
+
+<p>この問題をCVE-2015-1427として報告済みです。</p>
+
+<p>バージョン1.3.8と1.4.3では、デフォルトで、Groovyに対してのサンドボックスをオフにしました。
+結果として、<strong>ダイナミックスクリプトの実行はGroovyに対してもオフとなります。</strong></p>
+
+<p>もし、脆弱性のあるバージョンで実行している場合、v1.3.8かv1.4.3にアップグレードするか、ダイナミックなGroovyスクリプトをクラスタの
+すべてのノードに対して次の設定を追加することで、オフにします。</p>
+
+<pre><code>script.groovy.sandbox.enabled: false
+</code></pre>
+
+<p>これは、Groovyのサンドボックスをオフにし、リクエストの一部としてインラインで受け付けるダイナミックなGroovyスクリプトや
+特殊な<code>.scripts</code>インデックスに保存されているスクリプトを実行しません。</p>
+
+<p>それまでは、各データノードの<code>config/scripts</code>ディレクトリにファイルとして保存されたGroovyスクリプトは
+まだ、利用可能です。詳細の情報については<a href="http://www.elasticsearch.org/blog/running-groovy-scripts-without-dynamic-scripting/">Running scripts without dynamic scripting</a>をごらんください。</p>
+
+<h2>future scripting plans</h2>
+
+<p>安全なダイナミックスクリプティング言語としてGroovyを失うことは、Elasticsearchにとって痛手です。
+update APIやsearch APIやaggregationsフレームワークの一部としてScriptを使います。
+それらは、静的なAPIでは簡単に表現できない、カスタムなトリックをユーザに実行できるようにします。</p>
+
+<p>残念ながら、Groovyチームとこの問題を議論した後、Groovy言語もサンドボックスによってきちんと保護されている
+というにはあまりにもダイナミックであるという結論に達しました。
+Groovyは、デフォルトでは利用できなくなります。
+利用可能なダイナミックスクリプト言語としては<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_lucene_expressions_scripts">Lucene Expressions言語</a>のみとなります。
+Expressionsははやいですが、それらは非常に限定されています。数値のフィールドでのみ実行可能で、ループをサポートしていません。</p>
+
+<p>より強力で（しかし安全な）ミニ言語になるようにExpressionsを拡張することを調査しています。
+これは、Scriptユーザが現在持っている最も一般的なユースケースを少なくとも助けるでしょう。
+この拡張は長期間のプロジェクトであり、進化には時間がかかるでしょう。</p>
+
+<p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[CROSS 2015で話をしてきました #cross2015]]></title>
@@ -337,14 +418,14 @@ Senseのナレッジベースは最新のAPIを含むものに拡張されてい
     <id>http://blog.johtani.info/blog/2014/12/18/elasticsearch-1-4-2-released-ja</id>
     <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
 
-<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">elasticsearch 1.4.2 and 1.3.7 released</a></p>
+<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-and-1-3-8-released/">elasticsearch 1.4.3 and 1.3.8 released</a></p>
 
-<p>本日、<strong>Lucene 4.10.2</strong>をベースにした<strong>Elasticsearch 1.4.2</strong>と、バグフィックスリリースである、<strong>Elasticsearch 1.3.7</strong>をリリースしました。
+<p>本日、<strong>Lucene 4.10.3</strong>をベースにした<strong>Elasticsearch 1.4.3</strong>と、<strong>セキュリティ</strong>フィックスとバグフィックスリリースである、<strong>Elasticsearch 1.3.8</strong>をリリースしました。
 ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
 
 <ul>
-<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-2">Elasticsearch 1.4.2</a></li>
-<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-7">Elasticsearch 1.3.7</a></li>
+<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a></li>
+<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-8">Elasticsearch 1.3.8</a></li>
 </ul>
 
 
@@ -393,132 +474,6 @@ Senseのナレッジベースは最新のAPIを含むものに拡張されてい
 <p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-2">Elasticsearch 1.4.2</a>をダウンロードして、試してみてください。
 そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
 また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[JJUG ナイトセミナーでLuceneの簡単な紹介をしてきました。#JJUG]]></title>
-    <link href="http://blog.johtani.info/blog/2014/12/17/jjug-night-seminar-dec-2014/"/>
-    <updated>2014-12-17T18:41:54+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/12/17/jjug-night-seminar-dec-2014</id>
-    <content type="html"><![CDATA[<p><a href="http://jjug.doorkeeper.jp/events/18378">「【東京】JJUG ナイト・セミナー「機械学習・自然言語処理特集！」12/17（水）開催」</a>でLuceneの話をしてきました。
-本当にごく簡単な入門です。
-Luceneをさわるきっかけにしてもらえたら嬉しいです。</p>
-
-<p>そのほかにも面白い話が聞けましたので、簡単ですがメモを。</p>
-
-<!-- more -->
-
-
-<h2>JJUGの2014年振り返り</h2>
-
-<ul>
-<li>だいたい、毎月ナイトセミナーかCCCを開催</li>
-<li>イベント系に、のべ3100名が参加</li>
-</ul>
-
-
-<h2>Java でカジュアルにはじめる機械学習</h2>
-
-<h3>小宮 篤史さん(スマートニュース株式会社)</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/komiya_atsushi/number-jjug-java-dekaziyuarunihazimeruji-jie-xue-xi">#JJUG - Java でカジュアルにはじめる機械学習</a><br/>
-ブログ：<a href="http://blog.k11i.biz/2014/12/jjug-java.html">#JJUG ナイトセミナー「機械学習・自然言語処理特集！」で Java でカジュアルに機械学習する話をしてきました</a></p>
-
-<ul>
-<li>ガチの人は寝ててください。</li>
-<li>機械学習でできること
-
-<ul>
-<li>分類・識別</li>
-<li>予測・回帰</li>
-<li>パターンマイニング・アソシエーションルール</li>
-<li>クラスタリング</li>
-</ul>
-</li>
-<li>上2つは教師あり学習/下2つは教師なし学習</li>
-<li>データとしては、日構造では扱えないので、「特徴量」を抽出して「特徴ベクトル」を作って、処理をするのが機械学習</li>
-</ul>
-
-
-<p>得られた結果の正しさの測定などなど</p>
-
-<ul>
-<li>機械学習の実装は辛いので、車輪の再発明をやめましょう！</li>
-</ul>
-
-
-<p>Javaで使える機械学習
-* Weka：とりあえず使ってみるならこれ？
-* MLlib：Sparkで使われてる
-* Mahout：オワコン？
-* SAMOA：Stormの上で利用できる
-* Jubatus：Javaクライアントあり。
-* h2o：Deep learningをJavaでやるなら、これ。
-* ほかにもあったけど、スライド見ていただければ。</p>
-
-<p>機械学習をはじめるのに使えるデータセット
-* UCI Machine learning repository
-  * Iris（アヤメデータ）は機械学習界のHello world</p>
-
-<ul>
-<li>Wekaを使ったサンプルコード</li>
-</ul>
-
-
-<h2>Spark/MLlibではじめるスケーラブルな機械学習</h2>
-
-<h3>猿田 浩輔さん(株式会社エヌ・ティ・ティ・データ)</h3>
-
-<p>スライド：（後日、リンクがあれば更新予定）</p>
-
-<ul>
-<li><p>Spark+MLlibを語る上で外せない話題</p>
-
-<ul>
-<li>Hadoopとの違い？</li>
-</ul>
-</li>
-<li><p>まずはHadoopの話</p></li>
-<li>HadoopによるK-meansのデモ</li>
-<li><p>Hadoopの問題点に対するSparkの解決策</p></li>
-<li><p>Spark 1.0系からJava8で書ける</p></li>
-</ul>
-
-
-<p>QA：</p>
-
-<p>Q： データをキャッシュできるという話でしたが、キャッシュするということは、ジョブが途中で失敗した場合は最初からやり直しになるのでしょうか？
-A： キャッシュしたデータが残っている場合は、途中から再開出来ます。キャッシュしたデータを持ったマシンがこけたら、最初からやり直しです。</p>
-
-<h2>Luceneと日本語の検索</h2>
-
-<h3>自分</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/johtani/lucenetori-ben-yu-falsejian-suo">Luceneと日本語の検索</a>
-サンプルのリポジトリ：<a href="https://github.com/johtani/jjug-example">jjug-example</a></p>
-
-<p>自然言語処理にからめて何か話をしてくださいと話を受けていたのですが、自然言語処理については「形態素解析」くらいしか出てこなかったですけど。。。
-Luceneがどんなものかを超概要で話をしてみました。少しでもLuceneがどんなものかをわかってもらえたら嬉しいです。</p>
-
-<p>もっと詳しく知りたい方は、スライドにある参考資料などを見ていただければと。</p>
-
-<p>Javaで書くのもいいんですが、もっと簡単に検索したい場合はElasticsearchを使うのが便利ですよ！で締めくくりたかったのですが、発表では失敗してしまいました。。。
-Elasticsearchの起動からデータ登録、検索までは<a href="https://speakerdeck.com/johtani/elasticsearch-and-kibana">こちらのスライド</a>を見ていただければ簡単さがわかると思います。</p>
-
-<p>また、Kuromojiを利用した時に、Tokenizerなどが出力するTokenの品詞情報を見たい場合に便利な<a href="https://github.com/johtani/elasticsearch-extended-analyze">Elasticsearch用プラグイン</a>も作っています。
-こちらも、Elasticsearchと一緒に使ってみてください。</p>
-
-<h2>まとめ</h2>
-
-<p>機械学習に関していろんなツールがあるのだなぁと。
-懇親会でもちょっと話しましたが、アルゴリズムの選定とか、アルゴリズムに適したデータの作成など、前処理のノウハウとかが大変そうだなぁといつも思います。
-機械学習はいつもぼやーっとしか理解してないので。。。</p>
-
-<p><a href="https://www.youtube.com/channel/UCZ5gDYmqI0tOeg-fEkCD2CQ">JJUGさんはYouTubeの動画</a>もあるようなので、過去の面白そうなセミナーも合わせてみてみると面白いと思います。</p>
-
-<p>毎度のことですが、なんでも良いので、発表した後のフィードバックをいただけるとうれしいです。
-今後の励みや改善につながるので。</p>
 ]]></content>
   </entry>
   
