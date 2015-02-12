@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-02-12T15:07:27+09:00</updated>
+  <updated>2015-02-12T18:01:39+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,186 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Groovyスクリプトをダイナミックスクリプトなしで実行(日本語訳)]]></title>
+    <link href="http://blog.johtani.info/blog/2015/02/12/running-groovy-scripts-without-dynamic-scripting-ja/"/>
+    <updated>2015-02-12T15:13:09+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/02/12/running-groovy-scripts-without-dynamic-scripting-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/running-groovy-scripts-without-dynamic-scripting/">running groovy scripts without dynamic scripting</a></p>
+
+<p>Elasticsearch1.3.8と1.4.3のリリースにより、デフォルトで、リクエストに含まれるGroovyスクリプトや
+インデックスに保存されたスクリプトを動的に実行する機能をオフにしました。
+しかし、Groovyはまだデフォルトのスクリプト言語です。
+本ブログ記事では、少しだけダイナミックだが、サンドボックスではない言語のためのスクリプトを
+どのように使い続けるかを説明します。</p>
+
+<p>本ブログ記事は、それが何を意味し、さらに重要なのは、安全に重要なタスクを実行させるためにスクリプトを
+どのように使用し続けるかを理解する助けとなるはずです。</p>
+
+<!-- more -->
+
+
+<h2>ダイナミックスクリプトとは？</h2>
+
+<p>Elasticsearchに詳しくない方のために、Elasticsearchでは、
+さまざまなリクエストの一部としてスクリプトを送信することができます。
+search、aggregation、update、upsert、delete by queryなどです。
+あなたのユースケースのために、通常の動作よりも拡張した動作をさせるためにスクリプトを追加できます。</p>
+
+<p>例えば、以下のリクエストは、ダイナミックスクリプトを含んでいます。
+<code>field1</code>と<code>field2 + shift</code>が同じ値を持っている時だけドキュメントを返します。</p>
+
+<pre><code class="json">GET /_search
+{
+  "query":{
+    "filtered":{
+      "filter":{
+        "script":{
+          "script":"doc['field1'].value == (doc['field2'].value + shift)",
+          "lang":"groovy",
+          "params":{
+            "shift":3
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre>
+
+<p>言語を変えることもできます。
+それは、当然、シンタックスが変わったり、制限が追加（例えば、Groovyスクリプトの代わりに<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_lucene_expressions_scripts">Lucene　Expressions</a>に変更）されることもあります。
+<code>lang</code>パラメータによって言語を指定できます。</p>
+
+<h3>なぜそれはダイナミック？</h3>
+
+<p>上記の例はダイナミックスクリプトです。
+それは、実際のスクリプトの部分はサーバサイドで<em>動的に</em>解釈されコンパイルされる必要があるからです。
+ダイナミックスクリプトはElasticsearchのAPIによってデータノードに送信されます。
+これは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_indexed_scripts">インデックスされたスクリプト(indexed script)</a>も含みます。</p>
+
+<p>言い換えると、もし、スクリプトがデータノード全てに保存されていなければ、
+それは、ダイナミックスクリプトとして扱われます。</p>
+
+<h2>dynamic scriptingをオフにするとどうなるか？</h2>
+
+<p>最新のリリースでの変更により、Groovyのdynaic scriptingはデフォルトでオフになりました。
+先ほどのスクリプトについても同様で、もし、先ほどのリクエストを実行すると、次のようなエラーが発生します。
+(一部省略してあります。)</p>
+
+<pre><code class="json">{
+   "error":"SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[8FJ02MofSnqVvOQ10BXxhQ][test][0]: SearchParseException[[test][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{...}]]]; nested: ScriptException[dynamic scripting for [groovy] disabled]...",
+   "status":400
+}
+</code></pre>
+
+<p>エラーメッセージの重要な箇所は「ScriptException[dynamic scripting for [groovy] disabled]」です。</p>
+
+<h2>スクリプティングを使い続けるには？</h2>
+
+<p>Elasticsearchでスクリプトを実行するには3つの方法があります。
+2つのダイナミックな方法は、リクエストごとのスクリプト（上述）かインデックスされた
+スクリプト(indexed script)を使う方法です。
+インデックスされたスクリプトを使うことは、Elasticsearch自身にGroovyスクリプトを保管することで
+利用で、それらを要求に応じて利用することです。
+（これは、実際には十分機能しますが、これではまだ、信頼できないユーザに対して彼らのスクリプトを実行できます）
+RDBのように保存されたプロシージャとして同じ方法で実行させるものと同様です。
+前もって、スクリプトを記述しておき、リクエストの一部として後から、名前で呼び出して実行可能です。</p>
+
+<pre><code class="json">GET /_search
+{
+  "query":{
+    "filtered":{
+      "filter":{
+        "script":{
+          "script_id":"your_custom_script",
+          "lang":"groovy",
+          "params":{
+            "shift":3
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre>
+
+<p>あまり変わっていないことに気づくでしょう。
+<code>script</code>の部分が、前もって記述されたスクリプトの名前<code>script_id</code>に変更されただけです。</p>
+
+<p>Elasticsearchにスクリプトを提供するダイナミックではない方法はインデックスに保存する代わりに、
+ディスクにファイルとしてスクリプトを保存することです。
+そうすることで、各スクリプトを設定として保存します。
+これは、どのようなスクリプト言語に対してもダイナミックスクリプティングをオフにしたまま、
+サンドボックス化されないスクリプトを使い続けることができる方法です。</p>
+
+<p>最初のサンプルで、Groovyスクリプトは<code>doc['field1'].value == doc['field2'].value + shift</code>でした。
+これを、<code>.groovy</code>拡張子を持ったファイルとして書き出すことができます。</p>
+
+<pre><code>doc['field1'].value == (doc['field2'].value + shift)
+</code></pre>
+
+<p>もし、このファイルに<code>your_custom_script.groovy</code>ちう名前をつけて、
+Elasticsearchのすべてのデータノードの<code>config/scripts</code>ディレクトリに保存すると、
+Elasticsearchは60秒（elasticsearch.ymlの<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_automatic_script_reloading"><code>watcher.interval</code>で変更可能</a>）でこのスクリプトを認識し、今後のリクエストに利用できるようにプリコンパイルするでしょう。
+そのファイルはElasticsearch実行ユーザによって読み込みができる必要があります。
+これをディスクに書き込んだ後、あなたの設定ディレクトリは次のようになっています。</p>
+
+<pre><code>config/
+  elasticsearch.yml
+  logging.yml
+  scripts/
+    your_custom_script.groovy
+</code></pre>
+
+<p>これは、各リクエストやインデックスされたスクリプトをスクリプトとして動的に送信しませんが、
+信頼された環境にスクリプトを追加することでダイナミックスクリプトとなることを許します。</p>
+
+<h2>ディスクに書かれたスクリプトを使用する</h2>
+
+<p>スクリプトは、ロードされたスクリプトになるまでは、利用できません。
+ログファイルに次のようなログが表示されるまではです。</p>
+
+<pre><code>[2015-02-11 11:14:47,066][INFO ][script                   ] [Sergei Kravinoff] compiling script file [/path/to/elasticsearch-1.4.3/config/scripts/your_custom_script.groovy]
+</code></pre>
+
+<p>すべてのElasticsearchのデータノードでスクリプトが読み込まれたら、
+それを利用することができます。
+利用するために、<code>file</code>（<code>script_id</code>ではありません！）としてスクリプト名を指定します。</p>
+
+<pre><code class="json">GET /_search
+{
+  "query":{
+    "filtered":{
+      "filter":{
+        "script":{
+          "file":"your_custom_script",
+          "lang":"groovy",
+          "params":{
+            "shift":3
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre>
+
+<p>Note:<code>lang</code>は必須ではありません。Groovyがデフォルトの言語のためです。
+もし、違うスクリプト言語を使いたい、もしくは、デフォルトの言語を（例えば、Lucene Expressionsへ）
+変更したい場合、言語が正しいスクリプトを見つけるために提供されている必要があります。
+一番良い方法は、アプリケーションが<code>lang</code>パラメータを含んでいることを勧めます。
+これは、将来、デフォルトのスクリプト言語が変更されても、問題ないからです。</p>
+
+<h2>質問？</h2>
+
+<p>もし、質問があれば、遠慮なくTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)で教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Elasticsearch　1.4.3および1.3.8リリース（日本語訳）]]></title>
@@ -408,72 +588,6 @@ Senseのナレッジベースは最新のAPIを含むものに拡張されてい
 <a href="https://groups.google.com/forum/?fromgroups#!forum/elasticsearch">ElasticsearchユーザML</a>や<a href="http://www.twitter.com/elasticsearch">Twitter</a>に質問や意見お送りください。</p></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch 1.4.2および1.3.7リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2014/12/18/elasticsearch-1-4-2-released-ja/"/>
-    <updated>2014-12-18T14:26:14+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/12/18/elasticsearch-1-4-2-released-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-and-1-3-8-released/">elasticsearch 1.4.3 and 1.3.8 released</a></p>
-
-<p>本日、<strong>Lucene 4.10.3</strong>をベースにした<strong>Elasticsearch 1.4.3</strong>と、<strong>セキュリティ</strong>フィックスとバグフィックスリリースである、<strong>Elasticsearch 1.3.8</strong>をリリースしました。
-ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
-
-<ul>
-<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a></li>
-<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-8">Elasticsearch 1.3.8</a></li>
-</ul>
-
-
-<p>過去のリリースに関するブログ（公式）はこちら。</p>
-
-<ul>
-<li>1.4:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
-<li>1.3:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.3.6</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.3.5</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-4-released/">1.3.4</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-3-released/">1.3.3</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-2-released/">1.3.2</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">1.3.1</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/">1.3.0</a>.</li>
-</ul>
-
-
-<p>すべての変更については<a href="http://www.elasticsearch.org/downloads/1-4-2">1.4.2のリリースノート</a>および<a href="http://www.elasticsearch.org/downloads/1-3-7">1.3.7のリリースノート</a>をごらんください。
-以下では、重要な変更について紹介します。</p>
-
-<!-- more -->
-
-
-<h2>bug fixes</h2>
-
-<p>Elasticsearchに対して広範囲にわたってランダムなテストを行っています。以下の問題を見つけ、修正するのに役立っています。</p>
-
-<ul>
-<li>プライマリシャードを持つnodeがレプリカシャードをプライマリから復旧している間に、リスタートした場合に、プライマリ上のトランザクションログが削除されデータをロスする(<a href="https://github.com/elasticsearch/elasticsearch/pull/8917">#8917</a>)</li>
-<li>scriptインデックスが普及した場合に、ScriptService全体がデッドロック(<a href="https://github.com/elasticsearch/elasticsearch/pull/8901">#8901</a>)</li>
-<li>Index Writerのロックを強制的に解放することによるシャードの破損(<a href="https://github.com/elasticsearch/elasticsearch/pull/8892">#8892</a>)</li>
-</ul>
-
-
-<h2>パフォーマンス改善</h2>
-
-<p>複雑な設定をもつ大きめのクラスタをもつユーザは、小さなスケールではわからない性能ボトルネックに直面します。
-彼らの報告が次の改善をもたらす助けとなりました。</p>
-
-<ul>
-<li>使用可能なディスク空間に基づいてシャードの配置を決定する、disk allocation deciderの速度改善とクラスタリスタート後のリカバリ速度の改善(<a href="https://github.com/elasticsearch/elasticsearch/pull/8803">#8803</a>)</li>
-<li>以前よりも高速な共有ファイルシステムでのSnapshot生成(<a href="https://github.com/elasticsearch/elasticsearch/pull/8749">#8749</a>)</li>
-<li>不要なクラスタ状態変更の削減とそれによるネットワークトラフィックの削減およびリカバリの速度向上(<a href="https://github.com/elasticsearch/elasticsearch/pull/8933">#8933</a>, <a href="https://github.com/elasticsearch/elasticsearch/pull/8413">#8413</a>)</li>
-<li>index stats APIはシャードリカバリによるブロックしない(<a href="https://github.com/elasticsearch/elasticsearch/pull/8910">#8910</a>)</li>
-</ul>
-
-
-<h2>試してみてください。</h2>
-
-<p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-2">Elasticsearch 1.4.2</a>をダウンロードして、試してみてください。
-そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 ]]></content>
   </entry>
   
