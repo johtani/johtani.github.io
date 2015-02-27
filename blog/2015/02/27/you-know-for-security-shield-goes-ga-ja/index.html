@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>セキュリティ向けプラグインShieldのリリース（日本語訳） - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="※この記事は次のブログを翻訳したものになります。 原文：you know, for security: shield goes ga 1/27にShield 1.0 をリリースしました。
+Elasticsearch向けの私たちのセキュリティプラグインの最初のリリースです。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.johtani.info" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">セキュリティ向けプラグインShieldのリリース（日本語訳）</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-02-27T18:49:56+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2015-02-27T18:49:56+09:00'><span class='date'>2015-02-27</span></time></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/you-know-for-security-shield-goes-ga/">you know, for security: shield goes ga</a></p>
+
+<p>1/27にShield 1.0 をリリースしました。
+Elasticsearch向けの私たちのセキュリティプラグインの最初のリリースです。
+11月にShieldについてアナウンスしてから、Elsaticsearchのためのセキュリティの機能は、
+一般的に望まれているものから始まり、具体的な考えと実行できる計画へと変遷し、それが、いま現実となりました。</p>
+
+<p>十分にセキュアな環境に、Elasticsearchクラスタをセキュアな状態でデプロイできるようにするため、
+私たちは継続的にカスタマーやユーザーからのリクエストを受け取り、統合されたソリューションになるようにしてきました。</p>
+
+<p>私たちは、そのようなプロダクトがどうあるべきか調査することから始め、
+カスタマーとユーザが必要とするセキュリティとはどんなものかを理解するために多くの時間を費やしました。
+その結果がShieldです。
+Shieldは、ElasticsearchクラスタをセキュアにするElasticsearchの有償プラグインです。
+私たちは、ShieldをDev、Gold、Platinumサブスクリプションの一部として、追加料金なしで提供します。</p>
+
+<p>最初のリリースでは、基本的な機能と基盤にフォーカスしています。
+Elasticsearch自身に対しても、セキュリティに対して準備してきました。
+拡張性の側面だけでなく、Elasticsearchにあるデータフローについても再考してきました。
+Elasticsearchクラスタをセキュアにする場合に、具体的な価値を即座に届けるだけでなく、素早く拡張できるようにも開発しました。</p>
+
+<!-- more -->
+
+
+<h3>機能</h3>
+
+<p>Shield 1.0は次の5つにフォーカスしています。</p>
+
+<ul>
+<li>認証(Authentication)</li>
+<li>認可(Authorization)</li>
+<li>暗号化通信とノードの認可(Encrypted Communication &amp; Node Authentication)</li>
+<li>IPフィルタリング</li>
+<li>監査証跡(Audit Trail)</li>
+</ul>
+
+
+<h3>認証(Authentication)</h3>
+
+<p>セキュリティの大部分はアイデンティティについてです（例えば、だれがこのAPIを呼び出したのか？システムに何のサービスが接続するか？など）
+サービスのライフタイムのある時点で、サブジェクト（例えばユーザー）を現在実行中のサブプロセスなどに結びつけることです。
+この関係性を持つためには、サブプロセスを実行する前にユーザの身元を確認するように命じます。
+ユーザの身元の確認のプロセスをAuthenticationと呼び、ElasticsearchのすべてのAPIコールでそれが実行されます。</p>
+
+<p>認証の手法は多くの異なるものがあります。
+それぞれの手法は、ユーザが認証されたという資格（Authentication Token）を、それぞれのタイプで提供するようにユーザに要求します。
+Shield 1.0ではシンプルに、必要なauthentication tokenをユーザ/パスワードペアとしています。
+（これは、Shieldの認証基盤が簡単に拡張でき、将来は異なるauthentication tokenもサポートできることを意味します。）</p>
+
+<p>ユーザの資格を受け取ることだけでは不十分で、次に、それらをチェックする必要があります。
+Shieldでは、これはレルムの責務です。
+レルムは認証プロバイダ/サービスとしてみることができます。
+妥当なユーザであると判断/解決されたか、
+authentication tokenが適切な資格を持っていない/単に知らないユーザであるということで、拒否されたかです。
+Shieldの認証メカニズムでは、複数のレルムを設定でき、さらに、あるレルムの戻り値を扱う他のレルム、というようなchainとすることもできます。
+Shield 1.0は3つのレルムをサポートします。</p>
+
+<ul>
+<li>esusers - Elasticsearchによって管理されるファイルベースのレルムです。
+これは、ファイルにユーザを定義することができます。（Apacheサーバのhtpasswdファイルのようなもの）
+このレルムは外部への依存はなく、Shieldをインストールすれば、デフォルトで使用できます。
+このレルムは配置が簡単で、マルチテナントなElasticsearchクラスタに対して使用できます。
+マルチテナントなElasticsearchクラスタとは、クラスタを複数のアプリでシェアすることをテナントと言います。
+また、すべてのユーザがパスワードを忘れてしまうような&#8221;emergency&#8221;な代替レルムも対応可能です。
+(誰もシステムに入れないような状況のことです)</li>
+<li>LDAP - 外部のLDAPサーバでユーザを認証するレルムです。
+このレルムは組織のLDAPサーバで管理/保存されているユーザをすでに持っている組織を対象としています。</li>
+<li>Active Directory - LDAPのタイプの1つで、Active Directoryに対する設定になります。</li>
+</ul>
+
+
+<p>レルムはelasticsearch.yml設定ファイルで、次のように設定可能です。</p>
+
+<blockquote><p>shield.authc
+    realms:</p>
+
+<pre><code>    esuser:
+        type: esusers
+        order: 0
+
+    ldap:
+        type: ldap
+        order: 1
+        url: ldaps://url/to/ldap1/server
+
+    ldap_fallback:
+        type: ldap
+        order: 2
+        url: ldaps://url/to/ldap2/server
+</code></pre></blockquote>
+
+<p>上記のようにrealmsが一つのチェインとして参照されます。
+レルムごとに、設定された順序で、それらは参照されます。</p>
+
+<p>NOTE : Shieldには、esusersファイルに保存されたユーザを管理するためのコマンドラインツールもあります。</p>
+
+<h2>認可(authorization)</h2>
+
+<p>認可(Authorization)は保護されたリソースにアクセスするユーザを許可するか拒否するかということです。
+モダンなシステムは、ユーザのパーミッションのために、ロールベースのアクセスコントロール（RBAC）モデルを利用します。
+このモデルでは、各ユーザはロールの集合に関連していて、それぞれのロールには、パーミッションの集合が定義されています。
+これは、洗練された設定で、パーミッションを機能的なグループで共有させることができます。
+例えば、次のようなロールを定義したとします。</p>
+
+<ul>
+<li><em>employee</em> - すべての従業員は部門をまたいだ会社のデータへアクセスできます（例えば、コンタクトやディレクトリ情報など）</li>
+<li><em>sales</em> - すべての営業職は営業データにアクセスできる（例えば、流通ルート、ルート、顧客）</li>
+<li><em>finace</em> - すべての財務の従業員は財務データにアクセスできる（例えば、予算、経費、伝票）</li>
+</ul>
+
+
+<p>財務部門の<code>Ann</code>は従業員と財務のロールを持っており、会社のディレクトリと財務データにアクセスでできます。</p>
+
+<p>認可プロセスはユーザがリクエストに関連したユーザが必要で、このプロセスのために、認証フェーズの後に直接実行されます。</p>
+
+<p>Shieldは2つのタイプのリソースを定義します。クラスタとインデックスです。
+これらは、すべてのAPIコールで保護されます。
+さらに、それらに関連したパーミッションとロールも定義できます。
+一度定義をすると、ロールはユーザもしくはLDAP/ADのグループに関係します。
+ロールは<strong>roles.yml</strong>設定ファイルで定義されます。
+設定のサンプルは次のようになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>admin:
+</span><span class='line'>    cluster: all
+</span><span class='line'>    indices:
+</span><span class='line'>        '*' : all
+</span><span class='line'>
+</span><span class='line'>monitor:
+</span><span class='line'>    cluster: monitor
+</span><span class='line'>    indices:
+</span><span class='line'>        '*': monitor
+</span><span class='line'>
+</span><span class='line'>employee:
+</span><span class='line'>    indices:
+</span><span class='line'>        'company_directory' : read
+</span><span class='line'>
+</span><span class='line'>sales:
+</span><span class='line'>    indices:
+</span><span class='line'>        'opportunities' : read, write
+</span><span class='line'>        'accounts' : read, write
+</span><span class='line'>
+</span><span class='line'>finance:
+</span><span class='line'>    indices:
+</span><span class='line'>        'expenses' : read, write
+</span><span class='line'>        'purchases' : read, write</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上記のサンプルで、次の5つのロールを定義しています。</p>
+
+<ul>
+<li><em>admin</em> - 管理者のロールで、すべてのクラスターレベルの操作とすべてのインデックスに対してすべてのインデックスレベルの操作を実行可能です。
+(¥*インデックスはすべてのインデックスにマッチするワイルドカード)</li>
+<li><em>monitor</em> - システム/クラスタのモニタリングのためのロール。このロールのユーザはすべてのクラスタとインデックスレベルの情報の読み取りの
+APIにアクセス可能だが、インデックスのデータへの読み書きや設定の更新は不能</li>
+<li><em>employee</em> - compnay_directoryにあるすべてのデータへの読み取りアクセスを与えられたロール。このロールはクラスタレベルへのアクセスやデータの書き込みアクセスは持っていない
+(特にcompany。洗濯されたグループの人々はcompanyディレクトリの更新は可能だが、employeeは読み取りのみが可能)</li>
+<li><em>sales</em> - opportunitiesとaccountsインデックスの読み書きができるロール</li>
+<li><em>finance</em> - expensesとpurchasesの両方に読み書きができるロール</li>
+</ul>
+
+
+<p>上記のサンプルで定義されている<code>all</code>と<code>read</code>と<code>write</code>として名前がつけられた権限です。
+これらは、予約語で、Elasticsearchのローレベルのアクションを複数含んだ権限です。
+（<code>write</code>は<code>index, delete, delete_by_query, bulk, update</code>の操作を含んでいます。）
+多くのケースで、これらのハイレベルの名前が付けられた権限で十分ですが、特定のロールに特定のアクションを明示的に指定することもできます。
+次のようになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hr:
+</span><span class='line'>    indices:
+</span><span class='line'>        'company_directory' : indices:data/write/index, indices:data/write/update</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ここまで説明した認可のレルムは、各ユーザに関連するロールを識別するためのものです。
+内部のesuserレルムでは、提供されるesuserコマンドラインツールを使ってロールはユーザに割り当てたり変更したりもできます。
+LDAPやActive Directoryでは、LDAP/ADグループにShieldのロールを割り当てることができます。</p>
+
+<p>認証と認可の両方を用いることで、ユーザリクエストに対して、ユーザごとに許可/不許可をすることができます。</p>
+
+<h3>暗号化通信</h3>
+
+<p>認可はElasticsearchのデータを機能的な観点（許可されたユーザだけが操作を可能にする）で保護しますが、
+クライアントからElasticsearchクラスタへ、もしくはクラスタのノード間では暗号化されていないデータを送るためまだ危険があります。
+第三者が登頂したり、オンザフライでデータを書き換えたりといった可能性やクラスタを壊すことができます。</p>
+
+<p>Shield 1.0はElasticsearchのすべての通信チャネルをセキュアにすることができます。
+クラスタ内のノード間のチャネルやクライアントに公開されているチャネルです。
+これは、SSL/TLS通信を導入して実現します。</p>
+
+<p>Shieldで使えるSSLはElasticsearchのtransportサービスをSSL/TLSで通信できるものに置き換えます。
+これは、ノード間通信チャネルと、HTTP transport（REST APIを提供するもの）のそれぞれに設定可能です。</p>
+
+<p>ShieldのSSL/TLSは、スタンダードなJavaのものとkeystoreとtruststoreを基本にしたものが利用可能です。
+SSL/TLSを設定すると、各ノードのキーストアに証明書をインポートする必要があります。
+CAがサインした証明書を使うことも、CAが信頼したものとして許可許諾されたものを使うことが可能です。
+これは、信頼されたすべてのCAとして知られているtrust storeが必要です。
+新しいノードをクラスタに追加するときに、すべての必要な少なくとも一つの信頼されたCAから発行されてサインされたものが必要になります。
+クラスタで個別のノードがすべてのkeystore/truststoreを更新する必要性なしに。？？</p>
+
+<p>通信チャネルを安全にする方法やSSL/TLS設定をどのように行うかは<a href="http://www.elasticsearch.org/guide/en/shield/current/securing-nodes.html">Shieldのドキュメント</a>をご覧ください。</p>
+
+<h3>ノード間認証</h3>
+
+<p>強く推奨しますが、許可されたノードだけがクラスタに接続できるようにするために、ノードの認証をSSL transportに設定することができます。
+これは、<code>shield.transport.client.auth</code>に<code>true</code>を設定することで可能です。
+設定した場合、ノード間でSSLハンドシェイクが行われ、接続されたノードが接続に来たノードのクライアント認証を要求しチェックします。
+もし、チェックに失敗した場合は、SSLシェイクハンドが失敗し接続が拒否されます。</p>
+
+<h3>SSLクライアント認証</h3>
+
+<p>transportレベルでノード認証が必要なようなら、次のような疑問がわくでしょう。
+Elasticsearchはクラスタに接続するTransportクライアントを使うときはどのように振る舞うのか？
+Transportクライアントはクラスタの他のノードと同じチャネルを使うため、コネクションを確立するときに、ノードが他のノードと異なるかどうかを見極めることはできません。</p>
+
+<p>この時、もっとも単純な解決は、Transportクライアントも同様に許可を与えることです。
+それは、認証を解決するときに、他の問題（潜在的な悪意）を引き起こします。
+Transportクライアントが他のクラスタのノードを偽装しようとすることです。これは望んでいません。</p>
+
+<p>幸いなことに、良い解決方法があります。
+トランスポートプロファイルです。
+Elasticsearch 1.4で導入されたトランスポートプロファイルは、トランスポートレイヤー（異なるホスト/ポートにバインドされる）のために複数のネットワークチャネルを設定することができます。
+Shieldはこのサポートを、プロファイルごとに異なるSSL設定をできるように拡張します。
+また、ノードのタイプとクライアントプロファイルタイプの間に明確な違いを設定することも可能です。
+これを用いると、2つのプロファイルを設定できるようになります。
+ひとつは、クライアントのためのもので、もうひとつはクラスタのノードのためのものです。
+これにより、クライアントのための認証の問題が必要なくなり、Shieldはクライアントプロファイルをもった限定されたクライアントからのリクエストを保証します。</p>
+
+<h3>IPフィルタリング</h3>
+
+<p>これは、厳密には、認証カテゴリではありませんが関係しています。
+Shieldはそれ自身がIPフィルタリングのメカニズムを持っています。
+これは、許可/不許可のIPのリストを設定することができます。
+これらのフィルタリングのルールは複数のレベルで設定可能です。
+transportチャネル、transportプロファイルレベル、そして、HTTPチャネルです。
+次の設定は、それらの設定のサンプルです。（設定ファイルはelasticsearch.ymlになります）</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>shield:
+</span><span class='line'>
+</span><span class='line'>    transport.filter:
+</span><span class='line'>        allow:
+</span><span class='line'>            - '127.0.0.1'
+</span><span class='line'>            - '2001:0db8:1234:0000:0000:8a2e:0370:73
+</span><span class='line'>        deny:
+</span><span class='line'>            - '10.0.0.0/8'
+</span><span class='line'>            - '2001:0db8:1234::/48'
+</span><span class='line'>            - '*.google.com'
+</span><span class='line'>
+</span><span class='line'>    http.filter:
+</span><span class='line'>        allow: [ '10.0.0.0/8' ]
+</span><span class='line'>        deny: [ '127.0.0.1' ]
+</span><span class='line'>
+</span><span class='line'>transport.profiles:
+</span><span class='line'>    client:
+</span><span class='line'>        shield.filter.deny: [ '_all' ]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このように、IPv4とIPv6、CIDR、ホスト名、ワイルドカードが利用できます。
+また、この機能はホストOSのIPテーブルに設定することで追加できるが、Shieldにそれを保持し、それらの設定を単純化し、
+デプロイの全体から除去できることにも注意してください（詳細は<a href="http://www.elasticsearch.org/guide/en/shield/current/ip-filtering.html">ドキュメントのIPフィルタリングをご覧ください</a>）。</p>
+
+<h3>監査証跡（Audit Trail）</h3>
+
+<p>セキュアなシステムの必須機能の一つで、監査硝石により、Elasticsearchに発生した重要なイベントをトラッキングすることが可能です。
+これらのイベントを保存することは、Elasticsearchクラスタの重要なアクティビティの証拠を提供でき、
+不審な/悪意のある可能性のあるイベントを追跡するときの診断ツールにもなります。</p>
+
+<p>Shield 1.0.0で、監査証跡は監査/アクセスlogを一般的なElasticsearchのログとは個別に保存します。
+それらは、構造化されているため、読んだりパースするのが容易で、イベントのタイプも分類されています。
+また、情報のレベルを設定することができ、各イベントをlogレベルの設定で書き出すことができます。
+以下が、イベントのリストです。</p>
+
+<ul>
+<li><em>anonymous_access_denied</em> - 認証トークンがないユーザからのリクエストがあった時のログ</li>
+<li><em>authentication_failed</em> - リクエストされたユーザの認証に失敗した時のログ</li>
+<li><em>access_denied</em> - 認証されたユーザが許可されていない操作を実行した時のログ</li>
+<li><em>access_granted</em> - 認証されたユーザが許可された操作を実行した時のログ</li>
+<li><em>tampered_request</em> - 不正に書き換えられたリクエストが到着したのを検知した時のログ</li>
+<li><em>connection_granted</em> - ノードもしくはtransportクライアントがIPフィルタのルールにパスした時のログ</li>
+<li><em>connection_denied</em> - ノードもしくはtransportクライアントがIPフィルタリングルールの制限により却下された時のログ</li>
+</ul>
+
+
+<p>Shieldの監査証跡についてより詳しく知りたい方は、<a href="http://www.elasticsearch.org/guide/en/shield/current/auditing.html">ドキュメント</a>をごらんください。</p>
+
+<h3>次のバージョンでは？</h3>
+
+<p>ここまで紹介したように、これはまだ始まりにすぎません。
+Shieldに追加される多くの機能があり、しっかりとした基盤を構築したところです。
+Shieldの次のバージョンでは、以下の機能の追加にフォーカスするでしょう。（これらだけに限ったわけではありません。）</p>
+
+<ul>
+<li>APIによる設定、管理</li>
+<li>より拡張され、柔軟なLDAP/Active Directoryサポート</li>
+<li>レルムタイプの追加（kerberos、anonymous、certificatesなどなど）</li>
+<li>セッションベースの認証</li>
+</ul>
+
+
+<p>ShieldはElasticsearch社の2番目の（<a href="http://www.elasticsearch.com/products/marvel?_ga=1.40546982.567962035.1389706748">Marvel</a>に続く）商用プロダクトです。
+ダウンロードして開発環境で評価してください。
+インストールは他のプラグインと同様の方法です（インストール方法についての詳細は<a href="http://www.elasticsearch.org/guide/en/shield/current/index.html">こちら</a>）。
+一度インストールすると、30日の試用ライセンスが始まります。
+もし、さらに時間が必要な場合は、sales@elasticsearch.comまで連絡してください。</p>
+
+<p>私たちのすべてのプロダクトについてフィードバックをお待ちしています。
+Shieldの商用利用、機能、ロードマップ、その他のセキュリティに関するトピックなど、質問がありましたら、
+<a href="http://www.elasticsearch.com/contact/?_ga=1.32250170.567962035.1389706748">サイトからご連絡ください</a>。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-02-27T18:49:56+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2015-02-27T18:49:56+09:00'><span class='date'>2015-02-27</span></time></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>, <a class='category' href='/blog/categories/shield/'>shield</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
+      data-hatena-bookmark-layout="standard"
+      data-hatena-bookmark-url="http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/">
+    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
+        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
+        style="border: none">
+  </a>
+</div>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog after sharing */
+google_ad_slot = "2760031654";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/02/20/kibana-4-literally-ja/" title="Previous Post: Kibana 4（日本語訳）">&laquo; Kibana 4（日本語訳）</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <a href="http://twitter.com/johtani"><img class="about_me" src="/images/about_me2.jpg" alt="後頭部"/></a>
+  <p>Elasticsearch関連の仕事をしているエンジニアです。Elasticsearch、Kibana、Logstashに興味のある方は連絡をください。<br/><br/>
+最近は自然言語処理、DataVisualizationに興味があります。<br/>
+Elasticsearch勉強会の主催をしています。<br/>
+<a href="http://code.google.com/p/lucene-gosen/">lucene-gosen</a>のコミッターもやっています。</p>
+↓ログ可視化本も出てます！<br/>
+　Elasticsearch本も出てます！↓<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=B00MPDUQQI&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4048662023&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+↓Solr本改訂版、出ました！<br/>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4774161632&IS1=1&nou=1&ref=qf_sp_asin_til&fc1=000000&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+    <script type="text/javascript" src="http://widget.booklog.jp/blogparts/js/booklog_minishelf.js?metal" id="booklog_minishelf"></script>
+    <script type="text/javascript" src="http://api.booklog.jp/json/johtani?category=0&count=15&callback=booklog_minishelf"></script>
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (59)</a></li><li><a href='/blog/categories/elaticsearch/'>elaticsearch (1)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (6)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (4)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (3)</a></li><li><a href='/blog/categories/misc/'>misc (3)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/shield/'>shield (1)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (19)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (2)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/">セキュリティ向けプラグインShieldのリリース（日本語訳）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/20/kibana-4-literally-ja/">Kibana 4（日本語訳）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/20/elasticsearch-1-4-4-and-1-3-9-released-ja/">Elasticsearch 1.4.4および1.3.9リリース（日本語訳）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/18/preparing-elasticsearch-meetup-in-nagoya/">名古屋でElasticsearch勉強会を開催します</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/16/8th-elasticsearch-jp/">第8回Elasticsearch勉強会を開催しました。#elasticsearchjp</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>On Twitter:</h1>
+  <div>
+    <p><br /><a href="http://twitter.com/johtani" target="_blank">My Tweets, on Twitter.</a></p>
+    <a href="http://twitter.com/johtani" class="twitter-follow-button" data-show-count="">Follow @johtani</a>
+  </div>
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/';
+        var disqus_url = 'http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+(function(w,d){
+    var c,e=d.createDocumentFragment(),f=d.getElementsByTagName("script")[0],
+    a=function(a,b){if(!d.getElementById(b)){c=d.createElement("script");
+    c.src=a;c.id=b||null;c.async=true;e.appendChild(c);}};
+
+    w.___gcfg={lang:"ja"};
+    a("https://apis.google.com/js/plusone.js");
+
+
+    a("//platform.twitter.com/widgets.js");
+
+
+    a("//connect.facebook.net/ja_JP/all.js#xfbml=1","facebook-jssdk");
+
+    a("//b.st-hatena.com/js/bookmark_button_wo_al.js");
+    f.parentNode.insertBefore(e,f);
+})(this,document);
+</script>
+
+
+  </div>
+</body>
+</html>

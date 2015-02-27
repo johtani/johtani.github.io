@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-02-21T00:50:27+09:00</updated>
+  <updated>2015-02-27T17:06:30+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,366 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[セキュリティ向けプラグインShieldのリリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/"/>
+    <updated>2015-02-27T18:49:56+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://www.elasticsearch.org/blog/you-know-for-security-shield-goes-ga/">you know, for security: shield goes ga</a></p>
+
+<p>1/27にShield 1.0 をリリースしました。
+Elasticsearch向けの私たちのセキュリティプラグインの最初のリリースです。
+11月にShieldについてアナウンスしてから、Elsaticsearchのためのセキュリティの機能は、
+一般的に望まれているものから始まり、具体的な考えと実行できる計画へと変遷し、それが、いま現実となりました。</p>
+
+<p>十分にセキュアな環境に、Elasticsearchクラスタをセキュアな状態でデプロイできるようにするため、
+私たちは継続的にカスタマーやユーザーからのリクエストを受け取り、統合されたソリューションになるようにしてきました。</p>
+
+<p>私たちは、そのようなプロダクトがどうあるべきか調査することから始め、
+カスタマーとユーザが必要とするセキュリティとはどんなものかを理解するために多くの時間を費やしました。
+その結果がShieldです。
+Shieldは、ElasticsearchクラスタをセキュアにするElasticsearchの有償プラグインです。
+私たちは、ShieldをDev、Gold、Platinumサブスクリプションの一部として、追加料金なしで提供します。</p>
+
+<p>最初のリリースでは、基本的な機能と基盤にフォーカスしています。
+Elasticsearch自身に対しても、セキュリティに対して準備してきました。
+拡張性の側面だけでなく、Elasticsearchにあるデータフローについても再考してきました。
+Elasticsearchクラスタをセキュアにする場合に、具体的な価値を即座に届けるだけでなく、素早く拡張できるようにも開発しました。</p>
+
+<!-- more -->
+
+
+<h3>機能</h3>
+
+<p>Shield 1.0は次の5つにフォーカスしています。</p>
+
+<ul>
+<li>認証(Authentication)</li>
+<li>認可(Authorization)</li>
+<li>暗号化通信とノードの認可(Encrypted Communication &amp; Node Authentication)</li>
+<li>IPフィルタリング</li>
+<li>監査証跡(Audit Trail)</li>
+</ul>
+
+
+<h3>認証(Authentication)</h3>
+
+<p>セキュリティの大部分はアイデンティティについてです（例えば、だれがこのAPIを呼び出したのか？システムに何のサービスが接続するか？など）
+サービスのライフタイムのある時点で、サブジェクト（例えばユーザー）を現在実行中のサブプロセスなどに結びつけることです。
+この関係性を持つためには、サブプロセスを実行する前にユーザの身元を確認するように命じます。
+ユーザの身元の確認のプロセスをAuthenticationと呼び、ElasticsearchのすべてのAPIコールでそれが実行されます。</p>
+
+<p>認証の手法は多くの異なるものがあります。
+それぞれの手法は、ユーザが認証されたという資格（Authentication Token）を、それぞれのタイプで提供するようにユーザに要求します。
+Shield 1.0ではシンプルに、必要なauthentication tokenをユーザ/パスワードペアとしています。
+（これは、Shieldの認証基盤が簡単に拡張でき、将来は異なるauthentication tokenもサポートできることを意味します。）</p>
+
+<p>ユーザの資格を受け取ることだけでは不十分で、次に、それらをチェックする必要があります。
+Shieldでは、これはレルムの責務です。
+レルムは認証プロバイダ/サービスとしてみることができます。
+妥当なユーザであると判断/解決されたか、
+authentication tokenが適切な資格を持っていない/単に知らないユーザであるということで、拒否されたかです。
+Shieldの認証メカニズムでは、複数のレルムを設定でき、さらに、あるレルムの戻り値を扱う他のレルム、というようなchainとすることもできます。
+Shield 1.0は3つのレルムをサポートします。</p>
+
+<ul>
+<li>esusers - Elasticsearchによって管理されるファイルベースのレルムです。
+これは、ファイルにユーザを定義することができます。（Apacheサーバのhtpasswdファイルのようなもの）
+このレルムは外部への依存はなく、Shieldをインストールすれば、デフォルトで使用できます。
+このレルムは配置が簡単で、マルチテナントなElasticsearchクラスタに対して使用できます。
+マルチテナントなElasticsearchクラスタとは、クラスタを複数のアプリでシェアすることをテナントと言います。
+また、すべてのユーザがパスワードを忘れてしまうような&#8221;emergency&#8221;な代替レルムも対応可能です。
+(誰もシステムに入れないような状況のことです)</li>
+<li>LDAP - 外部のLDAPサーバでユーザを認証するレルムです。
+このレルムは組織のLDAPサーバで管理/保存されているユーザをすでに持っている組織を対象としています。</li>
+<li>Active Directory - LDAPのタイプの1つで、Active Directoryに対する設定になります。</li>
+</ul>
+
+
+<p>レルムはelasticsearch.yml設定ファイルで、次のように設定可能です。</p>
+
+<blockquote><p>shield.authc
+    realms:</p>
+
+<pre><code>    esuser:
+        type: esusers
+        order: 0
+
+    ldap:
+        type: ldap
+        order: 1
+        url: ldaps://url/to/ldap1/server
+
+    ldap_fallback:
+        type: ldap
+        order: 2
+        url: ldaps://url/to/ldap2/server
+</code></pre></blockquote>
+
+<p>上記のようにrealmsが一つのチェインとして参照されます。
+レルムごとに、設定された順序で、それらは参照されます。</p>
+
+<p>NOTE : Shieldには、esusersファイルに保存されたユーザを管理するためのコマンドラインツールもあります。</p>
+
+<h2>認可(authorization)</h2>
+
+<p>認可(Authorization)は保護されたリソースにアクセスするユーザを許可するか拒否するかということです。
+モダンなシステムは、ユーザのパーミッションのために、ロールベースのアクセスコントロール（RBAC）モデルを利用します。
+このモデルでは、各ユーザはロールの集合に関連していて、それぞれのロールには、パーミッションの集合が定義されています。
+これは、洗練された設定で、パーミッションを機能的なグループで共有させることができます。
+例えば、次のようなロールを定義したとします。</p>
+
+<ul>
+<li><em>employee</em> - すべての従業員は部門をまたいだ会社のデータへアクセスできます（例えば、コンタクトやディレクトリ情報など）</li>
+<li><em>sales</em> - すべての営業職は営業データにアクセスできる（例えば、流通ルート、ルート、顧客）</li>
+<li><em>finace</em> - すべての財務の従業員は財務データにアクセスできる（例えば、予算、経費、伝票）</li>
+</ul>
+
+
+<p>財務部門の<code>Ann</code>は従業員と財務のロールを持っており、会社のディレクトリと財務データにアクセスでできます。</p>
+
+<p>認可プロセスはユーザがリクエストに関連したユーザが必要で、このプロセスのために、認証フェーズの後に直接実行されます。</p>
+
+<p>Shieldは2つのタイプのリソースを定義します。クラスタとインデックスです。
+これらは、すべてのAPIコールで保護されます。
+さらに、それらに関連したパーミッションとロールも定義できます。
+一度定義をすると、ロールはユーザもしくはLDAP/ADのグループに関係します。
+ロールは<strong>roles.yml</strong>設定ファイルで定義されます。
+設定のサンプルは次のようになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>admin:
+</span><span class='line'>    cluster: all
+</span><span class='line'>    indices:
+</span><span class='line'>        '*' : all
+</span><span class='line'>
+</span><span class='line'>monitor:
+</span><span class='line'>    cluster: monitor
+</span><span class='line'>    indices:
+</span><span class='line'>        '*': monitor
+</span><span class='line'>
+</span><span class='line'>employee:
+</span><span class='line'>    indices:
+</span><span class='line'>        'company_directory' : read
+</span><span class='line'>
+</span><span class='line'>sales:
+</span><span class='line'>    indices:
+</span><span class='line'>        'opportunities' : read, write
+</span><span class='line'>        'accounts' : read, write
+</span><span class='line'>
+</span><span class='line'>finance:
+</span><span class='line'>    indices:
+</span><span class='line'>        'expenses' : read, write
+</span><span class='line'>        'purchases' : read, write</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上記のサンプルで、次の5つのロールを定義しています。</p>
+
+<ul>
+<li><em>admin</em> - 管理者のロールで、すべてのクラスターレベルの操作とすべてのインデックスに対してすべてのインデックスレベルの操作を実行可能です。
+(¥*インデックスはすべてのインデックスにマッチするワイルドカード)</li>
+<li><em>monitor</em> - システム/クラスタのモニタリングのためのロール。このロールのユーザはすべてのクラスタとインデックスレベルの情報の読み取りの
+APIにアクセス可能だが、インデックスのデータへの読み書きや設定の更新は不能</li>
+<li><em>employee</em> - compnay_directoryにあるすべてのデータへの読み取りアクセスを与えられたロール。このロールはクラスタレベルへのアクセスやデータの書き込みアクセスは持っていない
+(特にcompany。洗濯されたグループの人々はcompanyディレクトリの更新は可能だが、employeeは読み取りのみが可能)</li>
+<li><em>sales</em> - opportunitiesとaccountsインデックスの読み書きができるロール</li>
+<li><em>finance</em> - expensesとpurchasesの両方に読み書きができるロール</li>
+</ul>
+
+
+<p>上記のサンプルで定義されている<code>all</code>と<code>read</code>と<code>write</code>として名前がつけられた権限です。
+これらは、予約語で、Elasticsearchのローレベルのアクションを複数含んだ権限です。
+（<code>write</code>は<code>index, delete, delete_by_query, bulk, update</code>の操作を含んでいます。）
+多くのケースで、これらのハイレベルの名前が付けられた権限で十分ですが、特定のロールに特定のアクションを明示的に指定することもできます。
+次のようになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hr:
+</span><span class='line'>    indices:
+</span><span class='line'>        'company_directory' : indices:data/write/index, indices:data/write/update</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ここまで説明した認可のレルムは、各ユーザに関連するロールを識別するためのものです。
+内部のesuserレルムでは、提供されるesuserコマンドラインツールを使ってロールはユーザに割り当てたり変更したりもできます。
+LDAPやActive Directoryでは、LDAP/ADグループにShieldのロールを割り当てることができます。</p>
+
+<p>認証と認可の両方を用いることで、ユーザリクエストに対して、ユーザごとに許可/不許可をすることができます。</p>
+
+<h3>暗号化通信</h3>
+
+<p>認可はElasticsearchのデータを機能的な観点（許可されたユーザだけが操作を可能にする）で保護しますが、
+クライアントからElasticsearchクラスタへ、もしくはクラスタのノード間では暗号化されていないデータを送るためまだ危険があります。
+第三者が登頂したり、オンザフライでデータを書き換えたりといった可能性やクラスタを壊すことができます。</p>
+
+<p>Shield 1.0はElasticsearchのすべての通信チャネルをセキュアにすることができます。
+クラスタ内のノード間のチャネルやクライアントに公開されているチャネルです。
+これは、SSL/TLS通信を導入して実現します。</p>
+
+<p>Shieldで使えるSSLはElasticsearchのtransportサービスをSSL/TLSで通信できるものに置き換えます。
+これは、ノード間通信チャネルと、HTTP transport（REST APIを提供するもの）のそれぞれに設定可能です。</p>
+
+<p>ShieldのSSL/TLSは、スタンダードなJavaのものとkeystoreとtruststoreを基本にしたものが利用可能です。
+SSL/TLSを設定すると、各ノードのキーストアに証明書をインポートする必要があります。
+CAがサインした証明書を使うことも、CAが信頼したものとして許可許諾されたものを使うことが可能です。
+これは、信頼されたすべてのCAとして知られているtrust storeが必要です。
+新しいノードをクラスタに追加するときに、すべての必要な少なくとも一つの信頼されたCAから発行されてサインされたものが必要になります。
+クラスタで個別のノードがすべてのkeystore/truststoreを更新する必要性なしに。？？</p>
+
+<p>通信チャネルを安全にする方法やSSL/TLS設定をどのように行うかは<a href="http://www.elasticsearch.org/guide/en/shield/current/securing-nodes.html">Shieldのドキュメント</a>をご覧ください。</p>
+
+<h3>ノード間認証</h3>
+
+<p>強く推奨しますが、許可されたノードだけがクラスタに接続できるようにするために、ノードの認証をSSL transportに設定することができます。
+これは、<code>shield.transport.client.auth</code>に<code>true</code>を設定することで可能です。
+設定した場合、ノード間でSSLハンドシェイクが行われ、接続されたノードが接続に来たノードのクライアント認証を要求しチェックします。
+もし、チェックに失敗した場合は、SSLシェイクハンドが失敗し接続が拒否されます。</p>
+
+<h3>SSLクライアント認証</h3>
+
+<p>transportレベルでノード認証が必要なようなら、次のような疑問がわくでしょう。
+Elasticsearchはクラスタに接続するTransportクライアントを使うときはどのように振る舞うのか？
+Transportクライアントはクラスタの他のノードと同じチャネルを使うため、コネクションを確立するときに、ノードが他のノードと異なるかどうかを見極めることはできません。</p>
+
+<p>この時、もっとも単純な解決は、Transportクライアントも同様に許可を与えることです。
+それは、認証を解決するときに、他の問題（潜在的な悪意）を引き起こします。
+Transportクライアントが他のクラスタのノードを偽装しようとすることです。これは望んでいません。</p>
+
+<p>幸いなことに、良い解決方法があります。
+トランスポートプロファイルです。
+Elasticsearch 1.4で導入されたトランスポートプロファイルは、トランスポートレイヤー（異なるホスト/ポートにバインドされる）のために複数のネットワークチャネルを設定することができます。
+Shieldはこのサポートを、プロファイルごとに異なるSSL設定をできるように拡張します。
+また、ノードのタイプとクライアントプロファイルタイプの間に明確な違いを設定することも可能です。
+これを用いると、2つのプロファイルを設定できるようになります。
+ひとつは、クライアントのためのもので、もうひとつはクラスタのノードのためのものです。
+これにより、クライアントのための認証の問題が必要なくなり、Shieldはクライアントプロファイルをもった限定されたクライアントからのリクエストを保証します。</p>
+
+<h3>IPフィルタリング</h3>
+
+<p>これは、厳密には、認証カテゴリではありませんが関係しています。
+Shieldはそれ自身がIPフィルタリングのメカニズムを持っています。
+これは、許可/不許可のIPのリストを設定することができます。
+これらのフィルタリングのルールは複数のレベルで設定可能です。
+transportチャネル、transportプロファイルレベル、そして、HTTPチャネルです。
+次の設定は、それらの設定のサンプルです。（設定ファイルはelasticsearch.ymlになります）</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>shield:
+</span><span class='line'>
+</span><span class='line'>    transport.filter:
+</span><span class='line'>        allow:
+</span><span class='line'>            - '127.0.0.1'
+</span><span class='line'>            - '2001:0db8:1234:0000:0000:8a2e:0370:73
+</span><span class='line'>        deny:
+</span><span class='line'>            - '10.0.0.0/8'
+</span><span class='line'>            - '2001:0db8:1234::/48'
+</span><span class='line'>            - '*.google.com'
+</span><span class='line'>
+</span><span class='line'>    http.filter:
+</span><span class='line'>        allow: [ '10.0.0.0/8' ]
+</span><span class='line'>        deny: [ '127.0.0.1' ]
+</span><span class='line'>
+</span><span class='line'>transport.profiles:
+</span><span class='line'>    client:
+</span><span class='line'>        shield.filter.deny: [ '_all' ]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このように、IPv4とIPv6、CIDR、ホスト名、ワイルドカードが利用できます。
+また、この機能はホストOSのIPテーブルに設定することで追加できるが、Shieldにそれを保持し、それらの設定を単純化し、
+デプロイの全体から除去できることにも注意してください（詳細は<a href="http://www.elasticsearch.org/guide/en/shield/current/ip-filtering.html">ドキュメントのIPフィルタリングをご覧ください</a>）。</p>
+
+<h3>監査証跡（Audit Trail）</h3>
+
+<p>セキュアなシステムの必須機能の一つで、監査硝石により、Elasticsearchに発生した重要なイベントをトラッキングすることが可能です。
+これらのイベントを保存することは、Elasticsearchクラスタの重要なアクティビティの証拠を提供でき、
+不審な/悪意のある可能性のあるイベントを追跡するときの診断ツールにもなります。</p>
+
+<p>Shield 1.0.0で、監査証跡は監査/アクセスlogを一般的なElasticsearchのログとは個別に保存します。
+それらは、構造化されているため、読んだりパースするのが容易で、イベントのタイプも分類されています。
+また、情報のレベルを設定することができ、各イベントをlogレベルの設定で書き出すことができます。
+以下が、イベントのリストです。</p>
+
+<ul>
+<li><em>anonymous_access_denied</em> - 認証トークンがないユーザからのリクエストがあった時のログ</li>
+<li><em>authentication_failed</em> - リクエストされたユーザの認証に失敗した時のログ</li>
+<li><em>access_denied</em> - 認証されたユーザが許可されていない操作を実行した時のログ</li>
+<li><em>access_granted</em> - 認証されたユーザが許可された操作を実行した時のログ</li>
+<li><em>tampered_request</em> - 不正に書き換えられたリクエストが到着したのを検知した時のログ</li>
+<li><em>connection_granted</em> - ノードもしくはtransportクライアントがIPフィルタのルールにパスした時のログ</li>
+<li><em>connection_denied</em> - ノードもしくはtransportクライアントがIPフィルタリングルールの制限により却下された時のログ</li>
+</ul>
+
+
+<p>Shieldの監査証跡についてより詳しく知りたい方は、<a href="http://www.elasticsearch.org/guide/en/shield/current/auditing.html">ドキュメント</a>をごらんください。</p>
+
+<h3>次のバージョンでは？</h3>
+
+<p>ここまで紹介したように、これはまだ始まりにすぎません。
+Shieldに追加される多くの機能があり、しっかりとした基盤を構築したところです。
+Shieldの次のバージョンでは、以下の機能の追加にフォーカスするでしょう。（これらだけに限ったわけではありません。）</p>
+
+<ul>
+<li>APIによる設定、管理</li>
+<li>より拡張され、柔軟なLDAP/Active Directoryサポート</li>
+<li>レルムタイプの追加（kerberos、anonymous、certificatesなどなど）</li>
+<li>セッションベースの認証</li>
+</ul>
+
+
+<p>ShieldはElasticsearch社の2番目の（<a href="http://www.elasticsearch.com/products/marvel?_ga=1.40546982.567962035.1389706748">Marvel</a>に続く）商用プロダクトです。
+ダウンロードして開発環境で評価してください。
+インストールは他のプラグインと同様の方法です（インストール方法についての詳細は<a href="http://www.elasticsearch.org/guide/en/shield/current/index.html">こちら</a>）。
+一度インストールすると、30日の試用ライセンスが始まります。
+もし、さらに時間が必要な場合は、sales@elasticsearch.comまで連絡してください。</p>
+
+<p>私たちのすべてのプロダクトについてフィードバックをお待ちしています。
+Shieldの商用利用、機能、ロードマップ、その他のセキュリティに関するトピックなど、質問がありましたら、
+<a href="http://www.elasticsearch.com/contact/?_ga=1.32250170.567962035.1389706748">サイトからご連絡ください</a>。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Kibana 4（日本語訳）]]></title>
@@ -2872,143 +3232,6 @@ Logstashでもこの機能が用意されており、簡単に利用ができま
 Elasticsearchにデータを登録する前にテンプレートも設定してありました。こちらについても、次回説明しようと思います。</p>
 
 <p>不明な点、誤植などありましたら、コメント欄へお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第7回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2014/11/19/hold-on-7th-elasticsearch-jp/"/>
-    <updated>2014-11-19T11:19:07+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/11/19/hold-on-7th-elasticsearch-jp</id>
-    <content type="html"><![CDATA[<p><a href="http://elasticsearch.doorkeeper.jp/events/16837">第7回Elsticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-
-<p>昨日も紹介しましたが、<a href="http://qiita.com/advent-calendar/2014/elasticsearch">Elasticsearch Advent Calendar 2014</a>を用意してみました。まだ、空きがありますので、登録お待ちしております！</p>
-
-<!-- more -->
-
-
-<p>今回は出足が好調で、早々に180人の枠を超えるという嬉しい事態でした。
-最終的な参加人数は130名程度で、懇親会参加者が50名弱といったところです。</p>
-
-<h2>「Kibana4」</h2>
-
-<h3>Elasticsearch Inc. Jun Ohtani @johtani</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/johtani/kibana4">Kibana4</a></p>
-
-<p>ということで、Kibana4の紹介と、Kibana4のBeta2を利用したデモを行いました。
-デモの開始のところで少し環境がうまく動いてなくて手間取ってしまいましたが。。。</p>
-
-<p>発表で1点だけ修正があります。JRubyを選択しているのがElasticsearchのライブラリを使用するためという説明をしましたが、
-こちらは、Logstashに関する話でした。Kibana4は現時点では、ElasticsearchへのProxyとしての動作が主なものとなります。Rubyでも動作可能です。
-bin/kibanaについてはJavaを使った起動になります。
-参考：<a href="https://github.com/elasticsearch/kibana/tree/master/src/server">https://github.com/elasticsearch/kibana/tree/master/src/server</a></p>
-
-<p>発表でも主張しましたが、ダウンロードして、Elasticsearchを用意すれば簡単に動作させることが可能です。
-ぜひ、ローカルで試して見てもらえればと思います。
-今回のデモのデータを入れるのに利用したLogstashの設定などについては、ブログで記事を書こうと思います。</p>
-
-<h2>niconicoの検索を支えるElasticsearch</h2>
-
-<h3>株式会社ドワンゴ 伊藤 祥 さん</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/shoito/niconico-elasticsearch">niconicoの検索を支えるElasticsearch</a></p>
-
-<ul>
-<li>リアルタイム検索の実現、新しい検索への対応</li>
-<li>検索のアーキテクチャとか。</li>
-<li>Capistranoでデプロイとかを管理</li>
-<li>1.4.1が出たら、クラスタを更新予定</li>
-</ul>
-
-
-<p>ということで、実際に導入した話から、現在の運用の仕方、クラスタのアップグレードなど多岐にわたる内容でおもしろかったです。
-遭遇した問題点とかもあったので。
-Marvel便利なのでぜひ導入を検討してもらえればw</p>
-
-<h2>Elasticsearch at CrowdWorks </h2>
-
-<h3>株式会社クラウドワークス 九岡 佑介 さん @mumoshu</h3>
-
-<p>スライド：<a href="http://www.slideshare.net/mumoshu/20141118-es">Elasticsearch at CrowdWorks</a></p>
-
-<ul>
-<li>会社の紹介</li>
-<li>仕事が検索対象</li>
-<li>検索時間が1桁減少！</li>
-<li>Graceful Degradationで失敗したら、InnoDB FTSで代替：<a href="https://github.com/crowdworks/gracefully">Gracefully</a></li>
-<li><a href="http://www.found.no">found.no</a>のサービスを利用</li>
-<li>elasticsearch-modelの拡張を作成してOSSとして公開：<a href="https://github.com/crowdworks/elasticsearch-model-extensions">elasticsearch-model-extensions</a></li>
-</ul>
-
-
-<p>Gracefullyで切り替えとかは面白いなと思いました。
-検索での利用の話でしたが、他のシーンでも使えそうですよね。
-日本にFoundユーザがいるのも初めて知りました。
-彼らの開発者ブログも質の良い情報が載っているので、参考になりますよね。</p>
-
-<p>次は、どんなMappingで運用しているのかとか、どういった工夫をしているかといった点を詳しく聞きたいなと思いました。
-またお待ちしております。</p>
-
-<h2>1分で作るElasticsearchプラグイン</h2>
-
-<h3>株式会社エヌツーエスエム 菅谷 信介 さん</h3>
-
-<p>スライド：<a href="http://www.slideshare.net/shinsuke/plugins-ates7">Elasticsearchプラグインの作り方</a></p>
-
-<ul>
-<li>プラグインの作り方とか。</li>
-<li>十数個のプラグインの紹介。プラグインはこちらで公開中。<a href="https://github.com/codelibs/">https://github.com/codelibs/</a></li>
-<li>実際に、業務で必要なものから作成</li>
-<li>まだまだ作りたいものがある</li>
-</ul>
-
-
-<p>コミュニティ還元できるものはPR送ってもらえるとうれしいです。
-前よりは体制も増えてるので、PRも目にとまるようになってるはずです。</p>
-
-<p>あとは、使ってみたいと思う方も多数いると思うので、ぜひ、OSSなので、貢献しましょう！
-フィードバックがあるだけで、OSS活動やってるものにとってはやる気につながると思いますし。</p>
-
-<h2>LT：GISとして活用するElasticsearch </h2>
-
-<h3>船戸 隆さん</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/tfunato/gistositehuo-yong-suruelasticsearch">GISとして活用するElasticsearch </a></p>
-
-<ul>
-<li>java-jaからIngressの青（Registance）の勧誘に来られた方w</li>
-<li>APIをハックして、情報を取得し、Kibanaで可視化</li>
-<li>残念ながら、APIが変更されて見れなくなったらしい。</li>
-</ul>
-
-
-<p>Ingress実際にやったことはないのですが、おもしろそうでした。
-発表される方の会社の採用紹介ではなく、Ingressの勧誘をされるとは想定外でしたw</p>
-
-<p>興味のあるデータをKibanaで可視化するのも面白い例だと思うので、活用してもらえればと思います。</p>
-
-<h2>その他、感想などのブログ</h2>
-
-<p>適当に見つけたブログを列挙してあります。これもあるよ！などあれば、教えてください。</p>
-
-<ul>
-<li><a href="http://blog.yoslab.com/entry/2014/11/18/203159">勉強会メモ - 第7回elasticsearch勉強会</a></li>
-<li><a href="http://qiita.com/t-sato/items/940ccfa9e4a668b91967">第7回elasticsearch勉強会 #elasticsearch #elasticsearchjp</a></li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<p>JJUGの時とは違い、Elasticsearch勉強会ではさすがに、企業としてのElasticsearchの知名度が高かったのはありがたいことでした。
-自分の発表のために始めた勉強会でもありますが、まだまだ、発表するときは緊張しますし、分かりにくいんじゃないかなぁと思うことも多々あります。
-この辺がわかりにくかった、この辺をもっと知りたいなど、フィードバックをお待ちしております。</p>
-
-<p>冒頭にも書きましたが、<a href="http://qiita.com/advent-calendar/2014/elasticsearch">Elasticsearch Advent Calendar 2014</a>の登録をお待ちしております。どんなことでも歓迎なので、Elasticsearch、Kibana、Logstashなどについて書いてもらえるとうれしいです。</p>
-
-<p>次回ももちろん2ヶ月後くらいに行います。 スピーカー募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。 よろしくお願いいたします。</p>
 ]]></content>
   </entry>
   
