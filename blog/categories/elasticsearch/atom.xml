@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-03-15T04:14:54+09:00</updated>
+  <updated>2015-04-01T17:03:01+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,181 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 1.5.0リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/04/01/elasticsearch-1-5-0-released-ja/"/>
+    <updated>2015-04-01T12:38:16+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/04/01/elasticsearch-1-5-0-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-5-0-released">Elasticsearch 1.5.0 Released</a></p>
+
+<p>本日（3/23）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.5.0</strong> をリリースしました。
+このリリースはElasticsearchの最新の安定バージョンとなります。
+多くの<em>resiliency(復元性、弾力性) enhancement</em>とバグフィックスを含んでおり、
+すべてのユーザにアップグレードを推奨しています。</p>
+
+<p>すべての変更については<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-0">download Elasticsearch 1.5.0 here</a>をごらんください。</p>
+
+<p>460PRという大量の変更を含む本リリースは、Elasticsearchをよりresilient(弾力のあるもの)にするために
+費やされています。</p>
+
+<!-- more -->
+
+
+<h3>Inner hits</h3>
+
+<p>本リリースで追加された、Elasticsearchに最もリクエストされたものの一つがinner hitsです。
+これは、<code>has_child</code>もしくは<code>nested</code>クエリにマッチした子のドキュメントを、各親ドキュメントと一緒に返すことができます。</p>
+
+<p>例えば、<code>blog</code>という親ドキュメントと<code>comment</code>という子ドキュメントを持っているとします。
+この時、&#8221;full text search&#8221;というコメントを持ったブログ記事を検索したいとします。</p>
+
+<pre><code class="json">GET /my_index/blog/_search
+{
+  "query": {
+    "has_child": {
+      "type":       "comment",
+      "score_mode": "sum",
+      "query": {
+        "match": {
+          "body":   "full text search"
+        }
+      }
+    }
+  }
+}
+</code></pre>
+
+<p>上記のリクエストは、親の<code>blog</code>ドキュメントを返します。
+しかし、どのコメントが関係しているのかはわかりません。
+関連しているコメントを検索して親ごとにグルーピングするために、
+少し手間のかかる2回目のクエリを実行する必要があります。</p>
+
+<p>Inner hitsがこれを変えてくれます。
+<code>inner_hits</code>パラメータを次のように、上記のクエリに追加するだけです！</p>
+
+<pre><code class="json">GET /my_index/blog/_search
+{
+  "query": {
+    "has_child": {
+      "type":       "comment",
+      "score_mode": "sum",
+      "query": {
+        "match": {
+          "body":   "full text search"
+        }
+      },
+      "inner_hits": {}
+    }
+  }
+}
+</code></pre>
+
+<p>それぞれマッチした<code>blog</code>記事に、<code>inner_hits</code>があり、その項目に最もマッチしたコメントの
+上位3件（デフォルト値）が含まれて返ってきます。</p>
+
+<pre><code class="json">...
+"hits": [
+  {
+    "_index":   "my_index",
+    "_type":    "blog",
+    "_id":      1,
+    "_score":   3.68,
+    "_source":  { ... },
+    "inner_hits": {
+      "comment": {
+        "total": 16,
+        "hits": [
+          {
+            "_type":    "comment",
+            "_id":      5,
+            "_score":   2.79,
+            "_source": {
+              "body":   "Full text search is the bomb"
+            }
+          },
+          { ... },
+          { ... }
+        ]
+      }
+    }
+  }
+]
+...
+</code></pre>
+
+<p><code>inner_hits</code>部分は、第2の検索リクエストに似ています。
+<code>size</code>や<code>from</code>パラメータを含めるくことで、挙動をカスタマイズできます。
+また、検索から想像するであろう、ページネーション、ソート、ハイライト、<code>_source</code>フィルタリングなどといった機能もサポートします。</p>
+
+<p>Inner hitsはparent-childおよび、<code>nested</code>ドキュメントをサポートします。
+この機能は、現時点では<code>experimental</code>ラベルが付与されています。
+このラベルは、この機能が将来変更されたり、削除されたりする可能性があるかもしれないことを意味します。
+詳細については、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.5/search-request-inner-hits.html">Inner Hits documentation</a>をごらんください。</p>
+
+<h3>Shadow replicas</h3>
+
+<p>Elasticsearchはそれ自身の冗長性に常に気をつけています。
+それは、レプリカシャード（各プライマリシャードの冗長なコピー）を持っています。
+これは、プライマリシャードを失った時に、データをロスしないようにするためのものです。
+レプリカシャードはまた、検索のスループットをスケールアウトするためにも利用できます。
+多くのレプリカ（ノードを伴うことで。）はスループットを増加させます。</p>
+
+<p>しかし、幾つかのユーザはElsticsearchを分散ファイルシステム上でホスティングしており、すでに、レプリケーションと冗長性に気をつけています。
+ファイルシステムが同じことしているときに、それは、各シャードの複数のコピーは意味がありません</p>
+
+<p>Shadowレプリカはノードを追加することによる検索スループットをスケールアウトすることができます。
+それは、拡張ストレージのための追加の予算や各ノードのためにインデキシングを伴う必要がありません。
+代わりに、各シャドーレプリカはプライマリシャードを持っている共有ファイルシステムにread-onlyでアクセスします。
+Shadowレプリカは定期的にファイルシステムのビューをリフレッシュし、プライマリシャードのどんな変更も検知するでしょう。</p>
+
+<p>プライマリシャードが失敗したら、Shadowレプリカがプライマリに昇格し、
+失敗したプライマリによって書き込まれたトランザクションログを読み込みリプレイできます。</p>
+
+<p>この機能は<em>experimental</em>マークが付いています。詳細については<a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.5/indices-shadow-replicas.html">Shadow Replicas documentation</a>をごらんください。</p>
+
+<h3>Resiliency improvements</h3>
+
+<p>Elasticsearch 1.1 から 1.3では、インデックスのすべてのファイルのチェックサムを追加し、
+それらのファイルが壊れているかどうかをチェックするために利用することにフォーカスしました。
+1.4では、Zen discoveryと分散モデルについて大きな改良を加えました。</p>
+
+<p>これらの変更にともなう、より詳細な統計情報やより詳細なロギングがElasticsearchやLuceneの以前のバージョンに存在した
+未知の問題を明るみに出しました。
+Elasticsearch 1.5.0では、これらの問題の多くに対処しています。</p>
+
+<ul>
+<li><p>ElasticsearchとLuceneの以前のバージョンにあるバグがインデックスの故障を引き起こしていました。<br/>
+チェックサムコードのおかげで、これらを発見できました。現在は、Elasticsearchの起動時に自動的にLucene3.x<br/>
+(Elasticsearch 0.20.x以前)が作成したセグメントを検知して、シャードをオープンする前に、新しいフォーマットを使って、
+新しいコミットポイントを書き出します。(<a href="https://github.com/elastic/elasticsearch/pull/9899">#9899</a>)</p></li>
+<li><p>1.3.xもしくは以前のバージョンからローリングアップグレードは、ローカルのシャードデータを再利用しようとせずに、<br/>
+シャード全体をコピーしようとします。1.3.2と以前のバージョンが実行されているノードからローリングアップグレードすることは
+圧縮をオフにしない限りできませんでした。(<a href="https://github.com/elastic/elasticsearch/pull/9925">#9925</a>)<br/>
+1.3.xやそれ以前のバージョンからアップグレードするとき、ローリングアップデートする代わりにクラスタの再起動を検討しようとするかもしれません。</p></li>
+<li><p>非同期環境は推論することが難しいです。時に、最も予測していないことが起きるからです。<br/>
+シャード配置、リカバリ、削除のコードの多くが単純化され、状態変更をよりアトミックで決定的にするための変更によりリファクタリングされました。<br/>
+(<a href="https://github.com/elastic/elasticsearch/pull/8720">#8720</a>, <a href="https://github.com/elastic/elasticsearch/pull/9799">#9799</a>, <a href="https://github.com/elastic/elasticsearch/pull/9784">#9784</a>, <a href="https://github.com/elastic/elasticsearch/pull/9801">#9801</a>, <a href="https://github.com/elastic/elasticsearch/pull/9083">#9083</a>, <a href="https://github.com/elastic/elasticsearch/pull/8579">#8579</a>, <a href="https://github.com/elastic/elasticsearch/pull/8436">#8436</a>, <a href="https://github.com/elastic/elasticsearch/pull/8092">#8092</a>, <a href="https://github.com/elastic/elasticsearch/pull/9902">#9902</a>, <a href="https://github.com/elastic/elasticsearch/pull/6644">#6644</a>, <a href="https://github.com/elastic/elasticsearch/pull/8350">#8350</a>, <a href="https://github.com/elastic/elasticsearch/pull/9770">#9770</a>, <a href="https://github.com/elastic/elasticsearch/pull/9616">#9616</a>, <a href="https://github.com/elastic/elasticsearch/pull/9439">#9439</a>, <a href="https://github.com/elastic/elasticsearch/pull/8350">#8350</a>, <a href="https://github.com/elastic/elasticsearch/pull/8494">#8494</a>)</p></li>
+<li><p>同様に、変更はクラスタ状態が常に前進していることも確かになりました。更新の受け取り順序が順不同であったり、<br/>
+もとマスターからの更新の場合に深刻な混乱を引き起こしていました。<br/>
+(<a href="https://github.com/elastic/elasticsearch/pull/9632">#9632</a>, <a href="https://github.com/elastic/elasticsearch/pull/9541">#9541</a>, <a href="https://github.com/elastic/elasticsearch/pull/9503">#9503</a>)</p></li>
+<li><p>チェックサムとチェックサムのバリデーションの強化(<a href="https://github.com/elastic/elasticsearch/pull/8723">#8723</a>,<br/>
+<a href="https://github.com/elastic/elasticsearch/pull/8599">#8599</a>, <a href="https://github.com/elastic/elasticsearch/pull/8587">#8587</a>, <a href="https://github.com/elastic/elasticsearch/pull/8407">#8407</a>, <a href="https://github.com/elastic/elasticsearch/pull/8010">#8010</a>, <a href="https://github.com/elastic/elasticsearch/pull/8018">#8018</a>)</p></li>
+<li><p>disk threshold allocation deciderを速く(<a href="https://github.com/elastic/elasticsearch/pull/8803">#8803</a>)、賢く(<a href="https://github.com/elastic/elasticsearch/pull/7785">#7785</a>)、自動化(<a href="https://github.com/elastic/elasticsearch/pull/8270">#8270</a>)</p></li>
+<li><p>auto-generated IDの利用時のインデキシングのスピードアップのためのに追加された最適化を除去。<br/>
+たまにドキュメントを重複して登録するため(<a href="https://github.com/elastic/elasticsearch/pull/7729">#7729</a>)</p></li>
+</ul>
+
+
+<h3>Download now</h3>
+
+<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-0">Elasticsearch 1.5.0</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[セキュリティ向けプラグインShieldのリリース（日本語訳）]]></title>
@@ -506,38 +681,6 @@ Groovyに関する<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3
 
 <p>私たちはフィードバックをお待ちしています。
 Twitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)もしくは<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で教えてください。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[名古屋でElasticsearch勉強会を開催します]]></title>
-    <link href="http://blog.johtani.info/blog/2015/02/18/preparing-elasticsearch-meetup-in-nagoya/"/>
-    <updated>2015-02-18T15:22:53+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/02/18/preparing-elasticsearch-meetup-in-nagoya</id>
-    <content type="html"><![CDATA[<p>来る、4月4日の土曜日の午後に名古屋でElasticsearch勉強会を開催予定です。
-「初」の東京以外の勉強会です。</p>
-
-<!-- more -->
-
-
-<p>Twitterでこのようなツイートを見かけまして。</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p>名古屋でElasticsearchの勉強会やりたい機運（今のところ2人）。</p>&mdash; mogami (@smogami) <a href="https://twitter.com/smogami/status/562864387632136192">2015, 2月 4</a></blockquote>
-
-
-<p> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
-
-<p>これは！ということで、名古屋で勉強会をやろうかと思います。30名程度の場所を借りて実施予定です。
-募集はいつもの、<a href="http://elasticsearch.doorkeeper.jp">elasticsearch勉強会のDoorkeeper</a>で行う予定です。
-ページの準備まで少々待ちください。（おそらく、3月中旬くらい）
-私自身はElasticsearchやELKについて話をしようと思っています。そのほかに、2,3名のスピーカーの方を予定しています。
-LTなど興味がある人がいたら、連絡ください。</p>
-
-<p>これを機に（？）他の場所でも勉強会を開催したいと考えています。
-ニーズがどのくらいありそうなのかが、まだよくわかっていませんが、関西などでニーズがあるんじゃないかと期待していたり。</p>
-
-<p>興味のある方は、コメント欄、Twitterなどでコンタクトしてもらえればと。
-（連絡来るとうれしいなぁ。）</p>
 ]]></content>
   </entry>
   
