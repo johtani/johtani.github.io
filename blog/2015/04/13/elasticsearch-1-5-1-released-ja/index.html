@@ -5,13 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Extended-Analyze 1.0.0RC1をリリースしました - @johtaniの日記 2nd</title>
+  <title>Elasticsearch 1.5.1リリース（日本語訳） - @johtaniの日記 2nd</title>
   <meta name="author" content="johtani">
 
   
-  <meta name="description" content="あけましておめでとうございます。今年もSolrやElasticsearchについて色々と頑張っていく所存です。
-とまぁ、お決まりの挨拶はおいておいてと。(もう、新年も22日ですが。。。) Elasticsearchの1.0.0RC1がリリースされました。
-ということで、 &hellip;">
+  <meta name="description" content="※この記事は次のブログを翻訳したものになります。 原文：Elasticsearch 1.5.1 Released 本日（4/9）、Lucene 4.10.4ベースのElasticsearch 1.5.1 をリリースしました。
+このリリースはElasticsearchの最新の安定バージョンとなります &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://blog.johtani.info/blog/2014/01/22/release-extended-plugin-for-1-0-0rc1/">
+  <link rel="canonical" href="http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
@@ -91,7 +90,7 @@ $(document).ready( function () {
   
   <header>
     
-      <h1 class="entry-title">Extended-Analyze 1.0.0RC1をリリースしました</h1>
+      <h1 class="entry-title">Elasticsearch 1.5.1リリース（日本語訳）</h1>
     
     
       <p class="meta">
@@ -108,52 +107,50 @@ $(document).ready( function () {
 
 
 
-<time datetime="2014-01-22T00:16:00+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-01-22T00:16:00+09:00'><span class='date'>2014-01-22</span></time></time>
+<time datetime="2015-04-13T11:34:31+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2015-04-13T11:34:31+09:00'><span class='date'>2015-04-13</span></time></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>あけましておめでとうございます。今年もSolrやElasticsearchについて色々と頑張っていく所存です。
-とまぁ、お決まりの挨拶はおいておいてと。(もう、新年も22日ですが。。。)</p>
+<div class="entry-content"><p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
 
-<p>Elasticsearchの1.0.0RC1がリリースされました。
-ということで、私が作っている<a href="https://github.com/johtani/elasticsearch-extended-analyze">Extended-Analyzeプラグイン</a>も1.0.0RC1向けに修正してリリースしました。</p>
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-5-1-released">Elasticsearch 1.5.1 Released</a></p>
+
+<p>本日（4/9）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.5.1</strong> をリリースしました。
+このリリースはElasticsearchの最新の安定バージョンとなります。</p>
+
+<p>すべての変更については<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-1">download Elasticsearch 1.5.1 here</a>をごらんください。</p>
 
 <!-- more -->
 
 
-<h2>1.0.0RC1向けに修正したこと</h2>
+<p>本リリースはシャードを新しいノードに配置するスピードを改善するためのバグフィックスを含んでいます。
+シャードのリカバリーの最初のフェーズで、コピー元のノードからコピー先のノードへすべてのセグメントをコピーします。
+このフェーズ中には登録、更新削除のリクエストはトランザクションログに記録され、リカバリが終了したあとに
+コピー先のノードでトランザクションログが再生されます。
+シャードが非常に大きい場合に、このトランザクションログはリプレイされるのに必要な多くのイベントを保存します。</p>
 
-<p>コミットログを見てもらえば、いいのですが、ロジック自体は変更しなくても良かったです。</p>
+<p>以前では、新しいセグメントのマージはリカバリ中のコピー先のノードでは、実行できませんでした。
+よって、大きなトランザクションログが新しい小さなセグメントを生成します。
+これはリカバリのスピードに非常に影響があります。Issue <a href="https://github.com/elastic/elasticsearch/pull/10463">#10463</a>は
+リカバリ中のコピー先のシャードのマージを可能にする変更です。</p>
 
-<p>ただ、正式に、Elasticsearchのつづりが決定したようで、クラス名が「ElasticSearchほげほげ」から、「Elasticsearchほげほげ」と、SearchのSが小文字になりっています。
-この影響で、例外クラスなどの名称を幾つか変更しました。
-また、バージョン番号を1.0.0RC1とし、0.x系をElasticsearchの0.90系向けのバージョンにしていく予定です。</p>
+<p>その他の注目すべきバグフィックスは次のものになります。</p>
 
-<p>今後は、UIを追加したいと思っているので、Elasticsearchのバージョン番号とはずれてくるとは思いますが。。。</p>
+<ul>
+<li>多くの削除のrefreshを強要した場合にバージョンマップがいっぱいになる問題の解消(<a href="https://github.com/elastic/elasticsearch/pull/10312">#10312</a>)</li>
+<li>多数のスナップショットを含んだリポジトリの管理の改善(<a href="https://github.com/elastic/elasticsearch/pull/10366">#10366</a>)</li>
+<li>実験的な機能である<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-inner-hits.html">inner hits</a>のバグフィックス(<a href="https://github.com/elastic/elasticsearch/pull/10388">#10388</a>, <a href="https://github.com/elastic/elasticsearch/pull/10353">#10353</a>, <a href="https://github.com/elastic/elasticsearch/pull/10309">#10309</a>, <a href="https://github.com/elastic/elasticsearch/pull/10235">#10235</a>)</li>
+</ul>
 
-<h2>Elasticsearch 1.0.0RC1を利用してみて</h2>
 
-<p>1点だけですが。
-これまでは、<code>-f</code>オプションを指定すると、デーモンではない動作で起動できていました。（デフォルトがデーモン起動）</p>
+<p>最後に、<a href="https://www.elastic.co/blog/deprecating_rivers">Riverが非推奨となりました</a>、まだ見ていない場合は記事をご覧ください。</p>
 
-<p>これが、1.0.0から（0.90の最新もかな？詳しく見ていない）デフォルトの挙動が変更され、デーモン起動ではなくなりました。
-代わりに、<code>-d</code>オプションを指定することで、デーモン起動ができるようになりました。</p>
-
-<p>これで、手元でうっかりデーモン起動することがなくなって、ひと安心です。（他の人は困るかもしれないけど）</p>
-
-<h2>ということで</h2>
-
-<p>1.0.0RC1が出たので、少しずつ1.0系で追加されたAPIや機能について、ブログで紹介していけたらと思います。</p>
-
-<p>こんなこと調べてよ？、これわかんないんだけど？などありましたら、コメントいただければと。
-気が向いたら記事を書くので。</p>
-
-<p>あと、<a href="https://github.com/johtani/elasticsearch-extended-analyze">Extended-Analyzeプラグイン</a>の感想などもお待ちしています！</p>
-
-<p>今年もよろしくお願いします！</p>
+<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-1">Elasticsearch 1.5.1</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 </div>
 
 
@@ -177,7 +174,7 @@ $(document).ready( function () {
 
 
 
-<time datetime="2014-01-22T00:16:00+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-01-22T00:16:00+09:00'><span class='date'>2014-01-22</span></time></time>
+<time datetime="2015-04-13T11:34:31+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2015-04-13T11:34:31+09:00'><span class='date'>2015-04-13</span></time></time>
       
 
 <span class="categories">
@@ -191,7 +188,7 @@ $(document).ready( function () {
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2014/01/22/release-extended-plugin-for-1-0-0rc1/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2014/01/22/release-extended-plugin-for-1-0-0rc1/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -201,7 +198,7 @@ $(document).ready( function () {
   
   <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
       data-hatena-bookmark-layout="standard"
-      data-hatena-bookmark-url="http://blog.johtani.info/blog/2014/01/22/release-extended-plugin-for-1-0-0rc1/">
+      data-hatena-bookmark-url="http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja/">
     <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
         alt="このエントリーをはてなブックマークに追加" width="20" height="20"
         style="border: none">
@@ -222,10 +219,8 @@ src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/12/30/looking-back-2013/" title="Previous Post: 今年の振り返りと来年の抱負（2013）">&laquo; 今年の振り返りと来年の抱負（2013）</a>
+        <a class="basic-alignment left" href="/blog/2015/04/04/elasticsearch-study-session-at-nagoya/" title="Previous Post: Elasticsearch勉強会 in 名古屋を開催しました。#elasticsearch #elasticsearchjp">&laquo; Elasticsearch勉強会 in 名古屋を開催しました。#elasticsearch #elasticsearchjp</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/" title="Next Post: Curator: 時系列インデックスの管理(日本語訳)">Curator: 時系列インデックスの管理(日本語訳) &raquo;</a>
       
     </p>
   </footer>
@@ -358,8 +353,8 @@ src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://blog.johtani.info/blog/2014/01/22/release-extended-plugin-for-1-0-0rc1/';
-        var disqus_url = 'http://blog.johtani.info/blog/2014/01/22/release-extended-plugin-for-1-0-0rc1/';
+        var disqus_identifier = 'http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja/';
+        var disqus_url = 'http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja/';
         var disqus_script = 'embed.js';
       
     (function () {
