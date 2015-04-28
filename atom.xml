@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-04-17T16:13:02+09:00</updated>
+  <updated>2015-04-28T17:20:01+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,92 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 1.5.2 および 1.4.5リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/04/28/elasticsearch-1-5-2-and-1-4-5-released-ja/"/>
+    <updated>2015-04-28T15:14:08+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/04/28/elasticsearch-1-5-2-and-1-4-5-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-5-2-released">Elasticsearch 1.5.2 Released</a></p>
+
+<p>本日（4/27）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.5.1</strong>および<strong>Elasticsearch 1.4.5</strong> をセキュリティバグフィックス版をリリースしました。
+ダウンロードおよびすべての変更については次のリンクをごらんください。</p>
+
+<ul>
+<li>最新安定版：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">Elasticsearch 1.5.2</a></li>
+<li>1.4系バグフィックス：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5">Elasticsearch 1.4.5</a></li>
+</ul>
+
+
+<p><em>本リリースはディレクトリトラバーサルの脆弱性のフィックスです。すべてのユーザにアップグレードを勧めます。</em></p>
+
+<!-- more -->
+
+
+<p>過去のリリースに関するブログは以下のリンクを参照してください。</p>
+
+<ul>
+<li><em>1.5</em>:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-5-1-released/">1.4.1</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-5-0-released/">1.5.0</a></li>
+<li><em>1.4</em>:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-4-released/">1.4.4</a>,<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-released/">1.4.3</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.4.2</a>,<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
+</ul>
+
+
+<p>すべての<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">1.5.2</a>および<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5">1.4.5</a>の変更についてはリンクをごらんください。以下では、セキュリティの問題について紹介します。</p>
+
+<h2>ディレクトリトラバーサル脆弱性の発見</h2>
+
+<p>1.5.2および1.4.5以前の全バージョンのElasticsearchで、ディレクトリトラバーサル攻撃に対する脆弱性がみつかりました。
+攻撃者はElasticsearchを実行しているサーバからファイルを探すことができます。
+この脆弱性はインストールしたばかりのElasticsearchには存在しません。
+この脆弱性は&#8221;site plugin&#8221;がインストールされると露呈します。
+ElasticのMarvelプラグインおよびコミュニティサポートの多くのプラグイン（例：Kopf、BigDesk、Head）がsite pluginです。
+Elastic Shield、Licensing、Cloud-AWS、Cloud-GCE、Cloud-Azure、analysis pluginおよびriverプラグインはsite pluginでは<em>ありません</em>。</p>
+
+<p>この問題を<a href="https://www.elastic.co/community/security">CVE-2015-3337</a>としました。</p>
+
+<p>バージョン1.5.2と1.4.5はこの脆弱性に対して対策済みで、私たちはすべてのユーザにアップグレードを勧めています。</p>
+
+<p>アップグレードを望まないユーザはいくつかの方法でこの脆弱性に対して対応可能ですが、これらの方法はsite pluginを動作させなくします。</p>
+
+<ul>
+<li>site pluginをインストールしているノードの<code>elasticsearch.yml</code>の<code>http.disable_sites</code>を<code>true</code>に設定し、Elasticsearchのノードを再起動</li>
+<li>ファイアウォールもしくはプロキシを利用して、<code>/_plugin</code>へのHTTPリクエストをブロック</li>
+<li>すべてのsite pluginをすべてのElasticsearchノードからアンインストール</li>
+</ul>
+
+
+<p>この問題を報告していただいた、DocuSignのJohn Heasmanに感謝いたします。</p>
+
+<h2>他の変更について</h2>
+
+<ul>
+<li><a href="https://github.com/elastic/elasticsearch/pull/10526">インデックスされたスクリプトおよびテンプレート</a>を上書きもしくは削除時に、キャッシュからも完全に削除する。</li>
+<li>geo-shapeの多数のフィックス（<code>distance_error_pct</code>を利用した場合の、重要な[precision]に関するフィックスを含む）</li>
+<li>インデックステンプレートのデフォルトマッピングがバルクインデキシング中に考慮</li>
+<li>Shadowレプリカが<a href="https://github.com/elastic/elasticsearch/pull/10688">ファイルシステムの遅延</a>により対応。また、プライマリシャードの<a href="https://github.com/elastic/elasticsearch/pull/10585">smoother relocation</a>をサポート</li>
+<li><a href="http://github.com/elastic/elasticsearch/issues/10602">geo-contexts</a>をcompletion suggesterで使用した場合のマッピングのリフレッシュループを改善</li>
+</ul>
+
+
+<p>いくつかのじゅううような変更がv1.4.5にバックポートされています。</p>
+
+<ul>
+<li><a href="http://github.com/elastic/elasticsearch/issues/10463">大きなシャードのリカバリを早くする</a>ためのシャードリカバリ中のマージを可能に</li>
+<li><a href="http://github.com/elastic/elasticsearch/issues/9797">truncated translogs</a>の操作をグレースフルに</li>
+<li>マージが遅くなる場合に、<a href="http://github.com/elastic/elasticsearch/issues/9986">delete-by-queryを減速</a></li>
+</ul>
+
+
+<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">Elasticsearch 1.5.2</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第9回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
@@ -2181,46 +2267,6 @@ Elasticsearchの起動からデータ登録、検索までは<a href="https://sp
 
 <p>毎度のことですが、なんでも良いので、発表した後のフィードバックをいただけるとうれしいです。
 今後の励みや改善につながるので。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[コーヒーブレイク]]></title>
-    <link href="http://blog.johtani.info/blog/2014/12/16/a-coffee-break/"/>
-    <updated>2014-12-16T12:01:32+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/12/16/a-coffee-break</id>
-    <content type="html"><![CDATA[<p>たまには、他愛のないブログを。</p>
-
-<p>仕事しながら、コーヒーを飲んでます。</p>
-
-<!-- more -->
-
-
-<p>最近は、サムライズムさんのオフィスに入り浸って仕事してます。
-オフィスには、コーヒーミル付きのコーヒーメーカーがあるんです。</p>
-
-<p>↓こんな感じ（現物は違うけど）</p>
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=B00O7HUQWE&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-
-<p>で、近所のコーヒー問屋で豆を買ってきてます。
-そこのマスターに、いつもサジェストされるんです。</p>
-
-<p>「この豆は、日が経つにつれて、細かく挽いて飲んでください。」</p>
-
-<p>「この豆は、細かめに挽いて飲むのがオススメです。」</p>
-
-<p>などなど。
-オススメされるんですが、全自動のコーヒーメーカーは残念ながらここまでやってくれません。</p>
-
-<p>ということで、手動のミルを買ってみました。家でも使えるし。</p>
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=B0044ZA066&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-
-<p>ちょっと考え事しながらとか、頭の切り替えに、ミルを回すのもいいかなと。
-気持ち、美味しいコーヒーな気がします（気のせいかも）</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-04-17T16:13:02+09:00</updated>
+  <updated>2015-04-28T17:20:01+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,92 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 1.5.2 および 1.4.5リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/04/28/elasticsearch-1-5-2-and-1-4-5-released-ja/"/>
+    <updated>2015-04-28T15:14:08+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/04/28/elasticsearch-1-5-2-and-1-4-5-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-5-2-released">Elasticsearch 1.5.2 Released</a></p>
+
+<p>本日（4/27）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.5.1</strong>および<strong>Elasticsearch 1.4.5</strong> をセキュリティバグフィックス版をリリースしました。
+ダウンロードおよびすべての変更については次のリンクをごらんください。</p>
+
+<ul>
+<li>最新安定版：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">Elasticsearch 1.5.2</a></li>
+<li>1.4系バグフィックス：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5">Elasticsearch 1.4.5</a></li>
+</ul>
+
+
+<p><em>本リリースはディレクトリトラバーサルの脆弱性のフィックスです。すべてのユーザにアップグレードを勧めます。</em></p>
+
+<!-- more -->
+
+
+<p>過去のリリースに関するブログは以下のリンクを参照してください。</p>
+
+<ul>
+<li><em>1.5</em>:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-5-1-released/">1.4.1</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-5-0-released/">1.5.0</a></li>
+<li><em>1.4</em>:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-4-released/">1.4.4</a>,<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-released/">1.4.3</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.4.2</a>,<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
+<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
+</ul>
+
+
+<p>すべての<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">1.5.2</a>および<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5">1.4.5</a>の変更についてはリンクをごらんください。以下では、セキュリティの問題について紹介します。</p>
+
+<h2>ディレクトリトラバーサル脆弱性の発見</h2>
+
+<p>1.5.2および1.4.5以前の全バージョンのElasticsearchで、ディレクトリトラバーサル攻撃に対する脆弱性がみつかりました。
+攻撃者はElasticsearchを実行しているサーバからファイルを探すことができます。
+この脆弱性はインストールしたばかりのElasticsearchには存在しません。
+この脆弱性は&#8221;site plugin&#8221;がインストールされると露呈します。
+ElasticのMarvelプラグインおよびコミュニティサポートの多くのプラグイン（例：Kopf、BigDesk、Head）がsite pluginです。
+Elastic Shield、Licensing、Cloud-AWS、Cloud-GCE、Cloud-Azure、analysis pluginおよびriverプラグインはsite pluginでは<em>ありません</em>。</p>
+
+<p>この問題を<a href="https://www.elastic.co/community/security">CVE-2015-3337</a>としました。</p>
+
+<p>バージョン1.5.2と1.4.5はこの脆弱性に対して対策済みで、私たちはすべてのユーザにアップグレードを勧めています。</p>
+
+<p>アップグレードを望まないユーザはいくつかの方法でこの脆弱性に対して対応可能ですが、これらの方法はsite pluginを動作させなくします。</p>
+
+<ul>
+<li>site pluginをインストールしているノードの<code>elasticsearch.yml</code>の<code>http.disable_sites</code>を<code>true</code>に設定し、Elasticsearchのノードを再起動</li>
+<li>ファイアウォールもしくはプロキシを利用して、<code>/_plugin</code>へのHTTPリクエストをブロック</li>
+<li>すべてのsite pluginをすべてのElasticsearchノードからアンインストール</li>
+</ul>
+
+
+<p>この問題を報告していただいた、DocuSignのJohn Heasmanに感謝いたします。</p>
+
+<h2>他の変更について</h2>
+
+<ul>
+<li><a href="https://github.com/elastic/elasticsearch/pull/10526">インデックスされたスクリプトおよびテンプレート</a>を上書きもしくは削除時に、キャッシュからも完全に削除する。</li>
+<li>geo-shapeの多数のフィックス（<code>distance_error_pct</code>を利用した場合の、重要な[precision]に関するフィックスを含む）</li>
+<li>インデックステンプレートのデフォルトマッピングがバルクインデキシング中に考慮</li>
+<li>Shadowレプリカが<a href="https://github.com/elastic/elasticsearch/pull/10688">ファイルシステムの遅延</a>により対応。また、プライマリシャードの<a href="https://github.com/elastic/elasticsearch/pull/10585">smoother relocation</a>をサポート</li>
+<li><a href="http://github.com/elastic/elasticsearch/issues/10602">geo-contexts</a>をcompletion suggesterで使用した場合のマッピングのリフレッシュループを改善</li>
+</ul>
+
+
+<p>いくつかのじゅううような変更がv1.4.5にバックポートされています。</p>
+
+<ul>
+<li><a href="http://github.com/elastic/elasticsearch/issues/10463">大きなシャードのリカバリを早くする</a>ためのシャードリカバリ中のマージを可能に</li>
+<li><a href="http://github.com/elastic/elasticsearch/issues/9797">truncated translogs</a>の操作をグレースフルに</li>
+<li>マージが遅くなる場合に、<a href="http://github.com/elastic/elasticsearch/issues/9986">delete-by-queryを減速</a></li>
+</ul>
+
+
+<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">Elasticsearch 1.5.2</a>をダウンロードして、試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第9回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
@@ -450,322 +536,6 @@ Elasticsearch 1.5.0では、これらの問題の多くに対処しています�
 <p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-0">Elasticsearch 1.5.0</a>をダウンロードして、試してみてください。
 そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
 また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[セキュリティ向けプラグインShieldのリリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja/"/>
-    <updated>2015-02-27T18:49:56+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/02/27/you-know-for-security-shield-goes-ga-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="http://www.elasticsearch.org/blog/you-know-for-security-shield-goes-ga/">you know, for security: shield goes ga</a></p>
-
-<p>1/27にShield 1.0 をリリースしました。
-Elasticsearch向けの私たちのセキュリティプラグインの最初のリリースです。
-11月にShieldについてアナウンスしてから、Elsaticsearchのためのセキュリティの機能は、
-一般的に望まれているものから始まり、具体的な考えと実行できる計画へと変遷し、それが、いま現実となりました。</p>
-
-<p>十分にセキュアな環境に、Elasticsearchクラスタをセキュアな状態でデプロイできるようにするため、
-私たちは継続的にカスタマーやユーザーからのリクエストを受け取り、統合されたソリューションになるようにしてきました。</p>
-
-<p>私たちは、そのようなプロダクトがどうあるべきか調査することから始め、
-カスタマーとユーザが必要とするセキュリティとはどんなものかを理解するために多くの時間を費やしました。
-その結果がShieldです。
-Shieldは、ElasticsearchクラスタをセキュアにするElasticsearchの有償プラグインです。
-私たちは、ShieldをDev、Gold、Platinumサブスクリプションの一部として、追加料金なしで提供します。</p>
-
-<p>最初のリリースでは、基本的な機能と基盤にフォーカスしています。
-Elasticsearch自身に対しても、セキュリティに対して準備してきました。
-拡張性の側面だけでなく、Elasticsearchにあるデータフローについても再考してきました。
-Elasticsearchクラスタをセキュアにする場合に、具体的な価値を即座に届けるだけでなく、素早く拡張できるようにも開発しました。</p>
-
-<!-- more -->
-
-
-<h3>機能</h3>
-
-<p>Shield 1.0は次の5つにフォーカスしています。</p>
-
-<ul>
-<li>認証(Authentication)</li>
-<li>認可(Authorization)</li>
-<li>暗号化通信とノードの認可(Encrypted Communication &amp; Node Authentication)</li>
-<li>IPフィルタリング</li>
-<li>監査証跡(Audit Trail)</li>
-</ul>
-
-
-<h3>認証(Authentication)</h3>
-
-<p>セキュリティの大部分はアイデンティティについてです（例えば、だれがこのAPIを呼び出したのか？システムに何のサービスが接続するか？など）
-サービスのライフタイムのある時点で、サブジェクト（例えばユーザー）を現在実行中のサブプロセスなどに結びつけることです。
-この関係性を持つためには、サブプロセスを実行する前にユーザの身元を確認するように命じます。
-ユーザの身元の確認のプロセスをAuthenticationと呼び、ElasticsearchのすべてのAPIコールでそれが実行されます。</p>
-
-<p>認証の手法は多くの異なるものがあります。
-それぞれの手法は、ユーザが認証されたという資格（Authentication Token）を、それぞれのタイプで提供するようにユーザに要求します。
-Shield 1.0ではシンプルに、必要なauthentication tokenをユーザ/パスワードペアとしています。
-（これは、Shieldの認証基盤が簡単に拡張でき、将来は異なるauthentication tokenもサポートできることを意味します。）</p>
-
-<p>ユーザの資格を受け取ることだけでは不十分で、次に、それらをチェックする必要があります。
-Shieldでは、これはレルムの責務です。
-レルムは認証プロバイダ/サービスとしてみることができます。
-妥当なユーザであると判断/解決されたか、
-authentication tokenが適切な資格を持っていない/単に知らないユーザであるということで、拒否されたかです。
-Shieldの認証メカニズムでは、複数のレルムを設定でき、さらに、あるレルムの戻り値を扱う他のレルム、というようなchainとすることもできます。
-Shield 1.0は3つのレルムをサポートします。</p>
-
-<ul>
-<li>esusers - Elasticsearchによって管理されるファイルベースのレルムです。
-これは、ファイルにユーザを定義することができます。（Apacheサーバのhtpasswdファイルのようなもの）
-このレルムは外部への依存はなく、Shieldをインストールすれば、デフォルトで使用できます。
-このレルムは配置が簡単で、マルチテナントなElasticsearchクラスタに対して使用できます。
-マルチテナントなElasticsearchクラスタとは、クラスタを複数のアプリでシェアすることをテナントと言います。
-また、すべてのユーザがパスワードを忘れてしまうような&#8221;emergency&#8221;な代替レルムも対応可能です。
-(誰もシステムに入れないような状況のことです)</li>
-<li>LDAP - 外部のLDAPサーバでユーザを認証するレルムです。
-このレルムは組織のLDAPサーバで管理/保存されているユーザをすでに持っている組織を対象としています。</li>
-<li>Active Directory - LDAPのタイプの1つで、Active Directoryに対する設定になります。</li>
-</ul>
-
-
-<p>レルムはelasticsearch.yml設定ファイルで、次のように設定可能です。</p>
-
-<blockquote><p>shield.authc
-    realms:</p>
-
-<pre><code>    esuser:
-        type: esusers
-        order: 0
-
-    ldap:
-        type: ldap
-        order: 1
-        url: ldaps://url/to/ldap1/server
-
-    ldap_fallback:
-        type: ldap
-        order: 2
-        url: ldaps://url/to/ldap2/server
-</code></pre></blockquote>
-
-<p>上記のようにrealmsが一つのチェインとして参照されます。
-レルムごとに、設定された順序で、それらは参照されます。</p>
-
-<p>NOTE : Shieldには、esusersファイルに保存されたユーザを管理するためのコマンドラインツールもあります。</p>
-
-<h2>認可(authorization)</h2>
-
-<p>認可(Authorization)は保護されたリソースにアクセスするユーザを許可するか拒否するかということです。
-モダンなシステムは、ユーザのパーミッションのために、ロールベースのアクセスコントロール（RBAC）モデルを利用します。
-このモデルでは、各ユーザはロールの集合に関連していて、それぞれのロールには、パーミッションの集合が定義されています。
-これは、洗練された設定で、パーミッションを機能的なグループで共有させることができます。
-例えば、次のようなロールを定義したとします。</p>
-
-<ul>
-<li><em>employee</em> - すべての従業員は部門をまたいだ会社のデータへアクセスできます（例えば、コンタクトやディレクトリ情報など）</li>
-<li><em>sales</em> - すべての営業職は営業データにアクセスできる（例えば、流通ルート、ルート、顧客）</li>
-<li><em>finace</em> - すべての財務の従業員は財務データにアクセスできる（例えば、予算、経費、伝票）</li>
-</ul>
-
-
-<p>財務部門の<code>Ann</code>は従業員と財務のロールを持っており、会社のディレクトリと財務データにアクセスでできます。</p>
-
-<p>認可プロセスはユーザがリクエストに関連したユーザが必要で、このプロセスのために、認証フェーズの後に直接実行されます。</p>
-
-<p>Shieldは2つのタイプのリソースを定義します。クラスタとインデックスです。
-これらは、すべてのAPIコールで保護されます。
-さらに、それらに関連したパーミッションとロールも定義できます。
-一度定義をすると、ロールはユーザもしくはLDAP/ADのグループに関係します。
-ロールは<strong>roles.yml</strong>設定ファイルで定義されます。
-設定のサンプルは次のようになります。</p>
-
-<pre><code>admin:
-    cluster: all
-    indices:
-        '*' : all
-
-monitor:
-    cluster: monitor
-    indices:
-        '*': monitor
-
-employee:
-    indices:
-        'company_directory' : read
-
-sales:
-    indices:
-        'opportunities' : read, write
-        'accounts' : read, write
-
-finance:
-    indices:
-        'expenses' : read, write
-        'purchases' : read, write
-</code></pre>
-
-<p>上記のサンプルで、次の5つのロールを定義しています。</p>
-
-<ul>
-<li><em>admin</em> - 管理者のロールで、すべてのクラスターレベルの操作とすべてのインデックスに対してすべてのインデックスレベルの操作を実行可能です。
-(¥*インデックスはすべてのインデックスにマッチするワイルドカード)</li>
-<li><em>monitor</em> - システム/クラスタのモニタリングのためのロール。このロールのユーザはすべてのクラスタとインデックスレベルの情報の読み取りの
-APIにアクセス可能だが、インデックスのデータへの読み書きや設定の更新は不能</li>
-<li><em>employee</em> - compnay_directoryにあるすべてのデータへの読み取りアクセスを与えられたロール。このロールはクラスタレベルへのアクセスやデータの書き込みアクセスは持っていない
-(特にcompany。洗濯されたグループの人々はcompanyディレクトリの更新は可能だが、employeeは読み取りのみが可能)</li>
-<li><em>sales</em> - opportunitiesとaccountsインデックスの読み書きができるロール</li>
-<li><em>finance</em> - expensesとpurchasesの両方に読み書きができるロール</li>
-</ul>
-
-
-<p>上記のサンプルで定義されている<code>all</code>と<code>read</code>と<code>write</code>として名前がつけられた権限です。
-これらは、予約語で、Elasticsearchのローレベルのアクションを複数含んだ権限です。
-（<code>write</code>は<code>index, delete, delete_by_query, bulk, update</code>の操作を含んでいます。）
-多くのケースで、これらのハイレベルの名前が付けられた権限で十分ですが、特定のロールに特定のアクションを明示的に指定することもできます。
-次のようになります。</p>
-
-<pre><code>hr:
-    indices:
-        'company_directory' : indices:data/write/index, indices:data/write/update
-</code></pre>
-
-<p>ここまで説明した認可のレルムは、各ユーザに関連するロールを識別するためのものです。
-内部のesuserレルムでは、提供されるesuserコマンドラインツールを使ってロールはユーザに割り当てたり変更したりもできます。
-LDAPやActive Directoryでは、LDAP/ADグループにShieldのロールを割り当てることができます。</p>
-
-<p>認証と認可の両方を用いることで、ユーザリクエストに対して、ユーザごとに許可/不許可をすることができます。</p>
-
-<h3>暗号化通信</h3>
-
-<p>認可はElasticsearchのデータを機能的な観点（許可されたユーザだけが操作を可能にする）で保護しますが、
-クライアントからElasticsearchクラスタへ、もしくはクラスタのノード間では暗号化されていないデータを送るためまだ危険があります。
-第三者が登頂したり、オンザフライでデータを書き換えたりといった可能性やクラスタを壊すことができます。</p>
-
-<p>Shield 1.0はElasticsearchのすべての通信チャネルをセキュアにすることができます。
-クラスタ内のノード間のチャネルやクライアントに公開されているチャネルです。
-これは、SSL/TLS通信を導入して実現します。</p>
-
-<p>Shieldで使えるSSLはElasticsearchのtransportサービスをSSL/TLSで通信できるものに置き換えます。
-これは、ノード間通信チャネルと、HTTP transport（REST APIを提供するもの）のそれぞれに設定可能です。</p>
-
-<p>ShieldのSSL/TLSは、スタンダードなJavaのものとkeystoreとtruststoreを基本にしたものが利用可能です。
-SSL/TLSを設定すると、各ノードのキーストアに証明書をインポートする必要があります。
-CAがサインした証明書を使うことも、CAが信頼したものとして許可許諾されたものを使うことが可能です。
-これは、信頼されたすべてのCAとして知られているtrust storeが必要です。
-新しいノードをクラスタに追加するときに、すべての必要な少なくとも一つの信頼されたCAから発行されてサインされたものが必要になります。
-クラスタで個別のノードがすべてのkeystore/truststoreを更新する必要性なしに。？？</p>
-
-<p>通信チャネルを安全にする方法やSSL/TLS設定をどのように行うかは<a href="http://www.elasticsearch.org/guide/en/shield/current/securing-nodes.html">Shieldのドキュメント</a>をご覧ください。</p>
-
-<h3>ノード間認証</h3>
-
-<p>強く推奨しますが、許可されたノードだけがクラスタに接続できるようにするために、ノードの認証をSSL transportに設定することができます。
-これは、<code>shield.transport.client.auth</code>に<code>true</code>を設定することで可能です。
-設定した場合、ノード間でSSLハンドシェイクが行われ、接続されたノードが接続に来たノードのクライアント認証を要求しチェックします。
-もし、チェックに失敗した場合は、SSLシェイクハンドが失敗し接続が拒否されます。</p>
-
-<h3>SSLクライアント認証</h3>
-
-<p>transportレベルでノード認証が必要なようなら、次のような疑問がわくでしょう。
-Elasticsearchはクラスタに接続するTransportクライアントを使うときはどのように振る舞うのか？
-Transportクライアントはクラスタの他のノードと同じチャネルを使うため、コネクションを確立するときに、ノードが他のノードと異なるかどうかを見極めることはできません。</p>
-
-<p>この時、もっとも単純な解決は、Transportクライアントも同様に許可を与えることです。
-それは、認証を解決するときに、他の問題（潜在的な悪意）を引き起こします。
-Transportクライアントが他のクラスタのノードを偽装しようとすることです。これは望んでいません。</p>
-
-<p>幸いなことに、良い解決方法があります。
-トランスポートプロファイルです。
-Elasticsearch 1.4で導入されたトランスポートプロファイルは、トランスポートレイヤー（異なるホスト/ポートにバインドされる）のために複数のネットワークチャネルを設定することができます。
-Shieldはこのサポートを、プロファイルごとに異なるSSL設定をできるように拡張します。
-また、ノードのタイプとクライアントプロファイルタイプの間に明確な違いを設定することも可能です。
-これを用いると、2つのプロファイルを設定できるようになります。
-ひとつは、クライアントのためのもので、もうひとつはクラスタのノードのためのものです。
-これにより、クライアントのための認証の問題が必要なくなり、Shieldはクライアントプロファイルをもった限定されたクライアントからのリクエストを保証します。</p>
-
-<h3>IPフィルタリング</h3>
-
-<p>これは、厳密には、認証カテゴリではありませんが関係しています。
-Shieldはそれ自身がIPフィルタリングのメカニズムを持っています。
-これは、許可/不許可のIPのリストを設定することができます。
-これらのフィルタリングのルールは複数のレベルで設定可能です。
-transportチャネル、transportプロファイルレベル、そして、HTTPチャネルです。
-次の設定は、それらの設定のサンプルです。（設定ファイルはelasticsearch.ymlになります）</p>
-
-<pre><code>shield:
-
-    transport.filter:
-        allow:
-            - '127.0.0.1'
-            - '2001:0db8:1234:0000:0000:8a2e:0370:73
-        deny:
-            - '10.0.0.0/8'
-            - '2001:0db8:1234::/48'
-            - '*.google.com'
-
-    http.filter:
-        allow: [ '10.0.0.0/8' ]
-        deny: [ '127.0.0.1' ]
-
-transport.profiles:
-    client:
-        shield.filter.deny: [ '_all' ]
-</code></pre>
-
-<p>このように、IPv4とIPv6、CIDR、ホスト名、ワイルドカードが利用できます。
-また、この機能はホストOSのIPテーブルに設定することで追加できるが、Shieldにそれを保持し、それらの設定を単純化し、
-デプロイの全体から除去できることにも注意してください（詳細は<a href="http://www.elasticsearch.org/guide/en/shield/current/ip-filtering.html">ドキュメントのIPフィルタリングをご覧ください</a>）。</p>
-
-<h3>監査証跡（Audit Trail）</h3>
-
-<p>セキュアなシステムの必須機能の一つで、監査硝石により、Elasticsearchに発生した重要なイベントをトラッキングすることが可能です。
-これらのイベントを保存することは、Elasticsearchクラスタの重要なアクティビティの証拠を提供でき、
-不審な/悪意のある可能性のあるイベントを追跡するときの診断ツールにもなります。</p>
-
-<p>Shield 1.0.0で、監査証跡は監査/アクセスlogを一般的なElasticsearchのログとは個別に保存します。
-それらは、構造化されているため、読んだりパースするのが容易で、イベントのタイプも分類されています。
-また、情報のレベルを設定することができ、各イベントをlogレベルの設定で書き出すことができます。
-以下が、イベントのリストです。</p>
-
-<ul>
-<li><em>anonymous_access_denied</em> - 認証トークンがないユーザからのリクエストがあった時のログ</li>
-<li><em>authentication_failed</em> - リクエストされたユーザの認証に失敗した時のログ</li>
-<li><em>access_denied</em> - 認証されたユーザが許可されていない操作を実行した時のログ</li>
-<li><em>access_granted</em> - 認証されたユーザが許可された操作を実行した時のログ</li>
-<li><em>tampered_request</em> - 不正に書き換えられたリクエストが到着したのを検知した時のログ</li>
-<li><em>connection_granted</em> - ノードもしくはtransportクライアントがIPフィルタのルールにパスした時のログ</li>
-<li><em>connection_denied</em> - ノードもしくはtransportクライアントがIPフィルタリングルールの制限により却下された時のログ</li>
-</ul>
-
-
-<p>Shieldの監査証跡についてより詳しく知りたい方は、<a href="http://www.elasticsearch.org/guide/en/shield/current/auditing.html">ドキュメント</a>をごらんください。</p>
-
-<h3>次のバージョンでは？</h3>
-
-<p>ここまで紹介したように、これはまだ始まりにすぎません。
-Shieldに追加される多くの機能があり、しっかりとした基盤を構築したところです。
-Shieldの次のバージョンでは、以下の機能の追加にフォーカスするでしょう。（これらだけに限ったわけではありません。）</p>
-
-<ul>
-<li>APIによる設定、管理</li>
-<li>より拡張され、柔軟なLDAP/Active Directoryサポート</li>
-<li>レルムタイプの追加（kerberos、anonymous、certificatesなどなど）</li>
-<li>セッションベースの認証</li>
-</ul>
-
-
-<p>ShieldはElasticsearch社の2番目の（<a href="http://www.elasticsearch.com/products/marvel?_ga=1.40546982.567962035.1389706748">Marvel</a>に続く）商用プロダクトです。
-ダウンロードして開発環境で評価してください。
-インストールは他のプラグインと同様の方法です（インストール方法についての詳細は<a href="http://www.elasticsearch.org/guide/en/shield/current/index.html">こちら</a>）。
-一度インストールすると、30日の試用ライセンスが始まります。
-もし、さらに時間が必要な場合は、sales@elasticsearch.comまで連絡してください。</p>
-
-<p>私たちのすべてのプロダクトについてフィードバックをお待ちしています。
-Shieldの商用利用、機能、ロードマップ、その他のセキュリティに関するトピックなど、質問がありましたら、
-<a href="http://www.elasticsearch.com/contact/?_ga=1.32250170.567962035.1389706748">サイトからご連絡ください</a>。</p>
 ]]></content>
   </entry>
   
