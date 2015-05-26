@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-05-21T18:54:56+09:00</updated>
+  <updated>2015-05-26T18:03:33+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,898 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Logstashを使ったElasticsearchの再インデックス（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/05/26/reindex-elasticsearch-with-logstash-ja/"/>
+    <updated>2015-05-26T16:08:10+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/05/26/reindex-elasticsearch-with-logstash-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://david.pilato.fr/blog/2015/05/20/reindex-elasticsearch-with-logstash/">Reindex Elasticsearch With Logstash</a></p>
+
+<p>Thanks David!</p>
+
+<!-- more -->
+
+
+<p>マッピングを変更したり、インデックスの設定を変更したり、あるサーバから他のサーバや、
+あるクラスタから他のクラスタ（例えば複数のデータセンターのような場合）にデータを再インデックスしたくなることがあるでしょう。</p>
+
+<p>後者のような場合は<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html">SnapshotやRestoreの機能</a>を利用することもできますが、インデックスの設定を変更をしたい場合は
+その他の方法が必要になります。</p>
+
+<p><a href="https://www.elastic.co/blog/logstash-1-5-0-ga-released">Logstash 1.5.0</a>で、
+<a href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-elasticsearch.html">elasticsearch input</a>と<a href="https://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html">elasticsearch output</a>を使うことで、とても簡単に再インデックスができます。</p>
+
+<p>ではやってみましょう。</p>
+
+<h2>古いクラスタ</h2>
+
+<p>elasticsearch 1.5.2 はすでにダウンロード済みとして、<code>localhost:9200</code>で<code>old</code>という名前のクラスタを起動します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bin/elasticsearch --cluster.name<span class="o">=</span>old
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>クラスタに<code>person</code>という名前のインデックスが存在します。
+これは、5シャードで、100万件のドキュメントを持っています。</p>
+
+<p><img src="http://david.pilato.fr/blog/images/reindex-es01/sense01.png"></p>
+
+<h2>新しいクラスタ</h2>
+
+<p>次に新しいクラスタを起動します。
+<code>localhost:9201</code>で<code>new</code>という名前のクラスタを起動します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bin/elasticsearch --cluster.name<span class="o">=</span>new
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>こちらは、空です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl -XGET <span class="s2">&quot;http://localhost:9201/person&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;IndexMissingException[[person] missing]&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;status&quot;</span><span class="p">:</span> <span class="mi">404</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Logstashのインストール</h2>
+
+<p>次に、Logstash 1.5.0をダウンロードして、インストールします。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>wget http://download.elastic.co/logstash/logstash/logstash-1.5.0.tar.gz
+</span><span class='line'>tar xzf logstash-1.5.0.tar.gz
+</span><span class='line'><span class="nb">cd </span>logstash-1.5.0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>logstashの設定ファイル<code>logstash.conf</code>を次のように設定します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>input <span class="o">{</span>
+</span><span class='line'>  <span class="c"># We read from the &quot;old&quot; cluster</span>
+</span><span class='line'>  elasticsearch <span class="o">{</span>
+</span><span class='line'>    <span class="nv">hosts</span> <span class="o">=</span>&gt; <span class="o">[</span> <span class="s2">&quot;localhost&quot;</span> <span class="o">]</span>
+</span><span class='line'>    <span class="nv">port</span> <span class="o">=</span>&gt; <span class="s2">&quot;9200&quot;</span>
+</span><span class='line'>    <span class="nv">index</span> <span class="o">=</span>&gt; <span class="s2">&quot;person&quot;</span>
+</span><span class='line'>    <span class="nv">size</span> <span class="o">=</span>&gt; 500
+</span><span class='line'>    <span class="nv">scroll</span> <span class="o">=</span>&gt; <span class="s2">&quot;5m&quot;</span>
+</span><span class='line'>    <span class="nv">docinfo</span> <span class="o">=</span>&gt; <span class="nb">true</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>output <span class="o">{</span>
+</span><span class='line'>  <span class="c"># We write to the &quot;new&quot; cluster</span>
+</span><span class='line'>  elasticsearch <span class="o">{</span>
+</span><span class='line'>    <span class="nv">host</span> <span class="o">=</span>&gt; <span class="s2">&quot;localhost&quot;</span>
+</span><span class='line'>    <span class="nv">port</span> <span class="o">=</span>&gt; <span class="s2">&quot;9201&quot;</span>
+</span><span class='line'>    <span class="nv">protocol</span> <span class="o">=</span>&gt; <span class="s2">&quot;http&quot;</span>
+</span><span class='line'>    <span class="nv">index</span> <span class="o">=</span>&gt; <span class="s2">&quot;%{[@metadata][_index]}&quot;</span>
+</span><span class='line'>    <span class="nv">index_type</span> <span class="o">=</span>&gt; <span class="s2">&quot;%{[@metadata][_type]}&quot;</span>
+</span><span class='line'>    <span class="nv">document_id</span> <span class="o">=</span>&gt; <span class="s2">&quot;%{[@metadata][_id]}&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  <span class="c"># We print dots to see it in action</span>
+</span><span class='line'>  stdout <span class="o">{</span>
+</span><span class='line'>    <span class="nv">codec</span> <span class="o">=</span>&gt; <span class="s2">&quot;dots&quot;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>実行と修正</h2>
+
+<p>実行します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bin/logstash -f logstash.conf
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>ドキュメントのチェックと修正</h3>
+
+<p>何が起きたでしょう？</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl -XGET <span class="s2">&quot;http://localhost:9200/person/person/AU1wqyQWZJKU8OibfxgH&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;_index&quot;</span><span class="p">:</span> <span class="s2">&quot;person&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;person&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_id&quot;</span><span class="p">:</span> <span class="s2">&quot;AU1wqyQWZJKU8OibfxgH&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;found&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_source&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Tali Elyne&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;dateOfBirth&quot;</span><span class="p">:</span> <span class="s2">&quot;1955-05-03&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;female&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;children&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;marketing&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;cars&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;shoes&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;toys&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;fashion&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;music&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;garden&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;electronic&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;hifi&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;food&quot;</span><span class="p">:</span> <span class="mi">846</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;country&quot;</span><span class="p">:</span> <span class="s2">&quot;Germany&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;zipcode&quot;</span><span class="p">:</span> <span class="s2">&quot;0099&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;city&quot;</span><span class="p">:</span> <span class="s2">&quot;Bonn&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;countrycode&quot;</span><span class="p">:</span> <span class="s2">&quot;DE&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>            <span class="mf">7.075943707068682</span><span class="p">,</span>
+</span><span class='line'>            <span class="mf">50.72883500730124</span>
+</span><span class='line'>         <span class="p">]</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>もう一方のクラスタと比較してみましょう。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl -XGET <span class="s2">&quot;http://localhost:9201/person/person/AU1wqyQWZJKU8OibfxgH&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;_index&quot;</span><span class="p">:</span> <span class="s2">&quot;person&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;person&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_id&quot;</span><span class="p">:</span> <span class="s2">&quot;AU1wqyQWZJKU8OibfxgH&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_version&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;found&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;_source&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Tali Elyne&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;dateOfBirth&quot;</span><span class="p">:</span> <span class="s2">&quot;1955-05-03&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;female&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;children&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;marketing&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;cars&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;shoes&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;toys&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;fashion&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;music&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;garden&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;electronic&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;hifi&quot;</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;food&quot;</span><span class="p">:</span> <span class="mi">846</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;country&quot;</span><span class="p">:</span> <span class="s2">&quot;Germany&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;zipcode&quot;</span><span class="p">:</span> <span class="s2">&quot;0099&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;city&quot;</span><span class="p">:</span> <span class="s2">&quot;Bonn&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;countrycode&quot;</span><span class="p">:</span> <span class="s2">&quot;DE&quot;</span><span class="p">,</span>
+</span><span class='line'>         <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>            <span class="mf">7.075943707068682</span><span class="p">,</span>
+</span><span class='line'>            <span class="mf">50.72883500730124</span>
+</span><span class='line'>         <span class="p">]</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nt">&quot;@version&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nt">&quot;@timestamp&quot;</span><span class="p">:</span> <span class="s2">&quot;2015-05-20T09:53:44.089Z&quot;</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Logstashは<code>@version</code>と<code>@timestamp</code>フィールドを追加してしました。
+これらを除去したいので、<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html">Mutate filter plugin</a>の<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html#plugins-filters-mutate-remove_field"><code>remove_field</code></a>を使います。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">filter</span> <span class="p">{</span>
+</span><span class='line'>  <span class="err">mutate</span> <span class="err">{</span>
+</span><span class='line'>    <span class="err">remove_field</span> <span class="err">=&gt;</span> <span class="err">[</span> <span class="nt">&quot;@timestamp&quot;</span><span class="p">,</span> <span class="nt">&quot;@version&quot;</span> <span class="err">]</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="err">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>マッピングのチェックと修正</h3>
+
+<p>実際に、logstashは<code>_source</code>フィールドを既存のドキュメントから読み込み、
+それらを新しいクラスタに直接投入しています。
+しかし、logstashはマッピングについてはケアしていません。</p>
+
+<p>古いマッピングと新しいマッピングを比較するために、マッピングを取得してみましょう。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl -XGET <span class="s2">&quot;http://localhost:9200/person/person/_mapping&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;person&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;mappings&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;person&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                     <span class="nt">&quot;city&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;country&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;countrycode&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;geo_point&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;zipcode&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>                     <span class="p">}</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;children&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;dateOfBirth&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nt">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;dateOptionalTime&quot;</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;gender&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;marketing&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                     <span class="nt">&quot;cars&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;electronic&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;fashion&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;food&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;garden&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;hifi&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;music&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;shoes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;toys&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">}</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>               <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl -XGET <span class="s2">&quot;http://localhost:9201/person/person/_mapping&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;person&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nt">&quot;mappings&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>         <span class="nt">&quot;person&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>               <span class="nt">&quot;address&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                     <span class="nt">&quot;city&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;country&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;countrycode&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;location&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;double&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;zipcode&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>                     <span class="p">}</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;children&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;dateOfBirth&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nt">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;dateOptionalTime&quot;</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;gender&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;marketing&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                     <span class="nt">&quot;cars&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;electronic&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;fashion&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;food&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;garden&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;hifi&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;music&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;shoes&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">},</span>
+</span><span class='line'>                     <span class="nt">&quot;toys&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;long&quot;</span>
+</span><span class='line'>                     <span class="p">}</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>               <span class="p">},</span>
+</span><span class='line'>               <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+</span><span class='line'>               <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これにより、いくつかの相違を発見できます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'> <span class="s2">&quot;location&quot;</span><span class="err">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;geo_point&quot;</span>
+</span><span class='line'> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'> <span class="s2">&quot;location&quot;</span><span class="err">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;double&quot;</span>
+</span><span class='line'> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>データをインデックスする「前」に、実際に利用したいマッピングでインデックスを作成しておくことで、
+この問題に対処できます。
+この時点で、オリジナルのマッピングを望んだ形に変更することができます。例えば、アナライザを変更したりです。
+また、インデックスの設定を新しく定義することもできます。
+デフォルトでは、Elasticsearchは5つのシャードと各シャードに対して1つのレプリカを作成します。
+しかし、この時点でもう一度変更することが可能です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl -XDELETE <span class="s2">&quot;http://localhost:9201/person&quot;</span>
+</span><span class='line'>curl -XPUT <span class="s2">&quot;http://localhost:9201/person&quot;</span> -d<span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">{</span>
+</span><span class='line'><span class="s1">  &quot;settings&quot;: {</span>
+</span><span class='line'><span class="s1">    &quot;number_of_shards&quot;: 1,</span>
+</span><span class='line'><span class="s1">    &quot;number_of_replicas&quot;: 0</span>
+</span><span class='line'><span class="s1">  }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span><span class='line'>curl -XPUT <span class="s2">&quot;http://localhost:9201/person/person/_mapping&quot;</span> -d<span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">{</span>
+</span><span class='line'><span class="s1">  &quot;person&quot;: {</span>
+</span><span class='line'><span class="s1">    &quot;properties&quot;: {</span>
+</span><span class='line'><span class="s1">      &quot;address&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;properties&quot;: {</span>
+</span><span class='line'><span class="s1">          &quot;city&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;string&quot;,</span>
+</span><span class='line'><span class="s1">            &quot;index&quot;: &quot;not_analyzed&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;country&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;string&quot;,</span>
+</span><span class='line'><span class="s1">            &quot;index&quot;: &quot;not_analyzed&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;countrycode&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;string&quot;,</span>
+</span><span class='line'><span class="s1">            &quot;index&quot;: &quot;not_analyzed&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;location&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;geo_point&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;zipcode&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;string&quot;</span>
+</span><span class='line'><span class="s1">          }</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">      },</span>
+</span><span class='line'><span class="s1">      &quot;children&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">      },</span>
+</span><span class='line'><span class="s1">      &quot;dateOfBirth&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;type&quot;: &quot;date&quot;,</span>
+</span><span class='line'><span class="s1">        &quot;format&quot;: &quot;dateOptionalTime&quot;</span>
+</span><span class='line'><span class="s1">      },</span>
+</span><span class='line'><span class="s1">      &quot;gender&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;type&quot;: &quot;string&quot;,</span>
+</span><span class='line'><span class="s1">        &quot;index&quot;: &quot;not_analyzed&quot;</span>
+</span><span class='line'><span class="s1">      },</span>
+</span><span class='line'><span class="s1">      &quot;marketing&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;properties&quot;: {</span>
+</span><span class='line'><span class="s1">          &quot;cars&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;electronic&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;fashion&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;food&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;garden&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;hifi&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;music&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;shoes&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          },</span>
+</span><span class='line'><span class="s1">          &quot;toys&quot;: {</span>
+</span><span class='line'><span class="s1">            &quot;type&quot;: &quot;long&quot;</span>
+</span><span class='line'><span class="s1">          }</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">      },</span>
+</span><span class='line'><span class="s1">      &quot;name&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;type&quot;: &quot;string&quot;</span>
+</span><span class='line'><span class="s1">      }</span>
+</span><span class='line'><span class="s1">    }</span>
+</span><span class='line'><span class="s1">  }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>さて、もう一度再インデックスしましょう！</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bin/logstash -f logstash.conf
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="http://david.pilato.fr/blog/images/reindex-es01/sense02.png"></p>
+
+<h2>インデックスやタイプ名の変更</h2>
+
+<p>もちろん、インデックス名やタイプ名、IDを変更したい場合も変更が可能です！:)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'>  <span class="err">elasticsearch</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">host</span> <span class="err">=&gt;</span> <span class="nt">&quot;localhost&quot;</span>
+</span><span class='line'>    <span class="err">port</span> <span class="err">=&gt;</span> <span class="s2">&quot;9201&quot;</span>
+</span><span class='line'>    <span class="err">protocol</span> <span class="err">=&gt;</span> <span class="s2">&quot;http&quot;</span>
+</span><span class='line'>    <span class="err">index</span> <span class="err">=&gt;</span> <span class="s2">&quot;europe_people&quot;</span>
+</span><span class='line'>    <span class="err">index_type</span> <span class="err">=&gt;</span> <span class="s2">&quot;someone&quot;</span>
+</span><span class='line'>    <span class="err">document_id</span> <span class="err">=&gt;</span> <span class="s2">&quot;%{[@metadata][_id]}&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[discuss.elastic.co にぜひ参加を]]></title>
@@ -2112,72 +3004,6 @@ Senseのナレッジベースは最新のAPIを含むものに拡張されてい
 <a href="https://groups.google.com/forum/?fromgroups#!forum/elasticsearch">ElasticsearchユーザML</a>や<a href="http://www.twitter.com/elasticsearch">Twitter</a>に質問や意見お送りください。</p></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch 1.4.2および1.3.7リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2014/12/18/elasticsearch-1-4-2-released-ja/"/>
-    <updated>2014-12-18T14:26:14+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/12/18/elasticsearch-1-4-2-released-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-and-1-3-8-released/">elasticsearch 1.4.3 and 1.3.8 released</a></p>
-
-<p>本日、<strong>Lucene 4.10.3</strong>をベースにした<strong>Elasticsearch 1.4.3</strong>と、<strong>セキュリティ</strong>フィックスとバグフィックスリリースである、<strong>Elasticsearch 1.3.8</strong>をリリースしました。
-ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
-
-<ul>
-<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a></li>
-<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-8">Elasticsearch 1.3.8</a></li>
-</ul>
-
-
-<p>過去のリリースに関するブログ（公式）はこちら。</p>
-
-<ul>
-<li>1.4:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
-<li>1.3:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.3.6</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.3.5</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-4-released/">1.3.4</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-3-released/">1.3.3</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-2-released/">1.3.2</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">1.3.1</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/">1.3.0</a>.</li>
-</ul>
-
-
-<p>すべての変更については<a href="http://www.elasticsearch.org/downloads/1-4-2">1.4.2のリリースノート</a>および<a href="http://www.elasticsearch.org/downloads/1-3-7">1.3.7のリリースノート</a>をごらんください。
-以下では、重要な変更について紹介します。</p>
-
-<!-- more -->
-
-
-<h2>bug fixes</h2>
-
-<p>Elasticsearchに対して広範囲にわたってランダムなテストを行っています。以下の問題を見つけ、修正するのに役立っています。</p>
-
-<ul>
-<li>プライマリシャードを持つnodeがレプリカシャードをプライマリから復旧している間に、リスタートした場合に、プライマリ上のトランザクションログが削除されデータをロスする(<a href="https://github.com/elasticsearch/elasticsearch/pull/8917">#8917</a>)</li>
-<li>scriptインデックスが普及した場合に、ScriptService全体がデッドロック(<a href="https://github.com/elasticsearch/elasticsearch/pull/8901">#8901</a>)</li>
-<li>Index Writerのロックを強制的に解放することによるシャードの破損(<a href="https://github.com/elasticsearch/elasticsearch/pull/8892">#8892</a>)</li>
-</ul>
-
-
-<h2>パフォーマンス改善</h2>
-
-<p>複雑な設定をもつ大きめのクラスタをもつユーザは、小さなスケールではわからない性能ボトルネックに直面します。
-彼らの報告が次の改善をもたらす助けとなりました。</p>
-
-<ul>
-<li>使用可能なディスク空間に基づいてシャードの配置を決定する、disk allocation deciderの速度改善とクラスタリスタート後のリカバリ速度の改善(<a href="https://github.com/elasticsearch/elasticsearch/pull/8803">#8803</a>)</li>
-<li>以前よりも高速な共有ファイルシステムでのSnapshot生成(<a href="https://github.com/elasticsearch/elasticsearch/pull/8749">#8749</a>)</li>
-<li>不要なクラスタ状態変更の削減とそれによるネットワークトラフィックの削減およびリカバリの速度向上(<a href="https://github.com/elasticsearch/elasticsearch/pull/8933">#8933</a>, <a href="https://github.com/elasticsearch/elasticsearch/pull/8413">#8413</a>)</li>
-<li>index stats APIはシャードリカバリによるブロックしない(<a href="https://github.com/elasticsearch/elasticsearch/pull/8910">#8910</a>)</li>
-</ul>
-
-
-<h2>試してみてください。</h2>
-
-<p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-2">Elasticsearch 1.4.2</a>をダウンロードして、試してみてください。
-そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 ]]></content>
   </entry>
   
