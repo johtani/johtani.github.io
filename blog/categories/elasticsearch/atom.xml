@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-06-08T23:41:42+09:00</updated>
+  <updated>2015-06-10T17:30:58+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,245 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 1.6.0リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/06/10/elasticsearch-1-6-0-released-ja/"/>
+    <updated>2015-06-10T13:31:02+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/06/10/elasticsearch-1-6-0-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-6-0-released">Elasticsearch 1.6.0 released</a></p>
+
+<p>本日（6/9）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.6.0</strong>をリリースしました。
+このリリースはElasticsearchの最新の安定バージョンとなります。
+また、素晴らしい新機能がいくつか追加されています。</p>
+
+<!-- more -->
+
+
+<ul>
+<li>synced flushによるリスタートの高速化</li>
+<li>シャード配置は保留中のタスクをブロックしない</li>
+<li>レスポンスボディのJSONのフィルタリング</li>
+<li>共有ファイルシステムリポジトリに対するセキュリティフィックス</li>
+<li>古いインデックスのためのUpgrade API</li>
+<li>Kibanaユーザのためのハイライトの強化</li>
+<li>Windowsユーザのための<code>mlockall</code></li>
+<li>より詳細なスクリプト設定</li>
+</ul>
+
+
+<p><a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-6-0">すべての変更リストとダウンロード</a>はこちらをごらんください。</p>
+
+<h2>synced flushによるリスタートの高速化</h2>
+
+<p>1.6.0より前のバージョンでは、メンテナンスやローリングアップグレード時の
+ノードの再起動で、必要であるかどうかに関わらず、ノードのすべてのシャードのすべてのデータを
+再度コピーする必要がありました。
+この新しいsynced flush機能により、
+sync-flushされたインデックスに対して、既存のデータを再利用し、
+より早くクラスタを正常な状態にすることができるようにします。</p>
+
+<p>ここで、この変更以前にどのように疎いていたかを説明します。
+すでにあるレプリカシャードは、ノードがリスタートした後に、
+プライマリから復元するときに、
+最初のステップはプライマリにあるセグメントとレプリカにあるセグメントを
+比較することです。そして、セグメントに違いがあった場合にコピーされます。
+問題は、セグメントプライマリのセグメントのマージと
+レプリカのセグメントのマージが別々に起こっており、
+各シャードのセグメントが完全に異なるが、
+それらが同じデータを持っているという点です。</p>
+
+<p>新しいsynced-flush機能では、<code>sync_id</code>がプライマリと
+レプリカシャードに、シャードのコンテンツが同一であるという判別するために、
+書き込まれます。これは、リカバリがセグメントの比較のステップを
+スキップできることを意味します。
+リカバリのスピードを高速にします。</p>
+
+<p>synced flushはアイドル状態のインデックスで自動的に実行されます。
+直前の5分間でデータが登録、更新削除されていないインデックスに対してです。
+これは、ロギングのユースケースで特に役に立ちます。
+機能のインデックスはインデキシングがストップしたあとの5分で自動的に
+syncされるでしょう。</p>
+
+<p>ノードのリスタートやクラスタのリスタートが必要で、
+自動的に発生するsyncを待てない場合は次のようなことが可能です。</p>
+
+<ul>
+<li>インデキシングを停止（実行中のリクエストが停止するのも待つ）</li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-cluster.html">シャードのアロケーションを停止</a></li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-synced-flush.html">synced-flush</a>リクエストの発行</li>
+<li>ノードのリスタート</li>
+<li>シャードのアロケーションの再開</li>
+<li>クラスタの状態がグリーンになるまで待つ</li>
+<li>インデキシングの再開</li>
+</ul>
+
+
+<p><strong>NOTE:</strong> &ldquo;disable allocation&#8221;ステップが必要です。
+これがない場合、Elasticsearchはノードの再起動が始まると、
+異なるノードにシャードの再配置を始めます。
+これは、新しいノードにシャードデータの全てをコピーする必要があります。</p>
+
+<p>ドキュメントのインデキシング、更新、削除のあとに最初のフラッシュが
+発生したときに、
+シャードの<code>sync_id</code>が自動的に無効化されます。
+詳細については<a href="https://github.com/elastic/elasticsearch/issues/11336">#11336</a>と<a href="https://github.com/elastic/elasticsearch/issues/11179">#11179</a>をごらんください。</p>
+
+<h2>シャード配置は保留中のタスクをブロックしない</h2>
+
+<p>多数のノードやインデックスを持っているユーザは
+クラスタ全体のリスタートのあとのシャードの
+リカバリがどのくらいの期間のストールがあるかを知りたいでしょう。
+これらのストールの間、クラスタ設定の更新のような軽微なアクションでさえ、
+例外が発生したり、その設定が反映されるまでに長時間かかるといったことが起きていました。
+この問題の兆候は保留中のタスクのキューが大きくなることです。</p>
+
+<p>これらの遅延の原因はシャードの配置のプロセスにあります。
+配置されるべきシャードのコピーを
+持っているのがどのノードかを全てのデータノードに聞きます。
+多くのシャードや遅いディスクを持ったデータノードは
+反応するのに時間がかかります。
+特に、シャードのリカバリがすでにI/Oを利用しているような時です。
+このバージョン以前のものは、シャード情報のためのリクエストを
+同期的に処理していました。
+クラスタ状態の更新はアロケーションプロセスを続けるために
+必要な情報を待っている間、ブロックされます。</p>
+
+<p> <a href="https://github.com/elastic/elasticsearch/issues/11262">#11262</a>での変更は
+この情報のためのリクエストを非同期にします。
+クラスタ状態の更新はこのタスクによってブロックされません。
+これは、保留中のタスクがより早く処理でき、
+クラスタが変更に対してより早く反応できます。
+処理中のshard infoリクエストの数は
+<code>number_of_in_flight_fetch</code>キーとしてcluster-health APIで取得できます。</p>
+
+<p>さらに、シャードがある理由で復旧に失敗すると、
+クラスタは、シャードのリカバリが成功するまで、同じノードに対して
+シャードをアロケーションしないようにします。</p>
+
+<h2>レスポンスボディのJSONのフィルタリング</h2>
+
+<p>Elasticsearchは全ての情報を返します。
+例えば、検索リクエストは<code>_index</code>、<code>_type</code>、<code>_id</code>、
+<code>_score</code>、<code>_source</code>を返します。
+しかし、全ての情報が必要でない場合があります。
+また、これらのデータを遅いネットワークで転送することは
+遅延の原因となります。</p>
+
+<p>ユーザはこの検索メタデータを無効にするための特殊な設定を
+行ったり、他のAPIのレスポンスのフォーマットを
+コントロールするための設定があります。
+<a href="https://github.com/elastic/elasticsearch/issues/10980">#10980</a>の変更で、任意のレスポンスボディのJSONに対して、
+必要な要素だけを取得する機能が追加されました。
+<code>filter_path</code>パラメータを使用します。</p>
+
+<p>例えば、検索リクエストからは<code>total</code>数と、各要素の<code>hits</code>の配列を欲しい場合、
+次のように指定します。</p>
+
+<pre><code>GET _search?filter_path=hits.total,hits.hits
+</code></pre>
+
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-info.html">nodes-info API</a>から各ノードの<code>http_address</code>だけを取得したい場合は、
+ノード名の部分にワイルドカード(<code>*</code>)を使用します。</p>
+
+<pre><code>GET _nodes?filter_path=nodes.*.http_address
+</code></pre>
+
+<p>単一の<code>*</code>がJSON階層の一つの階層に対しての
+ワイルドカードとして機能します。
+2つの<code>**</code>は複数階層に対してとなります。
+複数のフィルタはカンマ区切りで指定可能です。
+詳細について<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#_response_filtering">Response filtering</a>をごらんください。</p>
+
+<h2>共有ファイルシステムリポジトリに対するセキュリティフィックス</h2>
+
+<p>本リリースはsnapshot-restoreで使われる
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html#_shared_file_system_repository">共有ファイルシステムリポジトリ</a>に関するセキュリティ強化の変更が含まれます。
+現在、Elasticsearchのユーザは、Elasticsearchプロセスによって書き込み可能
+任意のディレクトリに<code>.snapshot</code>ファイルを書き込むことができます。
+<a href="https://github.com/elastic/elasticsearch/issues/11284">#11284</a>の変更で、リポジトリのために使用できるディレクトリを
+強制的に指定できるようになりました。
+適切なディレクトリが<code>config/elasticsearch.yml</code>設定ファイルの
+<code>path.repo</code>に指定される必要があります。</p>
+
+<p>適切に設定されたElasticsearchにインスタンスは
+次のセキュリティ問題に対して影響を受けません。</p>
+
+<ul>
+<li><code>root</code>ではなく<code>elasticsearch</code>ユーザとしてElasticsearchを実行</li>
+<li><code>elasticsearch</code>ユーザが<code>data</code>ディレクトリに対してのみ
+書き込み権限を持っていて、共有ファイルシステムリポジトリに対しても利用できる</li>
+<li>ファイアウォールやプロキシ、Shieldを使って、snapshot APIの実行を任意のユーザから実行されるのを防いでいる</li>
+</ul>
+
+
+<p>この問題を<a href="https://www.elastic.co/community/security">CVE-2015-4165</a>としています。</p>
+
+<h2>古いインデックスのためのUpgrade API</h2>
+
+<p>Elasticsearch 2.0以降では、
+Lucene 5ベースとなり、Lucene 3
+（Elasticsearchのバージョンでは0.90以前）
+によって書き出されたセグメントを含んだインデックスを読み込むことが
+できなくなります。
+これらの「古いインデックス」はLucene 4にアップグレードする必要があり、
+2.0-compatibleとして印をつける必要があります。
+そうしなければ、Elasticsearch 2.0に以降できないでしょう。</p>
+
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-upgrade.html">upgrade API</a>は
+、最新のLuceneフォーマットにインデックスにある全てのセグメントを
+アップグレードするためにすでに利用できます。
+また、最新のフォーマットは性能向上やバグフィックスといった利点もあります。
+さらに、2.0-compatibleとして古いインデックスをマークする設定も
+書き込むことができます。
+さらに、<code>upgrade_only_ancient_segments</code>オプションが
+Lucene 3のセグメントだけをアップグレードするために利用でき、
+移行前の必要な処理を減らすことができます。</p>
+
+<h2>Kibanaユーザのためのハイライトの強化</h2>
+
+<p>KibanaユーザはElasticsearchのハイライトについて2つの点で問題を見つけていました。</p>
+
+<ul>
+<li>ワイルドカードでフィールド名を指定した場合に、ハイライトが適用されないフィールドも帰ってくる（日付や数値のフィールドなど）</li>
+<li>古いインデックスが非常に大きなターム（> 32kB）を含んでいて、ハイライトが失敗する。
+最近のバージョンでは、これらの大きなタームはインデックス時に除去される</li>
+</ul>
+
+
+<p><a href="https://github.com/elastic/elasticsearch/issues/11364">#11364</a>の変更で
+これらの問題が修正されました。
+ワイルドカードを利用したフィールド名では、stringフィールドのみを返し、非常に長いタームによる例外は無視するようになります。</p>
+
+<h2>Windowsユーザのための<code>mlockall</code></h2>
+
+<p>速いGCはノードの安定性と性能について重要です。
+小さなバイトのヒープでさえ、ディスクにスワップすることを許可してしまうと、GCに対して大きな影響が出てしまいます。
+ですので、これらのコストは排除されるべきです。</p>
+
+<p>Linuxユーザは<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-configuration.html#setup-configuration-memory"><code>bootstrap.mloclall</code>設定</a>による恩恵を受けています。
+これは、RAMにJVMのヒープを起動時にロックします。
+<a href="https://github.com/elastic/elasticsearch/issues/10887">#10887</a>では、同様の機能をWindowsユーザにも提供します。</p>
+
+<h2>より詳細なスクリプト設定</h2>
+
+<p>Scriptsはリクエストにインラインで指定できます。
+<code>.scripts</code>インデックスにインデックスもでき、<code>config/</code>ディレクトリ配下にファイルとして保存もできます。
+これまでは、インラインかインデックスされたスクリプトの両方を同時に有効無効にすることが選択できましたが、
+<code>.scripts</code>インデックスをプロキシやShieldで保護することもできました。</p>
+
+<p><a href="https://github.com/elastic/elasticsearch/issues/10116">#10116</a>で追加されたより詳細なスクリプトの設定で、インラインか、インデックスされたものか、ファイル化を個別に言語ごとに設定できるようになりました。
+また、例えば、search APIではスクリプトを許可するが、update APIでは許可しないといったような設定も可能です。</p>
+
+<h2>最後に</h2>
+
+<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-6-0">Elasticsearch 1.6.0</a>を試してみてください。
+そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)や<a href="https://discuss.elastic.co/c/elasticsearch">Webフォーラム</a>などで教えて下さい。
+また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第10回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
@@ -821,51 +1060,6 @@ Kibanaはデモを見ていただけましたし。また、海外から人を�
 
 <p>次回は6月ごろをめどに計画しようかと。
 スピーカーは随時募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。 よろしくお願いいたします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch 1.5.1リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja/"/>
-    <updated>2015-04-13T11:34:31+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/04/13/elasticsearch-1-5-1-released-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-5-1-released">Elasticsearch 1.5.1 Released</a></p>
-
-<p>本日（4/9）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.5.1</strong> をリリースしました。
-このリリースはElasticsearchの最新の安定バージョンとなります。</p>
-
-<p>すべての変更については<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-1">download Elasticsearch 1.5.1 here</a>をごらんください。</p>
-
-<!-- more -->
-
-
-<p>本リリースはシャードを新しいノードに配置するスピードを改善するためのバグフィックスを含んでいます。
-シャードのリカバリーの最初のフェーズで、コピー元のノードからコピー先のノードへすべてのセグメントをコピーします。
-このフェーズ中には登録、更新削除のリクエストはトランザクションログに記録され、リカバリが終了したあとに
-コピー先のノードでトランザクションログが再生されます。
-シャードが大きい場合、トランザクションログに多数のイベントがたまってしまいます。</p>
-
-<p>以前では、新しいセグメントのマージはリカバリ中のコピー先のノードでは、実行できませんでした。
-大きなトランザクションログは結果として、小さな新しいセグメントを多く生成し、リカバリのスピードに非常に影響を与えます。
-Issue <a href="https://github.com/elastic/elasticsearch/pull/10463">#10463</a>は
-リカバリ中のコピー先のシャードのマージを可能にする変更です。</p>
-
-<p>その他の注目すべきバグフィックスは次のものになります。</p>
-
-<ul>
-<li>多くの削除によりバージョンマップがいっぱいになった場合にrefreshを実行するように変更(<a href="https://github.com/elastic/elasticsearch/pull/10312">#10312</a>)</li>
-<li>多数のスナップショットを含んだリポジトリの管理の改善(<a href="https://github.com/elastic/elasticsearch/pull/10366">#10366</a>)</li>
-<li>実験的な機能である<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-inner-hits.html">inner hits</a>のバグフィックス(<a href="https://github.com/elastic/elasticsearch/pull/10388">#10388</a>, <a href="https://github.com/elastic/elasticsearch/pull/10353">#10353</a>, <a href="https://github.com/elastic/elasticsearch/pull/10309">#10309</a>, <a href="https://github.com/elastic/elasticsearch/pull/10235">#10235</a>)</li>
-</ul>
-
-
-<p>最後に、<a href="https://www.elastic.co/blog/deprecating_rivers">Riverが非推奨となりました</a>、まだ見ていない場合は記事をご覧ください。</p>
-
-<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-1">Elasticsearch 1.5.1</a>をダウンロードして、試してみてください。
-そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 ]]></content>
   </entry>
   
