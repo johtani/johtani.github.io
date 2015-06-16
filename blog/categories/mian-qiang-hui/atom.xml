@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 勉強会 | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/mian-qiang-hui/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-06-10T18:03:47+09:00</updated>
+  <updated>2015-06-17T00:42:30+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,151 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[attend-hatena-engineer-seminar-5]]></title>
+    <link href="http://blog.johtani.info/blog/2015/06/17/attend-hatena-engineer-seminar-5/"/>
+    <updated>2015-06-17T00:21:33+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/06/17/attend-hatena-engineer-seminar-5</id>
+    <content type="html"><![CDATA[<p>ひさびさに、勉強会メモ。
+<a href="http://hatena.connpass.com/event/15973/">Hatena Engineer Seminar #5 @ Tokyo</a>に当選したので行ってきました。</p>
+
+<p>いつもは近寄らないオシャレな街をドキドキしながら行ってきました。</p>
+
+<!-- more -->
+
+
+<p>ということで、簡単なメモです。</p>
+
+<h2>はてなブックマーク全文検索の精度改善 id:takuya-a</h2>
+
+<h3>問題：検索精度がよくない</h3>
+
+<ul>
+<li>京都で検索 →　「ポーランドの京都」「京都大学のまるまる教授」のようなもんがヒット</li>
+<li>京都っぽいエントリが出て欲しい。
+
+<ul>
+<li>京都っぽい？？？</li>
+</ul>
+</li>
+<li>問題点をブレイクダウン
+
+<h4>課題</h4></li>
+<li>クエリ考えるの大変だよね</li>
+<li>順序が新着順なのが辛い</li>
+<li>適合率と再現率の両立</li>
+</ul>
+
+
+<p>そして（ドラムロール）、できました！（さすが）</p>
+
+<p>アイデア：はてブのタグを利用する。
+関連キーワードを抽出して、クエリ拡張する。</p>
+
+<h3>関連キーワードとは？</h3>
+
+<ol>
+<li>タグ検索する</li>
+<li>検索にヒットしたTerm Vectorsを取得</li>
+<li>特徴語をTop25件取得</li>
+<li>もっともスコアが高いタームを特徴語とする
+
+<ul>
+<li>英語のストップワードとかが問題点となってたり。</li>
+<li>→Dynamic stop word listというのを利用して排除（IDF、RIDF、Gain）</li>
+</ul>
+</li>
+</ol>
+
+
+<h3>今後の課題</h3>
+
+<ul>
+<li>再現率の向上</li>
+<li>解析用のフィールド・辞書を追加（精度向上や解析ミスなど）</li>
+</ul>
+
+
+<h3>トークに出てきた機能など</h3>
+
+<p>トークに出てきたElasticsearchの機能については、こんなツイートをしてたので、参考にしてもらえれば。</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr">これのkuromoji_stemmerを使ってるっぽい？ <a href="https://twitter.com/hashtag/hatenatech?src=hash">#hatenatech</a> / elastic/elasticsearch-analysis-kuromoji - <a href="https://t.co/3F2sBYXLPH">https://t.co/3F2sBYXLPH</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/610759870564859904">2015, 6月 16</a></blockquote>
+
+
+<p> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr"><a href="https://twitter.com/hashtag/hatenatech?src=hash">#hatenatech</a> Term Vectors APIのドキュメントはこちら - <a href="https://t.co/HhBmTDr46i">https://t.co/HhBmTDr46i</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/610760840170450944">2015, 6月 16</a></blockquote>
+
+
+<p> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="it" dir="ltr"><a href="https://twitter.com/hashtag/hatenatech?src=hash">#hatenatech</a> min_score - <a href="https://t.co/Sc0exzJRC1">https://t.co/Sc0exzJRC1</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/610763959944097793">2015, 6月 16</a></blockquote>
+
+
+<p> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+<h4>個人的な疑問</h4>
+
+<p>Q：クエリにヒットするタグがそもそもなかったら？</p>
+
+<h2>はてなブックマークに基づく関連記事レコメンドエンジンの開発 id:skozawa</h2>
+
+<h3>課題：一部のエントリに対して関連記事が出ない</h3>
+
+<p>タグがない記事について関連エントリが出ない＝既存はタグを利用している
+例：レシピで考える</p>
+
+<h4>現行システム</h4>
+
+<ul>
+<li>ユーザがつけたタグ情報を利用してMoreLikeThisで計算</li>
+</ul>
+
+
+<h4>新規システム</h4>
+
+<ol>
+<li>類似記事検索</li>
+<li>特徴語の抽出</li>
+<li>特徴語を分類</li>
+<li>関連記事検索</li>
+<li>関連記事をスコアリング</li>
+</ol>
+
+
+<h4>個人的な疑問</h4>
+
+<p>Q：毎回計算してるのかな？記事登録とかされたタイミングでやってるのかな？
+Q：Termの精度などどうなんだろ？</p>
+
+<h2>『BrandSafe はてな』のアドベリフィケーションのしくみ id:tarao</h2>
+
+<p>BrandSafeはてな：とか。
+広告の配信先をフィルタリング</p>
+
+<p>複数の素朴なフィルタの組み合わせ→AdaBoost</p>
+
+<h4>個人的な疑問</h4>
+
+<p>Q：海外とかもいけるのかな？</p>
+
+<h2>まとめと感想</h2>
+
+<p>ということで、簡単なメモでした。ピザごちそうさまでした！
+聞いてて少し思ったのは、データ量があるサイトだからうまくいく手法だというのもあるんだろうなというところでした。
+あとは、クエリを暗に改善するのとは別に、サジェスト的に表示するのにも使えたりするかも？と思ってみたり。
+できるかどうかはわからないですが。。。</p>
+
+<p>Elasticsearchをいろいろと活用してもらってるのがわかって、楽しい勉強会でした。
+もっともっといろんなところで宣伝してくださいw</p>
+
+<p>今日の勉強会を聞いて、俄然、京都・大阪でElasticsearch勉強会を開催したい気になってきました。
+特に大阪に知り合いがいないので、だれか紹介してもらえると嬉しいです。
+お待ちしてます。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第10回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
@@ -396,110 +541,6 @@ LTなど興味がある人がいたら、連絡ください。</p>
 
 <p>興味のある方は、コメント欄、Twitterなどでコンタクトしてもらえればと。
 （連絡来るとうれしいなぁ。）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第8回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2015/02/16/8th-elasticsearch-jp/"/>
-    <updated>2015-02-16T15:02:23+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/02/16/8th-elasticsearch-jp</id>
-    <content type="html"><![CDATA[<p><a href="http://elasticsearch.doorkeeper.jp/events/19923">第8回Elsticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-
-<!-- more -->
-
-
-<p>今回は出足が好調で、早々に180人の枠を超えるという嬉しい事態でしたが、
-キャンセル待ちが残っているにもかからわらず、来られていない方が67名もいるということで、キャンセル待ちの方には申し訳なかったです。
-もうすこし、キャンセルをしてもらえると嬉しいんですが。。。
-今回はメールを当日に1度しか打ってないからかなぁ。</p>
-
-<p>さて、いつもの通り簡単なメモです。
-本当に簡単にですが。</p>
-
-<h2>「Elasticsearch導入チェックリスト？」 Elasticsearch株式会社 Jun Ohtani @johtani</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/johtani/elasticsearchdao-ru-tietukurisuto">Elasticsearch導入チェックリスト？</a></p>
-
-<p>Elasticsearchを開発環境や本番に導入する前に気にかけて欲しいことについて発表しました。
-元ネタは<a href="http://www.elasticsearch.org/webinars/elasticsearch-pre-flight-checklist/">elasticsearch pre-flight checklist</a>です。
-少々古いのですが、私が今回話した内容以外にもモニタリングなどについての話も盛り込まれています。
-時間がある方は、見ていただければと。</p>
-
-<h2>「Elasticsearch クエリとスキーマ定義のすごい細かい話」株式会社ドワンゴ 藤堂淳也 さん</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/jtodo/elasticsearch-kueritosukimading-yi-falsexi-kaihua">Elasticsearch クエリとスキーマ定義のすごい細かい話</a></p>
-
-<ul>
-<li>フィールドのチェックを別途インデキシングするアプリで行っている。利用できるものだけElasticsearchに投げる</li>
-<li>実際に本番環境で利用しているマッピングに対してフィールドを追加する手順について</li>
-<li>「これもドキュメントに書いてあるんですが」という感じでドキュメントに色々書いてあるので読みましょうというありがたい発表でした。</li>
-</ul>
-
-
-<p>実際に試行錯誤したり検証するときに行ったことを喋ってもらえたので、どういった点を気にしながら運用、設計するかというのがわかりやすかったです。</p>
-
-<h2>「ElasticsearchとKibanaで実現する、30億req/dayのリアルタイム分析」株式会社サイバーエージェント　山田直行さん　@satully</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/Satully/elasticsearch8-elasticsearchkibana-30reqday">ElasticsearchとKibanaで実現する、30億req/dayのリアルタイム分析</a></p>
-
-<p>会場が21時までしか抑えられていないという失態で、ドタバタしてて前半は聞けてないです。。。</p>
-
-<ul>
-<li>前回の発表では30日分Elasticsearchに入れていたが、今は3日分のみ保存</li>
-<li>レポートなどにはRedshift＋Tableauを利用</li>
-<li>Kibana3をメインに使っているが、Kibana4も検討予定？</li>
-</ul>
-
-
-<p>QA
-* Q：なぜ、ELBを挟んでいるのか？
-  * A：特に考えておいているわけではない。
-* Q：インデックスの構成は？
-  * A：1日に2つのインデックス。Bitされたもの、入札されないもの
-* Q：searchのnodeをやめたのは？
-  * A：前回発表した勉強会での懇親会で話を聞いたり、他の方と話を聞いて、不要と判断したため</p>
-
-<h2>「はてなのメディア面を支えるElasticsearch」株式会社はてな　山家雄介さん　@yanbe</h2>
-
-<p>スライド：未定。おそらく、開発者ブログに公開されるかと。</p>
-
-<ul>
-<li>アドテク系にもやってるらしい。BrandSafeはてな</li>
-<li>はてなブックマークのデータを魅せ方を変える機能などで大活躍。<a href="http://bkuma.hatena.ne.jp">B!KUMA</a>とか</li>
-<li>その日の話題の見出し自動生成機能。Significant Terms Aggregationsを利用。</li>
-<li>こちらの<a href="http://bookmark.hatenastaff.com/entry/2015/02/05/190331">「自然言語処理技術を用いたはてなブックマークの新機能「トピック」をベータリリースしました」</a>エントリに関係あるのかな？</li>
-</ul>
-
-
-<p>記事の魅せ方を検索できる管理画面ではElasticsearchのクエリDSLを活用されているとのことでした。
-検索専門の人でなくても検索式を簡単にくみたてられる画面を用意して、ElasticsearchのクエリDSLに変換するようにしていると。
-確かに、クエリをそのまま組み立ててもらうよりも利用しやすい画面がある方がいいですよね。バックエンドはJSとPerlのライブラリとのことでした。</p>
-
-<h2>その他、感想などのブログ</h2>
-
-<ul>
-<li><a href="http://takudo.hatenablog.jp/entry/2015/02/14/101749">2015-02-13 第8回 elasticsearch 勉強会 @ 丸の内 リクルート 41Fアカデミーホール</a></li>
-<li><a href="http://suzuki.tdiary.net/20150213.html"> [Elasticsearch] 第8回 elasticsearch 勉強会へ参加してきた</a></li>
-<li><a href="http://qiita.com/t-sato/items/8e353ccf7d7bba46f635">第8回elasticsearch勉強会 #elasticsearch #elasticsearchjp</a></li>
-<li><a href="http://keyamb.hatenablog.com/entry/2015/02/16/015916">第8回 Elasticsearch 勉強会に行ってきた #elasticsearch #elasticsearchjp</a></li>
-<li><a href="http://blog.yoslab.com/entry/2015/02/13/203251">勉強会メモ - 第8回elasticsearch勉強会</a></li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<p>今回も検索からログまでいろんな話になったので、面白かったかと。
-参加された方は新しい方が多かったんじゃないかなぁと。（集計結果で見れないのかな、Doorkeeper）。</p>
-
-<p>今回は、みなさんに21時に41Fから33Fへ移動していただくという大失態があったので、大変申し訳なかったです。
-次回（4月中旬）は、このようなことがないように気をつけますので、今後もよろしくお願いいたします。</p>
-
-<p>あと、東京以外の勉強会も検討しつつあります。興味のある方はコメントやTwitterで反応をいただけると嬉しいです。</p>
-
-<p>スピーカーは随時募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。 よろしくお願いいたします。</p>
 ]]></content>
   </entry>
   
