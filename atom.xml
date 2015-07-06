@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-06-17T00:46:01+09:00</updated>
+  <updated>2015-07-06T10:54:34+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,155 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[JustTechTalk#02 形態素解析のあれやこれや@ジャストシステムに参加しました。]]></title>
+    <link href="http://blog.johtani.info/blog/2015/07/06/attend-justsystem-techtalk-no2/"/>
+    <updated>2015-07-06T10:49:01+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/07/06/attend-justsystem-techtalk-no2</id>
+    <content type="html"><![CDATA[<p><a href="https://justsystems.doorkeeper.jp/events/27174">JustTechTalk#02 形態素解析のあれやこれや@ジャストシステム</a></p>
+
+<p>に参加してきました。
+ジャストシステムさんの形態素解析器JMATの話とKagome、Janome、Kuromoji.js、ssslaの開発者の
+パネルディスカッションでした。</p>
+
+<p>ということで、いつものメモです。</p>
+
+<!-- more -->
+
+
+<h2>ジャストシステムの形態素解析その２（機械学習編）</h2>
+
+<ul>
+<li><p>JMATの話</p>
+
+<ul>
+<li>前回は辞書の話</li>
+<li>今回は学習の話</li>
+</ul>
+</li>
+<li><p>教師あり/教師なし</p>
+
+<ul>
+<li>JMATは教師あり</li>
+<li>教師なしは研究段階</li>
+</ul>
+</li>
+<li><p>ラティス構造を辞書ベースで構築して、コストの総和が最小の経路を求める</p>
+
+<ul>
+<li>連接、単語生成とか。</li>
+</ul>
+</li>
+<li>学習は3フェーズ
+
+<ul>
+<li>ベース、能動、部分アノテーション</li>
+<li>ベース
+
+<ul>
+<li>300万文のコーパスから1万文のみを利用（なぜ？今から説明）
+
+<ul>
+<li>64GBマシン買ってみたけど、複数実験するには追いつかない</li>
+<li>オンライン学習がメジャーでない時代に作り始めたので、つかってない</li>
+<li>CRF学習器を改善
+
+<ul>
+<li>結果として50万文くらいで精度が良くなる</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>辞書チームからNGがでて、方向転換</li>
+</ul>
+</li>
+<li>方向転換した結果が3つのフェーズらしい</li>
+<li>ピタジョブに採用？</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>疑問</h3>
+
+<ul>
+<li>JMATって、Webの検索の前処理とか分類とかに主に利用するのかな？</li>
+<li>ATOKでもこのノウハウって利用してるんかな？</li>
+<li>辞書もあるらしいけど、辞書更新されると学習器のデータとかどーなるんだろ？</li>
+</ul>
+
+
+<h2>形態素解析器の実装言語Talkについて</h2>
+
+<ul>
+<li>kuromoji.jsの@takuya-aさん
+
+<ul>
+<li>Typed Arrayサポートが高速にできてる理由でもあるらしい</li>
+</ul>
+</li>
+<li>Kagomeの@ikawahaさん
+
+<ul>
+<li>Goはいろいろないらしい</li>
+</ul>
+</li>
+<li>Janomeの@moco_betaさん</li>
+<li><p>sssla（茶筌のRuby clone）</p></li>
+<li><p>なんで作ったの？</p>
+
+<ul>
+<li>形態素解析のライブラリはNLPのHelloWorldだから</li>
+</ul>
+</li>
+<li>なんで、その言語？</li>
+<li>その言語で困った点は？
+
+<ul>
+<li>Goだと、辞書を内包するのが大変</li>
+<li>JSは苦労したところしかない（1hくらいしゃべれるぞ！）。基本的なデータ構造とかもない</li>
+<li>Pythonはパフォーマンスを考えないと</li>
+<li>Ruby（1.6だったので）もパフォーマンスが</li>
+</ul>
+</li>
+<li><p>その言語を開発するときに必須のものは？</p>
+
+<ul>
+<li>Goはとくにない。エディタはどれでもOK</li>
+<li>browserfy?が便利</li>
+</ul>
+</li>
+<li><p>ほかの人たちの言語をdisってください</p>
+
+<ul>
+<li>JSは論外。Pythonのコードフォーマッターが揺れるのが。。。Rubyはバージョンが。。。</li>
+<li>Goはブラウザで動かない。Pythonもブラウザで動かない。Rubyも(ry</li>
+<li>ほかのは触ったことないので。。。</li>
+<li>Pythonは2.xか3.xか決めてくれ！</li>
+</ul>
+</li>
+<li>なんで、Kuromojiベースなの？
+
+<ul>
+<li>Java読みやすいから。</li>
+</ul>
+</li>
+<li>MeCabとKuromojiの違いは？
+
+<ul>
+<li>未知語の処理が結構違う</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>感想</h2>
+
+<p>きれいなロビーで良かったのですが、マイクがあると嬉しかったかもしれません。
+前回の辞書の話も聞いてみたかったかも。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Hatena Engineer Seminar #5 @ Tokyoに参加しました。 #hatenatech]]></title>
@@ -3104,98 +3253,6 @@ Expressionsははやいですが、それらは非常に限定されています
 <p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a>をダウンロードして、試してみてください。
 そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
 また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[CROSS 2015で話をしてきました #cross2015]]></title>
-    <link href="http://blog.johtani.info/blog/2015/01/29/talk-at-cross2015/"/>
-    <updated>2015-01-29T11:59:28+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/01/29/talk-at-cross2015</id>
-    <content type="html"><![CDATA[<p>今年もCROSS参加しました。そして、話もしてきました。
-今年は横浜の大さん橋でした。横浜はあんまりこないので、乗り換えでおたおたしてしまいましたが。。。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20150129/oosanbashi.jpg"></p>
-
-<!-- more -->
-
-
-<p>なかなかいい景色でした。（寒いけど）
-「おおさんばし」って読むんですね。「だいさんばし」だと思ってた。。。</p>
-
-<p>以下はいつもの、自分用メモです。</p>
-
-<h2>俺はどうしてそのデータストアを選択したのか 〜銀河と小宇宙を語る会〜</h2>
-
-<p><a href="http://2015.cross-party.com/program/c1">http://2015.cross-party.com/program/c1</a></p>
-
-<p>遅れて入ったので、ちゃんと聴けてないです。</p>
-
-<h4>最近注目しているデータストアは？</h4>
-
-<ul>
-<li>Postgresql。JSON型が気になってる。</li>
-<li>AiroSpike。データ型のあるデータストアが気になってる。</li>
-<li>MongoDB。<strike>JSON使いたいなら、これじゃないの？</strike></li>
-<li>AWSのAurora。<strike>インスタンスタイプを選ばなくていい</strike>（選ばないといけないらしい）とか、勝手にスケールしてくれるし、MySQL互換。</li>
-</ul>
-
-
-<h2>今こそ語るエンジニアの幸せな未来</h2>
-
-<p><a href="http://2015.cross-party.com/program/x3">http://2015.cross-party.com/program/x3</a></p>
-
-<ul>
-<li>「無職初日です。」</li>
-<li>Web系の人？とか質問されて、自分が何系かいつもわからなくなるなぁ。</li>
-<li>「働きがいは会社が提供するのか、個人が見つけるのか？」
-
-<ul>
-<li>個人かなぁ。会社がなにをやってるかにもよる気がするかなぁ。</li>
-</ul>
-</li>
-<li>「辞めると伝えると、やりたいようにやれって言われるw」</li>
-<li>リモートできるかできないか。</li>
-<li>「働きがい」というキーワードが出てると普通は怪しい会社w</li>
-<li>今は、働きやすさを高くしないと人が雇えなくなってきている。</li>
-<li>欧米のミドルウェアだと、35歳定年説はない。→日本でもそうじゃないですか？</li>
-<li>漫然と進んでるとダメ。→そりゃそうだ。</li>
-</ul>
-
-
-<h2>全文検索エンジン群雄割拠〜あなたが使うべきはどれだ！〜</h2>
-
-<p><a href="http://2015.cross-party.com/program/c4">http://2015.cross-party.com/program/c4</a></p>
-
-<p>スライド：<a href="https://speakerdeck.com/johtani/elasticsearchfalseshao-jie-tote-zheng-cross-2015">https://speakerdeck.com/johtani/elasticsearchfalseshao-jie-tote-zheng-cross-2015</a></p>
-
-<p>楽しんでいただけましたでしょうか？
-ちょっと話が長くなってしまい、あとの方の時間が少なかった気がしますが。。。</p>
-
-<p>Kibanaのバックエンドとして認識されている人もいたので、検索エンジンですよというのをアピールするいい機会になったので良かったです。
-もちろん、Kibanaとの組み合わせも面白いので、少しでも興味をもっていただき、触っていただけたらなぁと。</p>
-
-<p>話をする機会を用意していただいた、<a href="https://twitter.com/yamakatu">やまかつさん</a>、その他のスピーカーのみなさん、ありがとうございました！。</p>
-
-<p>Elasticsearchに関して何か興味質問などありましたら、気軽にコンタクトしてください。Twitterとかブログコメントなどで。</p>
-
-<h2>プレモルタイム以降</h2>
-
-<p>プレモルの写真撮るの忘れてました。。。重要なのに。。。</p>
-
-<p>美味しくプレモルをいただきながら、何人かの方に声をかけていただき、話をすることができました。
-こういう時間がとってあるのがいいですよね。
-色々なところでElasticsearchを使っていただいているようで、うれしい限りです。
-DMMの方とも話ができたし。</p>
-
-<h2>まとめ</h2>
-
-<p>今年はプレモルを飲みに行くだけかなぁと思っていたのですが、話をする人になってました。（おかしいなぁ）
-来年もあれば、きっと参加するかなぁと。ではまた来年！</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20150129/night.jpg"></p>
-
-<p>夜景きれいですね。（端っこに写ってる船は<a href="http://www.asukacruise.co.jp/facility/view/">飛鳥II</a>でした。）</p>
 ]]></content>
   </entry>
   
