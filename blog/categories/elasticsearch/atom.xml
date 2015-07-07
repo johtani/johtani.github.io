@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-07-07T15:09:08+09:00</updated>
+  <updated>2015-07-07T15:11:53+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,76 +12,6 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[Mappingのすばらしいリファクタリング（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/07/06/great-mapping-refactoring-ja/"/>
-    <updated>2015-07-06T18:11:31+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/07/06/great-mapping-refactoring-ja</id>
-    <content type="html"><![CDATA[<p>Elasticsearchのユーザの悩みの最も大きなものの一つは、
-タイプとフィールドのマッピングに関する多義性です。
-この多義性は、インデックス時の例外やクエリ時の例外、
-正しくない結果、リクエストからリクエストへ変化する結果、
-また、インデックスの故障やデータのロスを結果として引き起こします。</p>
-
-<p>Elasticsearchをより強固で予測可能な振る舞いをするようにする作業において、
-フィールドやタイプのマッピングをより厳格でより信頼性を高くするかといったことに
-多くの変更を費やしました。
-多くのケースで、Elasticsearch v2.0で新しいインデックスを作るときにのみ、
-新しいルールを強制し、これまでのインデックスに関しては後方互換性を保つようにします。</p>
-
-<p>しかし、幾つかのケースでは、先ほど説明したようなフィールドマッピングの
-コンフリクトなどが存在するため、それらを利用できないです。</p>
-
-<blockquote><p>コンフリクトしたフィールドのマッピングをもつインデックスはElasticsearch v2.0にはアップグレードできません。</p></blockquote>
-
-<p>もし、これらのインデックスのデータが必要ない場合は、インデックスを消せばいいです。
-そうでない場合はマッピングを正しくして再度インデックスする必要があるでしょう。</p>
-
-<p>マッピングを正しく変更することは、私たちが簡単に決めることではありません。
-ここからは、現在ある問題点と、私たちがどのように実装して解決したかについて説明します。</p>
-
-<ul>
-<li>フィールドマッピングのコンフリクト</li>
-<li>あいまいなフィールドのルックアップ</li>
-<li>タイプのメタフィールド</li>
-<li>アナライザ設定</li>
-<li><code>index_name</code>と<code>path</code></li>
-<li>同期的なマッピングの更新</li>
-<li>マッピングの削除</li>
-<li>2.0のための準備</li>
-</ul>
-
-
-<h2>フィールドマッピングのコンフリクト</h2>
-
-<p>これまで、わたしたちはドキュメントのタイプは「データベースのテーブルのようなもの」と説明していました。
-タイプの目的を説明する簡単な方法だったからです。
-しかし、残念なことにこれは、真実ではありません。
-「同じ」インデックスの「異なるタイプ」にある同じ名前のフィールドは、
-内部的に、Luceneのフィールド名が同じものになります。</p>
-
-<p>もし<code>error</code>フィールドとして、ドキュメントタイプが<code>apache</code>のものには数値（integer）を、
-ドキュメントタイプが<code>nginx</code>のものには文字列（string）を割り当てた場合、
-Elasticsearchは同じLuceneのフィールドに数値と文字列のデータをもつことになります。
-このフィールドに対して、検索やaggregationを行う場合、おかしな結果を受け取るか、例外が帰ってくるか、
-インデックスが破損することになります。</p>
-
-<p>この問題を解決するために、まず、ドキュメントタイプの名前をフィールドの名前の前に追加することを考えました。
-各フィールドは完全に別のものとなります。
-このアプローチの利点はドキュメントタイプが実際のテーブルのようになることです。</p>
-
-<p>しかし、この方法には多くの欠点があります。</p>
-
-<ul>
-<li>フィールドは常に、他のタイプとは異なるものであると区別するために、
-ドキュメントタイプを前につける必要があり、複数のタイプに同じフィールドのクエリの場合はワイルドカードをつける必要があります。</li>
-<li>複数のドキュメントタイプに対して同じフィールド名で検索する場合、クエリを個別に発行しなければならなく遅くなる</li>
-<li></li>
-</ul>
-
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[さらに進化したFound（日本語訳）]]></title>
@@ -667,6 +597,499 @@ Foundの資料が上がってました。さすが。あそこのブログは面
 
 <p>スピーカーは随時募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。
 よろしくお願いいたします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Logstashを使ったElasticsearchの再インデックス（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/05/26/reindex-elasticsearch-with-logstash-ja/"/>
+    <updated>2015-05-26T16:08:10+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/05/26/reindex-elasticsearch-with-logstash-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="http://david.pilato.fr/blog/2015/05/20/reindex-elasticsearch-with-logstash/">Reindex Elasticsearch With Logstash</a></p>
+
+<p>Thanks David!</p>
+
+<!-- more -->
+
+
+<p>マッピングを変更したり、インデックスの設定を変更したり、あるサーバから他のサーバや、
+あるクラスタから他のクラスタ（例えば複数のデータセンターのような場合）にデータを再インデックスしたくなることがあるでしょう。</p>
+
+<p>後者のような場合は<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html">SnapshotやRestoreの機能</a>を利用することもできますが、インデックスの設定を変更をしたい場合は
+その他の方法が必要になります。</p>
+
+<p><a href="https://www.elastic.co/blog/logstash-1-5-0-ga-released">Logstash 1.5.0</a>で、
+<a href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-elasticsearch.html">elasticsearch input</a>と<a href="https://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html">elasticsearch output</a>を使うことで、とても簡単に再インデックスができます。</p>
+
+<p>ではやってみましょう。</p>
+
+<h2>古いクラスタ</h2>
+
+<p>elasticsearch 1.5.2 はすでにダウンロード済みとして、<code>localhost:9200</code>で<code>old</code>という名前のクラスタを起動します。</p>
+
+<pre><code class="bash">bin/elasticsearch --cluster.name=old
+</code></pre>
+
+<p>クラスタに<code>person</code>という名前のインデックスが存在します。
+これは、5シャードで、100万件のドキュメントを持っています。</p>
+
+<p><img class="<a" src="href="http://david.pilato.fr/blog/images/reindex-es01/sense01.png">http://david.pilato.fr/blog/images/reindex-es01/sense01.png</a>&#8221;></p>
+
+<h2>新しいクラスタ</h2>
+
+<p>次に新しいクラスタを起動します。
+<code>localhost:9201</code>で<code>new</code>という名前のクラスタを起動します。</p>
+
+<pre><code class="bash">bin/elasticsearch --cluster.name=new
+</code></pre>
+
+<p>こちらは、空です。</p>
+
+<pre><code class="bash">curl -XGET "http://localhost:9201/person"
+</code></pre>
+
+<pre><code class="json">{
+   "error": "IndexMissingException[[person] missing]",
+   "status": 404
+}
+</code></pre>
+
+<h2>Logstashのインストール</h2>
+
+<p>次に、Logstash 1.5.0をダウンロードして、インストールします。</p>
+
+<pre><code class="bash">wget http://download.elastic.co/logstash/logstash/logstash-1.5.0.tar.gz
+tar xzf logstash-1.5.0.tar.gz
+cd logstash-1.5.0
+</code></pre>
+
+<p>logstashの設定ファイル<code>logstash.conf</code>を次のように設定します。</p>
+
+<pre><code>input {
+  # We read from the "old" cluster
+  elasticsearch {
+    hosts =&gt; [ "localhost" ]
+    port =&gt; "9200"
+    index =&gt; "person"
+    size =&gt; 500
+    scroll =&gt; "5m"
+    docinfo =&gt; true
+  }
+}
+
+output {
+  # We write to the "new" cluster
+  elasticsearch {
+    host =&gt; "localhost"
+    port =&gt; "9201"
+    protocol =&gt; "http"
+    index =&gt; "%{[@metadata][_index]}"
+    index_type =&gt; "%{[@metadata][_type]}"
+    document_id =&gt; "%{[@metadata][_id]}"
+  }
+  # We print dots to see it in action
+  stdout {
+    codec =&gt; "dots"
+  }
+}
+</code></pre>
+
+<h2>実行と修正</h2>
+
+<p>実行します。</p>
+
+<pre><code class="bash">bin/logstash -f logstash.conf
+</code></pre>
+
+<h3>ドキュメントのチェックと修正</h3>
+
+<p>何が起きたでしょう？</p>
+
+<pre><code class="bash">curl -XGET "http://localhost:9200/person/person/AU1wqyQWZJKU8OibfxgH"
+</code></pre>
+
+<pre><code class="json">{
+   "_index": "person",
+   "_type": "person",
+   "_id": "AU1wqyQWZJKU8OibfxgH",
+   "_version": 1,
+   "found": true,
+   "_source": {
+      "name": "Tali Elyne",
+      "dateOfBirth": "1955-05-03",
+      "gender": "female",
+      "children": 2,
+      "marketing": {
+         "cars": null,
+         "shoes": null,
+         "toys": null,
+         "fashion": null,
+         "music": null,
+         "garden": null,
+         "electronic": null,
+         "hifi": null,
+         "food": 846
+      },
+      "address": {
+         "country": "Germany",
+         "zipcode": "0099",
+         "city": "Bonn",
+         "countrycode": "DE",
+         "location": [
+            7.075943707068682,
+            50.72883500730124
+         ]
+      }
+   }
+}
+</code></pre>
+
+<p>もう一方のクラスタと比較してみましょう。</p>
+
+<pre><code class="bash">curl -XGET "http://localhost:9201/person/person/AU1wqyQWZJKU8OibfxgH"
+</code></pre>
+
+<pre><code class="json">{
+   "_index": "person",
+   "_type": "person",
+   "_id": "AU1wqyQWZJKU8OibfxgH",
+   "_version": 1,
+   "found": true,
+   "_source": {
+      "name": "Tali Elyne",
+      "dateOfBirth": "1955-05-03",
+      "gender": "female",
+      "children": 2,
+      "marketing": {
+         "cars": null,
+         "shoes": null,
+         "toys": null,
+         "fashion": null,
+         "music": null,
+         "garden": null,
+         "electronic": null,
+         "hifi": null,
+         "food": 846
+      },
+      "address": {
+         "country": "Germany",
+         "zipcode": "0099",
+         "city": "Bonn",
+         "countrycode": "DE",
+         "location": [
+            7.075943707068682,
+            50.72883500730124
+         ]
+      },
+      "@version": "1",
+      "@timestamp": "2015-05-20T09:53:44.089Z"
+   }
+}
+</code></pre>
+
+<p>Logstashは<code>@version</code>と<code>@timestamp</code>フィールドを追加してしました。
+これらを除去したいので、<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html">Mutate filter plugin</a>の<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html#plugins-filters-mutate-remove_field"><code>remove_field</code></a>を使います。</p>
+
+<pre><code>filter {
+  mutate {
+    remove_field =&gt; [ "@timestamp", "@version" ]
+  }
+}
+</code></pre>
+
+<h3>マッピングのチェックと修正</h3>
+
+<p>実際に、logstashは<code>_source</code>フィールドを既存のドキュメントから読み込み、
+それらを新しいクラスタに直接投入しています。
+しかし、logstashはマッピングについてはケアしていません。</p>
+
+<p>古いマッピングと新しいマッピングを比較するために、マッピングを取得してみましょう。</p>
+
+<pre><code class="bash">curl -XGET "http://localhost:9200/person/person/_mapping"
+</code></pre>
+
+<pre><code class="json">{
+   "person": {
+      "mappings": {
+         "person": {
+            "properties": {
+               "address": {
+                  "properties": {
+                     "city": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                     },
+                     "country": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                     },
+                     "countrycode": {
+                        "type": "string",
+                        "index": "not_analyzed"
+                     },
+                     "location": {
+                        "type": "geo_point"
+                     },
+                     "zipcode": {
+                        "type": "string"
+                     }
+                  }
+               },
+               "children": {
+                  "type": "long"
+               },
+               "dateOfBirth": {
+                  "type": "date",
+                  "format": "dateOptionalTime"
+               },
+               "gender": {
+                  "type": "string",
+                  "index": "not_analyzed"
+               },
+               "marketing": {
+                  "properties": {
+                     "cars": {
+                        "type": "long"
+                     },
+                     "electronic": {
+                        "type": "long"
+                     },
+                     "fashion": {
+                        "type": "long"
+                     },
+                     "food": {
+                        "type": "long"
+                     },
+                     "garden": {
+                        "type": "long"
+                     },
+                     "hifi": {
+                        "type": "long"
+                     },
+                     "music": {
+                        "type": "long"
+                     },
+                     "shoes": {
+                        "type": "long"
+                     },
+                     "toys": {
+                        "type": "long"
+                     }
+                  }
+               },
+               "name": {
+                  "type": "string"
+               }
+            }
+         }
+      }
+   }
+}
+</code></pre>
+
+<pre><code class="bash">curl -XGET "http://localhost:9201/person/person/_mapping"
+</code></pre>
+
+<pre><code class="json">{
+   "person": {
+      "mappings": {
+         "person": {
+            "properties": {
+               "address": {
+                  "properties": {
+                     "city": {
+                        "type": "string"
+                     },
+                     "country": {
+                        "type": "string"
+                     },
+                     "countrycode": {
+                        "type": "string"
+                     },
+                     "location": {
+                        "type": "double"
+                     },
+                     "zipcode": {
+                        "type": "string"
+                     }
+                  }
+               },
+               "children": {
+                  "type": "long"
+               },
+               "dateOfBirth": {
+                  "type": "date",
+                  "format": "dateOptionalTime"
+               },
+               "gender": {
+                  "type": "string"
+               },
+               "marketing": {
+                  "properties": {
+                     "cars": {
+                        "type": "long"
+                     },
+                     "electronic": {
+                        "type": "long"
+                     },
+                     "fashion": {
+                        "type": "long"
+                     },
+                     "food": {
+                        "type": "long"
+                     },
+                     "garden": {
+                        "type": "long"
+                     },
+                     "hifi": {
+                        "type": "long"
+                     },
+                     "music": {
+                        "type": "long"
+                     },
+                     "shoes": {
+                        "type": "long"
+                     },
+                     "toys": {
+                        "type": "long"
+                     }
+                  }
+               },
+               "name": {
+                  "type": "string"
+               }
+            }
+         }
+      }
+   }
+}
+</code></pre>
+
+<p>これにより、いくつかの相違を発見できます。</p>
+
+<pre><code class="json"> "location": {
+    "type": "geo_point"
+ }
+</code></pre>
+
+<pre><code class="json"> "location": {
+    "type": "double"
+ }
+</code></pre>
+
+<p>データをインデックスする「前」に、実際に利用したいマッピングでインデックスを作成しておくことで、
+この問題に対処できます。
+この時点で、オリジナルのマッピングを望んだ形に変更することができます。例えば、アナライザを変更したりです。
+また、インデックスの設定を新しく定義することもできます。
+デフォルトでは、Elasticsearchは5つのシャードと各シャードに対して1つのレプリカを作成します。
+しかし、この時点でもう一度変更することが可能です。</p>
+
+<pre><code class="bash">curl -XDELETE "http://localhost:9201/person"
+curl -XPUT "http://localhost:9201/person" -d'
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  }
+}'
+curl -XPUT "http://localhost:9201/person/person/_mapping" -d'
+{
+  "person": {
+    "properties": {
+      "address": {
+        "properties": {
+          "city": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "country": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "countrycode": {
+            "type": "string",
+            "index": "not_analyzed"
+          },
+          "location": {
+            "type": "geo_point"
+          },
+          "zipcode": {
+            "type": "string"
+          }
+        }
+      },
+      "children": {
+        "type": "long"
+      },
+      "dateOfBirth": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      },
+      "gender": {
+        "type": "string",
+        "index": "not_analyzed"
+      },
+      "marketing": {
+        "properties": {
+          "cars": {
+            "type": "long"
+          },
+          "electronic": {
+            "type": "long"
+          },
+          "fashion": {
+            "type": "long"
+          },
+          "food": {
+            "type": "long"
+          },
+          "garden": {
+            "type": "long"
+          },
+          "hifi": {
+            "type": "long"
+          },
+          "music": {
+            "type": "long"
+          },
+          "shoes": {
+            "type": "long"
+          },
+          "toys": {
+            "type": "long"
+          }
+        }
+      },
+      "name": {
+        "type": "string"
+      }
+    }
+  }
+}'
+</code></pre>
+
+<p>さて、もう一度再インデックスしましょう！</p>
+
+<pre><code class="bash">bin/logstash -f logstash.conf
+</code></pre>
+
+<p><img class="<a" src="href="http://david.pilato.fr/blog/images/reindex-es01/sense02.png">http://david.pilato.fr/blog/images/reindex-es01/sense02.png</a>&#8221;></p>
+
+<h2>インデックスやタイプ名の変更</h2>
+
+<p>もちろん、インデックス名やタイプ名、IDを変更したい場合も変更が可能です！:)</p>
+
+<pre><code class="json">  elasticsearch {
+    host =&gt; "localhost"
+    port =&gt; "9201"
+    protocol =&gt; "http"
+    index =&gt; "europe_people"
+    index_type =&gt; "someone"
+    document_id =&gt; "%{[@metadata][_id]}"
+  }
+</code></pre>
 ]]></content>
   </entry>
   

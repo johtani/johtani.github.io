@@ -9,11 +9,9 @@
   <meta name="author" content="johtani">
 
   
-  <meta name="description" content="Elasticsearchのユーザの悩みの最も大きなものの一つは、
-タイプとフィールドのマッピングに関する多義性です。
-この多義性は、インデックス時の例外やクエリ時の例外、
-正しくない結果、リクエストからリクエストへ変化する結果、
-また、インデックスの故障やデータのロスを結果として引き起こします &hellip;">
+  <meta name="description" content="4ヶ月前に、Found joined our team at Elasticをアナウンスしました。
+Foundの素晴らしいチームと一緒に仕事をしていますが、彼らによって、より素晴らしい
+hosted Elasticsearchを提供することになりました。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -90,104 +88,6 @@ $(document).ready( function () {
       <div id="content">
         <div class="blog-index">
   
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/07/06/great-mapping-refactoring-ja/">Mappingのすばらしいリファクタリング（日本語訳）</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-
-<time datetime="2015-07-06T18:11:31+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2015-07-06T18:11:31+09:00'><span class='date'>2015-07-06</span></time></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Elasticsearchのユーザの悩みの最も大きなものの一つは、
-タイプとフィールドのマッピングに関する多義性です。
-この多義性は、インデックス時の例外やクエリ時の例外、
-正しくない結果、リクエストからリクエストへ変化する結果、
-また、インデックスの故障やデータのロスを結果として引き起こします。</p>
-
-<p>Elasticsearchをより強固で予測可能な振る舞いをするようにする作業において、
-フィールドやタイプのマッピングをより厳格でより信頼性を高くするかといったことに
-多くの変更を費やしました。
-多くのケースで、Elasticsearch v2.0で新しいインデックスを作るときにのみ、
-新しいルールを強制し、これまでのインデックスに関しては後方互換性を保つようにします。</p>
-
-<p>しかし、幾つかのケースでは、先ほど説明したようなフィールドマッピングの
-コンフリクトなどが存在するため、それらを利用できないです。</p>
-
-<blockquote><p>コンフリクトしたフィールドのマッピングをもつインデックスはElasticsearch v2.0にはアップグレードできません。</p></blockquote>
-
-<p>もし、これらのインデックスのデータが必要ない場合は、インデックスを消せばいいです。
-そうでない場合はマッピングを正しくして再度インデックスする必要があるでしょう。</p>
-
-<p>マッピングを正しく変更することは、私たちが簡単に決めることではありません。
-ここからは、現在ある問題点と、私たちがどのように実装して解決したかについて説明します。</p>
-
-<ul>
-<li>フィールドマッピングのコンフリクト</li>
-<li>あいまいなフィールドのルックアップ</li>
-<li>タイプのメタフィールド</li>
-<li>アナライザ設定</li>
-<li><code>index_name</code>と<code>path</code></li>
-<li>同期的なマッピングの更新</li>
-<li>マッピングの削除</li>
-<li>2.0のための準備</li>
-</ul>
-
-
-<h2>フィールドマッピングのコンフリクト</h2>
-
-<p>これまで、わたしたちはドキュメントのタイプは「データベースのテーブルのようなもの」と説明していました。
-タイプの目的を説明する簡単な方法だったからです。
-しかし、残念なことにこれは、真実ではありません。
-「同じ」インデックスの「異なるタイプ」にある同じ名前のフィールドは、
-内部的に、Luceneのフィールド名が同じものになります。</p>
-
-<p>もし<code>error</code>フィールドとして、ドキュメントタイプが<code>apache</code>のものには数値（integer）を、
-ドキュメントタイプが<code>nginx</code>のものには文字列（string）を割り当てた場合、
-Elasticsearchは同じLuceneのフィールドに数値と文字列のデータをもつことになります。
-このフィールドに対して、検索やaggregationを行う場合、おかしな結果を受け取るか、例外が帰ってくるか、
-インデックスが破損することになります。</p>
-
-<p>この問題を解決するために、まず、ドキュメントタイプの名前をフィールドの名前の前に追加することを考えました。
-各フィールドは完全に別のものとなります。
-このアプローチの利点はドキュメントタイプが実際のテーブルのようになることです。</p>
-
-<p>しかし、この方法には多くの欠点があります。</p>
-
-<ul>
-<li>フィールドは常に、他のタイプとは異なるものであると区別するために、
-ドキュメントタイプを前につける必要があり、複数のタイプに同じフィールドのクエリの場合はワイルドカードをつける必要があります。</li>
-<li>複数のドキュメントタイプに対して同じフィールド名で検索する場合、クエリを個別に発行しなければならなく遅くなる</li>
-<li></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
   
   
     <article>
@@ -611,6 +511,50 @@ hosted Elasticsearchを提供することになりました。</p>
 
     </article>
   
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/17/9th-elasticsearch-jp/">第9回Elasticsearch勉強会を開催しました。#elasticsearchjp</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2015-04-17T14:41:54+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2015-04-17T14:41:54+09:00'><span class='date'>2015-04-17</span></time></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="https://elasticsearch.doorkeeper.jp/events/23012">第9回Elsticsearch勉強会</a>を開催しました。
+スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
+次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/04/17/9th-elasticsearch-jp/">続きを読む &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -640,15 +584,11 @@ Elasticsearch勉強会の主催をしています。<br/>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elastic/'>elastic (1)</a></li><li><a href='/blog/categories/elasticon/'>elasticon (1)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (71)</a></li><li><a href='/blog/categories/elaticsearch/'>elaticsearch (1)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/found-dot-no/'>found.no (1)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (6)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (5)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (3)</a></li><li><a href='/blog/categories/misc/'>misc (3)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/shield/'>shield (1)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (24)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (2)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elastic/'>elastic (1)</a></li><li><a href='/blog/categories/elasticon/'>elasticon (1)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (70)</a></li><li><a href='/blog/categories/elaticsearch/'>elaticsearch (1)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/found-dot-no/'>found.no (1)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (6)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (5)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (3)</a></li><li><a href='/blog/categories/misc/'>misc (3)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (11)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/shield/'>shield (1)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (24)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (2)</a></li><li><a href='/blog/categories/ben/'>本 (3)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
 </section>
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2015/07/06/great-mapping-refactoring-ja/">Mappingのすばらしいリファクタリング（日本語訳）</a>
-      </li>
     
       <li class="post">
         <a href="/blog/2015/07/06/we-just-made-found-more-awesome-ja/">さらに進化したFound（日本語訳）</a>
@@ -664,6 +604,10 @@ Elasticsearch勉強会の主催をしています。<br/>
     
       <li class="post">
         <a href="/blog/2015/06/17/attend-hatena-engineer-seminar-5/">Hatena Engineer Seminar #5 @ Tokyoに参加しました。 #hatenatech</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/06/10/elasticsearch-1-6-0-released-ja/">Elasticsearch 1.6.0リリース（日本語訳）</a>
       </li>
     
   </ul>
