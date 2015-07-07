@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-07-07T15:24:40+09:00</updated>
+  <updated>2015-07-07T15:27:57+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -14,10 +14,160 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Elasticsearch 2.0.0.beta1リリース間近（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/07/07/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja/"/>
+    <updated>2015-07-07T15:25:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/07/07/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-2.0.0.beta1-coming-soon">Elasticsearch 2.0.0.beta1 coming soon!</a></p>
+
+<p>Elasticsearch 2.0.0.beta1のリリースの準備をしています。
+これは、Lucene 5.2.1に含まれる多くの改善が利用できるようになります。
+このリリースに関するいくつかの機能は次のようなものです。</p>
+
+<!-- more -->
+
+
+<h4>Pipeline Aggregations</h4>
+
+<p>差分や移動平均、他のAggregationsの結果に対する
+series arithmeticのようなaggregationが利用可能になります。
+この機能は、これまでは、クライアントサイドで実行する必要がありました。
+しかし、この計算をより強力な解析クエリを構築してElasticsearchで
+実行することができるようになります。
+クライアントのコードをより簡潔にすることができます。
+これにより、予測解析や異常検知のようなことができるようになります。</p>
+
+<h4>Query/Filter merging</h4>
+
+<p>Filterはなくなります。全てのフィルタは、クエリになります。
+クエリコンテキストで利用されると、効率的に関連度スコアを計算し、
+フィルタコンテキストで利用されると、単に、
+マッチしていないドキュメントを除外する（今のフィルタのようなもの）だけです
+この変更は、クエリ実行が自動的に、より効率的な順番で実行されるように
+最適化されることを意味します。
+例えば、フレーズやgeoクエリのような遅いクエリは
+まず、近似フェーズを実行し、それから、より遅い実際のフェーズが
+結果に対して行われます。
+フィルタコンテキストにおいて、頻繁に利用される条件は自動的にキャッシュされます。</p>
+
+<h4>Configurable store compression</h4>
+
+<p><code>index.codec</code>設定により、高速化のためのLZ4圧縮（<code>default</code>）か
+インデックスサイズを小さくするためのDEFLATE（<code>best_compression</code>）を
+選択できます。これは、ロギングでとくに役に立ちます。
+これにより、古いインデックスオプティマイズする前に<code>best_compression</code>に
+変更できます。</p>
+
+<p>これらに関するブログ記事がすぐに公開されるでしょう。</p>
+
+<h3>Performance and resilience</h3>
+
+<p>以降では、新しいメジャーリリースに関して簡単に紹介します。
+2.0の変更の多くは内部の機能に関するものであり、
+直接ユーザに関連するわけではないからです。</p>
+
+<p>新しいメジャーバージョンのテーマは、パフォーマンス、安定性、
+堅牢性、予測可能性、そして使い勝手の良さです。</p>
+
+<ul>
+<li>物事が予測した通りに動作する</li>
+<li>何か問題があった場合に、Elasticsearchから役立つフィードバックがある</li>
+<li>ローレベルの設定を扱う必要はなく、Elasticsearchが良い設定を決定する</li>
+<li>これらに加え、データがより安全に</li>
+</ul>
+
+
+<p>これらの目標は完全ではありません。
+まだ、多くの改善があります。しかし、2.xブランチで、
+すでに500コミットを超える大きな改善が実施されています。</p>
+
+<ul>
+<li>on-diskの doc valuesをデフォルトで利用（これまではfielddata）。
+ヒープ使用量を減らして、スケーラビリティを向上</li>
+<li>セグメントマージ処理中のメモリ使用量の削減</li>
+<li>normsの圧縮率の改善。ヒープスペースを利用している大きな処理のひとつだったため。</li>
+<li>全てのリクエストの後に、transaction logをfsyncすることで、デフォルトで耐久性を向上</li>
+<li>全てのファイル変更をアトミックに（部分的なファイルの書き出しはなし）</li>
+<li>マージを自動で制限</li>
+<li>フレーズクエリやスパンクエリを高速化</li>
+<li>フィルタキャッシュをより効率化するための圧縮されたビットセット</li>
+<li>クラスタ状態の差分更新</li>
+<li>構造化されたJSON形式の例外</li>
+<li>よりきめ細かいLuceneのメモリレポート</li>
+<li>デフォルトではlocalhostにのみバインド。開発のノードが他のクラスタにジョインするのを防ぐ</li>
+<li>parent/childのクエリ実行最適化のためにリライト</li>
+<li>Java Security Managerで必要最小限なパーミッションで実行</li>
+<li>全てのコアなプラグインをelasticsearchリポジトリに移行し、Elasticsearchのバージョンに同期してリリースされる予定</li>
+</ul>
+
+
+<h2>アップグレード前に</h2>
+
+<p>メジャーバージョンのアップグレードは問題のあるものを一掃する機会を与えてくれます。
+できる限り、これらの変更をアップグレードするために、簡単な方法を提供しようとしています。
+しかし、Elasticsearch 2.0にアップグレードする前に、必要な処理が2つあります。</p>
+
+<p>1つ目は、フィールドとタイプマッピングに関することです。
+mapping APIは、現在、それほど厳密ではありません。
+内蔵された保護機構を提供する代わりに、ユーザがベストプラクティスを知っていると信頼していました。
+2.0では、mappingはより厳密で安全ですが、いくつかの変更では、後方互換性を保っていません。
+詳細については<a href="https://www.elastic.co/blog/great-mapping-refactoring">The Great Mapping Recatoring</a>をごらんください。</p>
+
+<p>2つ目はElasticsearch 0.20以前のユーザに関する変更です。
+これは、Lucene 3.xを使っています。
+Elasticsearch 2.xはLucene 5をベースにしています。
+Lucene 5はLucene 4.xによって作成されたインデックスの読み込みはサポートしていますが、
+Lucene 3.xに関してはサポートしていません。</p>
+
+<p>Elasticsearch 0.20以前のバージョンによって生成されたインデックスを持っている場合、
+Elasticsearch 2.xのクラスタをスタートすることはできません。
+これらの古いインデックスを削除するか、Elaticsearch 1.6.0以上に含まれている
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-upgrade.html">upgrade API</a>を使用してアップグレードする必要があります。</p>
+
+<p>upgrade APIの実行は2つのジョブを実行します。</p>
+
+<ul>
+<li>古いLuceneフォーマットのセグメントを最新のフォーマットで書き換えます</li>
+<li>Elasticsearch 2.xによって読み込めるようという印をインデックスに追加します</li>
+</ul>
+
+
+<p>全てのセグメントを最新バージョンにアップグレードするのも良い案ですが、
+アップグレード前に必要な処理を最小限に抑えることも可能です。
+（Lucene 3.xのセグメントだけをアップグレード）
+その場合は、<code>only_ancient_segments</code>パラメータを指定します。</p>
+
+<h2>Elasticsearch Migration Plugin</h2>
+
+<p>Elasticsearch 2.0 に移行する前に、インデックスがアップグレードが必要なのか、
+ほかになにかするべきことがあるのかをチェックする助けになる
+Elasticsearch Migration Pluginをリリースしました。</p>
+
+<p>まず、プラグインをインストールします</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -i elastic/elasticsearch-migration</span></code></pre></td></tr></table></div></figure>
+
+
+<p>プラグインのインストール後はノードのリスタートは必要ありません。</p>
+
+<p>以下のリンクをブラウザで開きます。</p>
+
+<p><a href="http://localhost:9200/_plugin/migration">http://localhost:9200/_plugin/migration</a></p>
+
+<p>（<code>localhost:9200</code>はインストールしたホスト名に変更してください。）</p>
+
+<p>Migration pluginに関してバグやご意見がある場合は、<a href="http://github.com/elastic/elasticsearch-migration/issues">GitHubのIssue</a>にお願いします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[さらに進化したFound（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/07/06/we-just-made-found-more-awesome-ja/"/>
-    <updated>2015-07-06T16:51:41+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/07/06/we-just-made-found-more-awesome-ja</id>
+    <link href="http://blog.johtani.info/blog/2015/07/07/we-just-made-found-more-awesome-ja/"/>
+    <updated>2015-07-07T15:20:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/07/07/we-just-made-found-more-awesome-ja</id>
     <content type="html"><![CDATA[<p>4ヶ月前に、<a href="https://www.elastic.co/blog/welcome-found">Found joined our team at Elastic</a>をアナウンスしました。
 Foundの素晴らしいチームと一緒に仕事をしていますが、彼らによって、より素晴らしい
 hosted Elasticsearchを提供することになりました。</p>
@@ -229,156 +379,6 @@ Found Standardに対しても提供することになりました。
 
 <p>きれいなロビーで良かったのですが、マイクがあると嬉しかったかもしれません。
 前回の辞書の話も聞いてみたかったかも。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch 2.0.0.beta1リリース間近（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/06/30/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja/"/>
-    <updated>2015-06-30T14:11:14+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/06/30/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-2.0.0.beta1-coming-soon">Elasticsearch 2.0.0.beta1 coming soon!</a></p>
-
-<p>Elasticsearch 2.0.0.beta1のリリースの準備をしています。
-これは、Lucene 5.2.1に含まれる多くの改善が利用できるようになります。
-このリリースに関するいくつかの機能は次のようなものです。</p>
-
-<!-- more -->
-
-
-<h4>Pipeline Aggregations</h4>
-
-<p>デリバティブやmoving average、他のAggregationsの結果に対する
-series arithmeticのようなaggregationが利用可能になります。
-この機能は、これまでは、クライアントサイドで実行する必要がありました。
-しかし、この計算をより強力な解析クエリを構築してElasticsearchで
-実行することができるようになります。
-クライアントのコードをより簡潔にすることができます。
-これにより、予測解析や異常検知のようなことができるようになります。</p>
-
-<h4>Query/Filter merging</h4>
-
-<p>Filterはなくなります。全てのフィルタは、クエリになります。
-クエリコンテキストで利用されると、効率的に関連度スコアを計算し、
-フィルタコンテキストで利用されると、単に、
-マッチしていないドキュメントを除外する（今のフィルタのようなもの）だけです
-この変更は、クエリ実行が自動的に、より効率的な順番で実行されるように
-最適化されることを意味します。
-例えば、フレーズやgeoクエリのような遅いクエリは
-まず、近似フェーズを実行し、それから、より遅い実際のフェーズが
-結果に対して行われます。
-フィルタコンテキストにおいて、頻繁に利用される条件は自動的にキャッシュされます。</p>
-
-<h4>Configurable store compression</h4>
-
-<p><code>index.codec</code>設定により、高速化のためのLZ4圧縮（<code>default</code>）か
-インデックスサイズを小さくするためのDEFLATE（<code>best_compression</code>）を
-選択できます。これは、ロギングでとくに役に立ちます。
-これにより、古いインデックスオプティマイズする前に<code>best_compression</code>に
-変更できます。</p>
-
-<p>これらに関するブログ記事がすぐに公開されるでしょう。</p>
-
-<h3>Performance and resilience</h3>
-
-<p>以降では、新しいメジャーリリースに関して簡単に紹介します。
-2.0の変更の多くは内部の機能に関するものであり、
-直接ユーザに関連するわけではないからです。</p>
-
-<p>新しいメジャーバージョンのテーマは、パフォーマンス、安定性、
-堅牢性、予測可能性、そして使い勝手の良さです。</p>
-
-<ul>
-<li>物事が予測した通りに動作する</li>
-<li>何か問題があった場合に、Elasticsearchから役立つフィードバックがある</li>
-<li>ローレベルの設定を扱う必要はなく、Elasticsearchが良い設定を決定する</li>
-<li>これらに加え、データがより安全に</li>
-</ul>
-
-
-<p>これらの目標は完全ではありません。
-まだ、多くの改善があります。しかし、2.xブランチで、
-すでに500コミットを超える大きな改善が実施されています。</p>
-
-<ul>
-<li>on-diskの doc valuesをデフォルトで利用（これまではfielddata）。
-ヒープ使用量を減らして、スケーラビリティを向上</li>
-<li>セグメントマージ処理中のメモリ使用量の削減</li>
-<li>normsの圧縮率の改善。ヒープスペースを利用している大きな処理のひとつだったため。</li>
-<li>全てのリクエストの後に、transaction logをfsyncすることで、デフォルトで耐久性を向上</li>
-<li>全てのファイル変更をアトミックに（部分的なファイルの書き出しはなし）</li>
-<li>マージを自動で制限</li>
-<li>フレーズクエリやスパンクエリを高速化</li>
-<li>フィルタキャッシュをより効率化するための圧縮されたビットセット</li>
-<li>クラスタ状態の差分更新</li>
-<li>構造化されたJSON形式の例外</li>
-<li>よりきめ細かいLuceneのメモリレポート</li>
-<li>デフォルトではlocalhostにのみバインド。開発のノードが他のクラスタにジョインするのを防ぐ</li>
-<li>parent/childのクエリ実行最適化のためにリライト</li>
-<li>Java Security Managerで必要最小限なパーミッションで実行</li>
-<li>全てのコアなプラグインをelasticsearchリポジトリに移行し、Elasticsearchのバージョンに同期してリリースされる予定</li>
-</ul>
-
-
-<h2>アップグレード前に</h2>
-
-<p>メジャーバージョンのアップグレードは問題のあるものを一掃する機会を与えてくれます。
-できる限り、これらの変更をアップグレードするために、簡単な方法を提供しようとしています。
-しかし、Elasticsearch 2.0にアップグレードする前に、必要な処理が2つあります。</p>
-
-<p>1つ目は、フィールドとタイプマッピングに関することです。
-mapping APIは、現在、それほど厳密ではありません。
-内蔵された保護機構を提供する代わりに、ユーザがベストプラクティスを知っていると信頼していました。
-2.0では、mappingはより厳密で安全ですが、いくつかの変更では、後方互換性を保っていません。
-詳細については<a href="https://www.elastic.co/blog/great-mapping-refactoring">The Great Mapping Recatoring</a>をごらんください。</p>
-
-<p>2つ目はElasticsearch 0.20以前のユーザに関する変更です。
-これは、Lucene 3.xを使っています。
-Elasticsearch 2.xはLucene 5をベースにしています。
-Lucene 5はLucene 4.xによって作成されたインデックスの読み込みはサポートしていますが、
-Lucene 3.xに関してはサポートしていません。</p>
-
-<p>Elasticsearch 0.20以前のバージョンによって生成されたインデックスを持っている場合、
-Elasticsearch 2.xのクラスタをスタートすることはできません。
-これらの古いインデックスを削除するか、Elaticsearch 1.6.0以上に含まれている
-<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-upgrade.html">upgrade API</a>を使用してアップグレードする必要があります。</p>
-
-<p>upgrade APIの実行は2つのジョブを実行します。</p>
-
-<ul>
-<li>古いLuceneフォーマットのセグメントを最新のフォーマットで書き換えます</li>
-<li>Elasticsearch 2.xによって読み込めるようという印をインデックスに追加します</li>
-</ul>
-
-
-<p>全てのセグメントを最新バージョンにアップグレードするのも良い案ですが、
-アップグレード前に必要な処理を最小限に抑えることも可能です。
-（Lucene 3.xのセグメントだけをアップグレード）
-その場合は、<code>only_ancient_segments</code>パラメータを指定します。</p>
-
-<h2>Elasticsearch Migration Plugin</h2>
-
-<p>Elasticsearch 2.0 に移行する前に、インデックスがアップグレードが必要なのか、
-ほかになにかするべきことがあるのかをチェックする助けになる
-Elasticsearch Migration Pluginをリリースしました。</p>
-
-<p>まず、プラグインをインストールします</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -i elastic/elasticsearch-migration</span></code></pre></td></tr></table></div></figure>
-
-
-<p>プラグインのインストール後はノードのリスタートは必要ありません。</p>
-
-<p>以下のリンクをブラウザで開きます。</p>
-
-<p><a href="http://localhost:9200/_plugin/migration">http://localhost:9200/_plugin/migration</a></p>
-
-<p>（<code>localhost:9200</code>はインストールしたホスト名に変更してください。）</p>
-
-<p>Migration pluginに関してバグやご意見がある場合は、<a href="http://github.com/elastic/elasticsearch-migration/issues">GitHubのIssue</a>にお願いします。</p>
 ]]></content>
   </entry>
   
