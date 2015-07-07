@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-07-06T16:47:16+09:00</updated>
+  <updated>2015-07-07T15:09:08+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,290 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Mappingのすばらしいリファクタリング（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/07/06/great-mapping-refactoring-ja/"/>
+    <updated>2015-07-06T18:11:31+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/07/06/great-mapping-refactoring-ja</id>
+    <content type="html"><![CDATA[<p>Elasticsearchのユーザの悩みの最も大きなものの一つは、
+タイプとフィールドのマッピングに関する多義性です。
+この多義性は、インデックス時の例外やクエリ時の例外、
+正しくない結果、リクエストからリクエストへ変化する結果、
+また、インデックスの故障やデータのロスを結果として引き起こします。</p>
+
+<p>Elasticsearchをより強固で予測可能な振る舞いをするようにする作業において、
+フィールドやタイプのマッピングをより厳格でより信頼性を高くするかといったことに
+多くの変更を費やしました。
+多くのケースで、Elasticsearch v2.0で新しいインデックスを作るときにのみ、
+新しいルールを強制し、これまでのインデックスに関しては後方互換性を保つようにします。</p>
+
+<p>しかし、幾つかのケースでは、先ほど説明したようなフィールドマッピングの
+コンフリクトなどが存在するため、それらを利用できないです。</p>
+
+<blockquote><p>コンフリクトしたフィールドのマッピングをもつインデックスはElasticsearch v2.0にはアップグレードできません。</p></blockquote>
+
+<p>もし、これらのインデックスのデータが必要ない場合は、インデックスを消せばいいです。
+そうでない場合はマッピングを正しくして再度インデックスする必要があるでしょう。</p>
+
+<p>マッピングを正しく変更することは、私たちが簡単に決めることではありません。
+ここからは、現在ある問題点と、私たちがどのように実装して解決したかについて説明します。</p>
+
+<ul>
+<li>フィールドマッピングのコンフリクト</li>
+<li>あいまいなフィールドのルックアップ</li>
+<li>タイプのメタフィールド</li>
+<li>アナライザ設定</li>
+<li><code>index_name</code>と<code>path</code></li>
+<li>同期的なマッピングの更新</li>
+<li>マッピングの削除</li>
+<li>2.0のための準備</li>
+</ul>
+
+
+<h2>フィールドマッピングのコンフリクト</h2>
+
+<p>これまで、わたしたちはドキュメントのタイプは「データベースのテーブルのようなもの」と説明していました。
+タイプの目的を説明する簡単な方法だったからです。
+しかし、残念なことにこれは、真実ではありません。
+「同じ」インデックスの「異なるタイプ」にある同じ名前のフィールドは、
+内部的に、Luceneのフィールド名が同じものになります。</p>
+
+<p>もし<code>error</code>フィールドとして、ドキュメントタイプが<code>apache</code>のものには数値（integer）を、
+ドキュメントタイプが<code>nginx</code>のものには文字列（string）を割り当てた場合、
+Elasticsearchは同じLuceneのフィールドに数値と文字列のデータをもつことになります。
+このフィールドに対して、検索やaggregationを行う場合、おかしな結果を受け取るか、例外が帰ってくるか、
+インデックスが破損することになります。</p>
+
+<p>この問題を解決するために、まず、ドキュメントタイプの名前をフィールドの名前の前に追加することを考えました。
+各フィールドは完全に別のものとなります。
+このアプローチの利点はドキュメントタイプが実際のテーブルのようになることです。</p>
+
+<p>しかし、この方法には多くの欠点があります。</p>
+
+<ul>
+<li>フィールドは常に、他のタイプとは異なるものであると区別するために、
+ドキュメントタイプを前につける必要があり、複数のタイプに同じフィールドのクエリの場合はワイルドカードをつける必要があります。</li>
+<li>複数のドキュメントタイプに対して同じフィールド名で検索する場合、クエリを個別に発行しなければならなく遅くなる</li>
+<li></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[さらに進化したFound（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/07/06/we-just-made-found-more-awesome-ja/"/>
+    <updated>2015-07-06T16:51:41+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/07/06/we-just-made-found-more-awesome-ja</id>
+    <content type="html"><![CDATA[<p>4ヶ月前に、<a href="https://www.elastic.co/blog/welcome-found">Found joined our team at Elastic</a>をアナウンスしました。
+Foundの素晴らしいチームと一緒に仕事をしていますが、彼らによって、より素晴らしい
+hosted Elasticsearchを提供することになりました。</p>
+
+<!-- more -->
+
+
+<p>私たちがともに密接に働くことにより、本日（2015/7/1）、
+<a href="https://www.elastic.co/products/found">新しい2つのFound</a>を提供することになりました。
+Found StandardはこれまでのFoundの機能に加え、さらに低価格を提供します。
+Found Premiumは、SLAサポートと、ShieldやWatcherを将来Found上で提供します。</p>
+
+<h2>Found Standard</h2>
+
+<p>Foundは素晴らしいです。専用のElasticsearchクラスタ、簡単なスケール、
+ビルトインのセキュリティそして、時間単位での課金などを持っています。
+私たちは、hosted Elasticsearchを探している方に、
+Foundが適したソリューションであると思っていますし、
+すべての方に利用できて手頃な価格であるということを確信したいと思っています。</p>
+
+<p>本日（2015/07/01）からFoundの価格をかなり低価格にし、
+<strong>月額50ドル以下</strong>でhosted Elasticsearchを簡単に試してもらえるようにしました。</p>
+
+<p>価格を下げることは正しい重要なステップですが、
+Foundを利用している全ての人に、より良い経験を持っていただきたいと考えています。
+低価格化と一緒に、<strong>free backups</strong>と<strong>built in SSD</strong>もFoundで提供を始めることになります。</p>
+
+<p>Foundの重要な特徴の一つが、高可用性のために、クラスタをいくつのデータセンターに持つかを
+選択できることです。
+データは重要です。これが正しい選択でユーザの助けになると考えています。
+これにより、私たちの価格は、<strong>複数のデータセンターにより安価に</strong>配置することができます。</p>
+
+<p>また、KibanaもElasticsearchのデータを可視化する素晴らしい方法だと考えています。
+Kibana 4が最新バージョンですが、
+これは、サーバサイドコンポーネントを持っています。
+これは、サービスとしてこれを提供するために、追加の料金がかかることを意味します。
+Foundチームが築いた素晴らしい基盤とKibanaチームの努力により、
+hosted Elasticsearchクラスタで<strong>フリーのKibana 4</strong>を7月15日より提供することになりました。</p>
+
+<h2>Found Premium</h2>
+
+<p>また、私たちは、オープンソースプロダクトに関してサブスクリプションを提供していますが、
+Found Standardに対しても提供することになりました。
+これが、Found Premiumです。</p>
+
+<p>フォーラムベースのサポートよりもSLAベースのサポートを望んでいる場合、
+プロダクトを開発しているチームからのサポートを受けることができるオプションを
+提供し始めました。
+クリティカルなイベントを持っていたり、私たちのプロダクトに関する
+問題を予測するためのベストなヘルプやガイダンス、アドバイスを探しているような場合にサポートします。</p>
+
+<p>さらに近い将来、サブスクリプションの一部として、<a href="https://www.elastic.co/products/shield">Shield</a>（Elasticasearchのセキュリティプラグイン）や<a href="https://www.elastic.co/products/watcher">Watcher</a>（アラーティングプラグイン）が利用できるようになります。</p>
+
+<p>私たちのチームがともに働き、多くのことを可能にし、すばらしい仕事をユーザに提供したかを
+将来も楽しみです。
+私は非常に誇りに思っていますし、気に入っていただけたらと思っています。
+ぜひ、<a href="https://www.elastic.co/webinars/getting-started-with-found">7/15のWebnarに参加して</a>くわしい話を聞いていただき、疑問を解消してください。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 2.0.0.beta1リリース間近（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/06/30/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja/"/>
+    <updated>2015-06-30T14:11:14+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/06/30/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-2.0.0.beta1-coming-soon">Elasticsearch 2.0.0.beta1 coming soon!</a></p>
+
+<p>Elasticsearch 2.0.0.beta1のリリースの準備をしています。
+これは、Lucene 5.2.1に含まれる多くの改善が利用できるようになります。
+このリリースに関するいくつかの機能は次のようなものです。</p>
+
+<!-- more -->
+
+
+<h4>Pipeline Aggregations</h4>
+
+<p>デリバティブやmoving average、他のAggregationsの結果に対する
+series arithmeticのようなaggregationが利用可能になります。
+この機能は、これまでは、クライアントサイドで実行する必要がありました。
+しかし、この計算をより強力な解析クエリを構築してElasticsearchで
+実行することができるようになります。
+クライアントのコードをより簡潔にすることができます。
+これにより、予測解析や異常検知のようなことができるようになります。</p>
+
+<h4>Query/Filter merging</h4>
+
+<p>Filterはなくなります。全てのフィルタは、クエリになります。
+クエリコンテキストで利用されると、効率的に関連度スコアを計算し、
+フィルタコンテキストで利用されると、単に、
+マッチしていないドキュメントを除外する（今のフィルタのようなもの）だけです
+この変更は、クエリ実行が自動的に、より効率的な順番で実行されるように
+最適化されることを意味します。
+例えば、フレーズやgeoクエリのような遅いクエリは
+まず、近似フェーズを実行し、それから、より遅い実際のフェーズが
+結果に対して行われます。
+フィルタコンテキストにおいて、頻繁に利用される条件は自動的にキャッシュされます。</p>
+
+<h4>Configurable store compression</h4>
+
+<p><code>index.codec</code>設定により、高速化のためのLZ4圧縮（<code>default</code>）か
+インデックスサイズを小さくするためのDEFLATE（<code>best_compression</code>）を
+選択できます。これは、ロギングでとくに役に立ちます。
+これにより、古いインデックスオプティマイズする前に<code>best_compression</code>に
+変更できます。</p>
+
+<p>これらに関するブログ記事がすぐに公開されるでしょう。</p>
+
+<h3>Performance and resilience</h3>
+
+<p>以降では、新しいメジャーリリースに関して簡単に紹介します。
+2.0の変更の多くは内部の機能に関するものであり、
+直接ユーザに関連するわけではないからです。</p>
+
+<p>新しいメジャーバージョンのテーマは、パフォーマンス、安定性、
+堅牢性、予測可能性、そして使い勝手の良さです。</p>
+
+<ul>
+<li>物事が予測した通りに動作する</li>
+<li>何か問題があった場合に、Elasticsearchから役立つフィードバックがある</li>
+<li>ローレベルの設定を扱う必要はなく、Elasticsearchが良い設定を決定する</li>
+<li>これらに加え、データがより安全に</li>
+</ul>
+
+
+<p>これらの目標は完全ではありません。
+まだ、多くの改善があります。しかし、2.xブランチで、
+すでに500コミットを超える大きな改善が実施されています。</p>
+
+<ul>
+<li>on-diskの doc valuesをデフォルトで利用（これまではfielddata）。
+ヒープ使用量を減らして、スケーラビリティを向上</li>
+<li>セグメントマージ処理中のメモリ使用量の削減</li>
+<li>normsの圧縮率の改善。ヒープスペースを利用している大きな処理のひとつだったため。</li>
+<li>全てのリクエストの後に、transaction logをfsyncすることで、デフォルトで耐久性を向上</li>
+<li>全てのファイル変更をアトミックに（部分的なファイルの書き出しはなし）</li>
+<li>マージを自動で制限</li>
+<li>フレーズクエリやスパンクエリを高速化</li>
+<li>フィルタキャッシュをより効率化するための圧縮されたビットセット</li>
+<li>クラスタ状態の差分更新</li>
+<li>構造化されたJSON形式の例外</li>
+<li>よりきめ細かいLuceneのメモリレポート</li>
+<li>デフォルトではlocalhostにのみバインド。開発のノードが他のクラスタにジョインするのを防ぐ</li>
+<li>parent/childのクエリ実行最適化のためにリライト</li>
+<li>Java Security Managerで必要最小限なパーミッションで実行</li>
+<li>全てのコアなプラグインをelasticsearchリポジトリに移行し、Elasticsearchのバージョンに同期してリリースされる予定</li>
+</ul>
+
+
+<h2>アップグレード前に</h2>
+
+<p>メジャーバージョンのアップグレードは問題のあるものを一掃する機会を与えてくれます。
+できる限り、これらの変更をアップグレードするために、簡単な方法を提供しようとしています。
+しかし、Elasticsearch 2.0にアップグレードする前に、必要な処理が2つあります。</p>
+
+<p>1つ目は、フィールドとタイプマッピングに関することです。
+mapping APIは、現在、それほど厳密ではありません。
+内蔵された保護機構を提供する代わりに、ユーザがベストプラクティスを知っていると信頼していました。
+2.0では、mappingはより厳密で安全ですが、いくつかの変更では、後方互換性を保っていません。
+詳細については<a href="https://www.elastic.co/blog/great-mapping-refactoring">The Great Mapping Recatoring</a>をごらんください。</p>
+
+<p>2つ目はElasticsearch 0.20以前のユーザに関する変更です。
+これは、Lucene 3.xを使っています。
+Elasticsearch 2.xはLucene 5をベースにしています。
+Lucene 5はLucene 4.xによって作成されたインデックスの読み込みはサポートしていますが、
+Lucene 3.xに関してはサポートしていません。</p>
+
+<p>Elasticsearch 0.20以前のバージョンによって生成されたインデックスを持っている場合、
+Elasticsearch 2.xのクラスタをスタートすることはできません。
+これらの古いインデックスを削除するか、Elaticsearch 1.6.0以上に含まれている
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-upgrade.html">upgrade API</a>を使用してアップグレードする必要があります。</p>
+
+<p>upgrade APIの実行は2つのジョブを実行します。</p>
+
+<ul>
+<li>古いLuceneフォーマットのセグメントを最新のフォーマットで書き換えます</li>
+<li>Elasticsearch 2.xによって読み込めるようという印をインデックスに追加します</li>
+</ul>
+
+
+<p>全てのセグメントを最新バージョンにアップグレードするのも良い案ですが、
+アップグレード前に必要な処理を最小限に抑えることも可能です。
+（Lucene 3.xのセグメントだけをアップグレード）
+その場合は、<code>only_ancient_segments</code>パラメータを指定します。</p>
+
+<h2>Elasticsearch Migration Plugin</h2>
+
+<p>Elasticsearch 2.0 に移行する前に、インデックスがアップグレードが必要なのか、
+ほかになにかするべきことがあるのかをチェックする助けになる
+Elasticsearch Migration Pluginをリリースしました。</p>
+
+<p>まず、プラグインをインストールします</p>
+
+<pre><code>./bin/plugin -i elastic/elasticsearch-migration
+</code></pre>
+
+<p>プラグインのインストール後はノードのリスタートは必要ありません。</p>
+
+<p>以下のリンクをブラウザで開きます。</p>
+
+<p><a href="http://localhost:9200/_plugin/migration">http://localhost:9200/_plugin/migration</a></p>
+
+<p>（<code>localhost:9200</code>はインストールしたホスト名に変更してください。）</p>
+
+<p>Migration pluginに関してバグやご意見がある場合は、<a href="http://github.com/elastic/elasticsearch-migration/issues">GitHubのIssue</a>にお願いします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Elasticsearch 1.6.0リリース（日本語訳）]]></title>
@@ -383,682 +667,6 @@ Foundの資料が上がってました。さすが。あそこのブログは面
 
 <p>スピーカーは随時募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。
 よろしくお願いいたします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Logstashを使ったElasticsearchの再インデックス（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/05/26/reindex-elasticsearch-with-logstash-ja/"/>
-    <updated>2015-05-26T16:08:10+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/05/26/reindex-elasticsearch-with-logstash-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="http://david.pilato.fr/blog/2015/05/20/reindex-elasticsearch-with-logstash/">Reindex Elasticsearch With Logstash</a></p>
-
-<p>Thanks David!</p>
-
-<!-- more -->
-
-
-<p>マッピングを変更したり、インデックスの設定を変更したり、あるサーバから他のサーバや、
-あるクラスタから他のクラスタ（例えば複数のデータセンターのような場合）にデータを再インデックスしたくなることがあるでしょう。</p>
-
-<p>後者のような場合は<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html">SnapshotやRestoreの機能</a>を利用することもできますが、インデックスの設定を変更をしたい場合は
-その他の方法が必要になります。</p>
-
-<p><a href="https://www.elastic.co/blog/logstash-1-5-0-ga-released">Logstash 1.5.0</a>で、
-<a href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-elasticsearch.html">elasticsearch input</a>と<a href="https://www.elastic.co/guide/en/logstash/current/plugins-outputs-elasticsearch.html">elasticsearch output</a>を使うことで、とても簡単に再インデックスができます。</p>
-
-<p>ではやってみましょう。</p>
-
-<h2>古いクラスタ</h2>
-
-<p>elasticsearch 1.5.2 はすでにダウンロード済みとして、<code>localhost:9200</code>で<code>old</code>という名前のクラスタを起動します。</p>
-
-<pre><code class="bash">bin/elasticsearch --cluster.name=old
-</code></pre>
-
-<p>クラスタに<code>person</code>という名前のインデックスが存在します。
-これは、5シャードで、100万件のドキュメントを持っています。</p>
-
-<p><img class="<a" src="href="http://david.pilato.fr/blog/images/reindex-es01/sense01.png">http://david.pilato.fr/blog/images/reindex-es01/sense01.png</a>&#8221;></p>
-
-<h2>新しいクラスタ</h2>
-
-<p>次に新しいクラスタを起動します。
-<code>localhost:9201</code>で<code>new</code>という名前のクラスタを起動します。</p>
-
-<pre><code class="bash">bin/elasticsearch --cluster.name=new
-</code></pre>
-
-<p>こちらは、空です。</p>
-
-<pre><code class="bash">curl -XGET "http://localhost:9201/person"
-</code></pre>
-
-<pre><code class="json">{
-   "error": "IndexMissingException[[person] missing]",
-   "status": 404
-}
-</code></pre>
-
-<h2>Logstashのインストール</h2>
-
-<p>次に、Logstash 1.5.0をダウンロードして、インストールします。</p>
-
-<pre><code class="bash">wget http://download.elastic.co/logstash/logstash/logstash-1.5.0.tar.gz
-tar xzf logstash-1.5.0.tar.gz
-cd logstash-1.5.0
-</code></pre>
-
-<p>logstashの設定ファイル<code>logstash.conf</code>を次のように設定します。</p>
-
-<pre><code>input {
-  # We read from the "old" cluster
-  elasticsearch {
-    hosts =&gt; [ "localhost" ]
-    port =&gt; "9200"
-    index =&gt; "person"
-    size =&gt; 500
-    scroll =&gt; "5m"
-    docinfo =&gt; true
-  }
-}
-
-output {
-  # We write to the "new" cluster
-  elasticsearch {
-    host =&gt; "localhost"
-    port =&gt; "9201"
-    protocol =&gt; "http"
-    index =&gt; "%{[@metadata][_index]}"
-    index_type =&gt; "%{[@metadata][_type]}"
-    document_id =&gt; "%{[@metadata][_id]}"
-  }
-  # We print dots to see it in action
-  stdout {
-    codec =&gt; "dots"
-  }
-}
-</code></pre>
-
-<h2>実行と修正</h2>
-
-<p>実行します。</p>
-
-<pre><code class="bash">bin/logstash -f logstash.conf
-</code></pre>
-
-<h3>ドキュメントのチェックと修正</h3>
-
-<p>何が起きたでしょう？</p>
-
-<pre><code class="bash">curl -XGET "http://localhost:9200/person/person/AU1wqyQWZJKU8OibfxgH"
-</code></pre>
-
-<pre><code class="json">{
-   "_index": "person",
-   "_type": "person",
-   "_id": "AU1wqyQWZJKU8OibfxgH",
-   "_version": 1,
-   "found": true,
-   "_source": {
-      "name": "Tali Elyne",
-      "dateOfBirth": "1955-05-03",
-      "gender": "female",
-      "children": 2,
-      "marketing": {
-         "cars": null,
-         "shoes": null,
-         "toys": null,
-         "fashion": null,
-         "music": null,
-         "garden": null,
-         "electronic": null,
-         "hifi": null,
-         "food": 846
-      },
-      "address": {
-         "country": "Germany",
-         "zipcode": "0099",
-         "city": "Bonn",
-         "countrycode": "DE",
-         "location": [
-            7.075943707068682,
-            50.72883500730124
-         ]
-      }
-   }
-}
-</code></pre>
-
-<p>もう一方のクラスタと比較してみましょう。</p>
-
-<pre><code class="bash">curl -XGET "http://localhost:9201/person/person/AU1wqyQWZJKU8OibfxgH"
-</code></pre>
-
-<pre><code class="json">{
-   "_index": "person",
-   "_type": "person",
-   "_id": "AU1wqyQWZJKU8OibfxgH",
-   "_version": 1,
-   "found": true,
-   "_source": {
-      "name": "Tali Elyne",
-      "dateOfBirth": "1955-05-03",
-      "gender": "female",
-      "children": 2,
-      "marketing": {
-         "cars": null,
-         "shoes": null,
-         "toys": null,
-         "fashion": null,
-         "music": null,
-         "garden": null,
-         "electronic": null,
-         "hifi": null,
-         "food": 846
-      },
-      "address": {
-         "country": "Germany",
-         "zipcode": "0099",
-         "city": "Bonn",
-         "countrycode": "DE",
-         "location": [
-            7.075943707068682,
-            50.72883500730124
-         ]
-      },
-      "@version": "1",
-      "@timestamp": "2015-05-20T09:53:44.089Z"
-   }
-}
-</code></pre>
-
-<p>Logstashは<code>@version</code>と<code>@timestamp</code>フィールドを追加してしました。
-これらを除去したいので、<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html">Mutate filter plugin</a>の<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html#plugins-filters-mutate-remove_field"><code>remove_field</code></a>を使います。</p>
-
-<pre><code>filter {
-  mutate {
-    remove_field =&gt; [ "@timestamp", "@version" ]
-  }
-}
-</code></pre>
-
-<h3>マッピングのチェックと修正</h3>
-
-<p>実際に、logstashは<code>_source</code>フィールドを既存のドキュメントから読み込み、
-それらを新しいクラスタに直接投入しています。
-しかし、logstashはマッピングについてはケアしていません。</p>
-
-<p>古いマッピングと新しいマッピングを比較するために、マッピングを取得してみましょう。</p>
-
-<pre><code class="bash">curl -XGET "http://localhost:9200/person/person/_mapping"
-</code></pre>
-
-<pre><code class="json">{
-   "person": {
-      "mappings": {
-         "person": {
-            "properties": {
-               "address": {
-                  "properties": {
-                     "city": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                     },
-                     "country": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                     },
-                     "countrycode": {
-                        "type": "string",
-                        "index": "not_analyzed"
-                     },
-                     "location": {
-                        "type": "geo_point"
-                     },
-                     "zipcode": {
-                        "type": "string"
-                     }
-                  }
-               },
-               "children": {
-                  "type": "long"
-               },
-               "dateOfBirth": {
-                  "type": "date",
-                  "format": "dateOptionalTime"
-               },
-               "gender": {
-                  "type": "string",
-                  "index": "not_analyzed"
-               },
-               "marketing": {
-                  "properties": {
-                     "cars": {
-                        "type": "long"
-                     },
-                     "electronic": {
-                        "type": "long"
-                     },
-                     "fashion": {
-                        "type": "long"
-                     },
-                     "food": {
-                        "type": "long"
-                     },
-                     "garden": {
-                        "type": "long"
-                     },
-                     "hifi": {
-                        "type": "long"
-                     },
-                     "music": {
-                        "type": "long"
-                     },
-                     "shoes": {
-                        "type": "long"
-                     },
-                     "toys": {
-                        "type": "long"
-                     }
-                  }
-               },
-               "name": {
-                  "type": "string"
-               }
-            }
-         }
-      }
-   }
-}
-</code></pre>
-
-<pre><code class="bash">curl -XGET "http://localhost:9201/person/person/_mapping"
-</code></pre>
-
-<pre><code class="json">{
-   "person": {
-      "mappings": {
-         "person": {
-            "properties": {
-               "address": {
-                  "properties": {
-                     "city": {
-                        "type": "string"
-                     },
-                     "country": {
-                        "type": "string"
-                     },
-                     "countrycode": {
-                        "type": "string"
-                     },
-                     "location": {
-                        "type": "double"
-                     },
-                     "zipcode": {
-                        "type": "string"
-                     }
-                  }
-               },
-               "children": {
-                  "type": "long"
-               },
-               "dateOfBirth": {
-                  "type": "date",
-                  "format": "dateOptionalTime"
-               },
-               "gender": {
-                  "type": "string"
-               },
-               "marketing": {
-                  "properties": {
-                     "cars": {
-                        "type": "long"
-                     },
-                     "electronic": {
-                        "type": "long"
-                     },
-                     "fashion": {
-                        "type": "long"
-                     },
-                     "food": {
-                        "type": "long"
-                     },
-                     "garden": {
-                        "type": "long"
-                     },
-                     "hifi": {
-                        "type": "long"
-                     },
-                     "music": {
-                        "type": "long"
-                     },
-                     "shoes": {
-                        "type": "long"
-                     },
-                     "toys": {
-                        "type": "long"
-                     }
-                  }
-               },
-               "name": {
-                  "type": "string"
-               }
-            }
-         }
-      }
-   }
-}
-</code></pre>
-
-<p>これにより、いくつかの相違を発見できます。</p>
-
-<pre><code class="json"> "location": {
-    "type": "geo_point"
- }
-</code></pre>
-
-<pre><code class="json"> "location": {
-    "type": "double"
- }
-</code></pre>
-
-<p>データをインデックスする「前」に、実際に利用したいマッピングでインデックスを作成しておくことで、
-この問題に対処できます。
-この時点で、オリジナルのマッピングを望んだ形に変更することができます。例えば、アナライザを変更したりです。
-また、インデックスの設定を新しく定義することもできます。
-デフォルトでは、Elasticsearchは5つのシャードと各シャードに対して1つのレプリカを作成します。
-しかし、この時点でもう一度変更することが可能です。</p>
-
-<pre><code class="bash">curl -XDELETE "http://localhost:9201/person"
-curl -XPUT "http://localhost:9201/person" -d'
-{
-  "settings": {
-    "number_of_shards": 1,
-    "number_of_replicas": 0
-  }
-}'
-curl -XPUT "http://localhost:9201/person/person/_mapping" -d'
-{
-  "person": {
-    "properties": {
-      "address": {
-        "properties": {
-          "city": {
-            "type": "string",
-            "index": "not_analyzed"
-          },
-          "country": {
-            "type": "string",
-            "index": "not_analyzed"
-          },
-          "countrycode": {
-            "type": "string",
-            "index": "not_analyzed"
-          },
-          "location": {
-            "type": "geo_point"
-          },
-          "zipcode": {
-            "type": "string"
-          }
-        }
-      },
-      "children": {
-        "type": "long"
-      },
-      "dateOfBirth": {
-        "type": "date",
-        "format": "dateOptionalTime"
-      },
-      "gender": {
-        "type": "string",
-        "index": "not_analyzed"
-      },
-      "marketing": {
-        "properties": {
-          "cars": {
-            "type": "long"
-          },
-          "electronic": {
-            "type": "long"
-          },
-          "fashion": {
-            "type": "long"
-          },
-          "food": {
-            "type": "long"
-          },
-          "garden": {
-            "type": "long"
-          },
-          "hifi": {
-            "type": "long"
-          },
-          "music": {
-            "type": "long"
-          },
-          "shoes": {
-            "type": "long"
-          },
-          "toys": {
-            "type": "long"
-          }
-        }
-      },
-      "name": {
-        "type": "string"
-      }
-    }
-  }
-}'
-</code></pre>
-
-<p>さて、もう一度再インデックスしましょう！</p>
-
-<pre><code class="bash">bin/logstash -f logstash.conf
-</code></pre>
-
-<p><img class="<a" src="href="http://david.pilato.fr/blog/images/reindex-es01/sense02.png">http://david.pilato.fr/blog/images/reindex-es01/sense02.png</a>&#8221;></p>
-
-<h2>インデックスやタイプ名の変更</h2>
-
-<p>もちろん、インデックス名やタイプ名、IDを変更したい場合も変更が可能です！:)</p>
-
-<pre><code class="json">  elasticsearch {
-    host =&gt; "localhost"
-    port =&gt; "9201"
-    protocol =&gt; "http"
-    index =&gt; "europe_people"
-    index_type =&gt; "someone"
-    document_id =&gt; "%{[@metadata][_id]}"
-  }
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch 1.5.2 および 1.4.5リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/04/28/elasticsearch-1-5-2-and-1-4-5-released-ja/"/>
-    <updated>2015-04-28T15:14:08+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/04/28/elasticsearch-1-5-2-and-1-4-5-released-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-5-2-and-1-4-5-released">Elasticsearch 1.5.2 Released</a></p>
-
-<p>本日（4/27）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.5.1</strong>および<strong>Elasticsearch 1.4.5</strong> をセキュリティバグフィックス版をリリースしました。
-ダウンロードおよびすべての変更については次のリンクをごらんください。</p>
-
-<ul>
-<li>最新安定版：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">Elasticsearch 1.5.2</a></li>
-<li>1.4系バグフィックス：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5">Elasticsearch 1.4.5</a></li>
-</ul>
-
-
-<p><em>本リリースはディレクトリトラバーサルの脆弱性のフィックスです。すべてのユーザにアップグレードを勧めます。</em></p>
-
-<!-- more -->
-
-
-<p>過去のリリースに関するブログは以下のリンクを参照してください。</p>
-
-<ul>
-<li><em>1.5</em>:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-5-1-released/">1.4.1</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-5-0-released/">1.5.0</a></li>
-<li><em>1.4</em>:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-4-released/">1.4.4</a>,<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-released/">1.4.3</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.4.2</a>,<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
-</ul>
-
-
-<p>すべての<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">1.5.2</a>および<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-4-5">1.4.5</a>の変更についてはリンクをごらんください。以下では、セキュリティの問題について紹介します。</p>
-
-<h2>ディレクトリトラバーサル脆弱性の発見</h2>
-
-<p>1.5.2および1.4.5以前の全バージョンのElasticsearchで、ディレクトリトラバーサル攻撃に対する脆弱性がみつかりました。
-攻撃者はElasticsearchを実行しているサーバからファイルを取得することができます。
-この脆弱性はインストールしたばかりのElasticsearchには存在しません。
-この脆弱性は&#8221;site plugin&#8221;がインストールされると露呈します。
-ElasticのMarvelプラグインおよびコミュニティサポートの多くのプラグイン（例：Kopf、BigDesk、Head）がsite pluginです。
-Elastic Shield、Licensing、Cloud-AWS、Cloud-GCE、Cloud-Azure、analysis pluginおよびriverプラグインはsite pluginでは<em>ありません</em>。</p>
-
-<p>この問題を<a href="https://www.elastic.co/community/security">CVE-2015-3337</a>としました。</p>
-
-<p>バージョン1.5.2と1.4.5はこの脆弱性に対して対策済みで、私たちはすべてのユーザにアップグレードを勧めています。</p>
-
-<p>アップグレードを望まないユーザはいくつかの方法でこの脆弱性に対して対応可能ですが、これらの方法はsite pluginを動作させなくします。</p>
-
-<ul>
-<li>site pluginをインストールしているノードの<code>elasticsearch.yml</code>の<code>http.disable_sites</code>を<code>true</code>に設定し、Elasticsearchのノードを再起動</li>
-<li>ファイアウォールもしくはプロキシを利用して、<code>/_plugin</code>へのHTTPリクエストをブロック</li>
-<li>すべてのsite pluginをすべてのElasticsearchノードからアンインストール</li>
-</ul>
-
-
-<p>この問題を報告していただいた、DocuSignのJohn Heasmanに感謝いたします。</p>
-
-<h2>他の変更について</h2>
-
-<ul>
-<li><a href="https://github.com/elastic/elasticsearch/pull/10526">インデックスされたスクリプトおよびテンプレート</a>を上書きもしくは削除時に、キャッシュからも完全に削除する。</li>
-<li>geo-shapeの多数のフィックス（<code>distance_error_pct</code>を利用した場合の、重要な<a href="https://github.com/elastic/elasticsearch/pull/10679">precisionに関するフィックス</a>を含む）</li>
-<li>インデックステンプレートのデフォルトマッピングがバルクインデキシング中にも考慮するように修正</li>
-<li>Shadowレプリカが<a href="https://github.com/elastic/elasticsearch/pull/10688">ファイルシステムの遅延</a>に対する対障害性を向上し、プライマリシャードの<a href="https://github.com/elastic/elasticsearch/pull/10585">よりスムーズなリロケーション</a>をサポート</li>
-<li><a href="http://github.com/elastic/elasticsearch/issues/10602">geo-contexts</a>をcompletion suggesterで使用した場合のマッピングのリフレッシュループを改善</li>
-</ul>
-
-
-<p>いくつかの重要な変更がv1.4.5にバックポートされています。</p>
-
-<ul>
-<li><a href="http://github.com/elastic/elasticsearch/issues/10463">大きなシャードのリカバリを早くする</a>ためのシャードリカバリ中のマージを可能に</li>
-<li><a href="http://github.com/elastic/elasticsearch/issues/9797">truncated translogs</a>の操作をグレースフルに</li>
-<li>マージが遅くなる場合に、<a href="http://github.com/elastic/elasticsearch/issues/9986">delete-by-queryを減速</a></li>
-</ul>
-
-
-<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-5-2">Elasticsearch 1.5.2</a>をダウンロードして、試してみてください。
-そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第9回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2015/04/17/9th-elasticsearch-jp/"/>
-    <updated>2015-04-17T14:41:54+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/04/17/9th-elasticsearch-jp</id>
-    <content type="html"><![CDATA[<p><a href="https://elasticsearch.doorkeeper.jp/events/23012">第9回Elsticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-
-<!-- more -->
-
-
-<p>今回はトレーニングで来日していたIgorとNathanによる特別公演でした。
-昨年同様、<a href="http://samuraism.com">サムライズム</a>の<a href="https://twitter.com/yusuke">@yusuke</a>さんに
-テキスト翻訳していただき、大変助かりました。ほんとうにすごかった。。。</p>
-
-<h3>チェックイン数など</h3>
-
-<ul>
-<li>今回はチェックインした人：119名</li>
-<li>キャンセルしなかった人：45名</li>
-</ul>
-
-
-<p>でした。今回はキャンセル待ちのまま当日を迎えた人もいなかったので良かったかなと。
-今回から懇親会ページを別にしてみました。本編の勉強会に参加登録していた方には何度かメールを出していたので、
-見つけていなかった人は以内とは思うのですが、勉強会のページと間違える人がいたらしいという話を聞きました。
-Doorkeeperで1イベントで複数のチケットにそれぞれの参加者数を設定できるようになると嬉しいかもなぁ。</p>
-
-<p>さて、いつもの通り簡単なメモです。
-本当に簡単にですが。</p>
-
-<h2>Resiliency in Elasticsearch and Lucene / Igor Motov</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/elastic/resiliency-in-elasticsearch-and-lucene">https://speakerdeck.com/elastic/resiliency-in-elasticsearch-and-lucene</a></p>
-
-<p>※上記スライドは少し古いバージョンです。公開されたら差し替える予定です。</p>
-
-<p>サンフランシスコで行われた<a href="https://www.elastic.co/elasticon">Elastic{ON}</a>（弊社初のカンファレンス）で行われたセッションの
-改良版といったところでしょうか。
-話の中で登場した機能などのリンクをざっとアップしておきます。</p>
-
-<ul>
-<li><a href="http://www.elastic.co/guide/en/elasticsearch/guide/current/fielddata.html">Fielddata</a></li>
-<li><a href="http://www.elastic.co/guide/en/elasticsearch/guide/current/doc-values.html">Doc Values</a></li>
-<li><a href="http://www.elastic.co/guide/en/elasticsearch/resiliency/current/index.html">Resiliency Status</a></li>
-</ul>
-
-
-<h2>Kibana4: What&rsquo;s New ? / Nathan Zamecnik</h2>
-
-<p>スライド：未定</p>
-
-<p>Kibana4の紹介をデモを交えてという感じでした。
-こちらは、スライドよりもデモを見てもらうのが一番いいのですが。。。</p>
-
-<p>いくつかQAがあったので補足を。ちなみに、Issueのラベルに実装される予定のバージョンが付与されてたりします。</p>
-
-<ul>
-<li>Q：グラフをPDFでエクスポートとかできますか？
-
-<ul>
-<li>A：4.3.0で実装される予定です。関連Issueはこちら。<a href="https://github.com/elastic/kibana/issues/509">https://github.com/elastic/kibana/issues/509</a></li>
-</ul>
-</li>
-<li>Q：巨大な数値の場合にKB、MBなどといった表示は可能ですか？
-
-<ul>
-<li>A：4.1.0で実装される予定です。関連Issueはこちら。<a href="https://github.com/elastic/kibana/issues/1543">https://github.com/elastic/kibana/issues/1543</a></li>
-</ul>
-</li>
-<li>Q：地図のズームを固定することはできますか？
-
-<ul>
-<li>A：4.1.0で実装される予定です。関連Issueはこちら。<a href="https://github.com/elastic/kibana/issues/1442">https://github.com/elastic/kibana/issues/1442</a></li>
-</ul>
-</li>
-</ul>
-
-
-<h2>その他、感想などのブログ</h2>
-
-<ul>
-<li><a href="http://suzuki.tdiary.net/20150415.html#p01">[Elasticsearch] 第9回 Elasticsearch 勉強会へ参加してきた</a></li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<p>今回は特別バージョンでした。かなり詳しい話だったので面白かったと思います。
-Kibanaはデモを見ていただけましたし。また、海外から人を呼べるといいなぁ。</p>
-
-<p>次回は6月ごろをめどに計画しようかと。
-スピーカーは随時募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。 よろしくお願いいたします。</p>
 ]]></content>
   </entry>
   

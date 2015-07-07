@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-07-06T16:47:16+09:00</updated>
+  <updated>2015-07-07T15:09:08+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,141 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Mappingのすばらしいリファクタリング（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/07/06/great-mapping-refactoring-ja/"/>
+    <updated>2015-07-06T18:11:31+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/07/06/great-mapping-refactoring-ja</id>
+    <content type="html"><![CDATA[<p>Elasticsearchのユーザの悩みの最も大きなものの一つは、
+タイプとフィールドのマッピングに関する多義性です。
+この多義性は、インデックス時の例外やクエリ時の例外、
+正しくない結果、リクエストからリクエストへ変化する結果、
+また、インデックスの故障やデータのロスを結果として引き起こします。</p>
+
+<p>Elasticsearchをより強固で予測可能な振る舞いをするようにする作業において、
+フィールドやタイプのマッピングをより厳格でより信頼性を高くするかといったことに
+多くの変更を費やしました。
+多くのケースで、Elasticsearch v2.0で新しいインデックスを作るときにのみ、
+新しいルールを強制し、これまでのインデックスに関しては後方互換性を保つようにします。</p>
+
+<p>しかし、幾つかのケースでは、先ほど説明したようなフィールドマッピングの
+コンフリクトなどが存在するため、それらを利用できないです。</p>
+
+<blockquote><p>コンフリクトしたフィールドのマッピングをもつインデックスはElasticsearch v2.0にはアップグレードできません。</p></blockquote>
+
+<p>もし、これらのインデックスのデータが必要ない場合は、インデックスを消せばいいです。
+そうでない場合はマッピングを正しくして再度インデックスする必要があるでしょう。</p>
+
+<p>マッピングを正しく変更することは、私たちが簡単に決めることではありません。
+ここからは、現在ある問題点と、私たちがどのように実装して解決したかについて説明します。</p>
+
+<ul>
+<li>フィールドマッピングのコンフリクト</li>
+<li>あいまいなフィールドのルックアップ</li>
+<li>タイプのメタフィールド</li>
+<li>アナライザ設定</li>
+<li><code>index_name</code>と<code>path</code></li>
+<li>同期的なマッピングの更新</li>
+<li>マッピングの削除</li>
+<li>2.0のための準備</li>
+</ul>
+
+
+<h2>フィールドマッピングのコンフリクト</h2>
+
+<p>これまで、わたしたちはドキュメントのタイプは「データベースのテーブルのようなもの」と説明していました。
+タイプの目的を説明する簡単な方法だったからです。
+しかし、残念なことにこれは、真実ではありません。
+「同じ」インデックスの「異なるタイプ」にある同じ名前のフィールドは、
+内部的に、Luceneのフィールド名が同じものになります。</p>
+
+<p>もし<code>error</code>フィールドとして、ドキュメントタイプが<code>apache</code>のものには数値（integer）を、
+ドキュメントタイプが<code>nginx</code>のものには文字列（string）を割り当てた場合、
+Elasticsearchは同じLuceneのフィールドに数値と文字列のデータをもつことになります。
+このフィールドに対して、検索やaggregationを行う場合、おかしな結果を受け取るか、例外が帰ってくるか、
+インデックスが破損することになります。</p>
+
+<p>この問題を解決するために、まず、ドキュメントタイプの名前をフィールドの名前の前に追加することを考えました。
+各フィールドは完全に別のものとなります。
+このアプローチの利点はドキュメントタイプが実際のテーブルのようになることです。</p>
+
+<p>しかし、この方法には多くの欠点があります。</p>
+
+<ul>
+<li>フィールドは常に、他のタイプとは異なるものであると区別するために、
+ドキュメントタイプを前につける必要があり、複数のタイプに同じフィールドのクエリの場合はワイルドカードをつける必要があります。</li>
+<li>複数のドキュメントタイプに対して同じフィールド名で検索する場合、クエリを個別に発行しなければならなく遅くなる</li>
+<li></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[さらに進化したFound（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/07/06/we-just-made-found-more-awesome-ja/"/>
+    <updated>2015-07-06T16:51:41+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/07/06/we-just-made-found-more-awesome-ja</id>
+    <content type="html"><![CDATA[<p>4ヶ月前に、<a href="https://www.elastic.co/blog/welcome-found">Found joined our team at Elastic</a>をアナウンスしました。
+Foundの素晴らしいチームと一緒に仕事をしていますが、彼らによって、より素晴らしい
+hosted Elasticsearchを提供することになりました。</p>
+
+<!-- more -->
+
+
+<p>私たちがともに密接に働くことにより、本日（2015/7/1）、
+<a href="https://www.elastic.co/products/found">新しい2つのFound</a>を提供することになりました。
+Found StandardはこれまでのFoundの機能に加え、さらに低価格を提供します。
+Found Premiumは、SLAサポートと、ShieldやWatcherを将来Found上で提供します。</p>
+
+<h2>Found Standard</h2>
+
+<p>Foundは素晴らしいです。専用のElasticsearchクラスタ、簡単なスケール、
+ビルトインのセキュリティそして、時間単位での課金などを持っています。
+私たちは、hosted Elasticsearchを探している方に、
+Foundが適したソリューションであると思っていますし、
+すべての方に利用できて手頃な価格であるということを確信したいと思っています。</p>
+
+<p>本日（2015/07/01）からFoundの価格をかなり低価格にし、
+<strong>月額50ドル以下</strong>でhosted Elasticsearchを簡単に試してもらえるようにしました。</p>
+
+<p>価格を下げることは正しい重要なステップですが、
+Foundを利用している全ての人に、より良い経験を持っていただきたいと考えています。
+低価格化と一緒に、<strong>free backups</strong>と<strong>built in SSD</strong>もFoundで提供を始めることになります。</p>
+
+<p>Foundの重要な特徴の一つが、高可用性のために、クラスタをいくつのデータセンターに持つかを
+選択できることです。
+データは重要です。これが正しい選択でユーザの助けになると考えています。
+これにより、私たちの価格は、<strong>複数のデータセンターにより安価に</strong>配置することができます。</p>
+
+<p>また、KibanaもElasticsearchのデータを可視化する素晴らしい方法だと考えています。
+Kibana 4が最新バージョンですが、
+これは、サーバサイドコンポーネントを持っています。
+これは、サービスとしてこれを提供するために、追加の料金がかかることを意味します。
+Foundチームが築いた素晴らしい基盤とKibanaチームの努力により、
+hosted Elasticsearchクラスタで<strong>フリーのKibana 4</strong>を7月15日より提供することになりました。</p>
+
+<h2>Found Premium</h2>
+
+<p>また、私たちは、オープンソースプロダクトに関してサブスクリプションを提供していますが、
+Found Standardに対しても提供することになりました。
+これが、Found Premiumです。</p>
+
+<p>フォーラムベースのサポートよりもSLAベースのサポートを望んでいる場合、
+プロダクトを開発しているチームからのサポートを受けることができるオプションを
+提供し始めました。
+クリティカルなイベントを持っていたり、私たちのプロダクトに関する
+問題を予測するためのベストなヘルプやガイダンス、アドバイスを探しているような場合にサポートします。</p>
+
+<p>さらに近い将来、サブスクリプションの一部として、<a href="https://www.elastic.co/products/shield">Shield</a>（Elasticasearchのセキュリティプラグイン）や<a href="https://www.elastic.co/products/watcher">Watcher</a>（アラーティングプラグイン）が利用できるようになります。</p>
+
+<p>私たちのチームがともに働き、多くのことを可能にし、すばらしい仕事をユーザに提供したかを
+将来も楽しみです。
+私は非常に誇りに思っていますし、気に入っていただけたらと思っています。
+ぜひ、<a href="https://www.elastic.co/webinars/getting-started-with-found">7/15のWebnarに参加して</a>くわしい話を聞いていただき、疑問を解消してください。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[JustTechTalk#02 形態素解析のあれやこれや@ジャストシステムに参加しました。]]></title>
@@ -164,6 +299,156 @@
 
 <p>きれいなロビーで良かったのですが、マイクがあると嬉しかったかもしれません。
 前回の辞書の話も聞いてみたかったかも。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 2.0.0.beta1リリース間近（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/06/30/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja/"/>
+    <updated>2015-06-30T14:11:14+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/06/30/elasticsearch-2-dot-0-0-dot-beta1-coming-soon-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-2.0.0.beta1-coming-soon">Elasticsearch 2.0.0.beta1 coming soon!</a></p>
+
+<p>Elasticsearch 2.0.0.beta1のリリースの準備をしています。
+これは、Lucene 5.2.1に含まれる多くの改善が利用できるようになります。
+このリリースに関するいくつかの機能は次のようなものです。</p>
+
+<!-- more -->
+
+
+<h4>Pipeline Aggregations</h4>
+
+<p>デリバティブやmoving average、他のAggregationsの結果に対する
+series arithmeticのようなaggregationが利用可能になります。
+この機能は、これまでは、クライアントサイドで実行する必要がありました。
+しかし、この計算をより強力な解析クエリを構築してElasticsearchで
+実行することができるようになります。
+クライアントのコードをより簡潔にすることができます。
+これにより、予測解析や異常検知のようなことができるようになります。</p>
+
+<h4>Query/Filter merging</h4>
+
+<p>Filterはなくなります。全てのフィルタは、クエリになります。
+クエリコンテキストで利用されると、効率的に関連度スコアを計算し、
+フィルタコンテキストで利用されると、単に、
+マッチしていないドキュメントを除外する（今のフィルタのようなもの）だけです
+この変更は、クエリ実行が自動的に、より効率的な順番で実行されるように
+最適化されることを意味します。
+例えば、フレーズやgeoクエリのような遅いクエリは
+まず、近似フェーズを実行し、それから、より遅い実際のフェーズが
+結果に対して行われます。
+フィルタコンテキストにおいて、頻繁に利用される条件は自動的にキャッシュされます。</p>
+
+<h4>Configurable store compression</h4>
+
+<p><code>index.codec</code>設定により、高速化のためのLZ4圧縮（<code>default</code>）か
+インデックスサイズを小さくするためのDEFLATE（<code>best_compression</code>）を
+選択できます。これは、ロギングでとくに役に立ちます。
+これにより、古いインデックスオプティマイズする前に<code>best_compression</code>に
+変更できます。</p>
+
+<p>これらに関するブログ記事がすぐに公開されるでしょう。</p>
+
+<h3>Performance and resilience</h3>
+
+<p>以降では、新しいメジャーリリースに関して簡単に紹介します。
+2.0の変更の多くは内部の機能に関するものであり、
+直接ユーザに関連するわけではないからです。</p>
+
+<p>新しいメジャーバージョンのテーマは、パフォーマンス、安定性、
+堅牢性、予測可能性、そして使い勝手の良さです。</p>
+
+<ul>
+<li>物事が予測した通りに動作する</li>
+<li>何か問題があった場合に、Elasticsearchから役立つフィードバックがある</li>
+<li>ローレベルの設定を扱う必要はなく、Elasticsearchが良い設定を決定する</li>
+<li>これらに加え、データがより安全に</li>
+</ul>
+
+
+<p>これらの目標は完全ではありません。
+まだ、多くの改善があります。しかし、2.xブランチで、
+すでに500コミットを超える大きな改善が実施されています。</p>
+
+<ul>
+<li>on-diskの doc valuesをデフォルトで利用（これまではfielddata）。
+ヒープ使用量を減らして、スケーラビリティを向上</li>
+<li>セグメントマージ処理中のメモリ使用量の削減</li>
+<li>normsの圧縮率の改善。ヒープスペースを利用している大きな処理のひとつだったため。</li>
+<li>全てのリクエストの後に、transaction logをfsyncすることで、デフォルトで耐久性を向上</li>
+<li>全てのファイル変更をアトミックに（部分的なファイルの書き出しはなし）</li>
+<li>マージを自動で制限</li>
+<li>フレーズクエリやスパンクエリを高速化</li>
+<li>フィルタキャッシュをより効率化するための圧縮されたビットセット</li>
+<li>クラスタ状態の差分更新</li>
+<li>構造化されたJSON形式の例外</li>
+<li>よりきめ細かいLuceneのメモリレポート</li>
+<li>デフォルトではlocalhostにのみバインド。開発のノードが他のクラスタにジョインするのを防ぐ</li>
+<li>parent/childのクエリ実行最適化のためにリライト</li>
+<li>Java Security Managerで必要最小限なパーミッションで実行</li>
+<li>全てのコアなプラグインをelasticsearchリポジトリに移行し、Elasticsearchのバージョンに同期してリリースされる予定</li>
+</ul>
+
+
+<h2>アップグレード前に</h2>
+
+<p>メジャーバージョンのアップグレードは問題のあるものを一掃する機会を与えてくれます。
+できる限り、これらの変更をアップグレードするために、簡単な方法を提供しようとしています。
+しかし、Elasticsearch 2.0にアップグレードする前に、必要な処理が2つあります。</p>
+
+<p>1つ目は、フィールドとタイプマッピングに関することです。
+mapping APIは、現在、それほど厳密ではありません。
+内蔵された保護機構を提供する代わりに、ユーザがベストプラクティスを知っていると信頼していました。
+2.0では、mappingはより厳密で安全ですが、いくつかの変更では、後方互換性を保っていません。
+詳細については<a href="https://www.elastic.co/blog/great-mapping-refactoring">The Great Mapping Recatoring</a>をごらんください。</p>
+
+<p>2つ目はElasticsearch 0.20以前のユーザに関する変更です。
+これは、Lucene 3.xを使っています。
+Elasticsearch 2.xはLucene 5をベースにしています。
+Lucene 5はLucene 4.xによって作成されたインデックスの読み込みはサポートしていますが、
+Lucene 3.xに関してはサポートしていません。</p>
+
+<p>Elasticsearch 0.20以前のバージョンによって生成されたインデックスを持っている場合、
+Elasticsearch 2.xのクラスタをスタートすることはできません。
+これらの古いインデックスを削除するか、Elaticsearch 1.6.0以上に含まれている
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-upgrade.html">upgrade API</a>を使用してアップグレードする必要があります。</p>
+
+<p>upgrade APIの実行は2つのジョブを実行します。</p>
+
+<ul>
+<li>古いLuceneフォーマットのセグメントを最新のフォーマットで書き換えます</li>
+<li>Elasticsearch 2.xによって読み込めるようという印をインデックスに追加します</li>
+</ul>
+
+
+<p>全てのセグメントを最新バージョンにアップグレードするのも良い案ですが、
+アップグレード前に必要な処理を最小限に抑えることも可能です。
+（Lucene 3.xのセグメントだけをアップグレード）
+その場合は、<code>only_ancient_segments</code>パラメータを指定します。</p>
+
+<h2>Elasticsearch Migration Plugin</h2>
+
+<p>Elasticsearch 2.0 に移行する前に、インデックスがアップグレードが必要なのか、
+ほかになにかするべきことがあるのかをチェックする助けになる
+Elasticsearch Migration Pluginをリリースしました。</p>
+
+<p>まず、プラグインをインストールします</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/plugin -i elastic/elasticsearch-migration</span></code></pre></td></tr></table></div></figure>
+
+
+<p>プラグインのインストール後はノードのリスタートは必要ありません。</p>
+
+<p>以下のリンクをブラウザで開きます。</p>
+
+<p><a href="http://localhost:9200/_plugin/migration">http://localhost:9200/_plugin/migration</a></p>
+
+<p>（<code>localhost:9200</code>はインストールしたホスト名に変更してください。）</p>
+
+<p>Migration pluginに関してバグやご意見がある場合は、<a href="http://github.com/elastic/elasticsearch-migration/issues">GitHubのIssue</a>にお願いします。</p>
 ]]></content>
   </entry>
   
@@ -2826,438 +3111,6 @@ LTなど興味がある人がいたら、連絡ください。</p>
 
 <p>興味のある方は、コメント欄、Twitterなどでコンタクトしてもらえればと。
 （連絡来るとうれしいなぁ。）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第8回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2015/02/16/8th-elasticsearch-jp/"/>
-    <updated>2015-02-16T15:02:23+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/02/16/8th-elasticsearch-jp</id>
-    <content type="html"><![CDATA[<p><a href="http://elasticsearch.doorkeeper.jp/events/19923">第8回Elsticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-
-<!-- more -->
-
-
-<p>今回は出足が好調で、早々に180人の枠を超えるという嬉しい事態でしたが、
-キャンセル待ちが残っているにもかからわらず、来られていない方が67名もいるということで、キャンセル待ちの方には申し訳なかったです。
-もうすこし、キャンセルをしてもらえると嬉しいんですが。。。
-今回はメールを当日に1度しか打ってないからかなぁ。</p>
-
-<p>さて、いつもの通り簡単なメモです。
-本当に簡単にですが。</p>
-
-<h2>「Elasticsearch導入チェックリスト？」 Elasticsearch株式会社 Jun Ohtani @johtani</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/johtani/elasticsearchdao-ru-tietukurisuto">Elasticsearch導入チェックリスト？</a></p>
-
-<p>Elasticsearchを開発環境や本番に導入する前に気にかけて欲しいことについて発表しました。
-元ネタは<a href="http://www.elasticsearch.org/webinars/elasticsearch-pre-flight-checklist/">elasticsearch pre-flight checklist</a>です。
-少々古いのですが、私が今回話した内容以外にもモニタリングなどについての話も盛り込まれています。
-時間がある方は、見ていただければと。</p>
-
-<h2>「Elasticsearch クエリとスキーマ定義のすごい細かい話」株式会社ドワンゴ 藤堂淳也 さん</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/jtodo/elasticsearch-kueritosukimading-yi-falsexi-kaihua">Elasticsearch クエリとスキーマ定義のすごい細かい話</a></p>
-
-<ul>
-<li>フィールドのチェックを別途インデキシングするアプリで行っている。利用できるものだけElasticsearchに投げる</li>
-<li>実際に本番環境で利用しているマッピングに対してフィールドを追加する手順について</li>
-<li>「これもドキュメントに書いてあるんですが」という感じでドキュメントに色々書いてあるので読みましょうというありがたい発表でした。</li>
-</ul>
-
-
-<p>実際に試行錯誤したり検証するときに行ったことを喋ってもらえたので、どういった点を気にしながら運用、設計するかというのがわかりやすかったです。</p>
-
-<h2>「ElasticsearchとKibanaで実現する、30億req/dayのリアルタイム分析」株式会社サイバーエージェント　山田直行さん　@satully</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/Satully/elasticsearch8-elasticsearchkibana-30reqday">ElasticsearchとKibanaで実現する、30億req/dayのリアルタイム分析</a></p>
-
-<p>会場が21時までしか抑えられていないという失態で、ドタバタしてて前半は聞けてないです。。。</p>
-
-<ul>
-<li>前回の発表では30日分Elasticsearchに入れていたが、今は3日分のみ保存</li>
-<li>レポートなどにはRedshift＋Tableauを利用</li>
-<li>Kibana3をメインに使っているが、Kibana4も検討予定？</li>
-</ul>
-
-
-<p>QA
-* Q：なぜ、ELBを挟んでいるのか？
-  * A：特に考えておいているわけではない。
-* Q：インデックスの構成は？
-  * A：1日に2つのインデックス。Bitされたもの、入札されないもの
-* Q：searchのnodeをやめたのは？
-  * A：前回発表した勉強会での懇親会で話を聞いたり、他の方と話を聞いて、不要と判断したため</p>
-
-<h2>「はてなのメディア面を支えるElasticsearch」株式会社はてな　山家雄介さん　@yanbe</h2>
-
-<p>スライド：未定。おそらく、開発者ブログに公開されるかと。</p>
-
-<ul>
-<li>アドテク系にもやってるらしい。BrandSafeはてな</li>
-<li>はてなブックマークのデータを魅せ方を変える機能などで大活躍。<a href="http://bkuma.hatena.ne.jp">B!KUMA</a>とか</li>
-<li>その日の話題の見出し自動生成機能。Significant Terms Aggregationsを利用。</li>
-<li>こちらの<a href="http://bookmark.hatenastaff.com/entry/2015/02/05/190331">「自然言語処理技術を用いたはてなブックマークの新機能「トピック」をベータリリースしました」</a>エントリに関係あるのかな？</li>
-</ul>
-
-
-<p>記事の魅せ方を検索できる管理画面ではElasticsearchのクエリDSLを活用されているとのことでした。
-検索専門の人でなくても検索式を簡単にくみたてられる画面を用意して、ElasticsearchのクエリDSLに変換するようにしていると。
-確かに、クエリをそのまま組み立ててもらうよりも利用しやすい画面がある方がいいですよね。バックエンドはJSとPerlのライブラリとのことでした。</p>
-
-<h2>その他、感想などのブログ</h2>
-
-<ul>
-<li><a href="http://takudo.hatenablog.jp/entry/2015/02/14/101749">2015-02-13 第8回 elasticsearch 勉強会 @ 丸の内 リクルート 41Fアカデミーホール</a></li>
-<li><a href="http://suzuki.tdiary.net/20150213.html"> [Elasticsearch] 第8回 elasticsearch 勉強会へ参加してきた</a></li>
-<li><a href="http://qiita.com/t-sato/items/8e353ccf7d7bba46f635">第8回elasticsearch勉強会 #elasticsearch #elasticsearchjp</a></li>
-<li><a href="http://keyamb.hatenablog.com/entry/2015/02/16/015916">第8回 Elasticsearch 勉強会に行ってきた #elasticsearch #elasticsearchjp</a></li>
-<li><a href="http://blog.yoslab.com/entry/2015/02/13/203251">勉強会メモ - 第8回elasticsearch勉強会</a></li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<p>今回も検索からログまでいろんな話になったので、面白かったかと。
-参加された方は新しい方が多かったんじゃないかなぁと。（集計結果で見れないのかな、Doorkeeper）。</p>
-
-<p>今回は、みなさんに21時に41Fから33Fへ移動していただくという大失態があったので、大変申し訳なかったです。
-次回（4月中旬）は、このようなことがないように気をつけますので、今後もよろしくお願いいたします。</p>
-
-<p>あと、東京以外の勉強会も検討しつつあります。興味のある方はコメントやTwitterで反応をいただけると嬉しいです。</p>
-
-<p>スピーカーは随時募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。 よろしくお願いいたします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Groovyスクリプトをダイナミックスクリプトなしで実行(日本語訳)]]></title>
-    <link href="http://blog.johtani.info/blog/2015/02/12/running-groovy-scripts-without-dynamic-scripting-ja/"/>
-    <updated>2015-02-12T15:13:09+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/02/12/running-groovy-scripts-without-dynamic-scripting-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="http://www.elasticsearch.org/blog/running-groovy-scripts-without-dynamic-scripting/">running groovy scripts without dynamic scripting</a></p>
-
-<p>Elasticsearch1.3.8と1.4.3のリリースにより、デフォルトで、リクエストに含まれるGroovyスクリプトや
-インデックスに保存されたスクリプトを動的に実行する機能をオフにしました。
-しかし、Groovyはまだデフォルトのスクリプト言語です。
-本ブログ記事では、少しだけダイナミックだが、サンドボックスではない言語のためのスクリプトを
-どのように使い続けるかを説明します。</p>
-
-<p>本ブログ記事は、それが何を意味し、さらに重要なのは、安全に重要なタスクを実行させるためにスクリプトを
-どのように使用し続けるかを理解する助けとなるはずです。</p>
-
-<!-- more -->
-
-
-<h2>ダイナミックスクリプトとは？</h2>
-
-<p>Elasticsearchに詳しくない方のために、Elasticsearchでは、
-さまざまなリクエストの一部としてスクリプトを送信することができます。
-search、aggregation、update、upsert、delete by queryなどです。
-あなたのユースケースのために、通常の動作よりも拡張した動作をさせるためにスクリプトを追加できます。</p>
-
-<p>例えば、以下のリクエストは、ダイナミックスクリプトを含んでいます。
-<code>field1</code>と<code>field2 + shift</code>が同じ値を持っている時だけドキュメントを返します。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/_search</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:{</span>
-</span><span class='line'>    <span class="nt">&quot;filtered&quot;</span><span class="p">:{</span>
-</span><span class='line'>      <span class="nt">&quot;filter&quot;</span><span class="p">:{</span>
-</span><span class='line'>        <span class="nt">&quot;script&quot;</span><span class="p">:{</span>
-</span><span class='line'>          <span class="nt">&quot;script&quot;</span><span class="p">:</span><span class="s2">&quot;doc[&#39;field1&#39;].value == (doc[&#39;field2&#39;].value + shift)&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;lang&quot;</span><span class="p">:</span><span class="s2">&quot;groovy&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;params&quot;</span><span class="p">:{</span>
-</span><span class='line'>            <span class="nt">&quot;shift&quot;</span><span class="p">:</span><span class="mi">3</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>言語を変えることもできます。
-それは、当然、シンタックスが変わったり、制限が追加（例えば、Groovyスクリプトの代わりに<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_lucene_expressions_scripts">Lucene　Expressions</a>に変更）されることもあります。
-<code>lang</code>パラメータによって言語を指定できます。</p>
-
-<h3>なぜそれはダイナミック？</h3>
-
-<p>上記の例はダイナミックスクリプトです。
-それは、実際のスクリプトの部分はサーバサイドで<em>動的に</em>解釈されコンパイルされる必要があるからです。
-ダイナミックスクリプトはElasticsearchのAPIによってデータノードに送信されます。
-これは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_indexed_scripts">インデックスされたスクリプト(indexed script)</a>も含みます。</p>
-
-<p>言い換えると、もし、スクリプトがデータノード全てに保存されていなければ、
-それは、ダイナミックスクリプトとして扱われます。</p>
-
-<h2>dynamic scriptingをオフにするとどうなるか？</h2>
-
-<p>最新のリリースでの変更により、Groovyのdynaic scriptingはデフォルトでオフになりました。
-先ほどのスクリプトについても同様で、もし、先ほどのリクエストを実行すると、次のようなエラーが発生します。
-(一部省略してあります。)</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="s2">&quot;SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[8FJ02MofSnqVvOQ10BXxhQ][test][0]: SearchParseException[[test][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{...}]]]; nested: ScriptException[dynamic scripting for [groovy] disabled]...&quot;</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="mi">400</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>エラーメッセージの重要な箇所は「ScriptException[dynamic scripting for [groovy] disabled]」です。</p>
-
-<h2>スクリプティングを使い続けるには？</h2>
-
-<p>Elasticsearchでスクリプトを実行するには3つの方法があります。
-2つのダイナミックな方法は、リクエストごとのスクリプト（上述）かインデックスされた
-スクリプト(indexed script)を使う方法です。
-インデックスされたスクリプトを使うことは、Elasticsearch自身にGroovyスクリプトを保管することで
-利用で、それらを要求に応じて利用することです。
-（これは、実際には十分機能しますが、これではまだ、信頼できないユーザに対して彼らのスクリプトを実行できます）
-RDBのように保存されたプロシージャとして同じ方法で実行させるものと同様です。
-前もって、スクリプトを記述しておき、リクエストの一部として後から、名前で呼び出して実行可能です。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/_search</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:{</span>
-</span><span class='line'>    <span class="nt">&quot;filtered&quot;</span><span class="p">:{</span>
-</span><span class='line'>      <span class="nt">&quot;filter&quot;</span><span class="p">:{</span>
-</span><span class='line'>        <span class="nt">&quot;script&quot;</span><span class="p">:{</span>
-</span><span class='line'>          <span class="nt">&quot;script_id&quot;</span><span class="p">:</span><span class="s2">&quot;your_custom_script&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;lang&quot;</span><span class="p">:</span><span class="s2">&quot;groovy&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;params&quot;</span><span class="p">:{</span>
-</span><span class='line'>            <span class="nt">&quot;shift&quot;</span><span class="p">:</span><span class="mi">3</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>あまり変わっていないことに気づくでしょう。
-<code>script</code>の部分が、前もって記述されたスクリプトの名前<code>script_id</code>に変更されただけです。</p>
-
-<p>Elasticsearchにスクリプトを提供するダイナミックではない方法はインデックスに保存する代わりに、
-ディスクにファイルとしてスクリプトを保存することです。
-そうすることで、各スクリプトを設定として保存します。
-これは、どのようなスクリプト言語に対してもダイナミックスクリプティングをオフにしたまま、
-サンドボックス化されないスクリプトを使い続けることができる方法です。</p>
-
-<p>最初のサンプルで、Groovyスクリプトは<code>doc['field1'].value == doc['field2'].value + shift</code>でした。
-これを、<code>.groovy</code>拡張子を持ったファイルとして書き出すことができます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">doc</span><span class="p">[</span><span class="err">&#39;field</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">]</span><span class="err">.value</span> <span class="err">==</span> <span class="err">(doc</span><span class="p">[</span><span class="err">&#39;field</span><span class="mi">2</span><span class="err">&#39;</span><span class="p">]</span><span class="err">.value</span> <span class="err">+</span> <span class="err">shift)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>もし、このファイルに<code>your_custom_script.groovy</code>ちう名前をつけて、
-Elasticsearchのすべてのデータノードの<code>config/scripts</code>ディレクトリに保存すると、
-Elasticsearchは60秒（elasticsearch.ymlの<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_automatic_script_reloading"><code>watcher.interval</code>で変更可能</a>）でこのスクリプトを認識し、今後のリクエストに利用できるようにプリコンパイルするでしょう。
-そのファイルはElasticsearch実行ユーザによって読み込みができる必要があります。
-これをディスクに書き込んだ後、あなたの設定ディレクトリは次のようになっています。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">config/</span>
-</span><span class='line'>  <span class="err">elasticsearch.yml</span>
-</span><span class='line'>  <span class="err">logging.yml</span>
-</span><span class='line'>  <span class="err">scripts/</span>
-</span><span class='line'>    <span class="err">your_custom_script.groovy</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>これは、各リクエストやインデックスされたスクリプトをスクリプトとして動的に送信しませんが、
-信頼された環境にスクリプトを追加することでダイナミックスクリプトとなることを許します。</p>
-
-<h2>ディスクに書かれたスクリプトを使用する</h2>
-
-<p>スクリプトは、ロードされたスクリプトになるまでは、利用できません。
-ログファイルに次のようなログが表示されるまではです。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">[</span><span class="mi">2015-02-11</span> <span class="mi">11</span><span class="err">:</span><span class="mi">14</span><span class="err">:</span><span class="mi">47</span><span class="p">,</span><span class="mi">066</span><span class="p">][</span><span class="err">INFO</span> <span class="p">][</span><span class="err">script</span>                   <span class="p">]</span> <span class="p">[</span><span class="err">Sergei</span> <span class="err">Kravinoff</span><span class="p">]</span> <span class="err">compiling</span> <span class="err">script</span> <span class="err">file</span> <span class="p">[</span><span class="err">/path/to/elasticsearch</span><span class="mf">-1.4</span><span class="err">.</span><span class="mi">3</span><span class="err">/config/scripts/your_custom_script.groovy</span><span class="p">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>すべてのElasticsearchのデータノードでスクリプトが読み込まれたら、
-それを利用することができます。
-利用するために、<code>file</code>（<code>script_id</code>ではありません！）としてスクリプト名を指定します。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/_search</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:{</span>
-</span><span class='line'>    <span class="nt">&quot;filtered&quot;</span><span class="p">:{</span>
-</span><span class='line'>      <span class="nt">&quot;filter&quot;</span><span class="p">:{</span>
-</span><span class='line'>        <span class="nt">&quot;script&quot;</span><span class="p">:{</span>
-</span><span class='line'>          <span class="nt">&quot;file&quot;</span><span class="p">:</span><span class="s2">&quot;your_custom_script&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;lang&quot;</span><span class="p">:</span><span class="s2">&quot;groovy&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;params&quot;</span><span class="p">:{</span>
-</span><span class='line'>            <span class="nt">&quot;shift&quot;</span><span class="p">:</span><span class="mi">3</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Note:<code>lang</code>は必須ではありません。Groovyがデフォルトの言語のためです。
-もし、違うスクリプト言語を使いたい、もしくは、デフォルトの言語を（例えば、Lucene Expressionsへ）
-変更したい場合、言語が正しいスクリプトを見つけるために提供されている必要があります。
-一番良い方法は、アプリケーションが<code>lang</code>パラメータを含んでいることを勧めます。
-これは、将来、デフォルトのスクリプト言語が変更されても、問題ないからです。</p>
-
-<h2>質問？</h2>
-
-<p>もし、質問があれば、遠慮なくTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)で教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch　1.4.3および1.3.8リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/02/12/elasticsearch-1-4-3-and-1-3-8-released-ja/"/>
-    <updated>2015-02-12T12:39:53+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/02/12/elasticsearch-1-4-3-and-1-3-8-released-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-3-and-1-3-8-released/">elasticsearch 1.4.3 and 1.3.8 released</a></p>
-
-<p>本日、<strong>Lucene 4.10.3</strong>をベースにした<strong>Elasticsearch 1.4.3</strong>と、<strong>セキュリティ</strong>とバグフィックスリリースである、<strong>Elasticsearch 1.3.8</strong>をリリースしました。
-ダウンロードおよび変更リストはそれぞれ次のリンクからアクセスできます。</p>
-
-<ul>
-<li>最新ステーブルリリース：<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a></li>
-<li>1.3.x系バグフィックス：<a href="http://www.elasticsearch.org/downloads/1-3-8">Elasticsearch 1.3.8</a></li>
-</ul>
-
-
-<p>過去のリリースに関するブログ（公式）はこちら。</p>
-
-<ul>
-<li>1.4:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.4.2</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.4.1</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.4.0</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-beta-released/">1.4.0.Beta1</a></li>
-<li>1.3:<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-2-released/">1.3.7</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-1-released/">1.3.6</a>,
-<a href="http://www.elasticsearch.org/blog/elasticsearch-1-4-0-released/">1.3.5</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-4-released/">1.3.4</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-3-released/">1.3.3</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-2-released/">1.3.2</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-1-released/">1.3.1</a>, <a href="http://www.elasticsearch.org/blog/elasticsearch-1-3-0-released/">1.3.0</a>.</li>
-</ul>
-
-
-<p>すべての変更については<a href="http://www.elasticsearch.org/downloads/1-4-3">1.4.3のリリースノート</a>および<a href="http://www.elasticsearch.org/downloads/1-3-8">1.3.8のリリースノート</a>をごらんください。
-以下では、セキュリティの問題について紹介します。</p>
-
-<!-- more -->
-
-
-<h2>groovy scripting の脆弱性</h2>
-
-<p>Elasticsearchのバージョン1.3.0から1.3.7および1.4.0から1.4.2で、Groovyスクリプトエンジンに脆弱性が発見されました。
-脆弱性は、攻撃者がGroovyスクリプトをサンドボックスを避けて構築でき、
-ElasticsearchのJava VMを実行しているユーザとしてシェルコマンドを実行できます。</p>
-
-<p>この問題をCVE-2015-1427として報告済みです。</p>
-
-<p>バージョン1.3.8と1.4.3では、デフォルトで、Groovyに対してのサンドボックスをオフにしました。
-結果として、<strong>ダイナミックスクリプトの実行はGroovyに対してもオフとなります。</strong></p>
-
-<p>もし、脆弱性のあるバージョンで実行している場合、v1.3.8かv1.4.3にアップグレードするか、ダイナミックなGroovyスクリプトをクラスタの
-すべてのノードに対して次の設定を追加することで、オフにします。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>script.groovy.sandbox.enabled: false</span></code></pre></td></tr></table></div></figure>
-
-
-<p>これは、Groovyのサンドボックスをオフにし、リクエストの一部としてインラインで受け付けるダイナミックなGroovyスクリプトや
-特殊な<code>.scripts</code>インデックスに保存されているスクリプトを実行しません。</p>
-
-<p>それまでは、各データノードの<code>config/scripts</code>ディレクトリにファイルとして保存されたGroovyスクリプトは
-まだ、利用可能です。詳細の情報については<a href="http://www.elasticsearch.org/blog/running-groovy-scripts-without-dynamic-scripting/">Running scripts without dynamic scripting</a>をごらんください。</p>
-
-<h2>future scripting plans</h2>
-
-<p>安全なダイナミックスクリプティング言語としてGroovyを失うことは、Elasticsearchにとって痛手です。
-update APIやsearch APIやaggregationsフレームワークの一部としてScriptを使います。
-それらは、静的なAPIでは簡単に表現できない、カスタムなトリックをユーザに実行できるようにします。</p>
-
-<p>残念ながら、Groovyチームとこの問題を議論した後、Groovy言語もサンドボックスによってきちんと保護されている
-というにはあまりにもダイナミックであるという結論に達しました。
-Groovyは、デフォルトでは利用できなくなります。
-利用可能なダイナミックスクリプト言語としては<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html#_lucene_expressions_scripts">Lucene Expressions言語</a>のみとなります。
-Expressionsははやいですが、それらは非常に限定されています。数値のフィールドでのみ実行可能で、ループをサポートしていません。</p>
-
-<p>より強力で（しかし安全な）ミニ言語になるようにExpressionsを拡張することを調査しています。
-これは、Scriptユーザが現在持っている最も一般的なユースケースを少なくとも助けるでしょう。
-この拡張は長期間のプロジェクトであり、進化には時間がかかるでしょう。</p>
-
-<p>ぜひ、<a href="http://www.elasticsearch.org/downloads/1-4-3">Elasticsearch 1.4.3</a>をダウンロードして、試してみてください。
-そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elasticsearch/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 ]]></content>
   </entry>
   
