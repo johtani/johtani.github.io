@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-08-27T12:28:59+09:00</updated>
+  <updated>2015-08-28T16:11:43+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,88 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearchアンプラグド - 2.0におけるネットワークの変更(日本語訳)]]></title>
+    <link href="http://blog.johtani.info/blog/2015/08/28/elasticsearch-unplugged-ja/"/>
+    <updated>2015-08-28T12:01:30+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/08/28/elasticsearch-unplugged-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-unplugged">Elasticsearch unplugged - Networking changes in 2.0</a></p>
+
+<p>Elasticsearchをローカルのマシンで起動します。
+そして、昨日試したデータを削除するために<code>DELETE *</code>を実行します。
+すると、悲しそうな叫びを同僚が発していることに気づき、なぜそんなことになっているのか不思議に思うでしょう。。。</p>
+
+<!-- more -->
+
+
+<p>Elasticsearchはいつも、親しみやすいものでした。
+複数ノードのクラスタがどのように機能するのかをテストするには、
+ローカルのマシンでいくつかのElasticsearchのインスタンスを起動するだけでした。
+起動したインスタンスはマルチキャストを利用して自動的にお互いを見つけて、1つのクラスタになり、負荷を共有し始めます。
+しかし、これは親しみやすすぎました。
+カンファレンスなどで、ローカルのマシンでElasticsearchを起動してみてください。
+すると100ノードのクラスタに参加しているのがすぐにわかるでしょう。</p>
+
+<p>もうすぐリリースされる、2.0.0-beta1では、Elasticsearchが通信先を選択するネットワークの機能に関する変更があります。
+ただし、これまで通り、簡単に開発者が経験で</p>
+
+<h2>localhostへのバインド</h2>
+
+<p>以前、Elasticsearchはデフォルトで、利用可能なネットワークインタフェース全てにバインドしていました。
+そこから、一番適したインタフェースを<code>publish_host</code>として選択しようとします。
+このアドレスはElasticsearchがクラスタの他のノードとやりとりするためのアドレスです。</p>
+
+<p>Elasticsearch 2.0では、デフォルトでは、<code>localhost</code>にのみバインドします。
+<code>127.0.0.1</code>（IPv4）と<code>[::1]</code>（IPv6）の両方にバインドしようとします。
+また、どちらかのみの環境でも動作します。
+この変更は、特に指定がない限り、Elasticsearchがネットワーク上の他のノードと接続しません。
+本番環境に移行する場合は、<code>network.host</code>パラメータを使って設定しましょう。
+設定は、<code>elasticsearch.yml</code>に記述するか、コマンドラインで指定します。</p>
+
+<pre><code>bin/elasticsearch --network.host 192.168.1.5
+bin/elasticsearch --network.host _non_loopback_
+</code></pre>
+
+<p><code>network.host</code>の全てのオプションについては、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/2.0/modules-network.html">network settingsのドキュメント</a>をごらんください。</p>
+
+<h2>マルチキャストは廃止</h2>
+
+<p>Elasticsearch 1.xはネットワークの他のノードに接続・探索するためにマルチキャストを使用しました。
+マルチキャストは魔法のような挙動です。。。
+残念ながら、マルチキャストのサポートは良くも悪くもあります。
+Linuxはローカルホストでマルチキャストの待ち受けをしていません。
+OS/Xは構成されたアドレスの全てのインタフェースにマルチキャストで配信できます。
+また、ネットワークによってはマルチキャストはデフォルトでは使用できなくなっています。</p>
+
+<p>Elasticsearch 2.0は異なるアプローチを採用しました。
+マルチキャストを廃止します（ただし、新たにプラグインとして提供します）。
+代わりに、ローカルホストでは、Elasticsearchは<code>transport.tcp.port</code>で指定されている範囲（デフォルトは<code>9300-9400</code>）の最初の5ポートに対してユニキャストを使用できるようにします。</p>
+
+<p>これは、開発者のための、設定することなく自動的にクラスタを組むという機能を残しています。
+しかし、本番に移行するときは、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/2.0/modules-discovery-zen.html#unicast">unicast hosts</a>で次のようにリストを指定する必要があります。</p>
+
+<pre><code>discovery.zen.ping.unicast.hosts: [ 192.168.1.2,  192.168.1.3 ]
+</code></pre>
+
+<p>unicast hostsとしてクラスタにあるノードの全てのリストを指定する必要はありません。
+少なくとも、マスタノードとして選出されるべきものを指定します。
+巨大なクラスタでは、3つの専用のマスタノードを持っており、この3つをunicast hostsとして設定することを推奨しています。</p>
+
+<p>これもまた、推奨する本番環境のネットワーク設定を使うことでよりインラインの開発の経験を提供します。</p>
+
+<h2>ノード情報の変更</h2>
+
+<p>最後に、<code>inet[/127.0.0.1:9200]</code>といったシンタックスを廃止します。
+これは、Elasticsearchが<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-info.html">nodes-info API</a>などで、使用していたIPアドレスのためのシンタックスです。
+今は、RFCに準拠した形で表示します。
+<code>127.0.0.1:9200</code>（IPv4）や<code>[::1]:9200</code>（IPv6）のようにです。</p>
+
+<p>質問がある場合は、<a href="https://discuss.elastic.co/c/elasticsearch">ElasticsearchのWebフォーラム</a>で質問してください。ベータはもうすぐです！（翻訳した時点で、すでにベータリリースされています。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Elasticsearch 2.0.0-beta1リリース（日本語訳）]]></title>
@@ -367,145 +449,6 @@ Shieldユーザがmore-like-this APIを利用できないバグのフィック�
 いくつかの変更も含んでいます（詳細は<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-7-1">更新リスト</a>をごらんください）。</p>
 
 <p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-7-1">Elasticsearch 1.7.1</a>をダウンロードして、試してみてください。
-そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch 1.7.0 および 1.6.1リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/07/22/elasticsearch-1-7-0-and-1-6-1-released-ja/"/>
-    <updated>2015-07-22T15:33:37+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/07/22/elasticsearch-1-7-0-and-1-6-1-released-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-1-7-0-and-1-6-1-released">Elasticsearch 1.7.0 and 1.6.1 released</a></p>
-
-<p>本日（7/16）、<strong>Lucene 4.10.4</strong>ベースの<strong>Elasticsearch 1.7.0</strong>および<strong>Elasticsearch 1.6.1</strong> のバグフィックス版をリリースしました。
-これらのリリースはセキュリティフィックスを含んでおり、<strong>すべてのユーザにアップグレードを推奨します。</strong></p>
-
-<p>ダウンロードおよびすべての変更については次のリンクをごらんください。</p>
-
-<ul>
-<li>最新安定版：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-7-0">Elasticsearch 1.7.0</a></li>
-<li>1.6系バグフィックス：<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-6-1">Elasticsearch 1.6.1</a></li>
-</ul>
-
-
-<!-- more -->
-
-
-<p>1.7.0が1.x系の最後のリリースとなります。
-今後の新機能については、Elasticsearch 2.0以降で取り込まれる予定です。</p>
-
-<p>Elasticsearch 1.7.0は小さなリリースですが、2つの重要なセキュリティフィックスと
-クラスタの安定化とリカバリに関する2つの重要な機能を含んでいます。</p>
-
-<ul>
-<li><a href="#security">セキュリティフィックス</a></li>
-<li><a href="#delayed">シャードアロケーションを遅らせる</a></li>
-<li><a href="#prioritization">インデックスリカバリの優先度</a></li>
-</ul>
-
-
-<h2><a name="security">セキュリティフィックス</a></h2>
-
-<p>Elasticsearch 1.6.1 と 1.7.0 は次の2つのセキュリティフィックスを含んでいます。</p>
-
-<h3>リモートコード実行の脆弱性</h3>
-
-<p>Elasticsearch 1.6.1より前のバージョンには、transport protocol（ノードとJavaクライアント間での通信に利用）により、
-リモートでコードが実行される脆弱性があります。
-これは、<a href="http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3253">CVE-2015-3253</a>でのGroovyに関係しています。</p>
-
-<p>Groovyのダイナミックスクリプティングがオフでも脆弱性があります。
-アップグレードをしないユーザは、transport protocol のポート（デフォルトで9300）信頼したエージェントからのみの
-アクセスに限定することで、脆弱性から保護できます。</p>
-
-<p>この問題を<a href="https://www.elastic.co/community/security">CVE-2015-5377</a>としました。</p>
-
-<h3>ディレクトリ探索の脆弱性</h3>
-
-<p>Elasticsearch 1.0.0から1.6.0までのバージョンで、ElasticsearchのJVMプロセスによって読み込みが可能なファイルを
-取得することができるディレクトリ探索攻撃の脆弱性があります。
-アップグレードをしないユーザは、信頼できない場所からの<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html">Snapshot-Restore API</a>の呼び出しを防ぐためにファイアウォール、リバースプロキシやShieldを使用することができます。</p>
-
-<p>この問題を<a href="https://www.elastic.co/community/security">CVE-2015-5531</a>としました。</p>
-
-<h2><a name="delayed">シャードアロケーションを遅らせる</a></h2>
-
-<p>Elasticsearch 1.6.0で<a href="https://www.elastic.co/blog/elasticsearch-1-6-0-released#synced-flush">Synced Flushing</a>が導入されました。
-これは、ノードのリスタート時に、更新が止まっているシャードのリカバリを劇的にスピードアップします。
-しかし、この変更は、シャードの配置を無効にしている環境でのみうまく実行されます。
-ノードが一時的にクラスタから外れている場合や予期せぬリブートの場合には役に立ちません。</p>
-
-<p>このシナリオとは次のようなものです。</p>
-
-<ul>
-<li>ノードの想定外のシャットダウン</li>
-<li>マスタがたのノードにシャードを再配置</li>
-<li>各シャードが新しい場所にネットワーク越しにコピー</li>
-<li>その間に、外れていたノードが再度クラスタにジョイン</li>
-<li>マスタは新しいノードにシャードを再配置。新しいノードに存在する既存のシャードが全く再利用されない可能性がある</li>
-</ul>
-
-
-<p>ノードレベルとクラスタレベルの両方の並列的なリカバリを抑制しても、
-この&#8221;シャードシャッフル&#8221;がクラスタに対して負荷をかける可能性があります。
-これは、外れたノードが再度ジョインするのを単に待つことにより防げるかもしれません。</p>
-
-<h3>待ちましょう！</h3>
-
-<p>Elasticsearch 1.7.0は<a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.7/delayed-allocation.html"><code>index.unassigned.node_left.delayed_timeout</code></a>設定を追加しました。デフォルトでは1分です。
-これは、ノードがクラスタから外れたとき、ほかのノードにこれらのノードを再配置するまでマスタが1分待つということです。
-ノードがこの1分の間に復帰した場合、マスタはローカルにあるシャードを再度配置します。</p>
-
-<h3>なぜ1分？</h3>
-
-<p>ノードがシャットダウンし、リスタートし、復帰するために十分な時間が1分だからです。
-しかし、ノードが復帰しない場合にはまだ再配置が発生することを意味します。
-デフォルト値を決定するのは難しいです。
-この設定をどのくらいに減らすか、増やすかを決める必要があるかもしれません。</p>
-
-<p>このデフォルト値は、<code>config/elasticsearch.yml</code>ファイルに設定できますが、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-update-settings.html">インデックス設定の更新API</a>を使って設定することも可能です。</p>
-
-<p>このデフォルトに関する知見をぜひフィードバックしてください。</p>
-
-<h2><a name="prioritization">インデックスリカバリの優先度</a></h2>
-
-<p>1.7.0の2つ目の重要な機構はフルクラスタリスタートのような後に、
-どの順番でインデックスをリカバリするかという優先度をつけることができるという機能です。</p>
-
-<p>電源故障による、ロギング用のクラスタのダウンを想像してください。
-クラスタが普及した場合、500個のインデックスをリカバリするような場合、499個のインデックスのデータは古く、
-500番目のインデックスが重要です。
-もっとも最近作成されたインデックスがリカバリされるまで、インデキシングを待つというようなことはできません。</p>
-
-<p>これまでは、インデックスはランダムな順序でリカバリされ、重要なインデックスがリカバリされるまで待つしかありませんでした。
-1.7.0では、インデックスは優先度の順番でリカバリされます。
-この優先度は次のプロパティで指定できます。</p>
-
-<ul>
-<li><code>index.priority</code>設定（大きな値が優先度が高い）</li>
-<li>インデックス作成日（新しいものが優先度が高い）</li>
-<li>インデックス名</li>
-</ul>
-
-
-<p>既存のクラスタについて特に変更せずとも、最も最近作成されたインデックスが古いものよりも復旧されます。
-古いインデックスの優先度を上げるためには、<code>index.priority</code>設定に0よりも大きな値を設定します。</p>
-
-<pre><code>PUT important_index/_settings
-{
-  "index.priority": 5
-}
-</code></pre>
-
-<p>この設定は、存在するインデックスに対して更新できます。リカバリ中にもです。</p>
-
-<h2>まとめ</h2>
-
-<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-1-7-0">Elasticsearch 1.7.0</a>をダウンロードして、試してみてください。
 そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)などで教えて下さい。
 また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 ]]></content>
