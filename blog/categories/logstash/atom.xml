@@ -4,7 +4,7 @@
   <title><![CDATA[Category: logstash | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/logstash/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-09-19T03:04:03+09:00</updated>
+  <updated>2015-10-30T10:45:39+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,208 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Logstash 2.0.0リリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/10/29/logstash-2-0-0-released-ja/"/>
+    <updated>2015-10-29T16:19:57+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/10/29/logstash-2-0-0-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/logstash-2-0-0-released">Logstash 2.0.0 released</a></p>
+
+<!-- more -->
+
+
+<p>Logstash 2.0.0が本日（10/28）リリースされました。
+この<a href="https://www.elastic.co/downloads/logstash">リリース</a>は
+いくつかの設定に関する重要な変更があります。
+詳細については、<a href="https://github.com/elastic/logstash/blob/2.0/CHANGELOG.md">changelog</a>または、新しい<a href="https://www.elastic.co/guide/en/logstash/2.0/breaking-changes.html">breaking changes</a>ドキュメントをご覧下さい。</p>
+
+<p>これまでの2.0.0直前のリリースに関する変更点はこちらをご覧ください。</p>
+
+<ul>
+<li><a href="https://www.elastic.co/blog/logstash-2-0-0-beta1-released">beta1</a></li>
+<li><a href="https://www.elastic.co/blog/logstash-2-0-0-beta2-released">beta2</a></li>
+<li><a href="https://www.elastic.co/blog/logstash-2-0-0-beta3-released">beta3</a></li>
+<li><a href="https://www.elastic.co/blog/logstash-2-0-0-rc1-released">RC</a></li>
+</ul>
+
+
+<p>ここでは、2.0の主な変更点の概要を説明します。</p>
+
+<h3>Elasticsearch 2.0との互換性</h3>
+
+<p>多くの機能および改善を含んだ<a href="https://www.elastic.co/blog/elasticsearch-2-0-0-released">Elasticsearch 2.0がリリース</a>されました。
+Logstash 2.0はこのリリースに対応しています。
+Logstashのこれまでのリリースでは、デフォルトで、Javaの <code>node client</code>をElasticsearchとの通信として
+使用してきました。
+2.0では、HTTPクライアントがデフォルトになります。
+これにより、シームレスにユーザのデータを取り込み、付加価値をつけ、Elasticsearchに保存して解析することができます。</p>
+
+<p>HTTPは他のプロトコル（<code>node</code>や<code>transport</code>）同等の機能を持っていますが、
+単一のクライアントに接続する時に、少しだけ遅いですが、管理や動作がより簡単です。
+HTTPプロトコルを使うことで、Elasticsearchのバージョンのアップグレードが、Logstashのアップグレードすることなく
+行うことができます。
+デフォルトをHTTPに変更したさらに詳しい情報については<a href="https://www.elastic.co/blog/logstash-2-0-0-beta1-released">beta1のブログ</a>をご覧ください。</p>
+
+<p>他のプロトコル（<code>node</code>と<code>transport</code>）もサポートしますが、これらを利用する場合には、
+プラグインを別途インストールする必要があります。</p>
+
+<pre><code>bin/plugin install --version 2.0.0 logstash-output-elasticsearch_java
+</code></pre>
+
+<h4>互換性のマトリックス</h4>
+
+<p>LogstashとElasticsearchのバージョンの互換性は次のようになります。</p>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/kibana-4-2-0">※画像に関しては原文をご覧ください。</a></p>
+
+<h1>Image <a href="https://www.elastic.co/assets/bltde5b69e2164aa82f%2Fcompat_matrix.png">https://www.elastic.co/assets/bltde5b69e2164aa82f%2Fcompat_matrix.png</a></h1>
+
+<h2>Shield 2.0との互換性</h2>
+
+<p>このリリースはShield 2.0リリースにも対応しています。
+HTTPプロトコルで、追加のプラグインは必要ありません。
+<a href="https://www.elastic.co/guide/en/shield/current/logstash.html">こちらのドキュメント</a>をご覧ください。
+<code>transport</code>プロトコルでは、Shield 2.0対応のプラグインを個別にインストールする必要があります。</p>
+
+<pre><code>bin/plugin install --version 2.0.0 logstash-output-elasticsearch_java_shield
+</code></pre>
+
+<h2>パフォーマンスの改善</h2>
+
+<p>このリリースはまた、多くの部分のパフォーマンスの改善を含んでおり、Logstashを利用してデータをより早く処理することができます。
+いくつかをここで説明します。</p>
+
+<ul>
+<li><p><strong>UserAgentとGeoIPフィルタ</strong>：これらのフィルタで、LRUキャッシュを追加して改善しています。
+これにより、IPとユーザエージェントがまとまって現れるというWebリクエストの特性を用いています。
+ユーザエージェントフィルタのケースでは、サンプルデータセットにおいて3.7倍ほど早くなりました。
+GeoIPでは、1.69倍早くなっています。</p></li>
+<li><p><strong>JSONプロセシング</strong>：LogstashでJSONのsiriaraizu/でシリアライズに利用しているJrJacksonを新しいバージョンにしました。
+これにより、JSONの処理が改善されています。</p></li>
+<li><p><strong>フィルタワーカーのより良い値をデフォルトに</strong>：以前のリリースでは、<code>filter_workers</code>の設定は1がデフォルトでした。
+これは、フィルタの処理を行うワーカーが1つであるという意味です。
+<code>filter_workers</code>の設定のデフォルト値はCPUコア数の半分の値を設定します。フィルタ実行の並列性が上がります。
+ですので、複雑なgrokパターンやuseragentフィルタの処理がにとっては重要です。</p></li>
+</ul>
+
+
+<h2>Filebeat Support</h2>
+
+<p><a href="https://www.elastic.co/products/beats/filebeat">Filebeat</a>のベータバージョンを<a href="https://www.elastic.co/blog/beats-beta4-filebeat-lightweight-log-forwarding">先日リリース</a>しました。
+これは、Logstash Forwarderの次期バージョンです。
+Filebeatはファイルベースのログをさらに処理するためにLogstashに送るためのエージェントです。
+2.0.0は<a href="https://www.elastic.co/guide/en/logstash/2.0/plugins-inputs-beats.html">logstash-input-beatsプラグイン</a>を使えばFilebeat 1.0.0-beta4とすぐに動作します。</p>
+
+<h2>シャットダウン操作</h2>
+
+<p>これまでのLogstashでは、シャットダウンが開始した時に、例外の機構でシャットダウンが開始したことを
+プラグインに通知していました。
+この処理はサードパーティのコードを使ったプラグインで問題を起こしていました。
+Logstashはどの例外を処理するか知らないため、予期しない動作をしていました。
+これを修正するためにAPI呼び出し（例えば<code>stop</code>）を各プラグインにシャットダウンのイベントを通知し、
+プラグイン自身がきちんと停止するようにしました。
+これは、200以上のプラグインに新しいAPIを利用するように修正しないといけないことを意味しました。
+しかし、Logstashの停止についてはまだ完全にはフィックスしていません。
+とちゅうでおわっているoutputがシャットダウンを遅らせる可能性があるからです。
+2.0でAPIの破壊的な変更は適切なリリースでの変更を繰り返すことができる出発点です。</p>
+
+<p>プラグインの開発者へ：もし、Logstash　1.5のプラグインを開発しているなら、
+シャットダウンに関する新しいAPIのリストに関するbreaking changesのドキュメントに助言をください。
+また、<a href="https://github.com/logstash-plugins/logstash-input-example">example input</a>リポジトリにて、新しいシャットダウンメカニズムの使い方のサンプルコードを提供しています。</p>
+
+<h2>ドキュメント</h2>
+
+<p>2.0に更新された<a href="https://www.elastic.co/guide/en/logstash/2.0/index.html">ドキュメントはこちら</a>です。設定の変更についてもこちらをご覧ください。</p>
+
+<h3>2.0へのアップデート</h3>
+
+<p>2.0へアップデートする前に、<a href="https://www.elastic.co/guide/en/logstash/2.0/upgrading-logstash.html">アップデートガイド</a>もご覧ください。</p>
+
+<h2>フィードバック</h2>
+
+<p>2.0のリリースできたことに、多くのコントリビューター、ユーザに感謝しています。
+このリリースに含まれている多くのパッチと全てのプレリリースのテストにも感謝しています。
+将来の修正やリリースなどについては<a href="https://www.elastic.co/guide/en/logstash-roadmap/current/index.html">ロードマップ</a>をご覧ください。
+2.0は<a href="https://www.elastic.co/downloads/logstash">今日リリース</a>されました。
+ご意見ご感想は<a href="https://discuss.elastic.co/c/logstash">Webフォーラム</a>で！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Release, we have（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/10/29/release-we-have-ja/"/>
+    <updated>2015-10-29T14:18:59+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/10/29/release-we-have-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/release-we-have">Relase, we have</a>
+※画像に関しては原文をご覧ください。</p>
+
+<!-- more -->
+
+
+<p>Elasticにとって大きな1日（社内では「release bonanza」と呼んでいる）です。
+多くの主要なプロダクトを新たにリリースしました。
+そして、本日、それらを一緒に利用する時にそれらを一緒に利用する時にユーザの体験についてまとめてみました。</p>
+
+<p>次の通りです。</p>
+
+<p><a href="https://www.elastic.co/blog/elasticsearch-2-0-0-released">Elasticsearch 2.0</a>リリース。
+大きなマイルストーン、チームによる改善、そして、コミュニティからの素晴らしい貢献。
+Pipeline Aggsと呼ばれる新しいタイプのaggregations、
+クエリとフィルタのコンセプトを統合することにより簡素化されたクエリDSL、
+better compressionオプション、
+JavaのSecurity Managerを有効にすることによる強化されたセキュリティ、
+FSの挙動に関する強化（fsync、checksum、atmicなリネーム）、
+パフォーマンス、マッピングの挙動の一貫性などなどです。
+また、我々のチームによる改善も含まれているLucene 5ベースにアップグレードしています。</p>
+
+<p><a href="https://www.elastic.co/blog/kibana-4-2-0">Kibana 4.2</a>リリース。
+Elasticsearch 2.0対応、ダークテーマ、カスタマイズ可能な地図、多くの改善。
+Kibana 4.2の多くに作業については外部プラグインサポートといった、内臓に関するものでした。
+この後の説明に続きます。</p>
+
+<p><a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">Marvel 2.0</a>リリース。
+Elasticsearch 2.0対応、合理化されたメトリックス、簡素化されたUI、
+多くはKibanaプラグイン（Kibanaプラットフォーム上に構築）としての書き換えです。
+このKibana拡張の最初の努力は、Kibanaのプラグインをどうやって書くか、
+Kibanaユーザに公式に何をする必要があるかといったものを特定するのに役立ちました。
+おっと、忘れるところでした、Marvelを全てのユーザにフリーで使えるようにしました。
+マルチクラスタサポートについては有償となります。</p>
+
+<p><a href="https://www.elastic.co/blog/sense-2-0-0-beta1">Sense 2.0</a>リリース。
+2つ目のKibanaプラグイんがこれです。
+SenseをKibanaプラグインとして書き換えました。
+Elasticsearch 2.0サポート、複数リクエストの実行、
+curlへのコピーなどです。
+おっと、忘れるところでした。オープンソースとすることにしました！</p>
+
+<p><a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">Shield + Watcher 2.0</a>リリース。ElasticsearchのためのセキュリティプラグインであるShieldと、アラート管理のためのプラグインであるWatcherにも
+多くの結果が入っています。
+最も要求のあった機能である、フィールドお呼びドキュメントレベルでのセキュリティについて、Luceneに落とし込んで実装しました。
+また、セキュリティの操作についてプラガブルに実装できるように変更しました。
+Watcherは監視の無効化、SlackやHipChatへの通知（bot ops向け）が可能です。</p>
+
+<p><a href="https://www.elastic.co/blog/logstash-2-0-0-released">Logstash 2.0</a>リリース。
+Elasticsearch 2.0のサポート、クリーンな停止、全面的なパフォーマンス改善、<a href="https://www.elastic.co/products/beats">Beats</a>サポート。</p>
+
+<p>ご覧の通り、すべてのプロダクトに関する大きな結果です。
+チーム間お呼びFoundの開発者のでの密な連携に感謝します。
+これらが私たちが公式にElasticsearch / Kibanaをホストしている<a href="https://www.elastic.co/found">Found</a>で
+利用可能です。</p>
+
+<p>ひゅう、息切れしました。
+チームがしてきたことは、感動的で、謙虚で、刺激的です！
+Elasticが会社として、全てのユーザ、コントリビュータがどのように私たちの大きなミッションに対する結果をもたらしたかという素晴らしい良い例です。
+ユーザに愛され、楽しまれ、成功に導き、革新させる製品を是非ご利用ください。ありがとうございます。</p>
+
+<p>&ldquo;A Lion, in Africa?&rdquo; - まだまだ終わりではありません。この文言で終わりにしますが、すぐに（本当にすぐに）戻ってきます。;)</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Logstashを使ったElasticsearchの再インデックス（日本語訳）]]></title>
@@ -877,626 +1079,6 @@ HTTPベーシック認証をユーザ名とパスワードをリクエストに�
 <p>ぜひ、Logstash 1.5.0 Beta 1をダウンロードして試してみてください。
 そして、感想をTwitter(<a href="https://twitter.com/elasticsearch">@elasticsearch</a>)などで教えて下さい。
 また、問題がありましたら、<a href="https://github.com/elasticsearch/logstash/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[インデックステンプレートとLogstash]]></title>
-    <link href="http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2/"/>
-    <updated>2014-11-25T16:25:46+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/11/25/import-apache-accesslog-using-logstash-2</id>
-    <content type="html"><![CDATA[<p>前回の「<a href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash/">Logstashを利用したApacheアクセスログのインポート</a>」の続きです。
-前回の記事では、Logstashの設定ファイルについて説明しました。
-今回は「Elasticsearchに設定するインデックステンプレート」について説明します。</p>
-
-<!-- more -->
-
-
-<h2>テンプレートの設定</h2>
-
-<p>Elasticsearchでは、登録するデータの特性に合わせてMappingを定義する方がデータを効率良く扱うことができる場合があります。
-この場合、通常ですと、インデックス作成時にMappingを指定します。</p>
-
-<p>ただ、今回は、<a href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash#output-elasticsearch">インデックス名に「年」を含める形</a>で指定してあります。
-「年」はLogstashで処理したデータによって決まります。このため、あらかじめMappingを指定してインデックスを作成するのは難しいです。</p>
-
-<p>このような場合に便利な機能として、「<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html#indices-templates">インデックステンプレート</a>」があります。</p>
-
-<h3>インデックステンプレートとは</h3>
-
-<p>実際のテンプレートの説明に入る前に、少しだけ説明を。
-インデックステンプレートとは、インデックスが作成されるタイミングで自動的に適用される設定をテンプレートとして登録できる機能のことです。
-実際にテンプレートが適用されるかどうかは、インデックス名で判断されます。</p>
-
-<p>例えば、大して重要でもなく、データ量も少ないインデックス用のテンプレートとして、シャード数が1、レプリカ数が0、&#8221;_source&#8221;を保存しない設定のテンプレートを登録する場合、
-次のようになります。</p>
-
-<pre><code class="yaml">curl -XPUT localhost:9200/_template/template_1 -d '
-{
-  "template" : "te*",
-  "settings" : {
-    "number_of_shards" : 1,
-    "number_of_replicas" : 0
-  },
-  "mappings" : {
-    "type1" : {
-      "_source" : { "enabled" : false }
-    }
-  }
-}
-'
-</code></pre>
-
-<p><code>_template</code>がインデックステンプレートを登録するためのエンドポイントです。
-<code>template_1</code>がこのテンプレートのIDです。削除などについては、このIDを利用します。</p>
-
-<p>そして、重要なのは、&#8221;<code>template</code>&ldquo;の設定です。
-&rdquo;<code>template</code>&ldquo;には、このテンプレートが適用されるべきインデックス名を記載します。
-上記サンプルでは<code>te*</code>となっているため、<code>te</code>で始まる名前のインデックスを作成した場合にテンプレートにある設定が適用されます。</p>
-
-<h3>今回利用するテンプレート</h3>
-
-<p>私がJJUG CCCや第7回Elasticsearch勉強会のKibana4のデモで利用したインデックスのテンプレートは次のものになります。
-&ldquo;<code>template</code>&#8220;には、<a href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash/#output-elasticsearch">前回の記事で紹介したoutput/elasticsearchの設定</a> に合致する<code>new_demo_access_log-*</code>を指定しています。</p>
-
-<pre><code class="yaml">curl -XPUT localhost:9200/_template/new_access_log_for_demo -d '
-{
-  "template": "new_demo_access_log-*",
-  "settings": {
-    "number_of_shards": "2",
-    "number_of_replicas": "0"
-  },
-  "mappings": {
-    "_default_": {
-      "dynamic_templates": [
-        {
-          "string_template": {
-            "mapping": {
-              "index": "not_analyzed",
-              "type": "string"
-            },
-            "match_mapping_type": "string",
-            "match": "*"
-          }
-        }
-      ],
-      "properties": {
-        "path": {
-          "type": "multi_field",
-          "fields": {
-            "no_analyzed": {
-              "index": "not_analyzed",
-              "type": "string"
-            },
-            "analyzed": {
-              "index": "analyzed",
-              "type": "string"
-            }
-          }
-        },
-        "referer": {
-          "type": "multi_field",
-          "fields": {
-            "no_analyzed": {
-              "index": "not_analyzed",
-              "type": "string"
-            },
-            "analyzed": {
-              "index": "analyzed",
-              "type": "string"
-            }
-          }
-        },
-        "agent": {
-          "type": "multi_field",
-          "fields": {
-            "no_analyzed": {
-              "index": "not_analyzed",
-              "type": "string"
-            },
-            "analyzed": {
-              "index": "analyzed",
-              "type": "string"
-            }
-          }
-        },
-        "geoip": {
-          "type": "object",
-          "properties": {
-            "location": {
-              "geohash": true,
-              "geohash_precision": 10,
-              "type": "geo_point",
-              "lat_lon": true,
-              "geohash_prefix": true
-            }
-          }
-        },
-        "response": {
-          "copy_to": "response_int",
-          "type": "string"
-        },
-        "bytes": {
-          "type": "long"
-        },
-        "response_int": {
-          "type": "integer"
-        }
-      }
-    }
-  }
-}
-'
-</code></pre>
-
-<h4>settings設定</h4>
-
-<p>デモ用であり、手元で2台のノードを起動するということもあり、<code>number_of_shards</code>に<code>2</code>を、<code>number_of_replicas</code>に<code>0</code>を指定してあります。</p>
-
-<h4>mappings設定</h4>
-
-<h5>インデックスのタイプ</h5>
-
-<p>Mappingsの指定は通常、特定の<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/glossary.html#glossary-type">タイプ</a>を指定します。
-今回のデモでは、1種類しかないのですが、タイプ名を特に意識しないために、<code>_default_</code>を使用しました。
-この場合、任意のタイプに適用されることとなります。
-タイプを指定してMappingの設定を行う場合は<code>_default_</code>の部分に特定のタイプ名を記入します。</p>
-
-<pre><code class="yaml">"mappings": {
-  "_default_": {
-    ...
-</code></pre>
-
-<h5>ダイナミックテンプレート</h5>
-
-<p>次は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-root-object-type.html#_dynamic_templates">ダイナミックテンプレート</a>です。
-インデックステンプレートはインデックスの設定をテンプレート化しました。ダイナミックテンプレートはフィールドに対してテンプレートを設定できます。</p>
-
-<p>以下のダイナミックテンプレートでは、<code>string</code>タイプのフィールドのデフォルト設定を変更しています。
-通常、<code>string</code>タイプのフィールドは<code>analyzed</code>となりますが、<code>not_analyzed</code>に変更してあります。
-詳しく検索したいフィールドの方が少ないためです。</p>
-
-<pre><code class="yaml">...
-"dynamic_templates": [
-  {
-    "string_template": {
-      "mapping": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "match_mapping_type": "string",
-      "match": "*"
-    }
-  }
-],
-...  
-</code></pre>
-
-<h5>multi_field指定</h5>
-
-<p>検索もしたいし、Terms Aggregationでも利用したいフィールドについては、<code>multi_field</code>を利用して、
-<code>analyzed</code>と<code>not_analyzed</code>の2種類のフィールドを用意しています。
-<code>multi_field</code>設定を用いることで、1つのJSONのデータから、異なる形のフィールドを用意することが可能です。</p>
-
-<p>今回のテンプレートでは、<code>path</code>、<code>referer</code>、<code>agent</code>に<code>multi_field</code>を指定しました。</p>
-
-<pre><code class="yaml">...
-"path": {
-  "type": "multi_field",
-  "fields": {
-    "no_analyzed": {
-      "index": "not_analyzed",
-      "type": "string"
-    },
-    "analyzed": {
-      "index": "analyzed",
-      "type": "string"
-    }
-  }
-},
-...
-</code></pre>
-
-<p>例えば、上記の設定の場合、入力のJSONは<code>path</code>というデータのみですが、インデックス上には<code>path.no_analyzed</code>と
-<code>path.analyzed</code>というフィールドができあがります。
-実際に検索する場合は、<code>path.analyzed:検索したい文字列</code>という形で検索をすることで、いわゆる部分一致のような検索が可能です。
-また、完全一致をしたい場合は<code>path.no_analyzed:検索したい文字列</code>という指定になります。
-用途を考えると、<code>request</code>も指定したほうが良いかもしれません。</p>
-
-<h5>geoip</h5>
-
-<p><a href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash#filter-geoip">Logstashでgeoipデータ</a>を付与していました。
-このgeoipのデータをKibana4で利用するために、geoデータとして登録する必要があります。</p>
-
-<pre><code class="yaml">"geoip": {
-  "type": "object",
-  "properties": {
-    "location": {
-      "geohash": true,
-      "geohash_precision": 10,
-      "type": "geo_point",
-      "lat_lon": true,
-      "geohash_prefix": true
-    }
-  }
-},
-</code></pre>
-
-<p>上記の設定がgeoデータの指定です。
-<code>type</code>に<code>object</code>が指定してありますが、これは、geoipのデータがネストしているためです。
-geoipオブジェクトのうち、緯度経度のデータは<code>location</code>に入っているため、こちらに緯度経度関係の設定を指定します。</p>
-
-<ul>
-<li><code>"type": "geo_point"</code>：<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-geo-point-type.html#mapping-geo-point-type"><code>geo_point</code></a>タイプであることを指定</li>
-<li><code>"geohash": true</code>：緯度経度のデータをもとに、geohashの値もインデックス</li>
-<li><code>"geohash_precision": 10</code>：geohashの精度の指定</li>
-<li><code>"lat_lon": true</code>：緯度経度を個別の<code>.lat</code>、<code>.lon</code>というフィールドにもインデックス</li>
-<li><code>"geohash_prefix": true</code>：該当するgeohashのみでなく、その親にあたるgeohashについてもインデックスする</li>
-</ul>
-
-
-<h5>response、response_int、bytes</h5>
-
-<p>最後は、response、response_int、bytesです。</p>
-
-<p>responseには、HTTPステータスコードが入ります。
-文字列としても扱いたいですが、integerとして、Renge Aggregationなどを行いたいので、
-response_intというフィールドにも値を入れています。
-<code>multi_field</code>でも可能ですが、ここでは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-core-types.html#copy-to"><code>copy_to</code></a>を利用しました。
-<code>copy_to</code>を用いることで、異なるフィールドに値をコピーすることができます。</p>
-
-<p>bytesについては、longで扱いたいとういう理由だけです。</p>
-
-<pre><code class="yaml">
-"response": {
-  "copy_to": "response_int",
-  "type": "string"
-},
-"bytes": {
-  "type": "long"
-},
-"response_int": {
-  "type": "integer"
-}
-</code></pre>
-
-<h2>まとめ</h2>
-
-<p>今回はデモに利用したインデックスてプレートについて説明しました。
-前回の、Logstashの設定とこのインデックステンプレートを用いることで、Kibanaで解析するデータの準備ができます。
-実際の操作などについては、また次回の記事で説明しようかと思います。</p>
-
-<p>不明な点、誤植などありましたら、コメント欄へお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Logstashを利用したApacheアクセスログのインポート]]></title>
-    <link href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash/"/>
-    <updated>2014-11-21T17:30:39+09:00</updated>
-    <id>http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash</id>
-    <content type="html"><![CDATA[<p>JJUG CCCや第7回Elasticsearch勉強会のKibana4のデモにアクセスログを利用しました。</p>
-
-<p>ただ、セッションでは、どうやってElasticsearchに投入したのかという詳しい話をしていませんでした。
-本記事では、データ取り込み時に利用したLogstashの設定ファイルについて説明します。</p>
-
-<!-- more -->
-
-
-<p>Logstashの設定の説明に入る前に、全体の流れを。
-「ApacheアクセスログをKibana4により可視化」です。</p>
-
-<h2>材料の準備</h2>
-
-<p>「ApacheアクセスログをKibana4により可視化」に必要な材料は次の通りです。
-（今回は起動するところまでいかないので、実際に必要なのは次回以降になります。）</p>
-
-<ul>
-<li>Java 7（u55以上を1つ）</li>
-<li>Logstash 1.4.2（1つ）</li>
-<li>Elasticsearch 1.4.0（1つ）</li>
-<li>Kibana4 Beta2（1つ）</li>
-<li>Apacheのアクセスログ（適量）</li>
-</ul>
-
-
-<p>Apacheのアクセスログ以外は、公式サイトからダウンロードできます。
-それぞれをダウンロードして、起動できるようにしておきましょう。</p>
-
-<p>※1台のマシン上で行う場合は、アクセスログの量を少なめにするなどの対策をとりましょう。
-※今回は、1台のマシン（Mac）上で、VMなどを利用せず、それぞれ直接起動するものとします。</p>
-
-<h2>可視化の手順と流れ</h2>
-
-<p>可視化の流れとしては、</p>
-
-<ol>
-<li>Logstashでファイルを読み込み、各種処理（パースしたり、情報を追加したり、切り出したり）</li>
-<li>Elasticsearchに保存</li>
-<li>Kibanaでグラフを作ったり、検索してみたり</li>
-</ol>
-
-
-<p>です。</p>
-
-<p>今回は、1のLogstashでファイルを読み込んだりする設定ファイルの説明です。</p>
-
-<h3>Logstashの設定</h3>
-
-<h4>Logstashの基本</h4>
-
-<p>まずは、Logstashの設定ですが、簡単にLogstashの説明を。
-Logstashは大きく3つのパーツに分かれています。</p>
-
-<ol>
-<li>input：データの入力処理</li>
-<li>filter：inputで読み込んだデータに対する操作など</li>
-<li>output：データの出力処理</li>
-</ol>
-
-
-<p>inputでデータを読み込み（複数可）、filterでデータに対して各種処理を行い、outputでデータを指定されたところに出力（複数可）します。</p>
-
-<h4>アクセスログの読み込み設定</h4>
-
-<p>アクセスログの読み込み処理は大まかに次のようなものとなります。</p>
-
-<ol>
-<li>アクセスログを読み込む（input/file）</li>
-<li>読み取ったアクセスログを各フィールド（IPアドレス、ユーザエージェントなど）に分割（filter/grok）</li>
-<li>日付のパース（filter/date）</li>
-<li>クライアントIPアドレスにgeoipの情報を付加（filter/geoip）</li>
-<li>リクエストのパスの第1階層の抽出（filter/grok）</li>
-<li>ユーザエージェントのパース（filter/useragent）</li>
-<li>Elasticsearchへの出力（output/elasticsearch）</li>
-</ol>
-
-
-<p>設定ファイルは次のようなものになります。</p>
-
-<pre><code class="ruby">input {
-  file {
-    path =&gt; "/Users/johtani/demo_access_log/*/*.log"
-    start_position =&gt; "beginning"
-  }
-}
-
-filter {
-  grok {
-    match =&gt; { "message" =&gt; "%{COMBINEDAPACHELOG}" }
-    break_on_match =&gt; false
-    tag_on_failure =&gt; ["_message_parse_failure"]
-  }
-  date {
-    match =&gt; ["timestamp", "dd/MMM/YYYY:HH:mm:ss Z"]
-    locale =&gt; en
-  }
-  geoip {
-    source =&gt; ["clientip"]
-  }
-  grok {
-    match =&gt; { "request" =&gt; "^/%{WORD:first_path}/%{GREEDYDATA}$" }
-    tag_on_failure =&gt; ["_request_parse_failure"]
-  }
-  useragent {
-    source =&gt; "agent"
-    target =&gt; "useragent"
-  }
-}
-
-output {
-  elasticsearch {
-    host =&gt; "localhost"
-    index =&gt; "new_demo_access_log-%{year}"
-    cluster =&gt; "demo_cluster"
-    protocol =&gt; "http"
-  }
-}
-</code></pre>
-
-<h5>1. アクセスログを読み込む（input/file）</h5>
-
-<p>inputの<a href="http://logstash.net/docs/1.4.2/inputs/file">fileモジュール(a)</a>を使用してアクセスログのファイルを読み込みます。
-<code>path</code>でアクセスログのファイルのパスを指定します。
-今回利用したアクセスログは<code>demo_access_log/2010/access20100201.log</code>といった日毎のファイルに分割されていたため、
-<code>*</code>を利用してファイルのパスを指定しました。
-また、今回は既存のファイルの読み込みだけのため、<code>start_position</code>に<code>beginning</code>を指定してあります。
-デフォルトでは<code>end</code>が指定されるため、Logstashを起動後に追記されたログから対象になってしまうためです。
-その他の設定については、公式ガイドをご覧ください。</p>
-
-<pre><code class="ruby">input {
-  file { # a
-    path =&gt; "/Users/johtani/demo_access_log/*/*.log" # b
-    start_position =&gt; "beginning" # c
-  }
-}
-</code></pre>
-
-<blockquote><p>Logstashでは、ファイルをどこまで読み込んだかという情報を保持するために、<a href="http://logstash.net/docs/1.4.2/inputs/file#sincedb_path">sincedb</a>を利用しています。
-設定変更後に同じファイルを最初から読み込みたい場合などは、こちらのファイルを一旦削除するなどの対応が必要です。</p></blockquote>
-
-<p>ちなみに、読み込んだデータは次のようなJSONになっています。</p>
-
-<pre><code class="json">{
-  "message": "読み込んだアクセスログ",
-  "@version": "1",
-  "@timestamp":"2014-11-21T06:16:21.644Z",
-  "host":"jupiter.local",
-  "path":"/Users/johtani/demo_access_log/2010/access20100201.log"}
-}
-</code></pre>
-
-<p>特に指定がない場合は、<code>message</code>に読み込んだデータが入ってきます。
-<code>@timestamp</code>がLogstashが読み込んだ時刻、<code>host</code>はLogstashが動作しているホスト名です。
-<code>path</code>はfileモジュールが読み込んだファイルのパスを設定しています。
-この後の処理で、どこの項目に対して処理を行うかといったことが重要になるので、</p>
-
-<h5>2. 読み取ったアクセスログを各フィールド（IPアドレス、ユーザエージェントなど）に分割（filter/grok）</h5>
-
-<p>2.〜6.の処理は、inputで読み込んだ1アクセスログに対する処理となります。</p>
-
-<p>ここでは、<a href="http://logstash.net/docs/1.4.2/filters/grok">grokフィルタ</a>を使用して
-Apacheのアクセスログを各フィールドに分割します。
-Logastashでは、簡単に使えるようにいくつかの<a href="https://github.com/elasticsearch/logstash/tree/v1.4.2/patterns">パターン</a>が用意されています。
-Apacheのログのために、<a href="https://github.com/elasticsearch/logstash/blob/v1.4.2/patterns/grok-patterns#L91"><code>COMBINEDAPACHELOG</code></a>というのが用意されています。
-今回はこちらを使用しています。その他にも日付などパターンが用意されているので、試してみてください。</p>
-
-<p><code>message</code>にアクセスログが入っているので、こちらの項目に対して<code>COMBINEDAPACHELOG</code>のパターンを
-<code>match</code>で適用してフィールドに抜き出します。
-<code>tag_on_failure</code>は、<code>match</code>でパースに失敗した場合に、<code>tag</code>というフィールドに指定した文字列を出力する機能になります。
-デフォルトだと<code>_grokparsefailure</code>が付与されますが、ここでは、どの処理で失敗したがを判別するために文字列を変更しています。</p>
-
-<pre><code class="ruby">filter {
-  grok {
-    match =&gt; { "message" =&gt; "%{COMBINEDAPACHELOG}" }
-    break_on_match =&gt; false
-    tag_on_failure =&gt; ["_message_parse_failure"]
-  }
-  ...
-</code></pre>
-
-<p><code>clientip</code>、<code>ident</code>、<code>auth</code>、<code>timestamp</code>、<code>verb</code>、<code>request</code>、<code>httpversion</code>、<code>response</code>、<code>bytes</code>、<code>referrer</code>、<code>agent</code>がgrokフィルタにより抜き出された項目です。</p>
-
-<pre><code class="json">{
-  "message":"アクセスログ",
-  "@version":"1",
-  "@timestamp":"2014-11-21T07:20:54.387Z",
-  "host":"jupiter.local",
-  "path":"/Users/johtani/demo_access_log/2010/access20100201.log",
-  "clientip":"クライアントのIPアドレス",
-  "ident":"-",
-  "auth":"-",
-  "timestamp":"01/Feb/2010:00:00:26 +0900",
-  "verb":"GET",
-  "request":"/images/favicon.ico",
-  "httpversion":"1.1",
-  "response":"200",
-  "bytes":"318",
-  "referrer":"\"-\"",
-  "agent":"\"Mozilla/5.0 (Windows; U; Windows NT 5.1; ja; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7 (.NET CLR 3.5.30729)\""
-}
-</code></pre>
-
-<h5>3. 日付のパース（filter/date）</h5>
-
-<p>Logstashは特に指定がない場合、inputでデータを取り出した日付が<code>@timestamp</code>となります。
-そして、このフィールドが特に指定がない場合は、Elasticsearchのデータの日付となり、Kibanaで利用する日付となります。</p>
-
-<p>リアルタイムにアクセスログを読み込む場合は、読み込んだ日時でもほぼ問題はありませんが、過去データの場合はそうもいきません。
-そこで、<a href="http://logstash.net/docs/1.4.2/filters/date"><code>dateフィルタ</code></a>を使用して、<code>@timestamp</code>の値を書き換えます。</p>
-
-<pre><code class="ruby">date {
-  match =&gt; ["timestamp", "dd/MMM/YYYY:HH:mm:ss Z"]
-  locale =&gt; en
-}
-</code></pre>
-
-<p>上記では、<code>timestamp</code>という項目に対して<code>dd/MMM/YYYY:HH:mm:ss Z</code>という日付パターンの場合に値を書き換える設定となります。
-なお、日付の月の部分が<code>Feb</code>となっているため、<code>locale</code>に<code>en</code>を指定しています。Logstashが動作するマシンの<code>locale</code>が<code>ja</code>などの場合にパースに失敗するためです。</p>
-
-<h5><a name="filter-geoip">4. クライアントIPアドレスにgeoipの情報を付加（filter/geoip）</a></h5>
-
-<p>どの国からのアクセスかなどを判別したいので、IPアドレスを元にgeoipを利用してより詳細な情報を付与します。
-Logstashでもこの機能が用意されており、簡単に利用ができます。</p>
-
-<pre><code class="ruby">geoip {
-  source =&gt; ["clientip"]
-}
-</code></pre>
-
-<p>これだけです。対象とするIPアドレスのフィールドを指定しているだけです。
-<code>geoip</code>というフィールドが追加され、次のような情報が付与されます。
-国名、緯度経度、タイムゾーンなどです。</p>
-
-<pre><code class="json">{
-  ...  
-  "geoip": {
-    "ip": "IPアドレス",
-    "country_code2": "JP",
-    "country_code3": "JPN",
-    "country_name": "Japan",
-    "continent_code": "AS",
-    "latitude": 36,
-    "longitude": 138,
-    "timezone": "Asia/Tokyo",
-    "location": [
-      138,
-      36
-    ]
-  }
-  ...
-}
-</code></pre>
-
-<h5>5. リクエストのパスの第1階層の抽出（filter/grok）</h5>
-
-<p>リクエストされたURLは<code>request</code>フィールドにありますが、個別のURLだと、大まかな集計が大変です。
-もちろん、クエリで処理することもできますが、Logstashで処理するついでに、第1階層のディレクトリ名を抽出しておくことで、
-検索や集計を行いやすくしておきます。</p>
-
-<pre><code class="ruby">grok {
-  match =&gt; { "request" =&gt; "^/%{WORD:first_path}/%{GREEDYDATA}$" }
-  tag_on_failure =&gt; ["_request_parse_failure"]
-}
-</code></pre>
-
-<p>また、grokフィルタの登場です。
-今回は、<code>WORD:first_path</code>という記述方法で、<code>WORD</code>パターンにマッチした文字列を<code>first_path</code>というフィールドに展開する指定をしています。</p>
-
-<p>例えば、サイトのスクリプトなどが<code>scripts</code>というディレクトリにある場合は、<code>first_path</code>の値を利用して、
-後続のフィルタでログデータを出力しないといった処理にも使えます。</p>
-
-<h5>6. ユーザエージェントのパース（filter/useragent）</h5>
-
-<p>Logstashではユーザエージェントの文字列から、いくつかの情報を付与するフィルタも用意されています。
-<a href="http://logstash.net/docs/1.4.2/filters/useragent"><code>useragent</code>フィルタです。</a></p>
-
-<pre><code>useragent {
-  source =&gt; "agent"
-  target =&gt; "useragent"
-}
-</code></pre>
-
-<p><code>agent</code>というフィールドにユーザエージェントの文字列があるので、このフィールドに対してフィルタを適用します。
-元の文字列も取っておきたいので、<code>useragent</code>という別のフィールドに出力するように指定してあります。</p>
-
-<pre><code class="json">"useragent": {
-  "name": "Firefox",
-  "os": "Windows XP",
-  "os_name": "Windows XP",
-  "device": "Other",
-  "major": "17",
-  "minor": "0"
-},
-</code></pre>
-
-<p>このように、OS名やバージョン名などが抽出できます。</p>
-
-<h5><a name="output-elasticsearch">7. Elasticsearchへの出力（output/elasticsearch）</a></h5>
-
-<p>最後は、<a href="http://logstash.net/docs/1.4.2/outputs/elasticsearch">Elasticsearchへのデータの出力設定</a>です。</p>
-
-<p><code>index</code>にて、出力するindex名を指定してあります。
-また、年毎のインデックス名にするために<code>%{year}</code>を利用しています。
-<a href="http://logstash.net/docs/1.4.2/configuration#sprintf">sprintf format</a>です。</p>
-
-<pre><code class="ruby">elasticsearch {
-  host =&gt; "localhost"
-  index =&gt; "new_demo_access_log-%{year}"
-  cluster =&gt; "demo_cluster"
-  protocol =&gt; "http"
-}
-</code></pre>
-
-<h2>まとめ</h2>
-
-<p>ということで、今回はアクセスログをLogstashにて読み込む時の設定について説明してきました。
-次回は、実際にLogstashを起動してElasticsearchにデータを登録するところまでを説明します。</p>
-
-<p>JJUG CCCや勉強会のデモに用いたデータは、
-Elasticsearchにデータを登録する前にテンプレートも設定してありました。こちらについても、次回説明しようと思います。</p>
-
-<p>不明な点、誤植などありましたら、コメント欄へお願いします。</p>
 ]]></content>
   </entry>
   
