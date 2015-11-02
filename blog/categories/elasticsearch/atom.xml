@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-10-30T17:52:54+09:00</updated>
+  <updated>2015-11-02T16:27:41+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,161 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Shield、Watcher、Marvel 2.0.0 GAリリース（日本語訳）]]></title>
+    <link href="http://blog.johtani.info/blog/2015/10/30/shield-watcher-and-marvel-2-0-ga-released-ja/"/>
+    <updated>2015-10-30T16:21:31+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/10/30/shield-watcher-and-marvel-2-0-ga-released-ja</id>
+    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
+
+<p>原文：<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">Shield, Watcher, and Marvel 2.0.0 GA Released</a></p>
+
+<!-- more -->
+
+
+<p>本日（10/28）Shield、WatcherおよびMarvel 2.0をリリースしました。
+これが、<a href="https://www.elastic.co/blog/elasticsearch-2-0-0-released">Elasticsearch 2.0</a>に対応したこれらのプラグインの最初のリリースです。</p>
+
+<p>Elasticsearch 2.0対応のほかに、ShieldとWatcher 2.0は、
+セキュリティとアラートを拡張するいくつかの新しい素敵な機能も備えています。</p>
+
+<h2>Shield</h2>
+
+<ul>
+<li><p>拡張可能なレルム - Sheild 1.xはユーザ認証のコア的なものを定義するのにフォーカスし
+3つの認証メカニズム（<em>esusers</em>、LDAP/AD、PKI）を提供しました。
+これらを提供することで、多くのユーザおよびユースケースをカバー出来ましたが、
+追加の認証メカニズムを統合する必要があることもわかっていました。
+ということで、Shieldのレルムベースの認証システムをユーザが利用、拡張できるようにオープンにし、
+ユーザ認証を扱うためのレルム実装をプラグインとして拡張できるようにしました。
+特定もしくはプロプライエタリな認証メカニズムが必要なユーザもShieldの強力な
+セキュリティ機能（ロールベースの認証、セキュアな通信など）をフルに活用できるようになりました。
+カスタムレルムの詳細については、<a href="https://www.elastic.co/guide/en/shield/current/custom-realms.html">こちら</a>をご覧ください。</p></li>
+<li><p>フィールドとドキュメントのACL - Shield 2.0はフィールドとドキュメントレベルのアクセス制御機能を提供します。
+これは、ロールごとにアクセス可能なフィールドやドキュメントを定義できます。
+この新しい機能は、設定の変更するよりも便利です。
+このアクセス制御はElasticsearchのLuceneインデックスという最も低レベルで実装されています。
+その結果として、このメンテナンスがより簡単であるだけでなく、より良くなっています。
+詳細については<a href="https://www.elastic.co/guide/en/shield/current/setting-up-field-and-document-level-security.html">こちら</a>をご覧ください。</p></li>
+<li><p>ユーザなりすまし - Shield 2.0で、ユーザなりすましの機能が実装されました。
+これは、ユーザ（適切なパーミッションを持った）が、他のユーザになることができ、
+それらのユーザのためにリクエストを実行できます。
+これは、Elasticsearch上に構築されたアプリケーションがすでにユーザ認証を行いますが、
+認可はElasticsearchサイドで行う必要があるような場合に有用です。
+このシナリオで、アプリケーションの&#8221;main&#8221;ユーザを設定でき、正しくなりすましを割り当て、
+ElasticsearchにアプリケーションユーザとしてリクエストをElasticsearchに実行させることができます。
+詳細については、<a href="https://www.elastic.co/guide/en/shield/current/submitting-requests-for-other-users.html">こちら</a>をご覧ください。</p></li>
+</ul>
+
+
+<h2>Watcher</h2>
+
+<ul>
+<li><p>SlackとHipChatインテグレーション - SlackとHipChatはチーム/グループコラボレーションツールです。
+これらは、急速に主流になり、組織の主な内部コミュニケーションハブとなっています。
+Watcher 2.0はチャンネル/ルームやユーザにこれらのコミュニケーションチャネル経由で、Watchの通知を行うことができるアクションを
+実装しました。
+<a href="https://www.elastic.co/guide/en/watcher/current/configuring-slack.html">slack</a>や<a href="https://www.elastic.co/guide/en/watcher/current/configuring-hipchat.html">hipchat</a>アクションについてはドキュメントをご覧ください。</p></li>
+<li><p>Array Compare Condition - 新しいconditionはタイムシリーズのデータのスパイクを検知するのを簡単にします。
+<a href="https://www.elastic.co/guide/en/watcher/current/condition.html#condition-compare">compare</a> conditionは1.xで導入されましたが、このコンディションはElasticsearchのダイナミックスクリプト機能を有効にする必要がアンク使えます。
+詳細については<a href="https://www.elastic.co/guide/en/watcher/current/condition.html#condition-array-compare">array_compare</a> conditionをご覧ください。</p></li>
+<li><p>Watchの有効・無効化 - ユーザからの多かったリクエストとして、Watchの無効化がありました。
+1.xには、登録済みのWatchを無効にする機能がありませんでした。
+これは、Watchを消すか、Watchのトリガーを変更することで回避していました。
+これは、全体としてはWatchを管理するのを難しくする回避方法でしかありません。
+2.0では、APIを呼び出すだけで、Watchの変更をすることなく、簡単にWatchの有効化・無効化が可能になりました。
+これは1.0からあるべき基本的な機能でしたが、ついにこの問題を解決しました。
+詳細は<a href="https://www.elastic.co/guide/en/watcher/current/watch-active-state.html#watch-active-state">こちら</a>をご覧ください。</p></li>
+</ul>
+
+
+<h2>Marvel</h2>
+
+<p>Marvel 2.0を紹介するのに興奮しています。
+Kibana 4をベースとした、再設計されたUIを持っています。
+Marvel 1.xで学んだ多くのことを導入し、より使いやすく監視しやすいUIになっています。
+ShieldとWatcherと同様に、最初のMarvelのリリースは将来的な成長の基盤となり
+Elasticsearch2.0を効率的に管理するための主要なメトリックにフォーカスしています。</p>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>再設計により、インタフェースを6ページに減らしています。</p>
+
+<h3>Cluster list</h3>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>ユーザやカスタマーの多くは複数のクラスタを利用しています。
+新しいMarvelはそれらを集中的にモニタリングする一つのクラスタからそれらを簡単に監視できます。
+各クラスタのデータ送信先をこのモニタリングクラスタにするだけです。</p>
+
+<h3>Cluster Overview</h3>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>クラスタオーバービューはある一つのクラスタの主要な性能メトリックを見ることができ、
+素早くスパイクを発見できます。
+このページはまた、アクティブなシャードのリカバリやリロケーションも見ることができます。</p>
+
+<h3>Indices List</h3>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>インデックスのリストにはクラスタにあるすべてのインデックスとその属性が表示されます。
+テーブルはライブでアップデートされ、フィルタリングやソートも可能です。
+一番大きなインデックスは？といったことも調べられます。</p>
+
+<h3>Index Detail</h3>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>インデックス詳細ページはインデックスの主な性能メトリックを見ることができ、シャードの配置についても表示します。</p>
+
+<h3>Nodes List</h3>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>ノードリストはクラスタにあるノードとその主な性能メトリックを見ることができます。
+テーブルはライブでアップデートされ、フィルタリングも可能です。
+高いCPU利用率やディスクの残り容量なども簡単にわかるようになっています。</p>
+
+<h3>Node Detail</h3>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>ノード詳細ページは個別のノードに関する主な性能メトリックを見ることができ、ノードにあるシャードのリストも見ることができます。</p>
+
+<p>新しいMarvelはKibana 4の上に構築されたので、管理方法が変わっています。
+Marvelのインストールは2つのステップがあります。
+marvel-agentとmarvel user interfaceです。</p>
+
+<h2>Marvel Agent</h2>
+
+<p>marvel-agentはElasticsearchクラスタにプラグインとしてインストールします。
+主なパフォーマンス情報を取得し、ローカルもしくは分離されたモニタリングクラスタにデータを保存・送信します。</p>
+
+<h2>Marvel User Interface</h2>
+
+<p>Marvel UIはKibanaのプラグインとしてインストールします。
+これは、Kibana 4.2の新しいプラグインインフラを利用し、
+Marvel Appとして、Kibanaのインタフェースとは個別に提供されます。
+Kibanaのアプリの切り替えは次の画像の通りです。</p>
+
+<p>画像あり。
+<a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">※画像に関しては原文をご覧ください。</a></p>
+
+<p>2.0リリースは私たちのプロダクトの大きな一歩です。またユーザの意見を常にお待ちしています。
+ぜひ、Webフォーラム（<a href="https://discuss.elastic.co%EF%BC%89%E3%82%84%E3%83%A1%E3%83%BC%E3%83%AB%EF%BC%88info@elastic.co%EF%BC%89%E3%81%A7%E3%81%94%E6%84%8F%E8%A6%8B%E3%82%92%E3%80%82">https://discuss.elastic.co%EF%BC%89%E3%82%84%E3%83%A1%E3%83%BC%E3%83%AB%EF%BC%88info@elastic.co%EF%BC%89%E3%81%A7%E3%81%94%E6%84%8F%E8%A6%8B%E3%82%92%E3%80%82</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Elasticsearch 2.0.0リリース(日本語訳)]]></title>
@@ -488,123 +643,6 @@ OS/Xは構成されたアドレスの全てのインタフェースにマルチ�
 <code>127.0.0.1:9200</code>（IPv4）や<code>[::1]:9200</code>（IPv6）のようにです。</p>
 
 <p>質問がある場合は、<a href="https://discuss.elastic.co/c/elasticsearch">ElasticsearchのWebフォーラム</a>で質問してください。ベータはもうすぐです！（翻訳した時点で、すでにベータリリースされています。）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch 2.0.0-beta1リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/08/27/elasticsearch-2-0-0-beta1-released-ja/"/>
-    <updated>2015-08-27T10:29:12+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/08/27/elasticsearch-2-0-0-beta1-released-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/elasticsearch-2-0-0-beta1-released">Elasticsearch 2.0.0-beta1 released</a></p>
-
-<p>本日（8/26）、<strong>Lucene 5.2.1</strong>ベースの<strong>Elasticsearch 2.0.0-beta1</strong>をリリースしました。
-本リリースは469名のコミッターからの2,500以上ものpull requestを含んでいます。
-pull requestのうち、約850が2.0のための新規のものとなります。</p>
-
-<p><strong>注意事項</strong>
-本リリースはベータリリースであり、テストを目的としたものとなります。
-Elasticsearch 2.0.0-beta1は Elasticsearch 2.0.0 GAと互換性があるかどうかの保証はありません。</p>
-
-<p><strong>本番環境には利用しないでください。</strong></p>
-
-<!-- more -->
-
-
-<p><a href="https://www.elastic.co/downloads/past-releases/elasticsearch-2-0-0-beta1">Elasticsearch 2.0.0-beta1のダウンロードおよび、すべての変更についてはリンク</a>をごらんください。</p>
-
-<p>Elasticsearch 2.0.0-beta1には次の新しい変更が含まれています。</p>
-
-<ul>
-<li>Pipeline Aggregations：これは、他のaggregationsの結果に対するAggregationを実行できます（導関数、移動平均、Holt Winter予測アルゴリズムなども含む）</li>
-<li>ディスクやファイルシステムキャッシュにより適したより良いデータの圧縮</li>
-<li>doc-valuesがデフォルトになったこと、マージ実行時のメモリ使用量の低減、フィルターキャッシュのためのroaring bitsetsなどにより、ヒープの使用率がより効率的に。</li>
-<li>構造化された例外</li>
-<li>最適化されたクエリ実行順序、フィルタの自動キャッシュ、より高速なクエリに書き換えられたparent-child</li>
-<li>設定の代わりに、フィードバックループを使用した自動調整</li>
-<li>トランザクションログへの書き込みがデフォルトで、アトミックでかつ冗長に</li>
-<li>安全で明確で信頼性のあるタイプマッピング</li>
-<li>デフォルトでローカルホストでのみクラスタを構成</li>
-<li>クラスタ状態の差分によりより高速に変更を伝搬</li>
-</ul>
-
-
-<p>上記の変更以外にも、多くのElasticsearchおよびLuceneに対する継続的な変更が含まれています。
-これらは、Elasticsearch 2.0をより安全に、より簡単に、より良いものにしています。
-本リリースに関するより詳しい情報が次のブログにあるので、参考にしてください。</p>
-
-<ul>
-<li><a href="https://www.elastic.co/blog/elasticsearch-2.0.0.beta1-coming-soon">Elasticsearch 2.0.0.beta1 coming soon!</a></li>
-<li><a href="https://www.elastic.co/blog/great-mapping-refactoring">The Great Mapping Refactoring</a></li>
-<li><a href="https://www.elastic.co/blog/store-compression-in-lucene-and-elasticsearch">Store compression in Lucene and Elasticsearch</a></li>
-<li><a href="https://www.elastic.co/blog/better-query-execution-coming-elasticsearch-2-0">Better query execution coming to Elasticsearch 2.0</a></li>
-<li><a href="https://www.elastic.co/blog/out-of-this-world-aggregations">Out of this world aggregations</a></li>
-<li><a href="https://www.elastic.co/blog/staying-in-control-with-moving-averages-part-1">Staying in Control with Moving Averages - Part 1</a></li>
-<li><a href="https://www.elastic.co/blog/staying-in-control-with-moving-averages-part-2">Staying in Control with Moving Averages - Part 2</a></li>
-<li><a href="https://www.elastic.co/blog/core-delete-by-query-is-a-plugin">The Delete by Query API Is now a plugin</a></li>
-<li><a href="https://www.elastic.co/blog/elasticsearch-unplugged">Elasticsearch unplugged - Networking changes in 2.0</a></li>
-</ul>
-
-
-<p>また、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/2.0/index.html">Elasticsearch 2.0.0-beta1のドキュメント</a>も参考になります。
-特に、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/2.0/breaking-changes-2.0.html">2.0での重大な変更点について</a>は必ずごらんください。</p>
-
-<h2>Core plugins</h2>
-
-<p>コアプラグインの開発の方法を変更しました。
-公式にサポートしているプラグインは、現在<a href="https://github.com/elastic/elasticsearch/tree/master/plugins">elasticsearchのリポジトリ</a>に含まれています。
-これにより、コアと一緒にテストされ、Elasticsearchと同じタイミングでリリースされます。
-コアプラグインはElasticsearchと同じバージョン番号隣ます。
-インストールは次のようになります。</p>
-
-<pre><code>sudo bin/plugin install analysis-icu
-</code></pre>
-
-<p><a href="https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/index.html">プラグインの新しいドキュメント</a>は私たちのWebサイトの<a href="https://www.elastic.co/guide/index.html">Guide</a>にあります。</p>
-
-<h2>Commercial plugins</h2>
-
-<p>私たちの商用プラグインもElasticsearchと同じバージョン番号となり、Elasticsearchと一緒にリリースされます。
-ShieldやWatcherはすでに2.0.0-beta1が利用可能です。
-インストールのコマンドはは次のようになります。</p>
-
-<pre><code>sudo bin/plugin install license
-sudo bin/plugin install shield
-sudo bin/plugin install watcher
-</code></pre>
-
-<p>MarvelおよびSenseに関する新しい情報もありますが、もう少しお待ちください。</p>
-
-<p>2.0.0-beta1の商用プラグインに関するドキュメントは次のリンクからごらんください。</p>
-
-<ul>
-<li><a href="https://www.elastic.co/guide/en/shield/2.0.0-beta1/index.html">Shield 2.0.0-beta1</a></li>
-<li><a href="https://www.elastic.co/guide/en/watcher/2.0.0-beta1/index.html">Watcher 2.0.0-beta1</a></li>
-</ul>
-
-
-<h2>Elasticsearch Migration plugin</h2>
-
-<p>Elasticsearch 2.0.0-beta1を試す前に、
-既存のインデックスのアップグレードするためになにか行う必要があるかどうかを確認するためのElasticsearch Migration Pluginもリリースしました。
-2.0.0では機能しない、問題のあるマッピングなどを見つけるために便利なプラグインです。</p>
-
-<p>このプラグインの利用方法については<a href="http://github.com/elastic/elasticsearch-migration">Elasticsearch Migration repository</a>をごらんください。</p>
-
-<h2>既知の問題</h2>
-
-<p>同じインデックスの異なるタイプに、同じ名前の<code>ip</code>タイプのフィールドを追加した時に、問題があることがわかっています。
-この問題は次のリリースでフィックスされます。詳細は<a href="https://github.com/elastic/elasticsearch/issues/13112">#13112</a>をごらんください。</p>
-
-<h2>テストしましょう！</h2>
-
-<p>Elasticsearch 2.0.0 GAをすぐにリリースできるようにより多くのベータテスターをお待ちしています。</p>
-
-<p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-2-0-0-beta1">Elasticsearch 2.0.0-beta1</a>をダウンロードして、試してみてください。
-そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)や<a href="https://discuss.elastic.co/c/elasticsearch">Webフォーラム</a>などで教えて下さい。
-また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
 ]]></content>
   </entry>
   
