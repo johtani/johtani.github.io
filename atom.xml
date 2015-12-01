@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2015-11-11T02:10:31+09:00</updated>
+  <updated>2015-12-01T15:23:42+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,139 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Timelionの紹介 - Elasticsearch Advent Calendar 2015 1日目]]></title>
+    <link href="http://blog.johtani.info/blog/2015/12/01/introduction-timelion/"/>
+    <updated>2015-12-01T11:28:11+09:00</updated>
+    <id>http://blog.johtani.info/blog/2015/12/01/introduction-timelion</id>
+    <content type="html"><![CDATA[<p>こんにちは、<a href="https://twitter.com/johtani">@johtani</a>です。</p>
+
+<p>早いもので、師走です。今年もあと少しとなりました（今月が一番忙しかったりしますが。。。）。
+ということで、Advent Calendarの季節が始まりました。</p>
+
+<p>この記事は<a href="http://qiita.com/advent-calendar/2015/elasticsearch">Elasticsearch Advent Calendar 2015</a>の1日目のエントリです。</p>
+
+<p>今日は、最近公開された<a href="https://github.com/elastic/timelion">Timelion</a>の紹介をしたいと思います。</p>
+
+<!-- more -->
+
+
+<h2>Timelion?</h2>
+
+<p>11/12に公開されたばかりのアプリになります。（<a href="https://www.elastic.co/blog/timelion-timeline">公式のブログはこちら</a>。ブログでは動画による説明もあり）</p>
+
+<p>Kibanaにプラグインとしてインストールすることで使用することができるようになるアプリです。
+Timelionと書いて「Timeline」と読むようです。
+Kibanaとは異なるグラフ描画のプラグインになっています。</p>
+
+<h3>Kibana 4.2からプラットフォーム化</h3>
+
+<p>Kibana 4.2から、Kibanaにプラグイン機構が導入されました。
+Kibanaとしての機能以外にも、プラグインとして、アプリを追加できるようになっています。
+Timelionもその一つです。</p>
+
+<h3>インストール</h3>
+
+<p>Timelionを試してみるには、ElasticsearchとKibanaが必要になります。（こちらは、すでにインストールされているとして。。。）</p>
+
+<p>Kibanaのコマンドを利用して、プラグインをインストールします。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>bin/kibana plugin -i kibana/timelion</span></code></pre></td></tr></table></div></figure>
+
+
+<p>インストールしたら、Kibanaにアクセスして、Timelionを呼び出します。</p>
+
+<h3>Timelionへアクセス</h3>
+
+<p>ブラウザで<code>localhost:5601</code>にアクセスすると、Kibanaが出てきます。
+Kibanaのプラグイン選択のアイコンをクリックし、Timelionのアイコンをクリックします。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20151201/switch_to_timelion.jpg" title="" ></p>
+
+<p>すると、初期画面はこんな感じです。
+直近15分のElasticsearchに入っているデータがが全部出てきます。
+チュートリアルも出てきてます（初回起動時に出たはず）</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20151201/tutrial_timelion.jpg" title="" ></p>
+
+<p>Kibanaでの検索窓の部分に関数を指定していくことで、グラフが描画できるツールになっています。</p>
+
+<h3>サンプル：気温データを可視化</h3>
+
+<p>百聞は一見に如かずということで、
+<a href="http://www.data.jma.go.jp/gmd/risk/obsdl/index.php">気象庁のデータ</a>を使って、
+ちょっとしたグラフを書いてみました。
+1年間の気温の推移と日照時間になります。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20151201/tenperature_naha_and_sapporo.jpg" title="" ></p>
+
+<p>上のグラフが那覇、下グラフが札幌の気温のグラフになります。</p>
+
+<ul>
+<li>赤いライン：最高気温</li>
+<li>青いライン：最低気温</li>
+<li>黄色い棒グラフ：日照時間</li>
+</ul>
+
+
+<p>最低気温と日照時間はグラフは次のような式で描画しています。</p>
+
+<h5>青いラインの最低気温</h5>
+
+<p>気温のグラフになります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>.es(index='tenki2', q='city:naha', metric='avg:temperature_min').label('min'),</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>.es()</code>がelasticsearchに対するデータ取得の関数です。
+引数は次のような意味になります。
+* index：対象とするインデックス名
+* q：検索クエリ。ここでは、cityというフィールドにnahaで検索。
+* metric：描画対象となっているデータの入ったフィールド。temperature_minというフィールドの1日毎の平均値を取得</p>
+
+<p>最低気温と最高気温は別々のフィールドに格納してあります。最高気温の場合は（temperature_max）を指定します。</p>
+
+<p><code>.label(min)</code>で、グラフの凡例の指定です。
+残念ながら、日本語の指定は現時点（2015年12月01日時点）ではうまくいかなかったです。（<a href="https://github.com/elastic/timelion/issues/17%EF%BC%89">https://github.com/elastic/timelion/issues/17%EF%BC%89</a></p>
+
+<p>デフォルトでは、線グラフが選択されているので、グラフの種類は特に指定はしていません。
+明確に指定する場合は<code>lines()</code>を指定します。</p>
+
+<h5>黄色い棒グラフの日照時間</h5>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>.es(index='tenki2', q='city:naha', metric='avg:sunlight').label(sunlight).bars()</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>.es()</code>に関しては最低気温のグラフとほぼ一緒です。異なるのは、metricの取得対象のフィールド名です。</p>
+
+<p><code>.label()</code>で凡例を指定しています。先程と同様です。</p>
+
+<p>最後に、棒グラフにしたいため、<code>.bars()</code>を指定しています。</p>
+
+<p>その他に用意されている関数について知りたい場合は、Timelionのヘルプを表示すると説明が出てきます。
+<code>cusum()</code>のような値を累積して表示するような関数も用意されています。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20151201/about_help.jpg" title="" ></p>
+
+<h3>まとめ</h3>
+
+<p>Kibanaとは少し違うアプローチで時系列データを描画するためのツールとなっています。
+線グラフと棒グラフを一つのグラフに描画したりもできますし、
+累積のグラフなんかも描画できるようになっています。</p>
+
+<p>実験的なプロジェクトである、Timelionの紹介でした。
+ここでのノウハウがkibanaにフィードバックされると色々と面白いことになるんじゃないかなと。</p>
+
+<h3>ということで、</h3>
+
+<p>明日は、<a href="http://qiita.com/zoetro">zoetro</a>さんの「Kibanaのプラグインの話」になります。
+お楽しみに！</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第13回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
@@ -2568,151 +2701,6 @@ Found Standardに対しても提供することになりました。
 
 <p>きれいなロビーで良かったのですが、マイクがあると嬉しかったかもしれません。
 前回の辞書の話も聞いてみたかったかも。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Hatena Engineer Seminar #5 @ Tokyoに参加しました。 #hatenatech]]></title>
-    <link href="http://blog.johtani.info/blog/2015/06/17/attend-hatena-engineer-seminar-5/"/>
-    <updated>2015-06-17T00:21:33+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/06/17/attend-hatena-engineer-seminar-5</id>
-    <content type="html"><![CDATA[<p>ひさびさに、勉強会メモ。
-<a href="http://hatena.connpass.com/event/15973/">Hatena Engineer Seminar #5 @ Tokyo</a>に当選したので行ってきました。</p>
-
-<p>いつもは近寄らないオシャレな街をドキドキしながら行ってきました。</p>
-
-<!-- more -->
-
-
-<p>ということで、簡単なメモです。</p>
-
-<h2>はてなブックマーク全文検索の精度改善 id:takuya-a</h2>
-
-<h3>問題：検索精度がよくない</h3>
-
-<ul>
-<li>京都で検索 →　「ポーランドの京都」「京都大学のまるまる教授」のようなもんがヒット</li>
-<li>京都っぽいエントリが出て欲しい。
-
-<ul>
-<li>京都っぽい？？？</li>
-</ul>
-</li>
-<li>問題点をブレイクダウン
-
-<h4>課題</h4></li>
-<li>クエリ考えるの大変だよね</li>
-<li>順序が新着順なのが辛い</li>
-<li>適合率と再現率の両立</li>
-</ul>
-
-
-<p>そして（ドラムロール）、できました！（さすが）</p>
-
-<p>アイデア：はてブのタグを利用する。
-関連キーワードを抽出して、クエリ拡張する。</p>
-
-<h3>関連キーワードとは？</h3>
-
-<ol>
-<li>タグ検索する</li>
-<li>検索にヒットしたTerm Vectorsを取得</li>
-<li>特徴語をTop25件取得</li>
-<li>もっともスコアが高いタームを特徴語とする
-
-<ul>
-<li>英語のストップワードとかが問題点となってたり。</li>
-<li>→Dynamic stop word listというのを利用して排除（IDF、RIDF、Gain）</li>
-</ul>
-</li>
-</ol>
-
-
-<h3>今後の課題</h3>
-
-<ul>
-<li>再現率の向上</li>
-<li>解析用のフィールド・辞書を追加（精度向上や解析ミスなど）</li>
-</ul>
-
-
-<h3>トークに出てきた機能など</h3>
-
-<p>トークに出てきたElasticsearchの機能については、こんなツイートをしてたので、参考にしてもらえれば。</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr">これのkuromoji_stemmerを使ってるっぽい？ <a href="https://twitter.com/hashtag/hatenatech?src=hash">#hatenatech</a> / elastic/elasticsearch-analysis-kuromoji - <a href="https://t.co/3F2sBYXLPH">https://t.co/3F2sBYXLPH</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/610759870564859904">2015, 6月 16</a></blockquote>
-
-
-<p> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
-
-<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr"><a href="https://twitter.com/hashtag/hatenatech?src=hash">#hatenatech</a> Term Vectors APIのドキュメントはこちら - <a href="https://t.co/HhBmTDr46i">https://t.co/HhBmTDr46i</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/610760840170450944">2015, 6月 16</a></blockquote>
-
-
-<p> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
-
-<blockquote class="twitter-tweet" lang="ja"><p lang="it" dir="ltr"><a href="https://twitter.com/hashtag/hatenatech?src=hash">#hatenatech</a> min_score - <a href="https://t.co/Sc0exzJRC1">https://t.co/Sc0exzJRC1</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/610763959944097793">2015, 6月 16</a></blockquote>
-
-
-<p> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
-
-<h4>個人的な疑問</h4>
-
-<p>Q：クエリにヒットするタグがそもそもなかったら？</p>
-
-<h2>はてなブックマークに基づく関連記事レコメンドエンジンの開発 id:skozawa</h2>
-
-<h3>課題：一部のエントリに対して関連記事が出ない</h3>
-
-<p>タグがない記事について関連エントリが出ない＝既存はタグを利用している
-例：レシピで考える</p>
-
-<h4>現行システム</h4>
-
-<ul>
-<li>ユーザがつけたタグ情報を利用してMoreLikeThisで計算</li>
-</ul>
-
-
-<h4>新規システム</h4>
-
-<ol>
-<li>類似記事検索</li>
-<li>特徴語の抽出</li>
-<li>特徴語を分類</li>
-<li>関連記事検索</li>
-<li>関連記事をスコアリング</li>
-</ol>
-
-
-<h4>個人的な疑問</h4>
-
-<p>Q：毎回計算してるのかな？記事登録とかされたタイミングでやってるのかな？
-Q：Termの精度などどうなんだろ？</p>
-
-<h2>『BrandSafe はてな』のアドベリフィケーションのしくみ id:tarao</h2>
-
-<p>BrandSafeはてな：とか。
-広告の配信先をフィルタリング</p>
-
-<p>複数の素朴なフィルタの組み合わせ→AdaBoost</p>
-
-<h4>個人的な疑問</h4>
-
-<p>Q：海外とかもいけるのかな？</p>
-
-<h2>まとめと感想</h2>
-
-<p>ということで、簡単なメモでした。ピザごちそうさまでした！
-聞いてて少し思ったのは、データ量があるサイトだからうまくいく手法だというのもあるんだろうなというところでした。
-あとは、クエリを暗に改善するのとは別に、サジェスト的に表示するのにも使えたりするかも？と思ってみたり。
-できるかどうかはわからないですが。。。</p>
-
-<p>Elasticsearchをいろいろと活用してもらってるのがわかって、楽しい勉強会でした。
-もっともっといろんなところで宣伝してくださいw</p>
-
-<p>今日の勉強会を聞いて、俄然、京都・大阪でElasticsearch勉強会を開催したい気になってきました。
-特に大阪に知り合いがいないので、だれか紹介してもらえると嬉しいです。
-お待ちしてます。</p>
 ]]></content>
   </entry>
   
