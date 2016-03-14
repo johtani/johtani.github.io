@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2016-01-12T14:24:16+09:00</updated>
+  <updated>2016-03-14T23:00:27+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,55 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[「自然言語処理の基本と技術」を読んでる]]></title>
+    <link href="http://blog.johtani.info/blog/2016/03/14/review-basics-and-tech-of-nlp/"/>
+    <updated>2016-03-14T22:34:12+09:00</updated>
+    <id>http://blog.johtani.info/blog/2016/03/14/review-basics-and-tech-of-nlp</id>
+    <content type="html"><![CDATA[<p>久々のポスト。。。</p>
+
+<p>久々に、技術書読んでます。<a href="http://amzn.to/1QSplr1">「自然言語処理の基本と技術」</a>という本です。</p>
+
+<p>監修の方のツイートを見て気になったので、買ってみました。
+書籍のサイトの説明はこんな感じでした。</p>
+
+<!-- more -->
+
+
+<blockquote><p>本書は、この未来に不可欠となるに違いない自然言語処理の、技術的、ビジネス的基礎知識をくまなくコンパクトに図解した一冊です。
+著者陣もそれぞれの分野の第一線で活躍するエキスパート揃い！</p></blockquote>
+
+<p>確かに著者陣がすごいです。</p>
+
+<p>まだ、「はじめに」と自分に関係のある「情報検索」の章を流し読みしただけなんですが、次のような特徴がある本です。</p>
+
+<ul>
+<li>平易な単語で説明してある（難しい専門用語が少ない）</li>
+<li>数式が出てこない（多分。少なくとも読んだ部分では見てない）</li>
+<li>説明には例と図解がある</li>
+</ul>
+
+
+<p>情報検索の章で言うと、全文検索でよく使われる転置インデックス（索引という単語が使われてる）がなぜ必要なのか、どういう感じで作られるのか、
+転置インデックスに利用する索引の単語をどうやって作るのか（文字N-Gramや形態素解析）、単語の正規化（ステミングやストップワード）などの説明が
+本当にわかりやすく書かれています。
+スコアリングについても触れられています。</p>
+
+<p>Elasticsearchも転置インデックスを用いた検索を行っており、
+MappingでAnalyzerの指定をしている理由などの理解に役に立つと思います。</p>
+
+<p>全文検索システムがどのように検索を処理しているかをざっくり理解するのにはもってこいじゃないかと。
+1点残念だなと思ったのは、書籍に「索引」がありませんでした（本の索引を思い浮かべてくださいっていう説明あったんだけど）。。。
+Kindle版を購入すれば「検索」できるのかな？</p>
+
+<p>ということで、まだ、流し読みしただけなんですが、「すごく」オススメです。
+購入はこちらから！</p>
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=479812852X&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第14回Elasticsearch勉強会を開催しました。 #elasticsearchjp]]></title>
@@ -2412,404 +2461,6 @@ A:本文とタイトルから別々に作っていて、タイトルからは弾
 
 <p>あまり、関西に縁がない（大阪15年ぶり、京都10年ぶり）ので、
 もっとユーザが増えて勉強会の機運が高まると嬉しいなと。:)</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Mappingのすばらしいリファクタリング（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/07/08/great-mapping-refactoring-ja/"/>
-    <updated>2015-07-08T18:11:31+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/07/08/great-mapping-refactoring-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/great-mapping-refactoring">The Great Mapping Refactoring</a></p>
-
-<!-- more -->
-
-
-<p>Elasticsearchのユーザの悩みの最も大きなものの一つは、
-タイプとフィールドのマッピングに関する多義性です。
-この多義性は、インデックス時の例外やクエリ時の例外、
-正しくない結果、リクエストからリクエストへ変化する結果、
-また、インデックスの故障やデータのロスを結果として引き起こします。</p>
-
-<p>Elasticsearchをより強固で予測可能な振る舞いをするようにする作業において、
-フィールドやタイプのマッピングをより厳格でより信頼性を高くするかといったことに
-多くの変更を費やしました。
-多くのケースで、Elasticsearch v2.0で新しいインデックスを作るときにのみ、
-新しいルールを強制し、これまでのインデックスに関しては後方互換性を保つようにします。</p>
-
-<p>しかし、幾つかのケースでは、先ほど説明したようなフィールドマッピングの
-コンフリクトなどが存在するため、それらを利用できないです。</p>
-
-<blockquote><p>コンフリクトしたフィールドのマッピングをもつインデックスはElasticsearch v2.0にはアップグレードできません。</p></blockquote>
-
-<p>もし、これらのインデックスのデータが必要ない場合は、インデックスを消せばいいです。
-そうでない場合はマッピングを正しくして再度インデックスする必要があるでしょう。</p>
-
-<p>マッピングを正しく変更することは、私たちが簡単に決めることではありません。
-ここからは、現在ある問題点と、私たちがどのように実装して解決したかについて説明します。</p>
-
-<ul>
-<li><a href="#conflicting-field-mappings">フィールドマッピングのコンフリクト</a></li>
-<li><a href="#ambiguous-field-lookup">あいまいなフィールドのルックアップ</a></li>
-<li><a href="#type-meta-fields">タイプのメタフィールド</a></li>
-<li><a href="#analyzer-settings">アナライザ設定</a></li>
-<li><a href="#index_name-and-path"><code>index_name</code>と<code>path</code></a></li>
-<li><a href="#mapping-update">同期的なマッピングの更新</a></li>
-<li><a href="#delete-mapping">マッピングの削除</a></li>
-<li><a href="#prepare-2_0">2.0のための準備</a></li>
-</ul>
-
-
-<h2><a name="conflicting-field-mappings">フィールドマッピングのコンフリクト</a></h2>
-
-<p>これまで、わたしたちはドキュメントのタイプは「データベースのテーブルのようなもの」と説明していました。
-タイプの目的を説明する簡単な方法だったからです。
-しかし、残念なことにこれは、真実ではありません。
-「同じ」インデックスの「異なるタイプ」にある同じ名前のフィールドは、
-内部的に、Luceneのフィールド名が同じものになります。</p>
-
-<p>もし<code>error</code>フィールドとして、ドキュメントタイプが<code>apache</code>のものには数値（integer）を、
-ドキュメントタイプが<code>nginx</code>のものには文字列（string）を割り当てた場合、
-Elasticsearchは同じLuceneのフィールドに数値と文字列のデータをもつことになります。
-このフィールドに対して、検索やaggregationを行う場合、おかしな結果を受け取るか、例外が帰ってくるか、
-インデックスが破損することになります。</p>
-
-<p>この問題を解決するために、まず、ドキュメントタイプの名前をフィールドの名前の前に追加することを考えました。
-各フィールドは完全に別のものとなります。
-このアプローチの利点はドキュメントタイプが実際のテーブルのようになることです。</p>
-
-<p>しかし、この方法には多くの欠点があります。</p>
-
-<ul>
-<li>フィールドは常に、他のタイプとは異なるものであると区別するためもしくは、複数のタイプに同じフィールドのクエリのためにワイルドカードをつけた場合、
-ドキュメントタイプを前につける必要があります。</li>
-<li>複数のドキュメントタイプに対して同じフィールド名で検索する場合、クエリを個別に発行しなければならなく遅くなります。</li>
-<li>多くの検索で、既存の多くのクエリを壊してしまうために、単純な<code>match</code>や<code>term</code>クエリの代わりに、multi-fieldクエリを使う必要があります。</li>
-<li>圧縮の効率の悪さから、ヒープ利用量、ディスク使用量、I/Oなどが、増加します。</li>
-<li>複数のドキュメントタイプに対するaggregationは、global ordinalの利点を利用できなくなるために、遅くなり、メモリの使用量も増えます。</li>
-</ul>
-
-
-<h3>解決方法</h3>
-
-<p>最終的に、同じインデックスの同じ名前を持つ全てのフィールドは、同じマッピングを持つ必要があるというルールを採用することに決めました。
-ただ、<code>copy_to</code>や<code>enabled</code>のようなパラメータはタイプごとに指定することができるようになっています。
-これにより、データの破損、クエリ時の例外そして、おかしな結果が発生する問題を防ぎます。
-クエリとaggregationは現在でも高速なままで、圧縮率を最大化し、ヒープ使用量やディスク使用率の低減させます。</p>
-
-<p>この解決方法の欠点は、個別のテーブルとしてタイプを扱いたいユーザが彼らの考え方を変える必要があるということです。
-これは、思ったよりも問題ではありません。
-実際には、多くのフィールド名はデータの明確なタイプを表現しています。
-<code>created_date</code>は常に、日付ですし、<code>number_of_hits</code>フィールドはいつも数値です。
-フィールドマッピングがコンフリクトしているユーザはデータを失ったり、おかしなデータを受け取ったり、データを欠損させています。
-ベストプラクティスにユーザが従っているかどうかによらず、インデックス時に正しい振る舞いを強制することが現在の違いです。</p>
-
-<p>ユーザの多くがコンフリクトしていないフィールドマッピングをもっていれば、
-コンフリクトが起きた場合、技術がこれらのシチュエーションを扱うことが可能になると思いませんか？
-そこにはいくつかの解決方法があります。</p>
-
-<h4>タイプの代わりにインデックスを別々に</h4>
-
-<p>最も簡単な解決方法です。インデックスを別々のインデックスとし、実際のデータベーステーブルのようにします。
-インデックスをまたいだ検索はタイプをまたいだ検索のように動作しますし、
-ソートやaggregationも同じデータタイプへのクエリのように動作します。これまでと同じ制限です。</p>
-
-<h4>コンフリクトしたフィールドの名前の変更</h4>
-
-<p>コンフリクトがごくわずかな場合、（Logstashやアプリケーションで使っているものも一緒に）よりわかりやすいフィールド名に変更することで解決できます。
-例えば、2つの<code>error</code>フィールドがあった場合に、<code>error_code</code>と<code>error_message</code>に変更します。</p>
-
-<h4><code>copy_to</code>もしくはmulti-fieldsを利用</h4>
-
-<p>異なるドキュメントタイプのフィールドは別々の<code>copy_to</code>を設定できます。
-元の<code>error</code>フィールドは<code>index</code>の設定に<code>no</code>が設定してあり、全てのドキュメントタイプで無効化されていますが、
-特定のタイプだけ、<code>error</code>フィールドの値を数値の<code>error_code</code>フィールドにコピーすることができます。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>PUT my_index/_mapping/mapping_one
-</span><span class='line'>{
-</span><span class='line'>  "properties": {
-</span><span class='line'>    "error": {
-</span><span class='line'>      "type": "string",
-</span><span class='line'>      "index": "no",
-</span><span class='line'>      "copy_to": "error_code"
-</span><span class='line'>    },
-</span><span class='line'>    "error_code": {
-</span><span class='line'>      "type": "integer"
-</span><span class='line'>    }
-</span><span class='line'>  }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>他のタイプでは文字列の<code>error_message</code>にコピーします。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>PUT my_index/_mapping/mapping_two
-</span><span class='line'>{
-</span><span class='line'>  "properties": {
-</span><span class='line'>    "error": {
-</span><span class='line'>      "type": "string",
-</span><span class='line'>      "index": "no",
-</span><span class='line'>      "copy_to": "error_message"
-</span><span class='line'>    },
-</span><span class='line'>    "error_message": {
-</span><span class='line'>      "type": "string"
-</span><span class='line'>    }
-</span><span class='line'>  }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>同様の解決方法として<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/mapping-core-types.html#multi-fields">multi-field</a>も使えます。</p>
-
-<h4>各データタイプに対してネストしたフィールドに</h4>
-
-<p>ときどき、Elasticsearchに送ったドキュメントやドキュメントがもっているフィールドを制御できない場合があります。
-部分的なコンフリクトに加え、闇雲に、ユーザが送ってきたフィールドを受け入れると、マッピングが肥大化します。
-タイムスタンプやIPアドレスをフィールド名に使うようなドキュメントがあると考えてください。</p>
-
-<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-nested-type.html"><code>nested</code> フィールド</a>にすることで、<code>str_val</code>、<code>int_val</code>、<code>date_val</code>というような各データタイプを利用できます。</p>
-
-<p>このアプローチによって、次のドキュメントは</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{
-</span><span class='line'>  "message": "some string",
-</span><span class='line'>  "count":   1,
-</span><span class='line'>  "date":    "2015-06-01"
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>アプリケーションによって、次のようにフォーマットしなおす必要があります。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{
-</span><span class='line'>  "data": [
-</span><span class='line'>    {"key": "message", "str_val":  "some_string" },
-</span><span class='line'>    {"key": "count",   "int_val":  1             },
-</span><span class='line'>    {"key": "date",    "date_val": "2015-06-01"  }
-</span><span class='line'>  ]
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>この解決方法は、アプリケーションサイドでより多くの作業が必要ですが、コンフリクトの問題とマッピングの肥大化の問題を同時に解決します。</p>
-
-<h2><a name="#ambiguous-field-lookup">あいまいなフィールドのルックアップ</a></h2>
-
-<p>現在、フィールドの指定には&#8221;short name&#8221;、フルパス、ドキュメントタイプを前につけたフルパスが利用できます。
-これらのオプションがあいまいさをもたらしています。
-サンプルとして次のマッピングをご覧ください。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{
-</span><span class='line'>  "mappings": {
-</span><span class='line'>    "user": {
-</span><span class='line'>      "properties": {
-</span><span class='line'>        "title": {
-</span><span class='line'>          "type": "string"
-</span><span class='line'>        }
-</span><span class='line'>      }
-</span><span class='line'>    },
-</span><span class='line'>    "blog": {
-</span><span class='line'>      "properties": {
-</span><span class='line'>        "title": {
-</span><span class='line'>          "type": "string"
-</span><span class='line'>        },
-</span><span class='line'>        "user": {
-</span><span class='line'>          "type": "object",
-</span><span class='line'>          "fields": {
-</span><span class='line'>            "title": {
-</span><span class='line'>              "type": "string"
-</span><span class='line'>            }
-</span><span class='line'>          }
-</span><span class='line'>        }
-</span><span class='line'>      }
-</span><span class='line'>    }
-</span><span class='line'>  }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li><code>title</code>は<code>user.title</code>、<code>blog.title</code>、<code>blog.user.title</code>のどれでしょう？</li>
-<li><code>user.title</code>は<code>user.title</code>または<code>blog.user.title</code>のどちらでしょう？</li>
-</ul>
-
-
-<p>答えは「場合によります。」です。Elasticsearchが最初に見つけたものになります。
-フィールドはリクエストごとに変わるため、各ノードでマッピングがどのようにシリアライズされたかに依存します。</p>
-
-<p>2.0では、フィールドを指定する時に、ドキュメントタイプを除いたフルパス名を使用するべきでしょう。</p>
-
-<ul>
-<li><code>user.title</code>は、<code>blog</code>タイプの<code>user.title</code>を意味します。</li>
-<li><code>title</code>は、<code>user</code>と<code>blog</code>タイプの<code>title</code>フィールドを意味します。</li>
-<li><code>*title</code>は<code>user.title</code>と<code>title</code>フィールドの両方にマッチします。</li>
-</ul>
-
-
-<p><code>user</code>タイプの<code>title</code>フィールドと<code>blog</code>タイプの<code>title</code>の違いはどのように指定するのでしょう？</p>
-
-<p>指定できません。<a href="#conflicting-field-mappings">フィールドマッピングのコンフリクト</a>で説明した変更により、
-<code>title</code>フィールドは両方のタイプで同じフィールドになります。
-本質的に<code>title</code>と呼ばれる1つのフィールドになります。</p>
-
-<p><code>user.</code>や<code>blog.</code>のようなタイプのプレフィックスはタイプを指定することによるフィルタリングで効果があります。
-クエリの<code>blog.title</code>フィールドは<code>blog</code>タイプのドキュメントだけを検索し、<code>user</code>タイプのドキュメントを検索しません。
-このシンタックスは誤解を招きやすいです。なぜなら、いつでも動作するわけではないからです。
-aggregationやsuggestionはすべてのタイプに関する結果を含みます。
-この利用のため、上記の例のあいまいさがあるので、タイプのプレフィックスはサポートしません。</p>
-
-<p><strong>重要</strong> short nameやタイププレフィックスを利用したpercolatorは更新する必要があります。</p>
-
-<h2><a name="type-meta-fields">タイプのメタフィールド</a></h2>
-
-<p>すべてのタイプはメタフィールドを持っています。<code>_id</code>、<code>_index</code>、<code>_routing</code>、<code>_parent</code>、<code>_timestamp</code>などです。
-これらのほとんどは<code>index</code>、<code>store</code>、<code>path</code>のような幾つかの設定をサポートしています。
-これらの設定について次のようにシンプルにしました。</p>
-
-<ul>
-<li><code>_id</code>と<code>_type</code>は変更不可</li>
-<li><code>_index</code>は、ドキュメントのもつインデックスを保存するために<code>enabled</code></li>
-<li><code>_routing</code>は<code>required</code>のみを指定</li>
-<li><code>_size</code>は<code>enabled</code>のみ</li>
-<li><code>_timestamp</code>はデフォルトで保存される</li>
-<li><code>_boost</code>と<code>_analyzer</code>は廃止。古いインデックスのものは無視される</li>
-</ul>
-
-
-<p>ドキュメントのフィールドから<code>_id</code>と<code>_routing</code>と<code>_timestamp</code>の値を抽出することができました。
-この機能は廃止されます。これは、ドキュメントのパースとコンフリクトを起こすためです。
-代わりに、これらの値はURLもしくはquery stringで指定可能です。</p>
-
-<p><code>_boost</code>と<code>_analyzer</code>フィールドは例外で、すでにあるメタフィールドの設定は古いインデックスのものが採用されます。</p>
-
-<h2><a name="analyzer-settings">アナライザ設定</a></h2>
-
-<p>これまで、indexとsearchのアナライザがインデックス、タイプ、フィールド、ドキュメント（<code>_analyzer</code>フィールドで）の
-それぞれのレベルで指定可能でした。
-同じフィールドに対して異なるanalysis chainの組み合わせができることにより、おかしな関連度を引き起こしていました。
-フィールドマッピングのコンフリクトを解消することに加え、アナライザの設定も簡略化します。</p>
-
-<ul>
-<li>Analyzedな文字列フィールドは、<code>analyzer</code>設定と<code>search_analyzer</code>設定（<code>analyzer</code>設定の値をデフォルトとする）を指定できます。<code>index_analyzer</code>設定は<code>analyzer</code>となります。</li>
-<li>複数のタイプで同じ名前のフィールドがある場合、フィールドはすべて、同じアナライザの設定を持たなければなりません。</li>
-<li>タイプレベルのデフォルト設定の<code>analyzer</code>、<code>index_analyzer</code>、<code>search_analyzer</code>設定は廃止されます。</li>
-<li>デフォルトアナライザはインデックスごとにインデックスの<code>analysis</code>設定で設定します。これらは<code>default</code>もしくは<code>default_search</code>という名前で設定します。</li>
-<li>ドキュメントごとの<code>_analyzer</code>フィールドはサポートしません。既存のインデックスのものは無視されます。</li>
-</ul>
-
-
-<h2><a name="index_name-and-path"><code>index_name</code>と<code>path</code></a></h2>
-
-<p><code>index_name</code>と<code>path</code>設定は（Elasticsearch v1.0.0から利用できる）<code>copy_to</code>によって置き換わりました。
-既存のインデックスについてはこれらは機能しますが、新しいインデックスでは指定できません。</p>
-
-<h2><a name="mapping-update">同期的なマッピングの更新</a></h2>
-
-<p>現在、これまで存在していないフィールドを含むドキュメントをインデキシングするとき、
-フィールドはローカルのマッピングに追加され、それから、マスターに変更（新しいマッピングをすべてのシャードに適用する更新）が送信されていました。
-同時に2つのシャードに同じフィールドを追加することができます。
-また、そのとき、異なる2つのマッピングがある可能性があります。
-1つは<code>double</code>でもう1つは<code>long</code>だったり、<code>string</code>と<code>date</code>だったりと。</p>
-
-<p>このような場合、マスターに最初に届いたマッピングが採用されます。
-しかし、「負けた」マッピングをもつシャードでは、すでに異なるデータのタイプを利用しているため、
-これを利用し続けます。
-そのご、ノードをリスタートしたときに、シャードが別のノードに移動し、マスターにあるマッピングを適用します。
-このとき、インデックスが破損したりデータを失ったりします。</p>
-
-<p>これを防ぐために、シャードはインデキシングを続ける前に、新しいマッピングがマスターによって採用されるかどうかを待つようになりました。
-これはすべてのマッピングが安全に更新されます。
-新しいフィールドをもっているドキュメントをインデキシングすると、前よりも処理が遅くなるでしょう。
-受け入れられることを待つ必要があるためです。
-しかし、クラスタの状態の更新処理のスピードが次の2つの新しい機能によって大きく改善されています。</p>
-
-<ul>
-<li><strong>クラスタ状態の差分</strong>：可能であれば、クラスタの状態の変更はクラスタ状態全体の変更ではなく、部分的なものとする。</li>
-<li><strong>シャードへのリクエストの非同期化</strong>：シャードアロケーション処理中に、マスタノードは、
-割り当てられていないシャードのコピーの日付が最新のものを持っているかを見つけるために、リクエストをデータノードに対して送信します。
-ここで、クラスタ状態を変更する呼び出しがブロッキングで行われていました。v1.6.0から、このリクエストはバックグラウンドで非同期で実行されます。
-これにより、マッピング更新のようなペンディングタスクをより早く処理できるようになります。</li>
-</ul>
-
-
-<h2><a name="delete-mapping">マッピングの削除</a></h2>
-
-<p>（そのタイプのドキュメントがある場合）タイプマッピングを削除できないようにします。
-マッピングを削除した後に、削除されたフィールドの情報は、Luceneレベルでは存在し続け、
-もし、後から同じ名前のフィールドが追加されたときにインデックスの破損を引き起こします。
-そのようなマッピングは残しておくか、新しいインデックスに再インデックスすることができます。</p>
-
-<h2><a name="prepare-2_0">2.0のための準備</a></h2>
-
-<p>マッピングがコンフリクトしているかどうかを決めることは、手動で行うには慎重に行う必要があります。
-私たちは、<a href="https://github.com/elastic/elasticsearch-migration">Elasticsearch Migration Plugin</a>を提供します。
-これは、2.0で非推奨になったり廃止された機能を利用しているかどうかを見つけるために役に立つでしょう。</p>
-
-<p>もし、コンフリクトしたマッピングを持っている場合、
-正しいマッピングを持つ新しいインデックスにデータを再インデックスするか、
-必要ないなら削除します。
-これらのコンフリクトを解決しない限り2.0にはアップグレードできないでしょう。</p>
 ]]></content>
   </entry>
   
