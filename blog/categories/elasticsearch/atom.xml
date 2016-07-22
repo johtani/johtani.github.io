@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2016-06-30T12:47:37+09:00</updated>
+  <updated>2016-07-22T15:37:39+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,313 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp]]></title>
+    <link href="http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/"/>
+    <updated>2016-07-22T13:26:56+09:00</updated>
+    <id>http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter</id>
+    <content type="html"><![CDATA[<p>久しぶりに、技術的なブログ書いてます。</p>
+
+<p>Ingest Processorのプラグインを作ってみたくなったので、書いてみました。
+ただ書いてみるんじゃ3番煎じになりそうなので、<a href="https://cookiecutter.readthedocs.io/en/latest/readme.html">cookiecutter</a>を使ってみました。</p>
+
+<!-- more -->
+
+
+<p>と言っても、同僚のAlexが<a href="https://discuss.elastic.co/t/cookiecutter-template-for-writing-ingest-processors/52985">cookiecutter-elasticsearch-ingest-processor</a>と言うテンプレートを作ってくれているのを使っただけですが。（<a href="https://discuss.elastic.co%E3%81%AB%E6%8A%95%E7%A8%BF%E3%81%95%E3%82%8C%E3%81%9F%E8%A8%98%E4%BA%8B%E3%81%A7%E3%80%81%E4%BD%BF%E3%81%84%E6%96%B9%E3%81%8C%E3%82%A2%E3%83%8B%E3%83%A1gif%E3%81%A7%E8%AA%AC%E6%98%8E%E3%81%95%E3%82%8C%E3%81%A6%E3%81%A6%E3%82%8F%E3%81%8B%E3%82%8A%E3%82%84%E3%81%99%E3%81%84%E3%81%A7%E3%81%99%EF%BC%89">https://discuss.elastic.co%E3%81%AB%E6%8A%95%E7%A8%BF%E3%81%95%E3%82%8C%E3%81%9F%E8%A8%98%E4%BA%8B%E3%81%A7%E3%80%81%E4%BD%BF%E3%81%84%E6%96%B9%E3%81%8C%E3%82%A2%E3%83%8B%E3%83%A1gif%E3%81%A7%E8%AA%AC%E6%98%8E%E3%81%95%E3%82%8C%E3%81%A6%E3%81%A6%E3%82%8F%E3%81%8B%E3%82%8A%E3%82%84%E3%81%99%E3%81%84%E3%81%A7%E3%81%99%EF%BC%89</a></p>
+
+<p><a href="https://cookiecutter.readthedocs.io/en/latest/readme.html">cookiecutter</a>とは、コマンドラインで質問に答えると、テンプレートからプロジェクトが生成できるツールです。
+Elasticでは、カスタムBeatを作る時に利用する例がいつかの日本語ブログや発表資料で話題になっていました。
+これのIngest Processorのプラグインバージョンです。</p>
+
+<p>今回は、NEologdも使ってみたかったので、Lucene Kuromoji for NEologdを利用して
+指定した品詞の単語だけを抽出するProcessorを作ってみました。</p>
+
+<p>GitHubのプロジェクト：<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract</a></p>
+
+<h3>Cookiecutterの使い方</h3>
+
+<p><a href="https://cookiecutter.readthedocs.io/en/latest/readme.html">Cookiecutterのインストールはサイト</a>をご覧ください。</p>
+
+<pre><code>cookiecutter gh:spinscale/cookiecutter-elasticsearch-ingest-processor
+</code></pre>
+
+<p>あとは、出てくる以下の項目を指定するだけです。</p>
+
+<ul>
+<li><code>processor_type</code> : Ingest Processorのタイプ名です。<code>kuromoji_part_of_speech_extract</code>としました。（Alexのだと<code>_</code>を使うとちょっと問題があるので後述）</li>
+<li><code>description</code> : readme.mdに利用されます。</li>
+<li><code>developer_name</code> : 名前を記載。Javaのファイルのヘッダに利用</li>
+<li><code>elasticsearch_version</code> : デフォルトで<code>5.0.0-alpha4</code>が指定されているので、特に指定せず</li>
+</ul>
+
+
+<p>以上の質問に答えたら、プロジェクトのディレクトリ構造が出来上がってます。
+プロジェクトのビルドなどにはGradleを利用します。</p>
+
+<h3>プロジェクトのIntelliJ IDEA用のファイルを生成</h3>
+
+<p>build.gradleファイルでGradleのideaプラグインがapplyされているので、以下のコマンドを叩けばIntelliJ IDEAのプロジェクトファイル（？）が生成され、IntelliJで開けばすぐに開発ができる状態にできます。</p>
+
+<pre><code>gradle idea
+</code></pre>
+
+<h3>コーディング</h3>
+
+<p>あとは、必要処理をコーディングします。
+実際にコーディングするクラスは<code>org.elasticsearch.plugin.ingest.kuromoji_part_of_speech_extract</code>のパッケージにある以下の2つです。（パッケージ名にはprocessor_typeの名前が指定されている）</p>
+
+<ul>
+<li>IngestKuromojiPartOfSpeechExtractPlugin</li>
+<li>KuromojiPartOfSpeechExtractProcessor</li>
+</ul>
+
+
+<h4>IngestKuromojiPartOfSpeechExtractPlugin</h4>
+
+<p>Pluginというクラスは、プラグインをNodeのModuleとして登録する処理を書くクラスとなります。
+生成してすぐは、次のような形になっています。（※importやクラス定義の部分は省略しています。）</p>
+
+<pre><code class="Java">...
+    public static final Setting&lt;String&gt; YOUR_SETTING =
+            new Setting&lt;&gt;("ingest.kuromoji_part_of_speech_extract.setting", "foo", (value) -&gt; value, Setting.Property.NodeScope);
+
+    @Override
+    public List&lt;Setting&lt;?&gt;&gt; getSettings() {
+        return Arrays.asList(YOUR_SETTING);
+    }
+
+    public void onModule(NodeModule nodeModule) throws IOException {
+        nodeModule.registerProcessor(KuromojiPartOfSpeechExtractProcessor.TYPE,
+                (registry) -&gt; new KuromojiPartOfSpeechExtractProcessor.Factory());
+    }
+...
+</code></pre>
+
+<p><code>YOUR_SETTING</code>プロパティと<code>getSettings()</code>メソッドは<code>elasticsearch.yml</code>で指定したい設定を記述する場合の例になります。今回は特に必要ないので両方削除しました。
+最終系は<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">GitHubのコード</a>をご覧ください。</p>
+
+<h4>KuromojiPartOfSpeechExtractProcessor</h4>
+
+<p>Processorは実際にIngest Nodeで行う処理を書くところです。</p>
+
+<pre><code class="Java">
+    public static final String TYPE = "kuromoji_part_of_speech_extract";
+
+    private final String field;
+    private final String targetField;
+
+    public KuromojiPartOfSpeechExtractProcessor(String tag, String field, String targetField) throws IOException {
+        super(tag);
+        this.field = field;
+        this.targetField = targetField;
+    }
+
+    @Override
+    public void execute(IngestDocument ingestDocument) throws Exception {
+        String content = ingestDocument.getFieldValue(field, String.class);
+        // TODO implement me!
+        ingestDocument.setFieldValue(targetField, content);
+    }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
+
+    public static final class Factory extends AbstractProcessorFactory&lt;KuromojiPartOfSpeechExtractProcessor&gt; {
+
+        @Override
+        public KuromojiPartOfSpeechExtractProcessor doCreate(String processorTag, Map&lt;String, Object&gt; config) throws Exception {
+            String field = readStringProperty(TYPE, processorTag, config, "field");
+            String targetField = readStringProperty(TYPE, processorTag, config, "target_field", "default_field_name");
+
+            return new KuromojiPartOfSpeechExtractProcessor(processorTag, field, targetField);
+        }
+    }
+</code></pre>
+
+<p><code>TYPE</code>が<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/put-pipeline-api.html">Ingest APIのPipelineでProcessorを指定するときに使う名前</a>になります。ここは、cookiecutterの時にprocessor_typeに入力した文字列になっています。
+<code>kuromoji_part_of_speech_extract</code>だと長いので、<code>kuromoji_pos_extract</code>に変えました。</p>
+
+<p><code>execute()</code>メソッドに<code>// TODO implement me!</code>とあります。
+この部分に実際の処理を記述していきます。</p>
+
+<p>あとは、<code>Factory</code>クラスでIngest APIで指定された設定項目を読み込みます。
+今回作成した<code>elasticsearch-ingest-kuromoji-pos-extract</code>では品詞を指定する必要があるので、<code>pos_tags</code>を指定できるように処理を追加しました。</p>
+
+<p>私が実装したものの説明をするとちょっと長くなりそうなので、<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">GitHubのコード</a>をご覧ください。</p>
+
+<h3>テストのコーディング</h3>
+
+<p>テストのクラスもテンプレートで生成されています。</p>
+
+<ul>
+<li>KuromojiPartOfSpeechExtractProcessorTests</li>
+<li>KuromojiPartOfSpeechExtractRestIT</li>
+</ul>
+
+
+<h4>KuromojiPartOfSpeechExtractProcessorTests</h4>
+
+<p>Processorクラスのテストになります。生成直後は次のような感じです。</p>
+
+<pre><code class="Java">public void testThatProcessorWorks() throws Exception {
+    Map&lt;String, Object&gt; document = new HashMap&lt;&gt;();
+    document.put("source_field", "fancy source field content");
+    IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+
+    KuromojiPartOfSpeechExtractProcessor processor = new KuromojiPartOfSpeechExtractProcessor(randomAsciiOfLength(10), "source_field", "target_field");
+    processor.execute(ingestDocument);
+    Map&lt;String, Object&gt; data = ingestDocument.getSourceAndMetadata();
+
+    assertThat(data, hasKey("target_field"));
+    assertThat(data.get("target_field"), is("fancy source field content"));
+    // TODO add fancy assertions here
+}
+</code></pre>
+
+<p>テストメソッドも実装されていますが、パラメータの追加の設定処理やアサーションが書かれてません。
+実装に合わせて、アサーションや設定処理を追加しましょう。</p>
+
+<h4>KuromojiPartOfSpeechExtractRestIT</h4>
+
+<p>こちらはIntegration Testになります。
+実際にElasticsearchに対して外部からAPIを叩くような感じです。
+APIを叩くときに利用するJSONの設定やアサーションは<code>src/test/resources</code>にyamlファイルがあります。</p>
+
+<ul>
+<li>10_basic.yaml</li>
+<li>20_kuromoji_part_of_speech_extract_processor.yaml</li>
+</ul>
+
+
+<p><code>10_basic.yaml</code>はプラグインがインストールされているかの確認のテストです。特に変更する必要はないです。</p>
+
+<p><code>20_kuromoji_part_of_speech_extract_processor.yaml</code>は実際にコーディングしたProcessorが動くかどうかのテストです。</p>
+
+<p>テストの内容については、<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">GitHubのコード</a>をご覧ください。</p>
+
+<h3>テストの実行とZipの生成</h3>
+
+<p>テストの実行とZipの生成は次のコマンドを実行すればOKです。</p>
+
+<pre><code>gradle check
+</code></pre>
+
+<p>テストに問題があった場合は、コケますし、問題なければ<code>SUCCESS</code>と表示が出ます。
+成功した場合は<code>build/distributions/</code>というディレクトリにzipファイルができています。
+これをElasticsearchのpluginコマンドでインストールすれば動きます。</p>
+
+<pre><code>bin/plugin install file:///path/to/elasticsearch-ingest-kuromoji-pos-extract/build/distribution/ingest-kuromoji_part_of_speech_extract-0.0.1-SNAPSHOT.zip
+</code></pre>
+
+<h3>kuromoji_pos_extractの利用方法</h3>
+
+<p>Ingest APIには便利な<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/simulate-pipeline-api.html">Simulate Pipeline API</a>があります。</p>
+
+<p>ということで、<a href="https://github.com/neologd/mecab-ipadic-neologd/blob/master/README.ja.md">mecab-ipadic-NEologd</a>にあったサンプルの文章を使って、使い方の説明です。</p>
+
+<pre><code class="JSON">POST _ingest/pipeline/_simulate
+{
+  "pipeline" : {
+    "description" : "kuromoji neologd extract test",
+    "processors" : [
+      {
+        "kuromoji_pos_extract" : {
+        "field" : "body",
+        "target_field" : "noun_field",
+        "pos_tags" : [
+          "名詞-固有名詞-組織",
+          "名詞-固有名詞-一般",
+          "名詞-固有名詞-人名-一般",
+          "名詞-固有名詞-地域-一般",
+          "名詞-固有名詞-地域-国"
+          ]
+        }
+      }
+      ]
+  },
+  "docs" : [
+    {
+      "_index": "index",
+      "_type": "type",
+      "_id": "id",
+      "_source": {
+        "body" : "10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。"
+      }
+    }
+    ]
+}
+</code></pre>
+
+<p>結果はこちら。</p>
+
+<pre><code class="JSON">{
+  "docs": [
+    {
+      "doc": {
+        "_index": "index",
+        "_id": "id",
+        "_type": "type",
+        "_source": {
+          "noun_field": [
+            "10日",
+            "中居正広のミになる図書館",
+            "テレビ朝日",
+            "SMAP",
+            "中居正広",
+            "篠原信一"
+          ],
+          "body": "10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。"
+        },
+        "_ingest": {
+          "timestamp": "2016-07-22T06:18:49.007+0000"
+        }
+      }
+    }
+  ]
+}
+</code></pre>
+
+<p><code>noun_field</code>に固有名詞の単語が抜き出せているのがわかるかと思います。</p>
+
+<h3>Alexのテンプレートで困った点</h3>
+
+<p>テンプレートは便利だったのですが、<code>processor_type</code>に<code>_</code>を使用したタイプ名を指定すると次のような問題（？）が発生しました。</p>
+
+<ul>
+<li>クラス名が<code>Kuromoji_part_of_speech_extractProcessor</code>となってしまう</li>
+</ul>
+
+
+<p>深刻な問題ではないのですが、JavaだとCamel Caseが普通なのでちょっと気になって。
+ということで、<a href="https://github.com/spinscale/cookiecutter-elasticsearch-ingest-processor/pull/1">プルリク</a>作って出してみました。まだ取り込まれてないかな。</p>
+
+<p>取り込み前に使いたい方は以下のコマンドを実行してください。
+<code>processor_class_name</code>という項目が増えています。
+デフォルトだと<code>processor_type</code>の<code>_</code>の部分を取り除きつつCamel Caseにしたものが入ります。</p>
+
+<pre><code>cookiecutter gh:johtani/cookiecutter-elasticsearch-ingest-processor
+</code></pre>
+
+<h3>まとめ</h3>
+
+<p>ということで、とりあえず作ってみましたというものになります。
+特徴的な単語（固有名詞だけ）を抜き出して、別のフィールドにできるので、タグみたいなものをこれを使って前処理で作れるようになるかなぁと。</p>
+
+<h2>参考ブログ（元ネタ？）</h2>
+
+<p>インスパイア元となったブログです。</p>
+
+<ul>
+<li><a href="http://dev.classmethod.jp/server-side/elasticsearch/ingest-plugin-useragent/">User Agentを解析するIngest Pluginを書いてみた</a></li>
+<li><a href="http://blog.cybozu.io/entry/2016/07/05/080000">Elasticsearch 5.0.0のIngest Node用プラグインを書いた話</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第16回Elasticsearch勉強会を開催しました。 #elasticsearchjp]]></title>
@@ -647,106 +954,6 @@ topコマンドで取れるデータなどを<a href="https://www.elastic.co/dow
 <p>その他にもイベント、オープンソースカンファレンス（まずは、<a href="https://www.ospn.jp/osc2016.enterprise-osaka/">大阪</a>、<a href="http://www.ospn.jp/osc2016-spring/">東京</a>）などに出没する予定ですので、こちらも参加していただければと。</p>
 
 <p>では、また来年のAdvent Calendarでお会いしましょう！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第13回Elasticsearch勉強会を開催しました。#elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2015/11/10/13th-elasticsearch-jp/"/>
-    <updated>2015-11-10T17:22:58+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/11/10/13th-elasticsearch-jp</id>
-    <content type="html"><![CDATA[<p><a href="https://elasticsearch.doorkeeper.jp/events/33631">第13回Elasticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、会場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-来年もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-
-<p>7月同様、<a href="http://samuraism.com">サムライズム</a>の<a href="https://twitter.com/yusuke">@yusuke</a>さんに
-テキスト翻訳していただき、大変助かりました。</p>
-
-<!-- more -->
-
-
-<h3>チェックイン数など</h3>
-
-<ul>
-<li>チェックインした人：100名</li>
-<li>キャンセルしなかった人：36名</li>
-</ul>
-
-
-<p>でした。
-今回は当日の時点でキャンセル待ちがない状態にしていました。
-雨もあって、これなかった人もいるのでしょうか。</p>
-
-<h2>&ldquo;Beyond the basics with Elasticsearch&rdquo; / Honza Král / Elastic</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/elasticsearch/beyond-the-basics-with-elasticsearch  ">https://speakerdeck.com/elasticsearch/beyond-the-basics-with-elasticsearch  </a>
-参考ビデオ（別のカンファレンスで話した時のビデオ）：<a href="https://www.youtube.com/watch?v=yIixWzjTNog">https://www.youtube.com/watch?v=yIixWzjTNog</a></p>
-
-<p>Pycon HKでアジアに来ていたHonzaに、ついでに日本で話をしてもらうという企画で、
-前回から1カ月足らずでの開催となりました。
-Elasticsearchの基本的な検索機能とは別の機能に関して少し話をしてもらった感じです。
-<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-percolate.html">Percolator</a>と<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations.html">Aggregation</a>の話でした。</p>
-
-<p>詳しくはビデオやスライドを見てもらうのがいいかなと。</p>
-
-<h2>&ldquo;How did we use Found.no for our services?&rdquo; / 株式会社アイリッジ　Takuya Noguchi さん @tn961ir</h2>
-
-<p>スライド：未定</p>
-
-<ul>
-<li>Foundユーザー。1.7までの話。</li>
-<li>社内で独自にクラスタを構築していたが、managed serviceを利用したいと思っていた。</li>
-<li>Found用のACLがShieldに</li>
-<li>マルチバイトのインデックス名とかも使いたいが、Nginxとの連携でちょっと。。。</li>
-<li>セキュリティ関連の話も。Securityに関する報告はこういうものも用意されてるので、こちらに相談してもらうのがいいかも。<a href="https://www.elastic.co/community/security">https://www.elastic.co/community/security</a></li>
-<li>要望がいくつか。</li>
-</ul>
-
-
-<h2>&ldquo;ログ収集の仕組みを再考しよう！　あとマウンテンビューに行ってきました。&rdquo; / Acroquest Technology株式会社 谷本 心さん @cero_t</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/shintanimoto/lets-reconsider-about-collecting-logs-plus-visiting-elasticmoutain-view">http://www.slideshare.net/shintanimoto/lets-reconsider-about-collecting-logs-plus-visiting-elasticmoutain-view</a></p>
-
-<p>ログの小話から始まり、ログに関する考え方とかを披露してもらいました。
-さらに踏み込んだログの活用の方法の話になるかと思いきや、
-思いっきり話が飛んで、マウンテンビューのElasticオフィスに遊びに行った写真が出てきましたw</p>
-
-<p>写真の後は、弊社のTanya（<a href="https://www.elastic.co/elasticon/tour/2015/tokyo">来月のElastic{ON} Tour Tokyo</a>で来日予定）から
-聞いた弊社製品に関する話をしていただきました。
-きっと、Beatsに関して次は話してくれるんだろうなぁ（棒）。
-流れ的には、<a href="https://www.elastic.co/elasticon/conf/2016/sf">来年の2月にサンフランシスコで開催されるElastic{ON}16</a>につながりそうだったので、ここで宣伝しときますね。
-今年3月に開催されたイベントには残念ながら日本の方はいなかったので、次回は日本の方がいると嬉しいなぁと。</p>
-
-<h2>LT &ldquo;「Elasticsearch を使った単語共起頻度の計算」&rdquo; / 株式会社はてな　id:takuya-a さん</h2>
-
-<p>スライド：未定</p>
-
-<p>一風変わったElasticsearchの使い方的な話でした。
-検索用にデータを登録してあるElasticsearchから単語の頻度情報を抜き出して、
-別のインデックスに登録するという感じでしょうか。
-こういうのが、実は、Elasticsearchに機能としてあると便利だったりするのかもなぁと思ってみたり。</p>
-
-<p>LTよりはちょっと長かったですかねw</p>
-
-<h2>その他、感想などのブログ</h2>
-
-<ul>
-<li><a href="http://arika.hateblo.jp/entry/2015/11/09/204652">elasticsearch勉強会</a></li>
-</ul>
-
-
-<h2>まとめ＋宣伝</h2>
-
-<p>今回も@yusukeさんのテキスト翻訳に助けていただきました。ほんとありがとうございます。
-今年の勉強会はこれがラストになります。
-来月は、トレーニングと<a href="https://www.elastic.co/elasticon/tour/2015/tokyo">Elastic{ON} Tour Tokyo</a>があるので忙しくなりそうですが、
-参加予定の方は楽しみにしていてください！</p>
-
-<ul>
-<li>Operations : <a href="http://training.elastic.co/class/Operations/Japan/Dec">http://training.elastic.co/class/Operations/Japan/Dec</a></li>
-<li>Developer : <a href="http://training.elastic.co/class/Developer/Japan/Dec">http://training.elastic.co/class/Developer/Japan/Dec</a></li>
-</ul>
-
 ]]></content>
   </entry>
   
