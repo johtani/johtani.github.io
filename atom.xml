@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2016-07-22T15:41:22+09:00</updated>
+  <updated>2016-12-01T22:48:21+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,119 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch 5.0のハイライト（その他）]]></title>
+    <link href="http://blog.johtani.info/blog/2016/12/01/elasticsearch-5-dot-0-highlight/"/>
+    <updated>2016-12-01T17:34:30+09:00</updated>
+    <id>http://blog.johtani.info/blog/2016/12/01/elasticsearch-5-dot-0-highlight</id>
+    <content type="html"><![CDATA[<p>Elastic stack Advent Calendar 1日目の記事になります。</p>
+
+<p><a href="https://www.elastic.co/jp/blog/elasticsearch-5-0-0-released">Elasticsearch 5.0</a>が10月末にリリースされました。
+リリースのブログでいくつか紹介されているのですが、そこでは紹介されていない機能について2、3紹介しようと思います。</p>
+
+<p>その前に、5.0、あれ？その前は2.xじゃなかったっけ？？と困惑されている方もいるかと思うので、簡単に5となった経緯の紹介をしようかと。</p>
+
+<h3>バージョン番号</h3>
+
+<p>なぜ2から5に飛んだのかという話ですが、このスライドがその紹介になっています。</p>
+
+<p><a href="https://speakerdeck.com/johtani/elastic-stack-5-dot-0-alpha1-alpha5?slide=5">https://speakerdeck.com/johtani/elastic-stack-5-dot-0-alpha1-alpha5?slide=5</a></p>
+
+<p><a href="https://www.elastic.co/elasticon/conf/2016/sf/opening-keynote">Elastic{ON} 2016のキーノート</a>でも紹介がありましたが、KibanaやLogstashとElasticsearchを組み合わせて使うときにバージョンのミスマッチで動かないというユーザの声が上がっていました。
+2.xのリリースから、同じ日にKibana、Logstash、Beatsもリリースするようになったのですが、
+やはり、バージョン番号が異なるため、ミスマッチで動かないというユーザが時々いました。</p>
+
+<p>Elastic Stackという名称にもなったため、バージョン番号をそろえようという事になり、
+Elasticsearch、Kibana、Logstash、Beats全てが5.0.0としてリリースされ、
+今後は同じバージョン番号になります。</p>
+
+<p>ちなみに、「5」になった理由はKibanaのメジャーバージョンが「4」だったためです。</p>
+
+<p>さて、では、いくつか機能の紹介を。</p>
+
+<h3>Reindex from remote cluster</h3>
+
+<p>Reindexが2.3から導入されました。データの再登録ができるようになり、マッピングの変更や
+Shardの数の変更などが柔軟に行えるようになりました。
+便利でしたが、あくまでも同一のクラスタでデータを登録し直す形でした。</p>
+
+<p>5.0からはこの機能に加えて、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html#reindex-from-remote">異なるクラスタからデータを取得してReindex</a>を行うことができるようになりました。
+こんな形になります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>POST _reindex
+</span><span class='line'>{
+</span><span class='line'>  "source": {
+</span><span class='line'>    "remote": {
+</span><span class='line'>      "host": "http://otherhost:9200",
+</span><span class='line'>      "username": "user",
+</span><span class='line'>      "password": "pass"
+</span><span class='line'>    },
+</span><span class='line'>    "index": "source",
+</span><span class='line'>    "query": {
+</span><span class='line'>      "match": {
+</span><span class='line'>        "test": "data"
+</span><span class='line'>      }
+</span><span class='line'>    }
+</span><span class='line'>  },
+</span><span class='line'>  "dest": {
+</span><span class='line'>    "index": "dest"
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>username</code>と<code>password</code>はリモートのクラスタに認証の気候が存在する場合に利用できるオプションです。
+また、ReindexのAPIはクエリを使用して、必要なデータだけを取得することが可能です。
+この機能により、1.xや2.xのクラスタからデータを移行することが可能になります。</p>
+
+<h3>Custom analyzer test using Analyze API</h3>
+
+<p>もう一つ、ちょっとだけ便利な機能を紹介します。
+独自にAnalyzerを定義（TokenizerとToken Filterなどを個別に設定）して、その挙動を確認するとき、2.xまでは、インデックスを作成してそのインデックスに対して<code>_analyze</code> APIを呼び出す必要がありました。</p>
+
+<p>5.xからは<code>_analyze</code> APIの読み出しのパラメータで指定できるようになりました。
+こんな感じです。ここでは、<code>lowercase</code>フィルタのあとに、<code>{...}</code>で<code>stop</code>フィルタを
+パラメータの中で、指定しています。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl -XGET 'localhost:9200/_analyze' -d '
+</span><span class='line'>{
+</span><span class='line'>  "tokenizer" : "whitespace",
+</span><span class='line'>  "filter" : ["lowercase", {"type": "stop", "stopwords": ["a", "is", "this"]}],
+</span><span class='line'>  "text" : "this is a test"
+</span><span class='line'>}'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ちょっとだけですが、Analyzerなどを試すのが楽になるのではないでしょうか？</p>
+
+<p>ということで、以上が1日目の記事でした。
+Logstashなど、他の5.0.0に関する記事もAdvent Calendarに空きがあるようなので、個別にかこうかなと思います。お楽しみに！</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp]]></title>
@@ -2706,70 +2819,6 @@ ShieldやWatcherはすでに2.0.0-beta1が利用可能です。
 <p>ぜひ、<a href="https://www.elastic.co/downloads/past-releases/elasticsearch-2-0-0-beta1">Elasticsearch 2.0.0-beta1</a>をダウンロードして、試してみてください。
 そして、感想をTwitter(<a href="https://twitter.com/elastic">@elastic</a>)や<a href="https://discuss.elastic.co/c/elasticsearch">Webフォーラム</a>などで教えて下さい。
 また、問題がありましたら、<a href="https://github.com/elastic/elasticsearch/issues">GitHub issues page</a>で報告をお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Delete by Query APIはプラグインへ（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/08/20/core-delete-by-query-is-a-plugin-ja/"/>
-    <updated>2015-08-20T13:24:04+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/08/20/core-delete-by-query-is-a-plugin-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/core-delete-by-query-is-a-plugin">The Delete by Query API Is now a plugin</a></p>
-
-<p>Elasticsearchの2.0.0-beta1では、これまであった <a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.6/docs-delete-by-query.html">Delete by Query API</a>が<a href="https://github.com/elastic/elasticsearch/pull/10859">削除</a>され、
-新しく <a href="https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/plugins-delete-by-query.html">Delete by Query plugin</a>に<a href="https://github.com/elastic/elasticsearch/pull/11516">置き換え</a>られています。</p>
-
-<!-- more -->
-
-
-<p>もし、Delete by Query を利用する場合、2.0にアップグレードしたあとは、プラグインをインストールし、ドキュメントに従ってください。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bin/plugin install delete-by-query</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>なぜプラグインに？</h2>
-
-<p>ElasticsearchのコアなAPIの品質を保つためであり、以前のDelete by Queryの実装は簡単にはフィックスできない大きな問題がありました。</p>
-
-<ul>
-<li>各リクエストのあとに、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.6/indices-refresh.html">refresh</a>を実行します。これは、<a href="https://github.com/elastic/elasticsearch/issues/3593">削除されたデータが想定外に検索に出てこないようにするため</a>です。<br/>
-また、<a href="https://github.com/elastic/elasticsearch/issues/6025">セグメントが大量にでき、マージが大量に発生し、ヒープが大量に消費されてインデキシングが劇的にスローダウンし</a>、クラスタの複数のノードがクラッシュしてしまう状況も引き起こしました。</li>
-<li>このクエリは、プライマリ、レプリカの両方で実行されるため、ことなるドキュメントを削除し、矛盾したレプリカ（データの破損）を引き起こしました。</li>
-<li>アップグレードが不安定になります。これは、Delete by Queryリクエストがトランザクションログの中にクエリとして残るためです。そのため、アップグレードのあとに正確にパースされなかったり正確に実行されないかもしれません。例えば、インデックスエイリアスに対するリクエストで、それが削除された後の場合に<a href="https://github.com/elastic/elasticsearch/issues/10262">このようなバグ</a>が発生します。</li>
-</ul>
-
-
-<p>対照的に、<a href="https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/plugins-delete-by-query.html">新しいプラグイン</a>は、安全な実装です。
-<a href="https://www.elastic.co/guide/en/elasticsearch/guide/current/scan-scroll.html">scanとscrollリクエスト</a>でクエリにマッチしたIDを見つけ、そのIDを使って、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html">bulk indexing API</a>で削除します。</p>
-
-<p>この実装は、遅い必要があります。特に、クエリが多くのドキュメントを削除する場合です。
-もし、多くのドキュメントをこのAPIを利用して削除する場合、アプリケーションをテストしてください。
-そして、<a href="https://www.elastic.co/blog/lucenes-handling-of-deleted-documents">代わりにインデックス全体を消す</a>ようなアプローチに切り替えることができないか検討してください。</p>
-
-<p><a href="https://www.elastic.co/guide/en/elasticsearch/plugins/2.0/delete-by-query-plugin-reason.html">Delete by Query pluginのドキュメント</a>に、新しい実装についての違いなどのより詳しい説明があります。</p>
-
-<h2>Elasticsearch coreを最小限に</h2>
-
-<p>プラグインに切り替えることは、簡単な決断ではありませんでした。
-多くのユーザは問題なく、Delete by Queryを利用していました。
-しかし、危険が常にそこにあり、些細とは言い切れない数のユーザが上記のような深刻な問題に遭遇していました。</p>
-
-<p>さらに、Elsticsearchのコアは信頼できるものでなければなりません。
-他のコアAPIを利用して実装できる機能は、コアに含みません。特に、それがバグを含んでいる場合。
-コアのすべての機能は強固であるべきで、Delete by Queryは人気があり、高性能ですが、そうではありませんでした。</p>
-
-<p>必要に応じて、このような難しいトレードオフの末、信頼性と品質を選びます。</p>
-
-<h2>マッピングの削除の廃止</h2>
-
-<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/1.6/indices-delete-mapping.html">タイプのマッピングを削除する機能</a>も2.0で<a href="https://github.com/elastic/elasticsearch/issues/8877">廃止</a>されます。
-これは、同じフィールド名を、異なるフィールドのタイプで再利用した場合に、インデックスの破損を引き起こす可能性があるためです。</p>
-
-<p>しかし、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-all-query.html">Match All Query</a>で、Delete by Queryプラグインに対してタイプを指定することで、タイプのすべてのドキュメントを削除することはできます。
-または、1つのインデックスに異なるタイプを複数含める代わりに、個別のインデックスに分割するようなアプローチに変更することを検討してください。</p>
 ]]></content>
   </entry>
   

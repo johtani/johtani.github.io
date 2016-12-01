@@ -9,8 +9,8 @@
   <meta name="author" content="johtani">
 
   
-  <meta name="description" content="久しぶりに、技術的なブログ書いてます。 Ingest Processorのプラグインを作ってみたくなったので、書いてみました。
-ただ書いてみるんじゃ3番煎じになりそうなので、cookiecutterを使ってみました。 ">
+  <meta name="description" content="Elastic stack Advent Calendar 1日目の記事になります。 Elasticsearch 5.0が10月末にリリースされました。
+リリースのブログでいくつか紹介されているのですが、そこでは紹介されていない機能について2、3紹介しようと思います。 その前に、5.0、あれ？ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -87,6 +87,147 @@ $(document).ready( function () {
       <div id="content">
         <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/12/01/elasticsearch-5-dot-0-highlight/">Elasticsearch 5.0のハイライト（その他）</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2016-12-01T17:34:30+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2016-12-01T17:34:30+09:00'><span class='date'>2016-12-01</span></time></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Elastic stack Advent Calendar 1日目の記事になります。</p>
+
+<p><a href="https://www.elastic.co/jp/blog/elasticsearch-5-0-0-released">Elasticsearch 5.0</a>が10月末にリリースされました。
+リリースのブログでいくつか紹介されているのですが、そこでは紹介されていない機能について2、3紹介しようと思います。</p>
+
+<p>その前に、5.0、あれ？その前は2.xじゃなかったっけ？？と困惑されている方もいるかと思うので、簡単に5となった経緯の紹介をしようかと。</p>
+
+<h3>バージョン番号</h3>
+
+<p>なぜ2から5に飛んだのかという話ですが、このスライドがその紹介になっています。</p>
+
+<p><a href="https://speakerdeck.com/johtani/elastic-stack-5-dot-0-alpha1-alpha5?slide=5">https://speakerdeck.com/johtani/elastic-stack-5-dot-0-alpha1-alpha5?slide=5</a></p>
+
+<p><a href="https://www.elastic.co/elasticon/conf/2016/sf/opening-keynote">Elastic{ON} 2016のキーノート</a>でも紹介がありましたが、KibanaやLogstashとElasticsearchを組み合わせて使うときにバージョンのミスマッチで動かないというユーザの声が上がっていました。
+2.xのリリースから、同じ日にKibana、Logstash、Beatsもリリースするようになったのですが、
+やはり、バージョン番号が異なるため、ミスマッチで動かないというユーザが時々いました。</p>
+
+<p>Elastic Stackという名称にもなったため、バージョン番号をそろえようという事になり、
+Elasticsearch、Kibana、Logstash、Beats全てが5.0.0としてリリースされ、
+今後は同じバージョン番号になります。</p>
+
+<p>ちなみに、「5」になった理由はKibanaのメジャーバージョンが「4」だったためです。</p>
+
+<p>さて、では、いくつか機能の紹介を。</p>
+
+<h3>Reindex from remote cluster</h3>
+
+<p>Reindexが2.3から導入されました。データの再登録ができるようになり、マッピングの変更や
+Shardの数の変更などが柔軟に行えるようになりました。
+便利でしたが、あくまでも同一のクラスタでデータを登録し直す形でした。</p>
+
+<p>5.0からはこの機能に加えて、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html#reindex-from-remote">異なるクラスタからデータを取得してReindex</a>を行うことができるようになりました。
+こんな形になります。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>POST _reindex
+</span><span class='line'>{
+</span><span class='line'>  "source": {
+</span><span class='line'>    "remote": {
+</span><span class='line'>      "host": "http://otherhost:9200",
+</span><span class='line'>      "username": "user",
+</span><span class='line'>      "password": "pass"
+</span><span class='line'>    },
+</span><span class='line'>    "index": "source",
+</span><span class='line'>    "query": {
+</span><span class='line'>      "match": {
+</span><span class='line'>        "test": "data"
+</span><span class='line'>      }
+</span><span class='line'>    }
+</span><span class='line'>  },
+</span><span class='line'>  "dest": {
+</span><span class='line'>    "index": "dest"
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>username</code>と<code>password</code>はリモートのクラスタに認証の気候が存在する場合に利用できるオプションです。
+また、ReindexのAPIはクエリを使用して、必要なデータだけを取得することが可能です。
+この機能により、1.xや2.xのクラスタからデータを移行することが可能になります。</p>
+
+<h3>Custom analyzer test using Analyze API</h3>
+
+<p>もう一つ、ちょっとだけ便利な機能を紹介します。
+独自にAnalyzerを定義（TokenizerとToken Filterなどを個別に設定）して、その挙動を確認するとき、2.xまでは、インデックスを作成してそのインデックスに対して<code>_analyze</code> APIを呼び出す必要がありました。</p>
+
+<p>5.xからは<code>_analyze</code> APIの読み出しのパラメータで指定できるようになりました。
+こんな感じです。ここでは、<code>lowercase</code>フィルタのあとに、<code>{...}</code>で<code>stop</code>フィルタを
+パラメータの中で、指定しています。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl -XGET 'localhost:9200/_analyze' -d '
+</span><span class='line'>{
+</span><span class='line'>  "tokenizer" : "whitespace",
+</span><span class='line'>  "filter" : ["lowercase", {"type": "stop", "stopwords": ["a", "is", "this"]}],
+</span><span class='line'>  "text" : "this is a test"
+</span><span class='line'>}'</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ちょっとだけですが、Analyzerなどを試すのが楽になるのではないでしょうか？</p>
+
+<p>ということで、以上が1日目の記事でした。
+Logstashなど、他の5.0.0に関する記事もAdvent Calendarに空きがあるようなので、個別にかこうかなと思います。お楽しみに！</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -544,53 +685,6 @@ $(document).ready( function () {
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/11/10/13th-elasticsearch-jp/">第13回Elasticsearch勉強会を開催しました。#elasticsearchjp</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-
-<time datetime="2015-11-10T17:22:58+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2015-11-10T17:22:58+09:00'><span class='date'>2015-11-10</span></time></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><a href="https://elasticsearch.doorkeeper.jp/events/33631">第13回Elasticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、会場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-来年もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-
-<p>7月同様、<a href="http://samuraism.com">サムライズム</a>の<a href="https://twitter.com/yusuke">@yusuke</a>さんに
-テキスト翻訳していただき、大変助かりました。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/11/10/13th-elasticsearch-jp/">続きを読む &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -620,11 +714,15 @@ Elasticsearch勉強会の主催をしています。<br/>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elastic/'>elastic (3)</a></li><li><a href='/blog/categories/elasticon/'>elasticon (1)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (90)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/found-dot-no/'>found.no (1)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (9)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (7)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (4)</a></li><li><a href='/blog/categories/misc/'>misc (4)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (12)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/sense/'>sense (1)</a></li><li><a href='/blog/categories/shield/'>shield (2)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/timelion/'>timelion (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/watcher/'>watcher (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (30)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (3)</a></li><li><a href='/blog/categories/ben/'>本 (4)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elastic/'>elastic (3)</a></li><li><a href='/blog/categories/elasticon/'>elasticon (1)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (91)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/found-dot-no/'>found.no (1)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (9)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (7)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (4)</a></li><li><a href='/blog/categories/misc/'>misc (4)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (12)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/sense/'>sense (1)</a></li><li><a href='/blog/categories/shield/'>shield (2)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/timelion/'>timelion (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/watcher/'>watcher (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (30)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (3)</a></li><li><a href='/blog/categories/ben/'>本 (4)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
 </section>
 <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/12/01/elasticsearch-5-dot-0-highlight/">Elasticsearch 5.0のハイライト（その他）</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/">Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp</a>
@@ -640,10 +738,6 @@ Elasticsearch勉強会の主催をしています。<br/>
     
       <li class="post">
         <a href="/blog/2016/03/17/15th-elasticsearch-jp/">第15回Elasticsearch勉強会を開催しました。 #elasticsearchjp</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2016/03/14/review-basics-and-tech-of-nlp/">「自然言語処理の基本と技術」を読んでる</a>
       </li>
     
   </ul>
