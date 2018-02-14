@@ -4,7 +4,7 @@
   <title><![CDATA[Category: kibana | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/kibana/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-01-19T18:12:09+09:00</updated>
+  <updated>2018-02-14T18:18:33+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,201 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第2回）]]></title>
+    <link href="http://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin/"/>
+    <updated>2018-02-09T18:17:37+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin</id>
+    <content type="html"><![CDATA[<p>第1回では、<a href="https://github.com/johtani/analyze-api-ui-plugin">Analyze UIというプラグイン</a>の紹介をしました、ごく簡単にですが。</p>
+
+<p>第2回では、Kibanaのプラグインの作成方法を順を追って見ていこうと思います。今回は、プラグインのプロジェクトの作り方を説明します。
+どんなファイルがあるのかなどについては第3回で説明します（2018/02月現在の方法になります。残念ながら、Kibanaのプラグイン作成自体はまだExperimentalな話になっていますので、変更がある可能性があります）。</p>
+
+<!-- more -->
+
+
+<p>実はそれほど難しいというわけではありません。Kibanaのプラグインを作成するためのテンプレートが用意されています。<a href="https://github.com/elastic/template-kibana-plugin/">template-kiban-plugin</a>です。
+テンプレートのリポジトリのREADMEに作業手順の記載があります。</p>
+
+<ol>
+<li>KibanaのリポジトリをClone、Checkout</li>
+<li>Node.jsの環境を用意する</li>
+<li>Kibanaを起動できるようにする</li>
+<li>SAOのインストール</li>
+<li>テンプレートによるプロジェクトファイルの生成</li>
+</ol>
+
+
+<p>順を追って説明します。
+<code>PLUGIN_DEV_DIR</code>というディレクトリ配下で作業をしている想定になります。</p>
+
+<h2>1. KibanaのリポジトリをClone、Checkout</h2>
+
+<p>開発環境として、Kibanaが必要です。Kibanaのプラグインを作るので。
+手順などは<a href="https://github.com/elastic/kibana/blob/6.2/CONTRIBUTING.md#contributing-code">KibanaのCONTRIBUTING.md</a>に記載があります。
+ということで、まずはKibanaのリポジトリをCloneします。</p>
+
+<pre><code>cd PLUGIN_DEV_DIR
+git clone git@github.com:elastic/kibana.git
+</code></pre>
+
+<p>このままだと、masterブランチなので、開発したい対象のKibanaのバージョンのブランチもしくはタグをcloneします。今回は6.2.1向けということで、次のようになります。</p>
+
+<pre><code>git checkout v6.2.1
+</code></pre>
+
+<p>これで、ソースが6.2.1向けになりました。</p>
+
+<h2>2. Node.jsの環境を用意する</h2>
+
+<p>Node.jsをインストールします。
+Kibanaのリポジトリに<code>.node-version</code>というファイルがあります。
+こちらにNode.jsのバージョンが記載されています。
+Kibanaが使用しているNode.jsを利用できるようにします。ローカルでは<a href="https://github.com/creationix/nvm#installation">nvm</a>利用してインストールしました。後から、切り替えが可能だからです。
+nvm自体のインストールについては<a href="https://github.com/creationix/nvm">nvmのサイト</a>をご覧ください。
+nvmがインストールできたら、次のコマンドで、Kibanaが使用しているバージョンをインストールします。</p>
+
+<pre><code>cd kibana
+nvm install "$(cat .node-version)"
+</code></pre>
+
+<p>すでにnvmを利用している場合などは、Kibana起動時にKibanaのバージョンに合わせたNode.jsに切り替えるようにしてください。</p>
+
+<h2>3. Kibanaを起動できるようにする</h2>
+
+<p>Kibanaでは<a href="https://yarnpkg.com/lang/en/">yarn</a>というjavascript向けのパッケージマネージャーを利用して起動やビルドなどを行います。まずはyarnをインストールします。<a href="https://github.com/elastic/kibana/pull/15485">最近npmからyarnに切り替えた</a>ようです。
+私はMacだったので、<a href="https://yarnpkg.com/en/docs/install">brewでインストール</a>しました。
+インストールできたら、次のコマンドを実行します。</p>
+
+<pre><code>yarn
+</code></pre>
+
+<p>これにより、package.jsonから必要なライブラリなどをダウンロードして来てくれます。
+問題なければ「✨  Done in 439.30s.」というような表示がされます（結構時間かかりますね）。
+では、Kibanaを起動できるか確認してみましょう。
+さらに、Elasticsearchも起動してみます。
+Kibanaのpackage.jsonの中にはElasticsearchを起動するためのスクリプトも用意されています。実際には<a href="https://gruntjs.com">grunt</a>を利用してタスクを実行しているようです。Elasticsearchの起動にはJavaが必要になります。
+今回は6.2.1なので、JDK 8以降がインストールされている必要があります。
+こちらはインストールされているものとします。</p>
+
+<pre><code>yarn elasticsearch
+</code></pre>
+
+<p>で起動できます。</p>
+
+<pre><code>&gt;&gt; Started 1 Elasticsearch nodes.
+</code></pre>
+
+<p>という表示が出てればOKです。
+次にKibanaです。別のTerminalを起動して、以下のコマンドで起動できます。</p>
+
+<pre><code>yarn start
+</code></pre>
+
+<p>これだけです。
+<code>
+server    log   [06:58:56.930] [info][listening] Server running at http://localhost:5603
+</code>
+この辺りが出てればKibanaのServerは起動済みです。また、Elasticsearchに接続できていれば、次のログが出ているはずです。</p>
+
+<pre><code>server    log   [07:02:18.010] [info][status][plugin:elasticsearch@6.2.1] Status changed from red to green - Ready
+</code></pre>
+
+<p>Elasticsearch接続用のKibanaのプラグインの状態になります。
+これで、Kibanaの環境が整ったことが確認できました。
+もちろん、Elasticsearchに関しては、yarnで起動せずに、tar.gzなどでダウンロードして来たElasticsearchを起動しておき、アクセスするといったことも可能です。プラグインなどをElasticsearchにもいれてテストしたい場合などはそちらの方が便利かもしれません。</p>
+
+<h2>4. SAOのインストール</h2>
+
+<p>では、一度、ElasticsearchとKibanaを停止しましょう。フォワグラウンドで起動しているので、それぞれのTerminalでCtrl+Cで停止できます。
+Kibanaのプラグイン作成むけに、テンプレートが作られています。<a href="https://sao.js.org">sao.js</a>というGitHubのリポジトリやnpmのパッケージをテンプレートとして使うことができるツールを利用してプラグインのプロジェクト（リポジトリ）を作成します。
+実際にテンプレートとなるリポジトリは<a href="https://github.com/elastic/template-kibana-plugin">template-kibana-plugin</a>になります。
+まずはSaoのインストールです。</p>
+
+<pre><code>npm install -g sao
+</code></pre>
+
+<p>プラグインのテンプレートのページには上記のようにnpmを利用したインストール方法になっていますが、次のようにyarnでも可能です。</p>
+
+<pre><code>yarn global add sao
+</code></pre>
+
+<p>これで、saoがインストールできました。</p>
+
+<h2>5. テンプレートによるプロジェクトファイルの生成</h2>
+
+<p>あとは、テンプレートを元にプロジェクトを作成します。
+<code>PLUGIN_DEV_DIR</code>ディレクトリ配下に、kibanaと同じ階層で作成するプラグイン用のディレクトリを作成します。</p>
+
+<pre><code>mkdir simple-sample-kibana-plugin
+</code></pre>
+
+<p>以下のような構成になります。</p>
+
+<pre><code>kibana                      simple-sample-kibana-plugin
+</code></pre>
+
+<p>次にテンプレートを適用していきます。
+<code>
+cd simple-sample-kibana-plugin
+sao kibana-plugin@7.2.4
+</code></p>
+
+<p>2行目がsaoを利用してプロジェクトを作成しているコマンドになります。
+すると、次のような質問が出て来ます。
+これらに答えるとプロジェクトに必要なファイル（package.jsonやREADME.mdなど）に入力した情報を適用したものを作ってくれます。</p>
+
+<pre><code>? Name of your plugin?
+? Provide a short description
+? What Kibana version are you targeting?
+? Should an app component be generated?
+? Should translation files be generated?
+? Should an hack component be generated?
+? Should a server API be generated?
+</code></pre>
+
+<p>実際に答えた内容はこちら。</p>
+
+<pre><code>? Name of your plugin? simple-sample-kibana-plugin
+? Provide a short description Sample plugin for explaining how to make kibana app
+? What Kibana version are you targeting? 6.2.1
+? Should an app component be generated? Yes
+? Should translation files be generated? Yes
+? Should an hack component be generated? Yes
+? Should a server API be generated? Yes
+</code></pre>
+
+<p>プラグインの名前などは、ディレクトリ名と同じものを入力補完してくれているので、そのままEnterでもOKです。
+Descriptionについてはわかりやすいものを入力しましょう。
+バージョンは、先ほどのKibanaのリポジトリに合わせて、<code>6.2.1</code>にしてあります。
+あとは、作るプラグインの種類に応じて、必要なコンポーネントを作るかどうかの質問にYes/Noで答えます。
+今回はサンプルの説明ということもあるので、全てYesで答えました。
+ちなみに、私が実際に作成した<a href="https://github.com/johtani/analyze-api-ui-plugin/">analyze-api-ui-plugin</a>では、<code>app</code>と<code>translation</code>と<code>server</code>の3つを作成しました。
+ただし、<code>translation</code>については現在はテンプレートで作成したままのファイルが入っており、実際には利用してないです。</p>
+
+<p>完了したら、プラグインのサンプル入りのプロジェクトが完成です。
+もう一度、Elasticsearchを立ち上げて、プラグインのプロジェクトからKibanaを起動してアクセスしてみます。まずは、<code>PLUGIN_DEV_DIR/kibana</code>ディレクトリの下で、Elasticsearchを起動します。</p>
+
+<pre><code>yarn elasticsearch
+</code></pre>
+
+<p>次に、<code>PLUGIN_DEV_DIR/simple-sample-kibana-plugin</code>ディレクトリの下で、以下のコマンドを実行し、プラグインが入った状態のKibanaを起動します。</p>
+
+<pre><code>yarn start
+</code></pre>
+
+<p>問題なく起動すれば、ブラウザでアクセスすると次のような画面が表示されるはずです。</p>
+
+<p><img src="/images/entries/20180214/sample_start.jpg" width="800"></p>
+
+<p>左側にメニューが1つ増えています。
+クリックすると、上記画像のような画面が表示されるはずです。</p>
+
+<p>これで、カスタムプラグインの開発ができる環境ができました！
+次回は、プロジェクトのディレクトリ構成や、どんなツールが内部で使用されてデータのやり取りが行われているかについて説明します。お楽しみに。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第1回）]]></title>
@@ -333,78 +528,6 @@ Kibana 4.2は小さな小さな小さなメモリフットプリントを管理�
 
 <p>小さな微調整がいくつもあります。また、今後紹介する本当に刺激的なものの基礎を気づき上げてきました。
 これからも<a href="http://elastic.co/blog">Elasticのブログ</a>、<a href="https://twitter.com/elastic">Twitter</a>、<a href="https://github.com/elastic/kibana">KibanaのGitHubリポジトリ</a>に注目し、<strike>モンスタートラック</strike><strong>アナリティクス</strong>の瞬間に立ち会ってください。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Release, we have（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/10/29/release-we-have-ja/"/>
-    <updated>2015-10-29T14:18:59+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/10/29/release-we-have-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/release-we-have">Relase, we have</a>
-※画像に関しては原文をご覧ください。</p>
-
-<!-- more -->
-
-
-<p>Elasticにとって大きな1日（社内では「release bonanza」と呼んでいる）です。
-多くの主要なプロダクトを新たにリリースしました。
-そして、本日、それらを一緒に利用する時にそれらを一緒に利用する時にユーザの体験についてまとめてみました。</p>
-
-<p>次の通りです。</p>
-
-<p><a href="https://www.elastic.co/blog/elasticsearch-2-0-0-released">Elasticsearch 2.0</a>リリース。
-大きなマイルストーン、チームによる改善、そして、コミュニティからの素晴らしい貢献。
-Pipeline Aggsと呼ばれる新しいタイプのaggregations、
-クエリとフィルタのコンセプトを統合することにより簡素化されたクエリDSL、
-better compressionオプション、
-JavaのSecurity Managerを有効にすることによる強化されたセキュリティ、
-FSの挙動に関する強化（fsync、checksum、atmicなリネーム）、
-パフォーマンス、マッピングの挙動の一貫性などなどです。
-また、我々のチームによる改善も含まれているLucene 5ベースにアップグレードしています。</p>
-
-<p><a href="https://www.elastic.co/blog/kibana-4-2-0">Kibana 4.2</a>リリース。
-Elasticsearch 2.0対応、ダークテーマ、カスタマイズ可能な地図、多くの改善。
-Kibana 4.2の多くに作業については外部プラグインサポートといった、内蔵に関するものでした。
-この後の説明に続きます。</p>
-
-<p><a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">Marvel 2.0</a>リリース。
-Elasticsearch 2.0対応、合理化されたメトリックス、簡素化されたUI、
-多くはKibanaプラグイン（Kibanaプラットフォーム上に構築）としての書き換えです。
-このKibana拡張の最初の努力は、Kibanaのプラグインをどうやって書くか、
-Kibanaユーザに公式に何をする必要があるかといったものを特定するのに役立ちました。
-おっと、忘れるところでした、Marvelを全てのユーザにフリーで使えるようにしました。
-マルチクラスタサポートについては有償となります。</p>
-
-<p><a href="https://www.elastic.co/blog/sense-2-0-0-beta1">Sense 2.0</a>リリース。
-2つ目のKibanaプラグインがこれです。
-SenseをKibanaプラグインとして書き換えました。
-Elasticsearch 2.0サポート、複数リクエストの実行、
-curlへのコピーなどです。
-おっと、忘れるところでした。オープンソースとすることにしました！</p>
-
-<p><a href="https://www.elastic.co/blog/shield-watcher-and-marvel-2-0-ga-released">Shield + Watcher 2.0</a>リリース。ElasticsearchのためのセキュリティプラグインであるShieldと、アラート管理のためのプラグインであるWatcherにも
-多くの結果が入っています。
-最も要求のあった機能である、フィールドお呼びドキュメントレベルでのセキュリティについて、Luceneに落とし込んで実装しました。
-また、セキュリティの操作についてプラガブルに実装できるように変更しました。
-Watcherは監視の無効化、SlackやHipChatへの通知（bot ops向け）が可能です。</p>
-
-<p><a href="https://www.elastic.co/blog/logstash-2-0-0-released">Logstash 2.0</a>リリース。
-Elasticsearch 2.0のサポート、クリーンな停止、全面的なパフォーマンス改善、<a href="https://www.elastic.co/products/beats">Beats</a>サポート。</p>
-
-<p>ご覧の通り、すべてのプロダクトに関する大きな結果です。
-チーム間およびFoundの開発者との間での密な連携に感謝します。
-これらが私たちが公式にElasticsearch / Kibanaをホストしている<a href="https://www.elastic.co/found">Found</a>で
-利用可能です。</p>
-
-<p>ひゅう、息切れしました。
-チームがしてきたことは、感動的で、謙虚で、刺激的です！
-Elasticが会社として、全てのユーザ、コントリビュータがどのように私たちの大きなミッションに対する結果をもたらしたかという素晴らしい良い例です。
-ユーザに愛され、楽しまれ、成功に導き、革新させる製品を是非ご利用ください。ありがとうございます。</p>
-
-<p>&ldquo;A Lion, in Africa?&rdquo; - まだまだ終わりではありません。この文言で終わりにしますが、すぐに（本当にすぐに）戻ってきます。;)</p>
 ]]></content>
   </entry>
   
