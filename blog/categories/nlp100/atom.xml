@@ -4,7 +4,7 @@
   <title><![CDATA[Category: nlp100 | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/nlp100/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-02-15T23:04:48+09:00</updated>
+  <updated>2018-02-19T18:59:06+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,65 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[第1章の03から04までやってみた（言語処理100本ノック）]]></title>
+    <link href="http://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04/"/>
+    <updated>2018-02-19T18:34:08+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04</id>
+    <content type="html"><![CDATA[<p>Rustで言語処理100本ノックの続きで、03と04です。</p>
+
+<!-- more -->
+
+
+<h3>03. 円周率</h3>
+
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec03">こちら</a>。</p>
+
+<script src="http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=60:71"></script>
+
+
+<p>入力文字列を<code>.split_whitespace()</code>で分割しておいて、単語ごとのベクタを作り出し、そこに対して文字を数えました。「アルファベットの」という注意書きがあるので&#8221;,&ldquo;や&rdquo;.&ldquo;は含めずに数えるのかなということで、
+charの<code>.is_alphabetic()</code>で<code>A-z</code>までの判定をしつつ、文字のベクタを作ってから、そのベクタの長さを詰め込むという感じでやりました。</p>
+
+<p>これ、ひょっとして、collectでベクタにしなくても、i32とかの変数でカウントするとベクタ作らなくてもいいなじゃにか？というのに書きながら気づいた。。。
+必要じゃないオブジェクトを作ってるよなぁ。</p>
+
+<p><code>.filter().map</code>とかかな？この辺りの操作がイマイチ苦手。Javaでもまだ馴染めてないところなんだよなぁ。頭固すぎ。</p>
+
+<h3>04. 元素記号</h3>
+
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec04">こちら</a>。</p>
+
+<script src="http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=74:112"></script>
+
+
+<p>大作ですね。何だろう、大作。。。
+最終的に連想配列（辞書型もしくはマップ型）」ということだったので、BTreeMapに詰め込んでます。
+HashMapでもいいんですが、文字列で出力した時にキーが並んで見やすいからという理由で、BTreeMap使いました。それ以上の理由はないです。普通にやるなら、HashMapかな？</p>
+
+<p>入力として、1文字だけの出力をする場所（インデックス番号）の配列を受け取ってます。1点だけ、チェックしていない、けど入力値の想定をしていて、<code>idx_one_symbols</code>がソートされていて、小さいものから順番に出てくるものとしてます。関数作って、チェックすべきかな？</p>
+
+<p>で、指定された場所の最後のものが入力文字列よりも大きいかどうかというチェックもしています。（あー、テストケース書いてないな）この辺りのせいでちょっと長めになってます。</p>
+
+<p>単語の配列を作るのは03の時と同じやり方です。
+回しかたがちょっと違って、<code>.iter().enumerate()</code>で回して、添字と値をタプル？でとりだしてます。添字を見ながら1文字取り出すのか、2文字取り出すのかの判断が必要だからです。あとは一緒ですね。1文字取り出すときは、<code>.first()</code>を使って見ました。
+実は、2文字取り出す時と、1文字の時と同じロジック使った方が共通化できて、短くなった？？？</p>
+
+<p>ということで、こんな感じでした。いつものようにツッコミお待ちしてます。</p>
+
+<h3>所感</h3>
+
+<p>問題それぞれについてではなく、
+やってて思ったのですが、問題に対して想定される結果が記載されていると嬉しいなと思いました。
+ロジックについては、各自実装者に寄ったり、言語によって違いが出たりするし、議論するベースになっていいかなと思うんですが、
+問題で想定されている結果（出力）があると、自分の実装にケアが足りないところがないのか？とか、ケアしなくていい点とかがわかるのかもなぁと。
+ユニットテスト相当のものがあると楽かなぁと。</p>
+
+<p>このケースどうするんだろ？みたいなのが、ところどころコメントに残ったりしてます。
+出題の意図としては、その部分も議論の対象ということなのかな？</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第1章の00から02までやってみた（言語処理100本ノック）]]></title>
@@ -69,6 +128,32 @@ next()のタプル返す関数作って、とかでなんかできたりする�
 説明するのが簡単だ。</p>
 
 <p>とりあえず、今日はこの辺まで。なんか、いい知恵あれば教えてください！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[言語処理100本ノックはじめました(Rust)]]></title>
+    <link href="http://blog.johtani.info/blog/2018/02/14/start-nlp100-with-rust/"/>
+    <updated>2018-02-14T19:52:31+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/02/14/start-nlp100-with-rust</id>
+    <content type="html"><![CDATA[<p>ども。新しいもの始めないと頭が退化する。。。ということで、こちら（
+<a href="http://blog.katsyoshi.org/blog/2018/01/16/happy-new-year-and-new-language/">happy new year and new language - katsyoshiのめもみたいなもの</a>）のブログに触発されて、言語処理100本ノックをはじめてみました。</p>
+
+<!-- more -->
+
+
+<p><a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#ch1">言語処理100本ノック</a>とは、自然言語処理になるのかな、東北大学の研究室の先生が公開している言語処理に関する実践的な課題をベースにプログラミングなどのスキルを学んでいくための問題集です。
+元々はPythonを対象とされているようですが、Rustでやってみようかと。
+まぁ、先ほどあげたブログの二番煎じです。。。
+ちなみに、インスパイアされた元のブログの方はRust book 2nd editionを読み終えたらしいですが、私はかじった程度です（ダメかも？）。</p>
+
+<p>NLPもRustもかじった程度なので、苦戦しそうですが、ちょっとずつやっていこうかなと。
+ということで、準備運動の第1章から始めようかと。
+GitHubにちょっとずつあげていく予定です。
+<a href="https://github.com/johtani/nlp100-rust">https://github.com/johtani/nlp100-rust</a></p>
+
+<p>まぁ、まずは宣言のブログを書いてみただけです。
+続いてなかったら、叱咤激励してください。叱咤だけかも？</p>
 ]]></content>
   </entry>
   
