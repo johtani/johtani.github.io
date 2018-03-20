@@ -4,7 +4,7 @@
   <title><![CDATA[Category: nlp100 | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/nlp100/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-02-19T19:07:23+09:00</updated>
+  <updated>2018-03-21T01:55:47+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,76 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[第1章の05から06までやってみた（言語処理100本ノック）]]></title>
+    <link href="http://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/"/>
+    <updated>2018-03-20T21:34:45+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06</id>
+    <content type="html"><![CDATA[<p>Rustで言語処理100本ノックの続きで、05と06です。</p>
+
+<!-- more -->
+
+
+<h3>05. n-gram</h3>
+
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec05">こちら</a>。</p>
+
+<p>みんな大好きn-gramです。単語と文字があるので、それぞれ別関数として実装しました。問題はbi-gramと<code>n=2</code>だったのですが、一応、<code>n</code>を引数に取る形にして実装しました。</p>
+
+<p>まずは、単語です。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139"></script>
+
+
+<p>前に実装した時は、自分で頑張って、先頭から数えたりしてたんですが、Rustには<a href="https://rust-lang-ja.github.io/the-rust-programming-language-ja/1.6/std/primitive.slice.html#method.windows">windows(n)</a>という便利なメソッドがsliceにあり、これを利用したらこんな簡単になりました。
+sliceは特定のシーケンス（配列）に対してある特定のサイズのViewを作ってくれます（説明あってる？）。
+ということで、文字列から、単語の配列（スペース区切りで単語にしている）を作り出して、<code>windows(n)</code>メソッドを通すと、
+<code>n</code>で指定した数字の個数だけの単語の配列を先頭から、1単語ずつずらして作ってくれます。まさに、n-gram!
+戻り値は配列の配列です。
+1点だけ疑問点があるのは、「空白で区切ったものが単語」という考え方で良いかどうか？という点です。特に問題文にはそれが明示されていなかったので、このような前提を置いてあります。</p>
+
+<p><code>invalid_n(text, n)</code>は<code>n</code>の値や入力された文字列をチェックする関数です。入力チェックですね。<code>n</code>が1よりも小さい場合、入力文字列が空文字の場合は、warningでメッセージを出して、空の配列を返す仕組みになっています。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=115:126"></script>
+
+
+<p>次は、文字です。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139"></script>
+
+
+<p>単語とほぼ一緒ですが、入力文字列を、1文字ずつの配列にしているところが異なります。
+また、<code>windows</code>メソッドで取り出された、1文字ずつの<code>n</code>個の配列を文字列に修正してから、結果の配列に入れています。
+ここでも疑問は空白をどう扱うか？になります。
+現時点では、空白も1文字とカウントして扱うことにしてあります。
+どっちがいいのかなぁ？</p>
+
+<h3>06. 集合</h3>
+
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec06">こちら</a>。</p>
+
+<p>まずは、文字n-gramで出てきた文字列をSetに入れる関数から。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=159:174"></script>
+
+
+<p>n-gramの問題で実装した文字n-gramの関数の戻り値を配列ではなく、BTreeSetに変えたものになります。比較などがしやすいように？と思い、BTreeSetを利用していますが、実装としてはHashSetでも問題ないかと。
+この関数の集合（Set）を元に、和集合、積集合、差集合を求める関数を実装しました。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=176:187"></script>
+
+
+<p>Setのメソッドとして、それぞれ、<code>union</code>＝和集合、<code>intersection</code>＝積集合、<code>difference</code>＝差集合のメソッドが用意されているので、特に困ることはなかったです。
+差集合については、1-2と2-1で結果が異なるはずなので、それぞれをテストケース、main.rsで出力するようにしてあります。</p>
+
+<h3>所感</h3>
+
+<p>今回は、Rustがすでに実装してくれているメソッドがあったので楽ができました。
+やりたいことに相当するメソッドがあるかどうかを調べるためにリファレンスを探さないといけないのがちょっと苦労しましたが。。。
+ということで、今日はこの辺りまで。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第1章の03から04までやってみた（言語処理100本ノック）]]></title>

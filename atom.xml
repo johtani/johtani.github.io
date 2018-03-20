@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-02-19T19:07:23+09:00</updated>
+  <updated>2018-03-21T01:55:47+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,76 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[第1章の05から06までやってみた（言語処理100本ノック）]]></title>
+    <link href="http://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/"/>
+    <updated>2018-03-20T21:34:45+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06</id>
+    <content type="html"><![CDATA[<p>Rustで言語処理100本ノックの続きで、05と06です。</p>
+
+<!-- more -->
+
+
+<h3>05. n-gram</h3>
+
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec05">こちら</a>。</p>
+
+<p>みんな大好きn-gramです。単語と文字があるので、それぞれ別関数として実装しました。問題はbi-gramと<code>n=2</code>だったのですが、一応、<code>n</code>を引数に取る形にして実装しました。</p>
+
+<p>まずは、単語です。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139"></script>
+
+
+<p>前に実装した時は、自分で頑張って、先頭から数えたりしてたんですが、Rustには<a href="https://rust-lang-ja.github.io/the-rust-programming-language-ja/1.6/std/primitive.slice.html#method.windows">windows(n)</a>という便利なメソッドがsliceにあり、これを利用したらこんな簡単になりました。
+sliceは特定のシーケンス（配列）に対してある特定のサイズのViewを作ってくれます（説明あってる？）。
+ということで、文字列から、単語の配列（スペース区切りで単語にしている）を作り出して、<code>windows(n)</code>メソッドを通すと、
+<code>n</code>で指定した数字の個数だけの単語の配列を先頭から、1単語ずつずらして作ってくれます。まさに、n-gram!
+戻り値は配列の配列です。
+1点だけ疑問点があるのは、「空白で区切ったものが単語」という考え方で良いかどうか？という点です。特に問題文にはそれが明示されていなかったので、このような前提を置いてあります。</p>
+
+<p><code>invalid_n(text, n)</code>は<code>n</code>の値や入力された文字列をチェックする関数です。入力チェックですね。<code>n</code>が1よりも小さい場合、入力文字列が空文字の場合は、warningでメッセージを出して、空の配列を返す仕組みになっています。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=115:126"></script>
+
+
+<p>次は、文字です。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139"></script>
+
+
+<p>単語とほぼ一緒ですが、入力文字列を、1文字ずつの配列にしているところが異なります。
+また、<code>windows</code>メソッドで取り出された、1文字ずつの<code>n</code>個の配列を文字列に修正してから、結果の配列に入れています。
+ここでも疑問は空白をどう扱うか？になります。
+現時点では、空白も1文字とカウントして扱うことにしてあります。
+どっちがいいのかなぁ？</p>
+
+<h3>06. 集合</h3>
+
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec06">こちら</a>。</p>
+
+<p>まずは、文字n-gramで出てきた文字列をSetに入れる関数から。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=159:174"></script>
+
+
+<p>n-gramの問題で実装した文字n-gramの関数の戻り値を配列ではなく、BTreeSetに変えたものになります。比較などがしやすいように？と思い、BTreeSetを利用していますが、実装としてはHashSetでも問題ないかと。
+この関数の集合（Set）を元に、和集合、積集合、差集合を求める関数を実装しました。</p>
+
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=176:187"></script>
+
+
+<p>Setのメソッドとして、それぞれ、<code>union</code>＝和集合、<code>intersection</code>＝積集合、<code>difference</code>＝差集合のメソッドが用意されているので、特に困ることはなかったです。
+差集合については、1-2と2-1で結果が異なるはずなので、それぞれをテストケース、main.rsで出力するようにしてあります。</p>
+
+<h3>所感</h3>
+
+<p>今回は、Rustがすでに実装してくれているメソッドがあったので楽ができました。
+やりたいことに相当するメソッドがあるかどうかを調べるためにリファレンスを探さないといけないのがちょっと苦労しましたが。。。
+ということで、今日はこの辺りまで。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[第1章の03から04までやってみた（言語処理100本ノック）]]></title>
@@ -2230,192 +2300,6 @@ Kindle版を購入すれば「検索」できるのかな？</p>
 
 <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=479812852X&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第14回Elasticsearch勉強会を開催しました。 #elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2016/01/08/14th-elasticcsearch-jp/"/>
-    <updated>2016-01-08T11:34:56+09:00</updated>
-    <id>http://blog.johtani.info/blog/2016/01/08/14th-elasticcsearch-jp</id>
-    <content type="html"><![CDATA[<p>あけましておめでとうございます、johtaniです。</p>
-
-<p><a href="https://elasticsearch.doorkeeper.jp/events/36330">第14回Elasticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、会場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-今年もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-
-<!-- more -->
-
-
-<h3>チェックイン数など</h3>
-
-<ul>
-<li>チェックインした人：122名</li>
-<li>キャンセルしなかった人：58名</li>
-</ul>
-
-
-<p>でした。
-今回も当日の昼の時点でキャンセル待ちがない状態にしていました。
-いくつか電車が止まっていたという話を聞いていたので、開始を5分遅らせ、
-受付は45分くらいまで開けておくという対応をしてもらいました。</p>
-
-<h3>&ldquo;ココが辛いよelasticsearch&rdquo; / 株式会社リクルートテクノロジー @tatakaba さん</h3>
-
-<p>スライド：<a href="http://www.slideshare.net/takahitotakabayashi/elasticsearch-56936397">ココが辛いよelasticsearch</a></p>
-
-<p>実際にいくつかのサービスで運用されている内容とどういった機能を利用しているか、
-どういったものを独自に作っているかという話をしていただきました。</p>
-
-<ul>
-<li>独自PluginでA/Bテストしてる</li>
-<li>Snapshotの活用</li>
-<li>Index作成は環境に合わせて行っている。</li>
-<li>バージョンは混在</li>
-<li>PusnaRSのバージョンアップの話。
-
-<ul>
-<li>2つのバージョンのクラスタを用意してリアルタイムに切り替え。</li>
-</ul>
-</li>
-<li>Elasticsearchの活用
-
-<ul>
-<li>QueryのRewrite：</li>
-<li>SolrのリクエストをEsで受け付けたり。</li>
-</ul>
-</li>
-<li>辛い話。
-
-<ul>
-<li>バージョンアップが辛い</li>
-<li>Riverなくなるのつらい</li>
-<li>データずれるのつらい</li>
-</ul>
-</li>
-</ul>
-
-
-<p>補足：</p>
-
-<h4>バージョンアップについて</h4>
-
-<p>1.x系から2.x系にアップされるのであれば、こちらを必ず試してください。</p>
-
-<p><a href="https://github.com/elastic/elasticsearch-migration">https://github.com/elastic/elasticsearch-migration</a></p>
-
-<p>「.」が使えなくなるという話は、Solrとの大きな違いになるのかもなぁと。
-ネスト構造のデータの表記を「.」で行うというのを厳密に行えるように、
-「.」を使えなくしたというのがあるかと。</p>
-
-<h4>Riverについて</h4>
-
-<p>Riverがなくなった理由については、<a href="https://www.elastic.co/blog/deprecating-rivers">https://www.elastic.co/blog/deprecating-rivers</a> で記載があります。
-便利なのですが、負荷が偏ったり、スケールしないとかいう問題点があるかなと。</p>
-
-<p>良いサンプルとしては、JDBC Riverなどは、Javaのプログラムとして起動できるように変更されていたりします。</p>
-
-<p><a href="https://github.com/jprante/elasticsearch-jdbc/wiki/jdbc-plugin-feeder-mode-as-an-alternative-to-the-deprecated-elasticsearch-river-api">https://github.com/jprante/elasticsearch-jdbc/wiki/jdbc-plugin-feeder-mode-as-an-alternative-to-the-deprecated-elasticsearch-river-api</a></p>
-
-<p>（<strong>個人的</strong> には、SolrのDIHもRiverもあんまり好きではなかったです。データの変換処理と、ロード処理は別々にしたい人だったので。）</p>
-
-<h4>データのズレなど</h4>
-
-<p>耐障害性とか信頼性に関しては、どういった問題点があるのか、どういった対応をしているのかというのがまとめられたページが用意されています。</p>
-
-<p><a href="https://www.elastic.co/guide/en/elasticsearch/resiliency/current/index.html">https://www.elastic.co/guide/en/elasticsearch/resiliency/current/index.html</a></p>
-
-<h3>「機械学習を利用したちょっとリッチな検索」 / Preferred Networks America, Inc. CTO 久保田展行(Kubota Nobuyuki) さん</h3>
-
-<p>スライド：<a href="http://www.slideshare.net/nobu_k/ss-56810268">機械学習を利用したちょっとリッチな検索</a></p>
-
-<p>来日していただき、機械学習と検索の話をしてもらいました。
-本編は次回の発表かもw</p>
-
-<ul>
-<li>機械学習を元に、検索対象の情報を元の情報から増やしてあげる。</li>
-<li>増えた情報を検索できるようにする</li>
-</ul>
-
-
-<h4>今日のゴール：</h4>
-
-<ul>
-<li>機械学習とはどういうものか？</li>
-<li>データの集め方とか、アノテーションとか</li>
-<li>学習の方法（ツールやライブラリに依存）</li>
-</ul>
-
-
-<h4>Esでの活用方法</h4>
-
-<ul>
-<li>オフラインで学習させて、情報を付与した後に、Elasticsearchに入れる</li>
-<li>Jubatus＋fluentdで</li>
-<li>ChainerサポートのOSSのツールを公開予定</li>
-</ul>
-
-
-<p>「ここからが本当の地獄だ。。。」ってのが聴きたいw</p>
-
-<h3>「Lucene Query 再考 - Domain Specific Query 実装 -」 / Supership株式会社 インフラ事業開発本部検索グループ 大川真吾 さん</h3>
-
-<p>スライド：<a href="http://www.slideshare.net/ShingoOKAWA/elasticsearch-20150107-56772462">Lucene Query 再考 - Domain Specific Query 実装 -</a></p>
-
-<p>Luceneのクエリに関する話と、クエリパーサーに関する話でした。
-こういった濃い話も勉強会でしてもらえると、色々な参加者に楽しんでいただけるかなぁと。
-次回も続きを話してもらう予定です。</p>
-
-<p>補足：</p>
-
-<p>参考までにですが、Elasticsearchに入門したての人向けに、
-Analyzerとか転置インデックスとかの話をした時のスライドになります。
-<a href="https://speakerdeck.com/johtani/lucenetori-ben-yu-falsejian-suo">https://speakerdeck.com/johtani/lucenetori-ben-yu-falsejian-suo</a></p>
-
-<h3>LT:</h3>
-
-<h4>Fluentd meets Beats / @repeatedly さん</h4>
-
-<p>スライド：<a href="http://www.slideshare.net/repeatedly/fluentpluginbeats-at-elasticsearch-meetup-14">http://www.slideshare.net/repeatedly/fluentpluginbeats-at-elasticsearch-meetup-14</a></p>
-
-<p>参考Qiita：<a href="http://qiita.com/repeatedly/items/77af41788f0b3ccdefd2">http://qiita.com/repeatedly/items/77af41788f0b3ccdefd2</a></p>
-
-<p>Beatsの説明をTDの人からしてもらうなどw
-FluentdにBeatsからのデータを流し込めるようにしたプラグインが出たという話でした。</p>
-
-<p>filebeatの性能の件は社内で聞いてみようかと。</p>
-
-<h4>Elasticsearchインデクシングのパフォーマンスを測ってみた / 日本IBM　黒澤亮二さん</h4>
-
-<p>スライド：<a href="http://www.slideshare.net/kuron99/elasticsearch-56784623">Elasticsearchインデクシングのパフォーマンスを測ってみた</a></p>
-
-<p>参考Qiita：<a href="http://qiita.com/rjkuro/items/e79eec7ffb0511b7c678">http://qiita.com/rjkuro/items/e79eec7ffb0511b7c678</a></p>
-
-<p>細かな性能測定の結果を駆け足で話してもらいました。
-皆さんもこの指標をもとに、手元の環境を計測してみたりしてみてもらえればと。</p>
-
-<p>あとは、2.x系になってるので、同じ方法で計測してもらってまた
-発表してもらえると嬉しいなー（棒）</p>
-
-<h2>その他、感想などのブログ</h2>
-
-<ul>
-<li><a href="http://acro-engineer.hatenablog.com/entry/2016/01/08/123857">Elasticsearch勉強会　第14回フィードバック</a></li>
-</ul>
-
-
-<h2>まとめ＋宣伝</h2>
-
-<p>久々に（初めてかな？）、ゲストがいないのに自分が喋りませんでした。
-次回は3月中旬を予定してます。
-次回は、Elastic{ON}16の報告をする予定です。いろいろと発表あるだろうし。</p>
-
-<p>あと、今月末の1/29に<a href="http://www.ospn.jp/osc2016.enterprise-osaka/">オープンソースカンファレンス 2016.enterprise@Osaka</a>にブース出展します。
-セミナー枠でも弊社OSSプロダクトの概要を話しする予定です。
-関西の方は、ぜひ参加していただければと。ブースでお待ちしております。</p>
-
-<p>また、スピーカーや場所が用意できたら、出張勉強会もまたやりたいなと思っています。
-興味ある方は、連絡ください！</p>
 ]]></content>
   </entry>
   
