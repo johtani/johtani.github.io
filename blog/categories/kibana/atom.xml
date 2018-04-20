@@ -4,7 +4,7 @@
   <title><![CDATA[Category: kibana | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/kibana/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-03-24T17:40:55+09:00</updated>
+  <updated>2018-04-20T18:44:40+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,260 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第3回）]]></title>
+    <link href="http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/"/>
+    <updated>2018-04-20T15:30:01+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture</id>
+    <content type="html"><![CDATA[<p><a href="http://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin/">第2回</a>から少し間が空いてしまいましたが、templateで作成したプラグインのディレクトリ構成とどういう流れでデータがやり取りされるかについてみていきます。
+（2018/02月時点で作成したディレクトリ構成にしたがって説明します）
+ちなみに、JavaScriptの優れた開発者ではないので、誤解している点や、効率の悪い書き方などがあるかもしれません。見つけた場合は、連絡をいただければと思います。</p>
+
+<!-- more -->
+
+
+<p>では、まずは作成したディレクトリ構成についてみていきましょう。</p>
+
+<h2>ディレクトリ構成</h2>
+
+<p><code>simple-sample-kibana-plugin</code>がプラグインのプロジェクトのトップディレクトリになります。このディレクトリに次のような構成でサブディレクトリが存在します(なお、画像はIntelliJに取り込んだ後のディレクトリになっているので、<code>.iml</code>など、不要なファイル/ディレクトリが存在しています)。</p>
+
+<p><img src="/images/entries/20180420/directories.jpg" width="400"></p>
+
+<p>主要なディレクトリ、ファイルについて簡単に一覧で説明します(順不同)。</p>
+
+<table>
+<thead>
+<tr>
+<th> ファイル/ディレクトリ名 </th>
+<th> 説明 </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> index.js </td>
+<td> プラグインの本体。Kibanaはこのファイルのオブジェクトを読み込みプラグインを起動。設定などの読み込みもこちら。 </td>
+</tr>
+<tr>
+<td> package.json </td>
+<td> npm/yarnのパッケージに関する情報を定義するファイル </td>
+</tr>
+<tr>
+<td> README.md </td>
+<td> README。プラグインの説明などを記載する。インストール方法なども記載すると便利 </td>
+</tr>
+<tr>
+<td> public </td>
+<td> ブラウザ側に配布されるプログラムや画像一式 </td>
+</tr>
+<tr>
+<td> public/less/main.less </td>
+<td> LESS用のファイル。アプリ固有のスタイルなどを記載 </td>
+</tr>
+<tr>
+<td> public/app.js </td>
+<td> ブラウザ側で読み込まれるプラグインのモジュールなど。 </td>
+</tr>
+<tr>
+<td> public/template/index.html </td>
+<td> HTMLのテンプレート。ブラウザ上での描画に利用 </td>
+</tr>
+<tr>
+<td> server/routes </td>
+<td> Kibanaサーバー側で動作するプラグイン。hapi.jsを利用してREST APIを実装する </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>重要なファイルについて少しだけ説明します。</p>
+
+<h4>package.json</h4>
+
+<p>npmやyarnでビルドなどをするときに使用するパッケージ情報を記載するためのファイルです。
+プラグインの名前、バージョン、説明などを記載します。
+Kibanaのバージョンについてもこちらで管理します。この情報を
+また、ライブラリなどの依存関係についてもこちらで記載しています。
+以下、抜粋。</p>
+
+<pre><code class="json">{
+  "name": "simple-sample-kibana-plugin",
+  "version": "0.0.0",
+  "description": "Sample plugin for explaining how to make kibana app",
+  "main": "index.js",
+  "kibana": {
+    "version": "6.2.1",
+    "templateVersion": "7.2.4"
+  },
+  "scripts": {
+    "lint": "eslint **/*.js",
+...
+  },
+  "devDependencies": {
+    "@elastic/eslint-config-kibana": "^0.14.0",
+    "@elastic/eslint-import-resolver-kibana": "^0.9.0",
+    "@elastic/plugin-helpers": "^7.1.3",
+...
+    "expect.js": "^0.3.1"
+  }
+}
+</code></pre>
+
+<p>ちなみに私は、<code>version</code>などをリリースするたびに変更しています。</p>
+
+<h4>index.js</h4>
+
+<p>最初にKibanaに読み込まれるオブジェクトになります。
+Kibanaのアプリの名前や、必要なモジュールなどを記載します。</p>
+
+<p>また、<code>kibana.yml</code>から設定など読み込む処理なども書くことができます。</p>
+
+<p>2行目の<code>exampleRoute</code>はサーバー側のAPIとして利用するhapi.js用のファイルのパスになります。</p>
+
+<p><code>uiExports</code>はこのアプリの画面に関する設定などの記載になります。
+<code>app</code>の部分が実際にアプリの情報で、
+<code>main</code>があとで説明するこのプラグインのUIのためのJavaScriptファイル(public/app.js)になります。mainですので、最初に読み込まれる処理が記載されているものを指定します。<code>app.js</code>というファイル名を変更する場合は、こちらの<code>app</code>の部分を変更したファイルに合わせましょう。</p>
+
+<p><code>config(Joi)</code>の関数が設定ファイルの読み込みなどの処理を記載する場所です。</p>
+
+<p><code>init(server, options)</code>の関数が初期化処理を記載する場所になります。
+このサンプルアプリでは、2行目の<code>import</code>で読み込んだhapi.js用のファイルの関数を呼び出しています。引数で渡している<code>server</code>がhapi.jsの<code>server</code>オブジェクトになります。
+<code>route</code>メソッドを使用して作成しているプラグイン用のREST APIを追加しています。</p>
+
+<pre><code class="javascript">import { resolve } from 'path';
+import exampleRoute from './server/routes/example';
+
+export default function (kibana) {
+  return new kibana.Plugin({
+    require: ['elasticsearch'],
+    name: 'simple-sample-kibana-plugin',
+    uiExports: {
+
+      app: {
+        title: 'Simple Sample Kibana Plugin',
+        description: 'Sample plugin for explaining how to make kibana app',
+        main: 'plugins/simple-sample-kibana-plugin/app'
+      },
+
+...
+    },
+
+    config(Joi) {
+      return Joi.object({
+        enabled: Joi.boolean().default(true),
+      }).default();
+    },
+
+    init(server, options) {
+      // Add server routes and initialize the plugin here
+      exampleRoute(server);
+    }
+  });
+};
+</code></pre>
+
+<h4>public/app.js</h4>
+
+<p>画面用のモジュールです。
+<code>uiRoutes</code>という機能を使用して、アプリの呼び出しURLを定義します。テンプレートで作成したばかりの場合は、<code>/</code>というURLが追加されるのみです。</p>
+
+<p>実際に画面を表示する際に動くコントローラーの部分はその下の
+<code>uiModules.controller</code>に指定してあるfunctionが画面描画の
+処理を書く部分になります。
+templateで作成したプラグインでは、&#8221;title&#8221;など表示に必要なデータを<code>$scope</code>というオブジェクトに詰め込んでいます。
+これはAngularJS(1系)でのモデルオブジェクトになります。</p>
+
+<pre><code class="javascript">import moment from 'moment';
+import { uiModules } from 'ui/modules';
+import uiRoutes from 'ui/routes';
+
+import 'ui/autoload/styles';
+import './less/main.less';
+import template from './templates/index.html';
+
+uiRoutes.enable();
+uiRoutes
+  .when('/', {
+    template,
+    resolve: {
+...
+    }
+  });
+
+uiModules
+  .get('app/simple-sample-kibana-plugin', [])
+  .controller('simpleSampleKibanaPluginHelloWorld', function ($scope, $route, $interval) {
+    $scope.title = 'Simple Sample Kibana Plugin';
+    $scope.description = 'Sample plugin for explaining how to make kibana app';
+...
+    $scope.$watch('$destroy', unsubscribe);
+  });
+</code></pre>
+
+<h4>server/routes/example.js</h4>
+
+<p><a href="https://hapijs.com">hapi.js</a>というNode.jsのためのサーバーフレームワークです。
+このフレームワークをKibanaは使っており、Kibanaのサーバーとブラウザとのやり取りに使用するREST APIを記述するために使用しています。
+例えば、Elasticsearchとのやり取りを実際に行うAPIなどをこのREST API内部で記述します。</p>
+
+<pre><code class="javascript">export default function (server) {
+
+  server.route({
+    path: '/api/simple-sample-kibana-plugin/example',
+    method: 'GET',
+    handler(req, reply) {
+      reply({ time: (new Date()).toISOString() });
+    }
+  });
+
+}
+</code></pre>
+
+<p><code>path</code>の部分がブラウザ側からアクセスするURLになります。
+実際にElasticsearchとやり取りする処理の書き方については、次回の記事で説明します。</p>
+
+<h2>アーキテクチャ（簡易版）</h2>
+
+<p>ざっくりですが、ファイルやディレクトリについて説明しました。
+簡単なデータのやり取りについての流れを説明します。</p>
+
+<p>Kibana自体はNode.jsで実装されサーバーとして動作していますが、ブラウザでアクセスすることで画面を描画しています。
+簡単なコンポーネントを並べるとデータのやり取りはこのような形です。</p>
+
+<p><img src="/images/entries/20180420/architecture.jpg" width="600"></p>
+
+<p>すごく簡易で大雑把な絵ですが。。。</p>
+
+<p>実際のプラグインとしては大きく、2つの処理があります。</p>
+
+<ul>
+<li>ブラウザ上の処理
+
+<ul>
+<li>クリックなどのイベント処理</li>
+<li>HTMLなどのレンダリング処理</li>
+</ul>
+</li>
+<li>Kibanaサーバー上の処理(Elasticsearchなどとの通信が必要な場合)
+
+<ul>
+<li>外部との通信処理</li>
+<li>ブラウザ上では重い処理</li>
+</ul>
+</li>
+</ul>
+
+
+<p>絵に記載しましたが、ブラウザ上の処理についてはAngularJSが主なフレームワークで、サーバー上の処理についてはhapi.jsがフレームワークとなっています。</p>
+
+<h2>まとめ</h2>
+
+<p>ということで、今回はディレクトリ構造とファイルの説明、どういったフレームワークが使われ、データのやり取りがどのように行われているか説明しました。</p>
+
+<p>次回からは、実際に私が作成した<a href="https://github.com/johtani/analyze-api-ui-plugin">Analyze UI</a>を元にElasticsearchとのデータのやり取りなどについて紹介していきます。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第2回）]]></title>
@@ -465,69 +719,6 @@ Kibanaのプラグイン選択のアイコンをクリックし、Timelionのア
 
 <p>明日は、<a href="http://qiita.com/zoetro">zoetro</a>さんの「Kibanaのプラグインの話」になります。
 お楽しみに！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Kibana 4.2.0リリース（日本語訳）]]></title>
-    <link href="http://blog.johtani.info/blog/2015/10/29/kibana-4-2-0-ja/"/>
-    <updated>2015-10-29T16:20:19+09:00</updated>
-    <id>http://blog.johtani.info/blog/2015/10/29/kibana-4-2-0-ja</id>
-    <content type="html"><![CDATA[<p><strong>※この記事は次のブログを翻訳したものになります。</strong></p>
-
-<p>原文：<a href="https://www.elastic.co/blog/kibana-4-2-0">Kibana 4.2.0 released</a></p>
-
-<!-- more -->
-
-
-<p>Elasticsearch 2.0 + Kibana 4.2 = 💚
-Elasticsearch 2.0サポートのKibanaの最初のリリースです。
-これが何を意味するでしょう？
-速さ、安定さ、新しい機能。
-試してみたい方は、<a href="https://www.elastic.co/downloads/kibana">いますぐダウンロード</a>してください。
-そうでない方は、Kibana 4.2の楽しい機能について読んでみてください。</p>
-
-<h3>暗黒面は怖い？</h3>
-
-<p>そんなことありません。
-私たちは常にチャートチャートとダッシュボードを組み立てている組み立てている間は明るいバックグラウンドを使うことを推奨してきましたが、
-時々、巨大なスクリーンで暗い部屋で誰も明るい画面から目を背けないようにしたいでしょう。
-その影響を小さくするためにダークモードを導入しました。
-あなたは、NOCや天文台、その他の暗い場所でKibanaのダッシュボードを楽しむことができます。</p>
-
-<p>画像あり。
-<a href="https://www.elastic.co/blog/kibana-4-2-0">※画像に関しては原文をご覧ください。</a></p>
-
-<h3>地図のカスタマイズ</h3>
-
-<p>Kibanaの地図は素晴らしいですが、もっと多くのオプションが望まれていると聞きました。
-もし地図に関して知識があるなら、Kibana 4.2のWMSバックグラウンド地図サポートを試してみてください。
-WMSは非常に強力で、US Geological Surveyを含む多くの無料サービスがあります。
-<a href="http://viewer.nationalmap.gov/example/services/serviceList.html">http://viewer.nationalmap.gov/example/services/serviceList.html</a></p>
-
-<p>画像あり。
-<a href="https://www.elastic.co/blog/kibana-4-2-0">※画像に関しては原文をご覧ください。</a></p>
-
-<h3>シナリオは？</h3>
-
-<p>何かおかしい時、何が起こっているかを正しく知ってもらいたいので、Kibanaがそのタイミングで注目したいコンポーネントがあるなら、
-どのように動いているかという概要を知るためのサーバステータスページを作りました。
-もちろん、全てがOKであるというのを知りたいだけの場合でも、settingメニューのStatusタブからいつでも呼び出せます。</p>
-
-<p>画像あり。
-<a href="https://www.elastic.co/blog/kibana-4-2-0">※画像に関しては原文をご覧ください。</a></p>
-
-<h3>全てにおいて速く</h3>
-
-<p>ブラウザリフレッシュはKibana 4.2の新しいコードビルディングシステムのおかげで、さらに早くなりました。
-また、メモリを覚えてます？<strike>Pepperidge Farm</strike>Kibanaが覚えています。
-Kibana 4.2は小さな小さな小さなメモリフットプリントを管理している間、長い長い長い時間実行されているダッシュボードを見ることができるような
-大きなメモリのクリーンアップも含んでいます。</p>
-
-<h3>もっとありますが。。。</h3>
-
-<p>小さな微調整がいくつもあります。また、今後紹介する本当に刺激的なものの基礎を気づき上げてきました。
-これからも<a href="http://elastic.co/blog">Elasticのブログ</a>、<a href="https://twitter.com/elastic">Twitter</a>、<a href="https://github.com/elastic/kibana">KibanaのGitHubリポジトリ</a>に注目し、<strike>モンスタートラック</strike><strong>アナリティクス</strong>の瞬間に立ち会ってください。</p>
 ]]></content>
   </entry>
   

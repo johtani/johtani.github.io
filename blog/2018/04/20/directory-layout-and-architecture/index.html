@@ -1,0 +1,724 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Analyze UIとKibanaのプラグインの作成方法（第3回） - @johtaniの日記 2nd</title>
+  <meta name="author" content="johtani">
+
+  
+  <meta name="description" content="第2回から少し間が空いてしまいましたが、templateで作成したプラグインのディレクトリ構成とどういう流れでデータがやり取りされるかについてみていきます。
+（2018/02月時点で作成したディレクトリ構成にしたがって説明します）
+ちなみに、JavaScriptの優れた開発者ではないので、 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <link rel="canonical" href="http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+<!-- Swiftype -->
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+  (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+  e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install','AwrzzMSUo45A2C2Nyaqx','2.0.0');
+</script>
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-41371795-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body>
+  <div id="navigation">
+    <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="#" class="st-search-show-outputs">Search&#8230;<img src="/images/search.png"/> </a></li>
+</ul>
+
+</nav>
+  </div>
+  <header role="banner"><hgroup>
+  <h1><a href="/">@johtaniの日記 2nd</a></h1>
+  
+    <h2>@johtani &#8216;s blog 2nd edition</h2>
+  
+</hgroup>
+
+</header>
+  <div id="body"  >
+    <div id="main">
+      <div id="content">
+        <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Analyze UIとKibanaのプラグインの作成方法（第3回）</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2018-04-20T15:30:01+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2018-04-20T15:30:01+09:00'><span class='date'>2018-04-20</span></time></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin/">第2回</a>から少し間が空いてしまいましたが、templateで作成したプラグインのディレクトリ構成とどういう流れでデータがやり取りされるかについてみていきます。
+（2018/02月時点で作成したディレクトリ構成にしたがって説明します）
+ちなみに、JavaScriptの優れた開発者ではないので、誤解している点や、効率の悪い書き方などがあるかもしれません。見つけた場合は、連絡をいただければと思います。</p>
+
+<!-- more -->
+
+
+<p>では、まずは作成したディレクトリ構成についてみていきましょう。</p>
+
+<h2>ディレクトリ構成</h2>
+
+<p><code>simple-sample-kibana-plugin</code>がプラグインのプロジェクトのトップディレクトリになります。このディレクトリに次のような構成でサブディレクトリが存在します(なお、画像はIntelliJに取り込んだ後のディレクトリになっているので、<code>.iml</code>など、不要なファイル/ディレクトリが存在しています)。</p>
+
+<p><img src="/images/entries/20180420/directories.jpg" width="400"></p>
+
+<p>主要なディレクトリ、ファイルについて簡単に一覧で説明します(順不同)。</p>
+
+<table>
+<thead>
+<tr>
+<th> ファイル/ディレクトリ名 </th>
+<th> 説明 </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> index.js </td>
+<td> プラグインの本体。Kibanaはこのファイルのオブジェクトを読み込みプラグインを起動。設定などの読み込みもこちら。 </td>
+</tr>
+<tr>
+<td> package.json </td>
+<td> npm/yarnのパッケージに関する情報を定義するファイル </td>
+</tr>
+<tr>
+<td> README.md </td>
+<td> README。プラグインの説明などを記載する。インストール方法なども記載すると便利 </td>
+</tr>
+<tr>
+<td> public </td>
+<td> ブラウザ側に配布されるプログラムや画像一式 </td>
+</tr>
+<tr>
+<td> public/less/main.less </td>
+<td> LESS用のファイル。アプリ固有のスタイルなどを記載 </td>
+</tr>
+<tr>
+<td> public/app.js </td>
+<td> ブラウザ側で読み込まれるプラグインのモジュールなど。 </td>
+</tr>
+<tr>
+<td> public/template/index.html </td>
+<td> HTMLのテンプレート。ブラウザ上での描画に利用 </td>
+</tr>
+<tr>
+<td> server/routes </td>
+<td> Kibanaサーバー側で動作するプラグイン。hapi.jsを利用してREST APIを実装する </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>重要なファイルについて少しだけ説明します。</p>
+
+<h4>package.json</h4>
+
+<p>npmやyarnでビルドなどをするときに使用するパッケージ情報を記載するためのファイルです。
+プラグインの名前、バージョン、説明などを記載します。
+Kibanaのバージョンについてもこちらで管理します。この情報を
+また、ライブラリなどの依存関係についてもこちらで記載しています。
+以下、抜粋。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;simple-sample-kibana-plugin&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.0.0&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Sample plugin for explaining how to make kibana app&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;main&quot;</span><span class="p">:</span> <span class="s2">&quot;index.js&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;kibana&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.2.1&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;templateVersion&quot;</span><span class="p">:</span> <span class="s2">&quot;7.2.4&quot;</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;scripts&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;lint&quot;</span><span class="p">:</span> <span class="s2">&quot;eslint **/*.js&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="err">...</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;devDependencies&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;@elastic/eslint-config-kibana&quot;</span><span class="p">:</span> <span class="s2">&quot;^0.14.0&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;@elastic/eslint-import-resolver-kibana&quot;</span><span class="p">:</span> <span class="s2">&quot;^0.9.0&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;@elastic/plugin-helpers&quot;</span><span class="p">:</span> <span class="s2">&quot;^7.1.3&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="err">...</span>
+</span><span class='line'>    <span class="nt">&quot;expect.js&quot;</span><span class="p">:</span> <span class="s2">&quot;^0.3.1&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ちなみに私は、<code>version</code>などをリリースするたびに変更しています。</p>
+
+<h4>index.js</h4>
+
+<p>最初にKibanaに読み込まれるオブジェクトになります。
+Kibanaのアプリの名前や、必要なモジュールなどを記載します。</p>
+
+<p>また、<code>kibana.yml</code>から設定など読み込む処理なども書くことができます。</p>
+
+<p>2行目の<code>exampleRoute</code>はサーバー側のAPIとして利用するhapi.js用のファイルのパスになります。</p>
+
+<p><code>uiExports</code>はこのアプリの画面に関する設定などの記載になります。
+<code>app</code>の部分が実際にアプリの情報で、
+<code>main</code>があとで説明するこのプラグインのUIのためのJavaScriptファイル(public/app.js)になります。mainですので、最初に読み込まれる処理が記載されているものを指定します。<code>app.js</code>というファイル名を変更する場合は、こちらの<code>app</code>の部分を変更したファイルに合わせましょう。</p>
+
+<p><code>config(Joi)</code>の関数が設定ファイルの読み込みなどの処理を記載する場所です。</p>
+
+<p><code>init(server, options)</code>の関数が初期化処理を記載する場所になります。
+このサンプルアプリでは、2行目の<code>import</code>で読み込んだhapi.js用のファイルの関数を呼び出しています。引数で渡している<code>server</code>がhapi.jsの<code>server</code>オブジェクトになります。
+<code>route</code>メソッドを使用して作成しているプラグイン用のREST APIを追加しています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">import</span> <span class="p">{</span> <span class="nx">resolve</span> <span class="p">}</span> <span class="nx">from</span> <span class="s1">&#39;path&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">exampleRoute</span> <span class="nx">from</span> <span class="s1">&#39;./server/routes/example&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">export</span> <span class="k">default</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">kibana</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="k">new</span> <span class="nx">kibana</span><span class="p">.</span><span class="nx">Plugin</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">require</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;elasticsearch&#39;</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;simple-sample-kibana-plugin&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">uiExports</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">app</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;Simple Sample Kibana Plugin&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">description</span><span class="o">:</span> <span class="s1">&#39;Sample plugin for explaining how to make kibana app&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">main</span><span class="o">:</span> <span class="s1">&#39;plugins/simple-sample-kibana-plugin/app&#39;</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">config</span><span class="p">(</span><span class="nx">Joi</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">Joi</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+</span><span class='line'>        <span class="nx">enabled</span><span class="o">:</span> <span class="nx">Joi</span><span class="p">.</span><span class="kr">boolean</span><span class="p">().</span><span class="k">default</span><span class="p">(</span><span class="kc">true</span><span class="p">),</span>
+</span><span class='line'>      <span class="p">}).</span><span class="k">default</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">init</span><span class="p">(</span><span class="nx">server</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Add server routes and initialize the plugin here</span>
+</span><span class='line'>      <span class="nx">exampleRoute</span><span class="p">(</span><span class="nx">server</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>public/app.js</h4>
+
+<p>画面用のモジュールです。
+<code>uiRoutes</code>という機能を使用して、アプリの呼び出しURLを定義します。テンプレートで作成したばかりの場合は、<code>/</code>というURLが追加されるのみです。</p>
+
+<p>実際に画面を表示する際に動くコントローラーの部分はその下の
+<code>uiModules.controller</code>に指定してあるfunctionが画面描画の
+処理を書く部分になります。
+templateで作成したプラグインでは、&#8221;title&#8221;など表示に必要なデータを<code>$scope</code>というオブジェクトに詰め込んでいます。
+これはAngularJS(1系)でのモデルオブジェクトになります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">import</span> <span class="nx">moment</span> <span class="nx">from</span> <span class="s1">&#39;moment&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="p">{</span> <span class="nx">uiModules</span> <span class="p">}</span> <span class="nx">from</span> <span class="s1">&#39;ui/modules&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">uiRoutes</span> <span class="nx">from</span> <span class="s1">&#39;ui/routes&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">import</span> <span class="s1">&#39;ui/autoload/styles&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="s1">&#39;./less/main.less&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">template</span> <span class="nx">from</span> <span class="s1">&#39;./templates/index.html&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">uiRoutes</span><span class="p">.</span><span class="nx">enable</span><span class="p">();</span>
+</span><span class='line'><span class="nx">uiRoutes</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">when</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">template</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">resolve</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">uiModules</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;app/simple-sample-kibana-plugin&#39;</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">controller</span><span class="p">(</span><span class="s1">&#39;simpleSampleKibanaPluginHelloWorld&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$scope</span><span class="p">,</span> <span class="nx">$route</span><span class="p">,</span> <span class="nx">$interval</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">title</span> <span class="o">=</span> <span class="s1">&#39;Simple Sample Kibana Plugin&#39;</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">description</span> <span class="o">=</span> <span class="s1">&#39;Sample plugin for explaining how to make kibana app&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">$watch</span><span class="p">(</span><span class="s1">&#39;$destroy&#39;</span><span class="p">,</span> <span class="nx">unsubscribe</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>server/routes/example.js</h4>
+
+<p><a href="https://hapijs.com">hapi.js</a>というNode.jsのためのサーバーフレームワークです。
+このフレームワークをKibanaは使っており、Kibanaのサーバーとブラウザとのやり取りに使用するREST APIを記述するために使用しています。
+例えば、Elasticsearchとのやり取りを実際に行うAPIなどをこのREST API内部で記述します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">export</span> <span class="k">default</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">server</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">server</span><span class="p">.</span><span class="nx">route</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/api/simple-sample-kibana-plugin/example&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">method</span><span class="o">:</span> <span class="s1">&#39;GET&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">handler</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">reply</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">reply</span><span class="p">({</span> <span class="nx">time</span><span class="o">:</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">toISOString</span><span class="p">()</span> <span class="p">});</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>path</code>の部分がブラウザ側からアクセスするURLになります。
+実際にElasticsearchとやり取りする処理の書き方については、次回の記事で説明します。</p>
+
+<h2>アーキテクチャ（簡易版）</h2>
+
+<p>ざっくりですが、ファイルやディレクトリについて説明しました。
+簡単なデータのやり取りについての流れを説明します。</p>
+
+<p>Kibana自体はNode.jsで実装されサーバーとして動作していますが、ブラウザでアクセスすることで画面を描画しています。
+簡単なコンポーネントを並べるとデータのやり取りはこのような形です。</p>
+
+<p><img src="/images/entries/20180420/architecture.jpg" width="600"></p>
+
+<p>すごく簡易で大雑把な絵ですが。。。</p>
+
+<p>実際のプラグインとしては大きく、2つの処理があります。</p>
+
+<ul>
+<li>ブラウザ上の処理
+
+<ul>
+<li>クリックなどのイベント処理</li>
+<li>HTMLなどのレンダリング処理</li>
+</ul>
+</li>
+<li>Kibanaサーバー上の処理(Elasticsearchなどとの通信が必要な場合)
+
+<ul>
+<li>外部との通信処理</li>
+<li>ブラウザ上では重い処理</li>
+</ul>
+</li>
+</ul>
+
+
+<p>絵に記載しましたが、ブラウザ上の処理についてはAngularJSが主なフレームワークで、サーバー上の処理についてはhapi.jsがフレームワークとなっています。</p>
+
+<h2>まとめ</h2>
+
+<p>ということで、今回はディレクトリ構造とファイルの説明、どういったフレームワークが使われ、データのやり取りがどのように行われているか説明しました。</p>
+
+<p>次回からは、実際に私が作成した<a href="https://github.com/johtani/analyze-api-ui-plugin">Analyze UI</a>を元にElasticsearchとのデータのやり取りなどについて紹介していきます。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+
+<time datetime="2018-04-20T15:30:01+09:00" pubdate data-updated="true"><time class='entry-date' datetime='2018-04-20T15:30:01+09:00'><span class='date'>2018-04-20</span></time></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/kibana/'>kibana</a>, <a class='category' href='/blog/categories/plugin/'>plugin</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
+      data-hatena-bookmark-layout="standard"
+      data-hatena-bookmark-url="http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/">
+    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
+        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
+        style="border: none">
+  </a>
+</div>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog after sharing */
+google_ad_slot = "2760031654";
+google_ad_width = 468;
+google_ad_height = 60;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2018/03/24/how-to-find-conferences/" title="Previous Post: カンファレンス情報の探し方（CfP、スポンサー応募、開催期間など）？">&laquo; カンファレンス情報の探し方（CfP、スポンサー応募、開催期間など）？</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <a href="http://twitter.com/johtani"><img class="about_me" src="/images/about_me2.jpg" alt="後頭部"/></a>
+  <p>Elasticsearch関連の仕事をしているエンジニアです。Elasticsearch、Kibana、Logstashに興味のある方は連絡をください。<br/><br/>
+最近は自然言語処理、DataVisualizationに興味があります。<br/>
+Elasticsearch勉強会の主催をしています。<br/>
+<a href="http://code.google.com/p/lucene-gosen/">lucene-gosen</a>のコミッターもやっています。</p>
+↓データ分析基盤（可視化）本も出てます！<br/>
+　Elasticsearch本も出てます！↓<br/>
+<iframe style="width:120px;height:240px;" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" src="https://rcm-fe.amazon-adsystem.com/e/cm?ref=qf_sp_asin_til&t=johtani-22&m=amazon&o=9&p=8&l=as1&IS2=1&detail=1&asins=477419218X&linkId=ead5cb07f0cdfa55537b25378d4638e8&bc1=000000&lt1=_blank&fc1=333333&lc1=0066C0&bg1=FFFFFF&f=ifr">
+    </iframe>
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=johtani-22&o=9&p=8&l=as1&asins=4048662023&nou=1&ref=qf_sp_asin_til&fc1=000000&IS2=1&lt1=_blank&m=amazon&lc1=0000FF&bc1=000000&bg1=FFFFFF&f=ifr" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+</section>
+<section>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elastic/'>elastic (3)</a></li><li><a href='/blog/categories/elasticon/'>elasticon (1)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (95)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/found-dot-no/'>found.no (1)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (13)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (7)</a></li><li><a href='/blog/categories/lucene/'>lucene (1)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (4)</a></li><li><a href='/blog/categories/misc/'>misc (4)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/nlp100/'>nlp100 (4)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (1)</a></li><li><a href='/blog/categories/plugin/'>plugin (15)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/rust/'>rust (4)</a></li><li><a href='/blog/categories/sense/'>sense (1)</a></li><li><a href='/blog/categories/shield/'>shield (2)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/timelion/'>timelion (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/watcher/'>watcher (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/kanhuarensu/'>カンファレンス (1)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/suponsa/'>スポンサー (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (31)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (5)</a></li><li><a href='/blog/categories/ben/'>本 (5)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (2)</a></li></ul>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2018/04/20/directory-layout-and-architecture/">Analyze UIとKibanaのプラグインの作成方法（第3回）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/03/24/how-to-find-conferences/">カンファレンス情報の探し方（CfP、スポンサー応募、開催期間など）？</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/03/20/nlp100-ch01-05to06/">第1章の05から06までやってみた（言語処理100本ノック）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/02/19/nlp100-ch01-03to04/">第1章の03から04までやってみた（言語処理100本ノック）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/02/15/nlp100-ch01-00to02/">第1章の00から02までやってみた（言語処理100本ノック）</a>
+      </li>
+    
+  </ul>
+</section>
+<script type="text/javascript"><!--
+google_ad_client = "ca-pub-8434618569803086";
+/* blog2 */
+google_ad_slot = "5207297251";
+google_ad_width = 250;
+google_ad_height = 250;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/johtani">@johtani</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'johtani',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>On Twitter:</h1>
+  <div>
+    <p><br /><a href="http://twitter.com/johtani" target="_blank">My Tweets, on Twitter.</a></p>
+    <a href="http://twitter.com/johtani" class="twitter-follow-button" data-show-count="">Follow @johtani</a>
+  </div>
+</section>
+
+
+  
+</aside>
+
+
+      </div>
+    </div>
+    <footer role="contentinfo"><p>
+  Copyright &copy; 2018 - johtani -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
+</p>
+
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'johtaniblog2nd';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/';
+        var disqus_url = 'http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+(function(w,d){
+    var c,e=d.createDocumentFragment(),f=d.getElementsByTagName("script")[0],
+    a=function(a,b){if(!d.getElementById(b)){c=d.createElement("script");
+    c.src=a;c.id=b||null;c.async=true;e.appendChild(c);}};
+
+    w.___gcfg={lang:"ja"};
+    a("https://apis.google.com/js/plusone.js");
+
+
+    a("//platform.twitter.com/widgets.js");
+
+
+    a("//connect.facebook.net/ja_JP/all.js#xfbml=1","facebook-jssdk");
+
+    a("//b.st-hatena.com/js/bookmark_button_wo_al.js");
+    f.parentNode.insertBefore(e,f);
+})(this,document);
+</script>
+
+
+  </div>
+</body>
+</html>

@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-03-24T17:40:55+09:00</updated>
+  <updated>2018-04-20T18:44:40+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,351 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第3回）]]></title>
+    <link href="http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/"/>
+    <updated>2018-04-20T15:30:01+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture</id>
+    <content type="html"><![CDATA[<p><a href="http://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin/">第2回</a>から少し間が空いてしまいましたが、templateで作成したプラグインのディレクトリ構成とどういう流れでデータがやり取りされるかについてみていきます。
+（2018/02月時点で作成したディレクトリ構成にしたがって説明します）
+ちなみに、JavaScriptの優れた開発者ではないので、誤解している点や、効率の悪い書き方などがあるかもしれません。見つけた場合は、連絡をいただければと思います。</p>
+
+<!-- more -->
+
+
+<p>では、まずは作成したディレクトリ構成についてみていきましょう。</p>
+
+<h2>ディレクトリ構成</h2>
+
+<p><code>simple-sample-kibana-plugin</code>がプラグインのプロジェクトのトップディレクトリになります。このディレクトリに次のような構成でサブディレクトリが存在します(なお、画像はIntelliJに取り込んだ後のディレクトリになっているので、<code>.iml</code>など、不要なファイル/ディレクトリが存在しています)。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20180420/directories.jpg" width="400"></p>
+
+<p>主要なディレクトリ、ファイルについて簡単に一覧で説明します(順不同)。</p>
+
+<table>
+<thead>
+<tr>
+<th> ファイル/ディレクトリ名 </th>
+<th> 説明 </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> index.js </td>
+<td> プラグインの本体。Kibanaはこのファイルのオブジェクトを読み込みプラグインを起動。設定などの読み込みもこちら。 </td>
+</tr>
+<tr>
+<td> package.json </td>
+<td> npm/yarnのパッケージに関する情報を定義するファイル </td>
+</tr>
+<tr>
+<td> README.md </td>
+<td> README。プラグインの説明などを記載する。インストール方法なども記載すると便利 </td>
+</tr>
+<tr>
+<td> public </td>
+<td> ブラウザ側に配布されるプログラムや画像一式 </td>
+</tr>
+<tr>
+<td> public/less/main.less </td>
+<td> LESS用のファイル。アプリ固有のスタイルなどを記載 </td>
+</tr>
+<tr>
+<td> public/app.js </td>
+<td> ブラウザ側で読み込まれるプラグインのモジュールなど。 </td>
+</tr>
+<tr>
+<td> public/template/index.html </td>
+<td> HTMLのテンプレート。ブラウザ上での描画に利用 </td>
+</tr>
+<tr>
+<td> server/routes </td>
+<td> Kibanaサーバー側で動作するプラグイン。hapi.jsを利用してREST APIを実装する </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>重要なファイルについて少しだけ説明します。</p>
+
+<h4>package.json</h4>
+
+<p>npmやyarnでビルドなどをするときに使用するパッケージ情報を記載するためのファイルです。
+プラグインの名前、バージョン、説明などを記載します。
+Kibanaのバージョンについてもこちらで管理します。この情報を
+また、ライブラリなどの依存関係についてもこちらで記載しています。
+以下、抜粋。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;simple-sample-kibana-plugin&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.0.0&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Sample plugin for explaining how to make kibana app&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;main&quot;</span><span class="p">:</span> <span class="s2">&quot;index.js&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nt">&quot;kibana&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;6.2.1&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;templateVersion&quot;</span><span class="p">:</span> <span class="s2">&quot;7.2.4&quot;</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;scripts&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;lint&quot;</span><span class="p">:</span> <span class="s2">&quot;eslint **/*.js&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="err">...</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nt">&quot;devDependencies&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;@elastic/eslint-config-kibana&quot;</span><span class="p">:</span> <span class="s2">&quot;^0.14.0&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;@elastic/eslint-import-resolver-kibana&quot;</span><span class="p">:</span> <span class="s2">&quot;^0.9.0&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;@elastic/plugin-helpers&quot;</span><span class="p">:</span> <span class="s2">&quot;^7.1.3&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="err">...</span>
+</span><span class='line'>    <span class="nt">&quot;expect.js&quot;</span><span class="p">:</span> <span class="s2">&quot;^0.3.1&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ちなみに私は、<code>version</code>などをリリースするたびに変更しています。</p>
+
+<h4>index.js</h4>
+
+<p>最初にKibanaに読み込まれるオブジェクトになります。
+Kibanaのアプリの名前や、必要なモジュールなどを記載します。</p>
+
+<p>また、<code>kibana.yml</code>から設定など読み込む処理なども書くことができます。</p>
+
+<p>2行目の<code>exampleRoute</code>はサーバー側のAPIとして利用するhapi.js用のファイルのパスになります。</p>
+
+<p><code>uiExports</code>はこのアプリの画面に関する設定などの記載になります。
+<code>app</code>の部分が実際にアプリの情報で、
+<code>main</code>があとで説明するこのプラグインのUIのためのJavaScriptファイル(public/app.js)になります。mainですので、最初に読み込まれる処理が記載されているものを指定します。<code>app.js</code>というファイル名を変更する場合は、こちらの<code>app</code>の部分を変更したファイルに合わせましょう。</p>
+
+<p><code>config(Joi)</code>の関数が設定ファイルの読み込みなどの処理を記載する場所です。</p>
+
+<p><code>init(server, options)</code>の関数が初期化処理を記載する場所になります。
+このサンプルアプリでは、2行目の<code>import</code>で読み込んだhapi.js用のファイルの関数を呼び出しています。引数で渡している<code>server</code>がhapi.jsの<code>server</code>オブジェクトになります。
+<code>route</code>メソッドを使用して作成しているプラグイン用のREST APIを追加しています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">import</span> <span class="p">{</span> <span class="nx">resolve</span> <span class="p">}</span> <span class="nx">from</span> <span class="s1">&#39;path&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">exampleRoute</span> <span class="nx">from</span> <span class="s1">&#39;./server/routes/example&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">export</span> <span class="k">default</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">kibana</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="k">new</span> <span class="nx">kibana</span><span class="p">.</span><span class="nx">Plugin</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">require</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;elasticsearch&#39;</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;simple-sample-kibana-plugin&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">uiExports</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">app</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;Simple Sample Kibana Plugin&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">description</span><span class="o">:</span> <span class="s1">&#39;Sample plugin for explaining how to make kibana app&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">main</span><span class="o">:</span> <span class="s1">&#39;plugins/simple-sample-kibana-plugin/app&#39;</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">config</span><span class="p">(</span><span class="nx">Joi</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">Joi</span><span class="p">.</span><span class="nx">object</span><span class="p">({</span>
+</span><span class='line'>        <span class="nx">enabled</span><span class="o">:</span> <span class="nx">Joi</span><span class="p">.</span><span class="kr">boolean</span><span class="p">().</span><span class="k">default</span><span class="p">(</span><span class="kc">true</span><span class="p">),</span>
+</span><span class='line'>      <span class="p">}).</span><span class="k">default</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">init</span><span class="p">(</span><span class="nx">server</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Add server routes and initialize the plugin here</span>
+</span><span class='line'>      <span class="nx">exampleRoute</span><span class="p">(</span><span class="nx">server</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>public/app.js</h4>
+
+<p>画面用のモジュールです。
+<code>uiRoutes</code>という機能を使用して、アプリの呼び出しURLを定義します。テンプレートで作成したばかりの場合は、<code>/</code>というURLが追加されるのみです。</p>
+
+<p>実際に画面を表示する際に動くコントローラーの部分はその下の
+<code>uiModules.controller</code>に指定してあるfunctionが画面描画の
+処理を書く部分になります。
+templateで作成したプラグインでは、&#8221;title&#8221;など表示に必要なデータを<code>$scope</code>というオブジェクトに詰め込んでいます。
+これはAngularJS(1系)でのモデルオブジェクトになります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">import</span> <span class="nx">moment</span> <span class="nx">from</span> <span class="s1">&#39;moment&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="p">{</span> <span class="nx">uiModules</span> <span class="p">}</span> <span class="nx">from</span> <span class="s1">&#39;ui/modules&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">uiRoutes</span> <span class="nx">from</span> <span class="s1">&#39;ui/routes&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">import</span> <span class="s1">&#39;ui/autoload/styles&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="s1">&#39;./less/main.less&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">template</span> <span class="nx">from</span> <span class="s1">&#39;./templates/index.html&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">uiRoutes</span><span class="p">.</span><span class="nx">enable</span><span class="p">();</span>
+</span><span class='line'><span class="nx">uiRoutes</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">when</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">template</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">resolve</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">uiModules</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;app/simple-sample-kibana-plugin&#39;</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">controller</span><span class="p">(</span><span class="s1">&#39;simpleSampleKibanaPluginHelloWorld&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$scope</span><span class="p">,</span> <span class="nx">$route</span><span class="p">,</span> <span class="nx">$interval</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">title</span> <span class="o">=</span> <span class="s1">&#39;Simple Sample Kibana Plugin&#39;</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">description</span> <span class="o">=</span> <span class="s1">&#39;Sample plugin for explaining how to make kibana app&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'>    <span class="nx">$scope</span><span class="p">.</span><span class="nx">$watch</span><span class="p">(</span><span class="s1">&#39;$destroy&#39;</span><span class="p">,</span> <span class="nx">unsubscribe</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>server/routes/example.js</h4>
+
+<p><a href="https://hapijs.com">hapi.js</a>というNode.jsのためのサーバーフレームワークです。
+このフレームワークをKibanaは使っており、Kibanaのサーバーとブラウザとのやり取りに使用するREST APIを記述するために使用しています。
+例えば、Elasticsearchとのやり取りを実際に行うAPIなどをこのREST API内部で記述します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kr">export</span> <span class="k">default</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">server</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">server</span><span class="p">.</span><span class="nx">route</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/api/simple-sample-kibana-plugin/example&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">method</span><span class="o">:</span> <span class="s1">&#39;GET&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">handler</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">reply</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">reply</span><span class="p">({</span> <span class="nx">time</span><span class="o">:</span> <span class="p">(</span><span class="k">new</span> <span class="nb">Date</span><span class="p">()).</span><span class="nx">toISOString</span><span class="p">()</span> <span class="p">});</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>path</code>の部分がブラウザ側からアクセスするURLになります。
+実際にElasticsearchとやり取りする処理の書き方については、次回の記事で説明します。</p>
+
+<h2>アーキテクチャ（簡易版）</h2>
+
+<p>ざっくりですが、ファイルやディレクトリについて説明しました。
+簡単なデータのやり取りについての流れを説明します。</p>
+
+<p>Kibana自体はNode.jsで実装されサーバーとして動作していますが、ブラウザでアクセスすることで画面を描画しています。
+簡単なコンポーネントを並べるとデータのやり取りはこのような形です。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20180420/architecture.jpg" width="600"></p>
+
+<p>すごく簡易で大雑把な絵ですが。。。</p>
+
+<p>実際のプラグインとしては大きく、2つの処理があります。</p>
+
+<ul>
+<li>ブラウザ上の処理
+
+<ul>
+<li>クリックなどのイベント処理</li>
+<li>HTMLなどのレンダリング処理</li>
+</ul>
+</li>
+<li>Kibanaサーバー上の処理(Elasticsearchなどとの通信が必要な場合)
+
+<ul>
+<li>外部との通信処理</li>
+<li>ブラウザ上では重い処理</li>
+</ul>
+</li>
+</ul>
+
+
+<p>絵に記載しましたが、ブラウザ上の処理についてはAngularJSが主なフレームワークで、サーバー上の処理についてはhapi.jsがフレームワークとなっています。</p>
+
+<h2>まとめ</h2>
+
+<p>ということで、今回はディレクトリ構造とファイルの説明、どういったフレームワークが使われ、データのやり取りがどのように行われているか説明しました。</p>
+
+<p>次回からは、実際に私が作成した<a href="https://github.com/johtani/analyze-api-ui-plugin">Analyze UI</a>を元にElasticsearchとのデータのやり取りなどについて紹介していきます。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[カンファレンス情報の探し方（CfP、スポンサー応募、開催期間など）？]]></title>
@@ -2196,106 +2541,6 @@ APIを叩くときに利用するJSONの設定やアサーションは<code>src/
 会場とかスピーカーとか興味ある人連絡ください。</p>
 
 <p>東京の勉強会のスピーカーも随時募集中ですので、連絡ください。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第15回Elasticsearch勉強会を開催しました。 #elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2016/03/17/15th-elasticsearch-jp/"/>
-    <updated>2016-03-17T12:43:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2016/03/17/15th-elasticsearch-jp</id>
-    <content type="html"><![CDATA[<p><a href="https://elasticsearch.doorkeeper.jp/events/40444">第15回Elasticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、会場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-今回は、Elastic{on} 2016開催直後ということで、大半はElastic{on}に関する話でした。</p>
-
-<!-- more -->
-
-
-<h3>チェックイン数など</h3>
-
-<ul>
-<li>チェックインした人：114名</li>
-<li>キャンセルしなかった人：62名</li>
-</ul>
-
-
-<p>でした。
-今回は、少しおそめで1時間前にキャンセル待ちがいない状態にしました。
-まぁ、いつもの感じでしょうか。数値も安定してきた感じですかね。</p>
-
-<h2>&ldquo;Elasticsearchと機械学習を実際に連携させる&rdquo; / <a href="https://www.preferred-networks.jp">Preferred Networks America, Inc.</a> CTO 久保田展行(Kubota Nobuyuki) さん</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/nobu_k/elasticsearch-59627321">Elasticsearchと機械学習を実際に連携させる</a></p>
-
-<p><a href="http://blog.johtani.info/blog/2016/01/08/14th-elasticcsearch-jp/">前回の続き</a>の話で、今回が本題でした。</p>
-
-<p>勉強会直前に発表された<a href="http://sensorbee.io">SensorBee</a>をElasticsearchと一緒に使うとどんなことができるかというお話です。
-まぁ、前処理重要ですよねというのが、いつものことですが、印象的でした。
-いつものようにわかりやすい説明だったので、使ってブログを書いて欲しいなと。</p>
-
-<p>発表の中で、説明に出てきたデモとか。
-* <a href="https://research.preferred.jp/2016/01/ces2016/">CES2016でロボットカーのデモを展示してきました</a></p>
-
-<h2>&ldquo;Elastic{ON} 2016レポート&rdquo; / Elastic Jun Ohtani</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/johtani/elastic-on-2016-repoto">elastic{on} 2016 レポート</a></p>
-
-<p>写真多めで、キーノートをメインに話をしました。</p>
-
-<p>簡単なまとめとしては</p>
-
-<ul>
-<li>プロダクトロゴができました。<a href="https://www.elastic.co/brand">ロゴ画像などはこちら</a></li>
-<li>次のメインバージョンは全て5.0。（<a href="https://www.elastic.co/v5">5.0に関する通知が欲しい人はこちらで登録できます</a>）</li>
-<li><a href="https://www.elastic.co/elasticon/conf/2016/sf">elastic{on} 2016のビデオなどはこちら</a></li>
-<li>BBL始めます。連絡ください</li>
-</ul>
-
-
-<h2>&ldquo;Elastic{ON}の過ごし方&rdquo; / クラスメソッド株式会社 藤本 真司 さん</h2>
-
-<p>スライド：<a href="http://dev.classmethod.jp/server-side/elasticsearch/elasticsearch-study-15-lt/">Elastic{ON}の過ごし方</a></p>
-
-<p>印象に残ったのは</p>
-
-<ul>
-<li>「自他共に認めるブログの会社」</li>
-<li>4/12にSAPさんに会場を借りてElastic＆クラスメソッドでイベントやります。</li>
-</ul>
-
-
-<p>やっぱりご飯が美味しいんですねぇ。
-早速<a href="http://dev.classmethod.jp/server-side/elasticsearch/elasticsearch-study-15-lt/">ブログ</a>が書かれてました。</p>
-
-<h2>&ldquo;Elastic{ON} 2016 見るべきセッション資料 7選&rdquo; / Acroquest Technology株式会社 谷本 心 さん</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/shintanimoto/elastic-on-2016-jian-rubekisetusiyonzi-liao-7xuan-number-elasticsearchjp">Elastic{ON} 2016 見るべきセッション資料 7選 #elasticsearchjp</a></p>
-
-<p>印象に残ったのは</p>
-
-<ul>
-<li>東京でハンズオンやる会場提供者募集中！</li>
-<li>Ingest Node（参考：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/ingest.html">Ingest Nodeのドキュメントは公開中。</a>）</li>
-<li>Reindex API（参考：<a href="https://github.com/elastic/elasticsearch/pull/17060">Backport reindex to 2.x </a>）</li>
-</ul>
-
-
-<h2>その他、感想などのブログ</h2>
-
-<ul>
-<li><a href="http://dev.classmethod.jp/server-side/elasticsearch/elasticsearch-study-15-lt/">第15回elasticsearch勉強会にLTで登壇しました #elasticsearch #elasticsearchjp</a></li>
-<li><a href="http://d.hatena.ne.jp/Kazuhira/20160316/1458142636">第15回elasticsearch勉強会に参加してきました #elasticsearch #elasticsearchjp</a></li>
-</ul>
-
-
-<h2>まとめ＋宣伝</h2>
-
-<p>来年のElastic{ON}に参加したいと思っていただけたらよかったなと。</p>
-
-<p>4/12にクラスメソッドさんとイベントを行います。また、ツイートすると思います。</p>
-
-<p>次回はいつも通りだと5月中旬になるかと思います（大丈夫かな？<a href="http://www.ospn.jp/osc2016-nagoya/">OSC 2016 Nagoya</a>でしゃべったり、ブース出したりとかするけど）。
-5末に名古屋に出没します。名古屋で勉強会できればやりたいと思ってます。会場とかスピーカーとか興味がある方は連絡ください。</p>
 ]]></content>
   </entry>
   
