@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-04-20T18:44:40+09:00</updated>
+  <updated>2018-07-29T18:39:55+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,87 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[JJUGナイトセミナーで話しました]]></title>
+    <link href="http://blog.johtani.info/blog/2018/07/29/apm-java-at-jjug/"/>
+    <updated>2018-07-29T14:45:30+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/07/29/apm-java-at-jjug</id>
+    <content type="html"><![CDATA[<p><a href="https://jjug.doorkeeper.jp/events/77485">7/25にJJUGナイトセミナー</a>でElastic Stackの紹介とAPMのJava Agentの紹介をしたので、補足のブログです。
+（久々に書くな。。。）</p>
+
+<!-- more -->
+
+
+<p>スライドとサンプルアプリのリポジトリはこちら。</p>
+
+<ul>
+<li>スライド：<a href="https://speakerdeck.com/johtani/intro-elastic-stack-and-elastic-apm-java">https://speakerdeck.com/johtani/intro-elastic-stack-and-elastic-apm-java</a></li>
+<li>リポジトリ：<a href="https://github.com/johtani/apm-beats-kubernetes-demo/tree/master">https://github.com/johtani/apm-beats-kubernetes-demo/tree/master</a></li>
+</ul>
+
+
+<h3>サンプルアプリ</h3>
+
+<p>勉強会の頭でサンプルアプリへのアクセス用QRコードを用意して質問してもらう感じにしました。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20180729/APM___Beats_demo_app.jpg" width="600"></p>
+
+<p>アプリ自体が質問の受付と、そこにある質問に対して聞きたいかどうかのVoteができる仕組みになっています。
+セッション最後にこの画面をみながら答えました。
+手を挙げていただくよりも、匿名（名前入れるようになってますが、実名である必要はない）で登録できるし、
+みんなが聞きたいかどうかもわかるので便利だなぁと。</p>
+
+<p>元は、Elastic{ON} 2018であった「<a href="https://www.elastic.co/webinars/elasticsearch-log-collection-with-kubernetes-docker-and-containers">Docker &amp; Kubernetes Log Collection and Monitoring with Beats and Elasticsearch</a>」のサンプルアプリです。
+これをSpring Bootに移植して、ちょっとだけサンプルコードを追加したものになります。</p>
+
+<h3>構成とかの補足</h3>
+
+<p>スライド、GitHubのリポジトリのREADMEにある図は、k8s上のサンプルアプリケーションの構成だけでした。
+ElasticsearchとKibanaを含めた図はこんな感じです。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20180729/system-overview.jpg" width="600"></p>
+
+<p>k8s上の各種Beats、APM Serverは一旦Elastic CLoud Elasticsearch Service（AWS Tokyoリージョンにデプロイ）に対してデータを投げます。
+で、KibanaはGKE(k8s on GCP)で動かして、実際に勉強会ではkubectl proxyで接続してから表示していました。
+この構成にしている理由は次の理由です。</p>
+
+<ul>
+<li>Elastic CloudのElasticsearchクラスターにデータを投げている理由
+
+<ul>
+<li>クラスターの起動が簡単。</li>
+<li>データを永続化したい。k8sのアプリは必要がなくなったらデータを削除したいから。</li>
+<li>k8sのdeploymentを書く手間を省く</li>
+<li>普段使ってるので。。。</li>
+</ul>
+</li>
+<li>KibanaをGKEで動かした理由
+
+<ul>
+<li>Elastic Cloudでは<em>「現時点(7/29現在)」</em>で、KibanaでAPM専用のUIを起動できない</li>
+<li>ローカルである必要はない</li>
+</ul>
+</li>
+</ul>
+
+
+<p>といったところです。
+Elastic Cloudのインスタンスを起動したままにしておけば、デモをしなくても、このタイミングのログ、メトリクスを
+再利用して話をすることも可能です。</p>
+
+<h3>まとめ</h3>
+
+<p>ということで、簡単ですが、構成の補足でした。
+勉強会では告知したのですが、今後の勉強会はトピックスごとでやりたいなと。ということで、どんなトピックスに興味があるのか、スピーカーの応募にはどんなツールが話しやすいかなどといったことのアンケートを集めております。ぜひご協力ください！
+また、アンケート、このブログに関する質問がある場合は、<a href="https://twitter.com/johtani">@johtani</a>、もしくはブログへのコメントでお願い致します。</p>
+
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">今後の勉強会のやり方などについてアンケートを実施中です。<a href="https://t.co/XU15CHro0n">https://t.co/XU15CHro0n</a> 皆さん是非ご協力ください。ここにない項目については返信をお願いします。 <a href="https://twitter.com/hashtag/elasticsearchjp?src=hash&amp;ref_src=twsrc%5Etfw">#elasticsearchjp</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1021388358730170368?ref_src=twsrc%5Etfw">2018年7月23日</a></blockquote>
+
+
+<p> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第3回）]]></title>
@@ -2384,163 +2465,6 @@ APIを叩くときに利用するJSONの設定やアサーションは<code>src/
 お祓いしてもらったので、何もなければいいんだけど。</p>
 
 <p>ということで、なんとなく<a href="http://www.amazon.co.jp/registry/wishlist/29EMX20UN9P16/ref=cm_sw_r_tw_ws_NhjDxb61H9RBS">欲しいものリスト</a>を貼っておきますね。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[第16回Elasticsearch勉強会を開催しました。 #elasticsearchjp]]></title>
-    <link href="http://blog.johtani.info/blog/2016/06/28/16th-elasticsearch-meetup/"/>
-    <updated>2016-06-28T13:55:55+09:00</updated>
-    <id>http://blog.johtani.info/blog/2016/06/28/16th-elasticsearch-meetup</id>
-    <content type="html"><![CDATA[<p><a href="https://elasticsearch.doorkeeper.jp/events/46539">第16回Elasticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、会場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-今回は、司会だけに注力してみました（）。</p>
-
-<!-- more -->
-
-
-<h3>チェックイン数など</h3>
-
-<ul>
-<li>チェックインした人：141名</li>
-<li>キャンセルしなかった人：67名</li>
-</ul>
-
-
-<p>でした。</p>
-
-<p>今回は、参加希望者が多くて、当日にも100名近いキャンセル待ちの方がいたので、
-240名まで、参加者枠を増枠（会場キャパ190名程度）して対応しました。
-まぁ、読み通り、1/3の方はキャンセルしない形でした。
-天気も良く電車の遅延などもなさそうだったので、ちょっとドキドキしてたのですが。</p>
-
-<p>以下は簡単なメモです。</p>
-
-<h2>「LogstashとElasticsearchで作るEnterprise Search Platform」/ Elastic Kosho Owa</h2>
-
-<p>スライド：<a href="https://speakerdeck.com/kosho/enabling-enterprise-search-platform-with-elastic-stack">https://speakerdeck.com/kosho/enabling-enterprise-search-platform-with-elastic-stack</a></p>
-
-<ul>
-<li>使ってるLogstashの設定ファイルを elastic-japan at elastic dot co に送るとTシャツがもらえるらしい。</li>
-<li>Logstashの<a href="https://github.com/logstash-plugins/logstash-filter-ruby/blob/master/lib/logstash/filters/ruby.rb">filter-ruby</a>はここで、evalしてcallしてるから、特にforkとかしてないかと。</li>
-</ul>
-
-
-<h2>「企業・業界情報プラットフォームSPEEDAにおけるElasticsearchの活用」 / 株式会社ユーザベース 北内 啓さん</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/tau3000/speedaelasticsearch-63510388">http://www.slideshare.net/tau3000/speedaelasticsearch-63510388</a></p>
-
-<ul>
-<li>アルゴリズム関連の開発担当</li>
-<li>企業データをいろんな軸で検索したい
-
-<ul>
-<li>データ数が約70億レコードになりそう（通貨 x MySQL）</li>
-</ul>
-</li>
-<li>300万企業データ＋Nestedとかで持ってる。
-
-<ul>
-<li>11万フィールド？？？</li>
-<li>10台の物理サーバに24仮想マシン</li>
-</ul>
-</li>
-<li>企業名の検索
-
-<ul>
-<li>recall重視</li>
-</ul>
-</li>
-<li>NewsPicksの検索機能
-
-<ul>
-<li>「日本 化粧品 売上高」業界のデータとかも観れるのかな？有料会員向け機能</li>
-<li>登録済みキーワードかどうかをRDB＋Esに検索して、ID化するっぽい
-
-<ul>
-<li>ID（Analyze必要ない）検索だから、termクエリだった、サンプルが。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>ノードの役割分担
-
-<ul>
-<li>更新はMasterNode経由でDataNodeへ。</li>
-<li>検索はClientNode経由でDataNodeへ。</li>
-</ul>
-</li>
-<li>1.xかぁ。。。</li>
-</ul>
-
-
-<h2>「Elasticsearchベースの全文検索システムFess」 / 株式会社エヌツーエスエム 菅谷信介さん</h2>
-
-<p>スライド：<a href="http://www.slideshare.net/shinsuke/elasticsearchfess">http://www.slideshare.net/shinsuke/elasticsearchfess</a></p>
-
-<ul>
-<li>10.xからSolrをやめてElasticsearchへ。</li>
-<li>日本語検索
-
-<ul>
-<li>bigram＋形態素（1文字検索とかに対応するため）</li>
-</ul>
-</li>
-<li>NeologDに対応したkuromojiを利用</li>
-<li>DBFluteをESFluteとしてEs対応</li>
-<li>KOPFを組み込んで使ってる</li>
-<li>configをREST API経由で更新できるプラグインあり</li>
-</ul>
-
-
-<h2>LT</h2>
-
-<h3>「ElasticsearchとGCPのネットワークでハマった話」 株式会社サイバーエージェント 平田大地 さん @daichild</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/daic_h/gcpfalsenetutowakudehamatutahua">https://speakerdeck.com/daic_h/gcpfalsenetutowakudehamatutahua</a></p>
-
-<ul>
-<li>hhkb2 2刀流！</li>
-<li>networkのKeep-alive周りで困ったよというお話。</li>
-<li>後で聞いたけど、<a href="https://www.elastic.co/guide/en/elasticsearch/plugins/current/cloud-gce.html">GCE Cloud Plugin</a>は使ってるそうです。</li>
-</ul>
-
-
-<p><strong>06/28 17:00追記</strong></p>
-
-<ul>
-<li>Pingを定期的に実行させることで回避も出来るようです。</li>
-<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/2.3/modules-transport.html#_tcp_transport">transport.ping_schedule</a>に時間を指定します。通常のNode（Transport以外）は&#8217;-1&#8217;が指定してあり、動作してません。</li>
-</ul>
-
-
-<h3>「スクリプトフィールドで作るランキングみたいな何か」iwag さん</h3>
-
-<p>スライド：<a href="https://speakerdeck.com/iwag/elasticsearch-dezuo-rurankingu">https://speakerdeck.com/iwag/elasticsearch-dezuo-rurankingu</a></p>
-
-<ul>
-<li>1.xかぁ。。。</li>
-<li>あとは、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html">function_score</a>とかも面白いですよ！</li>
-</ul>
-
-
-<h2>その他、感想などのブログ</h2>
-
-<ul>
-<li><a href="http://tsuyoshi-nakamura.hatenablog.com/entry/2016/06/28/115244">第16回elasticsearch勉強会に参加してきた</a></li>
-<li><a href="https://masutaka.net/chalow/2016-06-28-1.html">第16回Elasticsearch勉強会に参加してきた </a></li>
-</ul>
-
-
-<h2>まとめ＋宣伝？</h2>
-
-<p>1.xがまだまだいますねぇ、早く2.xにアップしましょう！（5.0ももう直ぐだし）。懇親会でも色々と話しましたが、<a href="https://discuss.elastic.co">https://discuss.elastic.co</a> というフォーラムあるので、ぜひ活用してください。</p>
-
-<p>次回は8月末か9月頭かでしょうか。
-<a href="http://www.ospn.jp/osc2016-kyoto/">7月末にOSC京都</a>に出没するので、京都で勉強会やりたいと思ってます！
-会場とかスピーカーとか興味ある人連絡ください。</p>
-
-<p>東京の勉強会のスピーカーも随時募集中ですので、連絡ください。</p>
 ]]></content>
   </entry>
   
