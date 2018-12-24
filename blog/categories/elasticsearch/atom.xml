@@ -4,7 +4,7 @@
   <title><![CDATA[Category: elasticsearch | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/elasticsearch/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2018-12-01T14:10:21+09:00</updated>
+  <updated>2018-12-24T23:51:35+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,76 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elastic Stack 7.0で入ってくる新機能をちょっと紹介]]></title>
+    <link href="http://blog.johtani.info/blog/2018/12/25/whats-new-in-elastic-stack-7/"/>
+    <updated>2018-12-25T00:00:01+09:00</updated>
+    <id>http://blog.johtani.info/blog/2018/12/25/whats-new-in-elastic-stack-7</id>
+    <content type="html"><![CDATA[<p><a href="https://qiita.com/advent-calendar/2018/elasticsearch">Elastic stack (Elasticsearch) Advent Calendar 2018</a>の25日目の記事になります。
+今年最後のAdvent Calendarです！来年も忘れてなければやるはず！</p>
+
+<p>今日は、すでにalpha2までリリースされた7系でどんな変更が入るのかをちょっとだけ紹介します。
+ほんとにちょっとだけですよ。</p>
+
+<!-- more -->
+
+
+<h3>Kibanaのk7 design (kibana)</h3>
+
+<p><a href="https://www.elastic.co/guide/en/kibana/master/release-notes-7.0.0-alpha1.html#K7-design-7.0.0">Kibanaの新デザインです。K7って呼ぶのかな？</a></p>
+
+<p><img src="/images/entries/20181225/k7dashboard.png" width="600"></p>
+
+<p>まだ、メニューと一部が実装されているだけですが、7.0.0でガラッと変わりそうです。
+そのほかの画面の<a href="https://github.com/elastic/kibana/issues?utf8=%E2%9C%93&amp;q=is%3Aissue+is%3Aopen+k7">Issueはこちら</a>です。
+&ldquo;k7&#8221;で検索しただけですが。メタIssueが見つからなかったんで。<a href="https://github.com/elastic/kibana/issues/25736">例えば、こんな感じでアプリとかのスイッチとかがこんな感じになるよというデザイン案が観れたりします</a>。</p>
+
+<h3>Zen2 (elasticsearch)</h3>
+
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-discovery.html">Elasticsearchの新しいクラスター管理機構アルゴリズム</a>になります。
+Zenと呼ばれる独自実装のものを6系までは使っていましたが、7系向けに変更がかかりました。
+実際には、Nodeを探す仕組み、Masterの選出アルゴリズム、クラスター状態の管理などを行います。
+上記のリンクにあるようにドキュメントも詳しくなりました。
+信頼性をさらに向上し、設定ミスを起こしにくくして、より使いやすくという目的で様々な変更が加えられています。
+これが、<a href="https://github.com/elastic/elasticsearch/issues/32006">メタIssue</a>かな？
+アルゴリズムの変更や、クラスターの状態の管理の方法などの変更に関するIssueやPRにリンクが貼ってあります。</p>
+
+<h3>新しいデータタイプ (elasticsearch)</h3>
+
+<h4>Feature/Feature vector datatype</h4>
+
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/feature.html">ドキュメントはこちら</a>と<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/feature-vector.html">こちら</a></p>
+
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-feature-query.html">feature query</a>と合わせて使用するためのフィールドで、しかもクエリのスコア計算「のみ」に使用するフィールドになります。
+検索条件やソート、Aggregationの対象ではなく、クエリのスコアに影響させたい値を入れておくためのフィールドです。
+7から追加された機能の「<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-uri-request.html">track_total_hits</a>」をfalseにした時に検索性能が上がるという利点まであります。
+ちなみに、「track_total_hits」は検索ヒット数を計算しないで、上位のデータを取得する時にクエリを早くするといったことができる機能になります。
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/index-modules-index-sorting.html">Index Sorting</a>と組み合わせることで威力が発揮できる仕組みになるはずです。</p>
+
+<h3>Filebeat supports NetFlow (beats)</h3>
+
+<p><a href="https://www.elastic.co/guide/en/beats/filebeat/master/filebeat-input-netflow.html">NetFlowが入力</a>として追加されます。
+Filebeatと言いつつ、File以外の入力が徐々に増えてきてますね（UDPやTCPにも対応しましたし）。
+ネットワーク機器などの監視を行う方などにはさらに便利になってくるのではないでしょうか？
+（私はこの辺りは不得手なので、誰か使ってみてもらえればと！）</p>
+
+<h2>まとめ</h2>
+
+<p>まだ、序の口って感じですが、今年はこの辺で。7系ではここであげた以外にも様々な機能が追加されています（もしくは予定です）。
+Elasticのドキュメントの良いところは、masterブランチのドキュメントも公開されていることです。
+ドキュメントのバージョンを<code>7.0.0-alpha2</code>にすれば、masterブランチで追加されたページが見れるので、
+興味のある方は眺めてみていただければと。物によって、リリースノートが書かれていなかったりするので注意は必要ですが。</p>
+
+<p>今年もあと数日になりましたが、Advent Calendarへの参加ありがとうございました！
+来年ももちろんやりますので、年始からネタを考えてくださいね。</p>
+
+<p>来年一発目は、<a href="https://www.meetup.com/ja-JP/Tokyo-Elastic-Fantastics/events/257301177/">第28回Elasticsearch勉強会 - 6.5機能紹介 -</a>になります。ウェビナーでも紹介しましたが、6.5で入った様々な新機能をデモありで紹介する予定です。
+興味のある方はぜひご参加ください。</p>
+
+<p>では、来年もよろしくお願いいたします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[2018年のElastic StackとElastic]]></title>
@@ -496,30 +566,6 @@ OSCなどイベントで声をかけていただいた皆様、ありがとう�
 <h4>ということで、</h4>
 
 <p>次は<a href="https://qiita.com/aeroastro">aeroastroさん</a>の「Elasticsearchのインデックスを本当の意味で無停止再構築する方法」（<a href="https://qiita.com/advent-calendar/2017/elasticsearch">Advent Calendarのページはこちら</a>）になります、お楽しみに！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[データ分析基盤構築入門 を一部執筆しました。]]></title>
-    <link href="http://blog.johtani.info/blog/2017/09/21/release-intro-logging-analysis-system/"/>
-    <updated>2017-09-21T10:02:30+09:00</updated>
-    <id>http://blog.johtani.info/blog/2017/09/21/release-intro-logging-analysis-system</id>
-    <content type="html"><![CDATA[<p>久々に執筆しました。といっても、<a href="http://blog.johtani.info/blog/2014/08/04/release-magazine-book-of-log-aggs-and-viz/">以前の書籍</a>の更新版です。
-まぁ、更新版といっても、私以外の方々は結構な量を書き直しor新規書き起こしされてますが。。。</p>
-
-<p>ということで、みなさん「買って」から感想をいただけるとうれしいです！（以下の画像でAmazonにジャンプできます！Kindle版も発売中です。）</p>
-
-<p><a target="_blank"  href="https://www.amazon.co.jp/gp/product/477419218X/ref=as_li_tl?ie=UTF8&camp=247&creative=1211&creativeASIN=477419218X&linkCode=as2&tag=johtani-22&linkId=f7cbe8130343ea340b18b53eba20d4b7"><img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=477419218X&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL250_&tag=johtani-22" ></a><img src="//ir-jp.amazon-adsystem.com/e/ir?t=johtani-22&l=am2&o=9&a=477419218X" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /></p>
-
-<!-- more -->
-
-
-<p>今回もElasticsearchの章を担当しました。
-5.4ベースで書きましたが、ちょっとずつ6でどう変わるかなども記載してあります。
-また、付録ではLogstashやBeatsにもちょっと触れています。
-また、自分が一番好きなKibanaの機能であるDev ToolsのConsoleについても記載してあります。こちらも合わせて目を通していただければと。</p>
-
-<p>みなさんのフィードバック（ツイート、ブログ、Amazonのコメントなどなど）をお待ちしております！</p>
 ]]></content>
   </entry>
   
