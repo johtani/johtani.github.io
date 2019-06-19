@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2019-04-26T00:28:24+09:00</updated>
+  <updated>2019-06-19T20:35:53+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,185 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[勉強会の受付自作？アプリ？HTMLについて]]></title>
+    <link href="http://blog.johtani.info/blog/2019/06/19/qr-code-with-meetup-dot-com/"/>
+    <updated>2019-06-19T19:10:44+09:00</updated>
+    <id>http://blog.johtani.info/blog/2019/06/19/qr-code-with-meetup-dot-com</id>
+    <content type="html"><![CDATA[<p>Twitterで「Meetup.comに切り替えたらー」みたいな話があったので、
+受付用アプリとかなくてという話になったので、普段Elasticsearch勉強会で使用している
+QRコード生成の仕組みを紹介してみようかと。</p>
+
+<!-- more -->
+
+
+<p>HTMLだけで済むようにQRコードを生成する<code>jquery.qrcode.min.js</code>ってのを使用してます。</p>
+
+<p><a href="https://gist.github.com/johtani/657df4dcfa7c31a86575760e23b64f7d">HTMLコードはこちら</a>。</p>
+
+<h2>仕組み</h2>
+
+<ul>
+<li>1枚だけのHTMLを生成</li>
+<li>Meetupの<a href="https://www.meetup.com/ja-JP/meetup_api/auth/#oauth2">OAuth2</a>の仕組みを利用(consumer keyを発行する必要あり。)</li>
+<li>Meetup APIを利用してユーザー情報取得</li>
+<li>取得したユーザー情報をGoogle Formに埋め込んだ形で表示するURLを組み立てる</li>
+<li>組み立てたURLをQRコードにしてHTMLに表示</li>
+<li>受付で、QRコードリーダーを使って、QRコードを読み込むとGoogle Formが開くので、「送信」ボタンを押す</li>
+</ul>
+
+
+<h3>1. HTMLの作成</h3>
+
+<p>QRコードを表示するためのHTMLを作成します。Gistに貼り付けてあるので、参考にしてもらえれば。
+いくつか埋め込まないといけないものがあるので、個別にそれは説明します。</p>
+
+<h3>2. Google Formの準備</h3>
+
+<p>Elasticsearch勉強会では、出席者の情報として、IDと氏名をリストとして保存しています。
+目的としては、何人実際に参加したかを計測するのが目的です。
+ですので、参加者リストのGoogle Formを作成します。
+で、作成した後に、プレビューを表示する。こんな感じ。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20190619/google_form.png" width="300"></p>
+
+<p>この時のプレビューのURLをQRコードのURLとして使いたいので、このURLをQRコード表示のHTMLに埋め込みます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">createGoogleFormURL</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">obj</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;entry.1744035444&quot;</span> <span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;entry.2031666715&quot;</span> <span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">name</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>  <span class="k">return</span> <span class="s2">&quot;https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?&quot;</span> <span class="o">+</span> <span class="nx">$</span><span class="p">.</span><span class="nx">param</span><span class="p">(</span><span class="nx">obj</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ここら辺です。
+<code>return</code>に書いてある<code>https</code>で始まる文字列をまず、先ほどのURLで置き換えます。
+次に、プレビューのHTMLの中から<code>&lt;input&gt;</code>タグを探して、<code>name</code>の値を抜き出します。
+それを<code>obj</code>のキーに利用します。<code>entry.</code>で始まる文字列が該当します。</p>
+
+<p>これで、このURLをQRコードにすれば、値（ここだとIDと氏名）が埋め込まれた形のGoogle Formがスマホのブラウザで起動します。</p>
+
+<h3>3. Meetup APIの準備</h3>
+
+<p>MeetupのAPIを利用できるようにします。Meetup.comにログインするとみれるAPIのページがあります。
+<a href="https://secure.meetup.com/meetup_api">https://secure.meetup.com/meetup_api</a></p>
+
+<p>まず、OAuthを利用するためのConsumer Keyを発行します。</p>
+
+<p>メニューのOAuth Consumersをクリックして、</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20190619/meetup_oauth_consumers.png" width="400"></p>
+
+<p>&ldquo;Create New Consumer&#8221;をクリックします。
+すると、次のような画面が開きます。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20190619/meetup_oauth_create_consumer.png" width="400"></p>
+
+<p><code>Consumer name</code>と<code>Redirect URI</code>が重要です。</p>
+
+<p><code>Consumer name</code>はユーザーがMeetup経由で認証するときに、その認証画面で表示される名前になります。
+わかりやすい名前を表示してあげると良いかと。</p>
+
+<p><code>Redirect URI</code>が一番重要です。実際にOAuthで認証が通った後に表示するHTMLを提供しているURLを指定します。
+Elasticsearch勉強会の場合は、私のドメインにwwwをつけた&#8221;<a href="https://www.johtani.info">https://www.johtani.info</a>&#8220;を指定しています。
+実際にQRコード表示用のHTMLを配置するHTTPサーバーのトップのURLを指定します。
+（ちなみに、私のウェブサーバーはS3で運用してます。ですので、HTMLをS3のバケットにアップロードしてあるだけです）</p>
+
+<p>必須項目を入力したあと、最下部にある<code>Register Consumer</code>ボタンを押せばキーが生成されます。
+生成されたキーがOAuth2のURLのパラメータに必要になります。</p>
+
+<p>これで、リダイレクトの準備が整いました。</p>
+
+<p>OAuth2のURLには、<a href="https://www.meetup.com/ja-JP/meetup_api/auth/#oauth2implicit">Implicit Flow</a>を利用します。
+これで、リダイレクト先のHTMLにトークンがわたるので、Meetup APIにこのトークンが使えるようになります。</p>
+
+<p>認証用のURLはこちらです。このURLを参加者宛のメールに入れて毎回送信しています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">https</span><span class="o">:</span><span class="c1">//secure.meetup.com/ja-JP/oauth2/authorize?response_type=token&amp;redirect_uri=&lt;QRコード表示HTMLのURL&gt;&amp;client_id=&lt;コンシューマーキー&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>参加者はこのリンクをクリックすることで、次のような画面が出てきます。
+ログインしていない場合はLog in画面が表示され、まずはログインを促されます。</p>
+
+<p><img src="http://blog.johtani.info/images/entries/20190619/meetup_oauth_page.png" width="400"></p>
+
+<p>で、Allowをクリックすれば、<code>redirect_uri</code>に指定されているページが表示されるわけです。</p>
+
+<p>QRコード表示用のHTMLでは、次のAPIを使用して、ログインしているユーザーの情報を取得してきています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">getMemberId</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">.</span><span class="nx">getJSON</span><span class="p">(</span><span class="s1">&#39;https://api.meetup.com/2/member/self/?only=id,name&amp;access_token=&#39;</span><span class="o">+</span> <span class="nx">getToken</span><span class="p">(),</span> <span class="nx">displayQRCode</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ここで取れた値が、先ほどの「2. Google Formの準備」で説明したコードの<code>data</code>の部分に渡ってくるわけです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">createGoogleFormURL</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">obj</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;entry.1744035444&quot;</span> <span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;entry.2031666715&quot;</span> <span class="o">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">name</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>  <span class="k">return</span> <span class="s2">&quot;https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?&quot;</span> <span class="o">+</span> <span class="nx">$</span><span class="p">.</span><span class="nx">param</span><span class="p">(</span><span class="nx">obj</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>4. QRコードの表示</h3>
+
+<p>あとは、<a href="https://github.com/jeromeetienne/jquery-qrcode"><code>jquery.qrcode.min.js</code></a>を使用してURLを表示するだけです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">displayQRCode</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#qrcode&#39;</span><span class="p">).</span><span class="nx">qrcode</span><span class="p">({</span><span class="nx">width</span><span class="o">:</span> <span class="mi">128</span><span class="p">,</span><span class="nx">height</span><span class="o">:</span> <span class="mi">128</span><span class="p">,</span> <span class="nx">text</span><span class="o">:</span><span class="nx">createGoogleFormURL</span><span class="p">(</span><span class="nx">data</span><span class="p">)});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>サイズとURLを指定するだけですね。</p>
+
+<h2>まとめ</h2>
+
+<p>あとは、受付で、参加者の方が表示してくれたQRコードをスマホのQRコードリーダーやカメラで読み込めばGoogle Formが開いて必要な情報は入っているので、「送信ボタン」を押せば参加者リストが出来上がっていくという形になります。</p>
+
+<p>毎回勉強会の前日に、前回のGoogle Formを「コピー」してから、各回の勉強会の登録者フォームを作成しています。
+コピーすることにより、Google Formの<code>&lt;input&gt;</code>タグに使用される<code>name</code>もそのままコピーされるので、
+QRコード生成用のHTMLを書き換える部分の手間が減る形になっています（気づくまで数回かかったw）。</p>
+
+<p>ですので、QRコードのHTMLの中身としては、「勉強会のページへのリンク」、「Google Formへのリンク」の2つを書き換えてから毎回アップロードしているだけとなっています。</p>
+
+<p>このやり方が、スマートかどうかはわからないですが、受付アプリがない中、Meetup.comから取得した参加者リストのExcelやプリントアウトしたリストを元に参加者をチェックするよりは、手間が省けてるんじゃないかなぁと。</p>
+
+<p>残念ながら、QRコードの存在を知らないでそのまま勉強会にくる人がいるので、受付で最低一人はMeetup.comの参加者リストから、
+名前を検索してチェックするという作業もやってもらってます。
+QRコードを持ってきた方がすんなり受付を通過できるようになってますので、ぜひQRコードを持って勉強会にきてもらえればと。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[勉強会運営座談会ってのをやってみた]]></title>
@@ -2182,73 +2361,6 @@ OSCなどイベントで声をかけていただいた皆様、ありがとう�
 <h4>ということで、</h4>
 
 <p>次は<a href="https://qiita.com/aeroastro">aeroastroさん</a>の「Elasticsearchのインデックスを本当の意味で無停止再構築する方法」（<a href="https://qiita.com/advent-calendar/2017/elasticsearch">Advent Calendarのページはこちら</a>）になります、お楽しみに！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Swiftypeがジョインしたので触ってみました]]></title>
-    <link href="http://blog.johtani.info/blog/2017/11/10/welcome-swiftype/"/>
-    <updated>2017-11-10T11:14:49+09:00</updated>
-    <id>http://blog.johtani.info/blog/2017/11/10/welcome-swiftype</id>
-    <content type="html"><![CDATA[<h1>Swiftypeでサイト内検索？</h1>
-
-<p>プレスリリース：<a href="https://www.elastic.co/jp/about/press/elastic-acquires-saas-site-search-leader-swiftype">Elasticがサイト内検索サービス最大手のSwiftypeを買収</a>が出ましたが、SwiftypeチームがElasticにジョインしました！</p>
-
-<h2>自分のブログ検索に導入してみる？</h2>
-
-<p><a href="https://swiftype.com/">Swiftype</a>はSite Searchをサービスとして提供しています。
-実際に指定したサイトのデータをクロールして、インデキシングし、検索できるようになります。
-ものは試しということで、自分のブログを登録してみました。検索窓はつけてないですが。
-14日間のFree trialがあるのでそちらで試してみましょう。
-検索窓はデモとか作れたらかな。</p>
-
-<!-- more -->
-
-
-<h2>ということで、Free trialへ</h2>
-
-<p>まずはユーザ登録です。Googleのアカウントと連携するか、Swiftypeにメルアドを登録するかが選択できます。
-登録できたら、次にどちらのプロダクトを使うかという選択画面が出てきます。
-今回はサイト検索して見たいので、「Site Search」の「START FREE TRIAL」をクリックします。</p>
-
-<h2>Engineの指定</h2>
-
-<p>Web Crawlerを利用するか、独自にSwiftypeのAPIを利用してデータを登録するかを選択します。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20171110/01_Create_Search_Engine___Swiftype.jpg" title="" ></p>
-
-<p>今回は、お手軽な方のCrawlerを選択します。
-すると次に、クロールしたいURLの指定画面が出てきます。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20171110/02_Create_Crawler-based_Search_Engine___Swiftype.jpg" title="" ></p>
-
-<p>今回は自分のブログなので、&#8217;<a href="http://blog.johtani.info">http://blog.johtani.info</a>&#8216;を指定します。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20171110/03_Create_Crawler-based_Search_Engine___Swiftype.jpg" title="" ></p>
-
-<p>で少し待つと、URLのチェック（存在チェックとか、接続チェックとか）が終わり、今回作成するEngineに名前をつける画面が出てきます。
-「My Blog search」という名前にしてみました。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20171110/04_https___app_swiftype_com_engines_my-blog-search_precrawls_166127_settings.jpg" title="" ></p>
-
-<p>sitemapがあるかどうかをCrawlerがチェックしています。
-私のBlogはOctopressでできていて、sitemap.xmlも作ってくれているので、これを元にCrawlerはクロールをしてくれます。そのほかにも<a href="https://swiftype.com/documentation/crawler">RSSやAtomサポートもあるみたいですね</a>。
-「COMPLETE SETUP」を押すと、Engineの管理画面が出てきます。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20171110/05_My_Blog_search_Overview___Swiftype.jpg" title="" ></p>
-
-<p>「CRAWLING」という表示が出ています。クロールしている最中です。これが終われば、「PREVIEW」に代わり、検索できる準備ができたことになります。
-実際にPREVIEWして見ると、次のような検索ができるようになります。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20171110/06_My_Blog_search_Overview___Swiftype_PREVIEW.jpg" title="" ></p>
-
-<p>そのほかにはWeightの調整画面などもありますね。フィールド毎に重み付けを変えて見たりもできます。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20171110/07_Weights___Swiftype.jpg" title="" ></p>
-
-<p>日本語独自のAnalyzerなどはまだないので、そのあたりができてくるともっと便利になりそうです。
-とりあえず、気になる方は触って見てはいかがでしょうか？
-個人的は検索に関するサービスが出てきたのですごく楽しみにしています！</p>
 ]]></content>
   </entry>
   

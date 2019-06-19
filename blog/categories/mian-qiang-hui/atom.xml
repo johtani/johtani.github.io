@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 勉強会 | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/mian-qiang-hui/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2019-04-26T00:28:24+09:00</updated>
+  <updated>2019-06-19T20:35:53+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,159 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[勉強会の受付自作？アプリ？HTMLについて]]></title>
+    <link href="http://blog.johtani.info/blog/2019/06/19/qr-code-with-meetup-dot-com/"/>
+    <updated>2019-06-19T19:10:44+09:00</updated>
+    <id>http://blog.johtani.info/blog/2019/06/19/qr-code-with-meetup-dot-com</id>
+    <content type="html"><![CDATA[<p>Twitterで「Meetup.comに切り替えたらー」みたいな話があったので、
+受付用アプリとかなくてという話になったので、普段Elasticsearch勉強会で使用している
+QRコード生成の仕組みを紹介してみようかと。</p>
+
+<!-- more -->
+
+
+<p>HTMLだけで済むようにQRコードを生成する<code>jquery.qrcode.min.js</code>ってのを使用してます。</p>
+
+<p><a href="https://gist.github.com/johtani/657df4dcfa7c31a86575760e23b64f7d">HTMLコードはこちら</a>。</p>
+
+<h2>仕組み</h2>
+
+<ul>
+<li>1枚だけのHTMLを生成</li>
+<li>Meetupの<a href="https://www.meetup.com/ja-JP/meetup_api/auth/#oauth2">OAuth2</a>の仕組みを利用(consumer keyを発行する必要あり。)</li>
+<li>Meetup APIを利用してユーザー情報取得</li>
+<li>取得したユーザー情報をGoogle Formに埋め込んだ形で表示するURLを組み立てる</li>
+<li>組み立てたURLをQRコードにしてHTMLに表示</li>
+<li>受付で、QRコードリーダーを使って、QRコードを読み込むとGoogle Formが開くので、「送信」ボタンを押す</li>
+</ul>
+
+
+<h3>1. HTMLの作成</h3>
+
+<p>QRコードを表示するためのHTMLを作成します。Gistに貼り付けてあるので、参考にしてもらえれば。
+いくつか埋め込まないといけないものがあるので、個別にそれは説明します。</p>
+
+<h3>2. Google Formの準備</h3>
+
+<p>Elasticsearch勉強会では、出席者の情報として、IDと氏名をリストとして保存しています。
+目的としては、何人実際に参加したかを計測するのが目的です。
+ですので、参加者リストのGoogle Formを作成します。
+で、作成した後に、プレビューを表示する。こんな感じ。</p>
+
+<p><img src="/images/entries/20190619/google_form.png" width="300"></p>
+
+<p>この時のプレビューのURLをQRコードのURLとして使いたいので、このURLをQRコード表示のHTMLに埋め込みます。</p>
+
+<pre><code class="javascript">function createGoogleFormURL(data) {
+  var obj = {
+    "entry.1744035444" : data.id,
+    "entry.2031666715" : data.name
+  };
+  return "https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?" + $.param(obj);
+}
+</code></pre>
+
+<p>ここら辺です。
+<code>return</code>に書いてある<code>https</code>で始まる文字列をまず、先ほどのURLで置き換えます。
+次に、プレビューのHTMLの中から<code>&lt;input&gt;</code>タグを探して、<code>name</code>の値を抜き出します。
+それを<code>obj</code>のキーに利用します。<code>entry.</code>で始まる文字列が該当します。</p>
+
+<p>これで、このURLをQRコードにすれば、値（ここだとIDと氏名）が埋め込まれた形のGoogle Formがスマホのブラウザで起動します。</p>
+
+<h3>3. Meetup APIの準備</h3>
+
+<p>MeetupのAPIを利用できるようにします。Meetup.comにログインするとみれるAPIのページがあります。
+<a href="https://secure.meetup.com/meetup_api">https://secure.meetup.com/meetup_api</a></p>
+
+<p>まず、OAuthを利用するためのConsumer Keyを発行します。</p>
+
+<p>メニューのOAuth Consumersをクリックして、</p>
+
+<p><img src="/images/entries/20190619/meetup_oauth_consumers.png" width="400"></p>
+
+<p>&ldquo;Create New Consumer&#8221;をクリックします。
+すると、次のような画面が開きます。</p>
+
+<p><img src="/images/entries/20190619/meetup_oauth_create_consumer.png" width="400"></p>
+
+<p><code>Consumer name</code>と<code>Redirect URI</code>が重要です。</p>
+
+<p><code>Consumer name</code>はユーザーがMeetup経由で認証するときに、その認証画面で表示される名前になります。
+わかりやすい名前を表示してあげると良いかと。</p>
+
+<p><code>Redirect URI</code>が一番重要です。実際にOAuthで認証が通った後に表示するHTMLを提供しているURLを指定します。
+Elasticsearch勉強会の場合は、私のドメインにwwwをつけた&#8221;<a href="https://www.johtani.info">https://www.johtani.info</a>&#8220;を指定しています。
+実際にQRコード表示用のHTMLを配置するHTTPサーバーのトップのURLを指定します。
+（ちなみに、私のウェブサーバーはS3で運用してます。ですので、HTMLをS3のバケットにアップロードしてあるだけです）</p>
+
+<p>必須項目を入力したあと、最下部にある<code>Register Consumer</code>ボタンを押せばキーが生成されます。
+生成されたキーがOAuth2のURLのパラメータに必要になります。</p>
+
+<p>これで、リダイレクトの準備が整いました。</p>
+
+<p>OAuth2のURLには、<a href="https://www.meetup.com/ja-JP/meetup_api/auth/#oauth2implicit">Implicit Flow</a>を利用します。
+これで、リダイレクト先のHTMLにトークンがわたるので、Meetup APIにこのトークンが使えるようになります。</p>
+
+<p>認証用のURLはこちらです。このURLを参加者宛のメールに入れて毎回送信しています。
+<code>
+https://secure.meetup.com/ja-JP/oauth2/authorize?response_type=token&amp;redirect_uri=&lt;QRコード表示HTMLのURL&gt;&amp;client_id=&lt;コンシューマーキー&gt;
+</code></p>
+
+<p>参加者はこのリンクをクリックすることで、次のような画面が出てきます。
+ログインしていない場合はLog in画面が表示され、まずはログインを促されます。</p>
+
+<p><img src="/images/entries/20190619/meetup_oauth_page.png" width="400"></p>
+
+<p>で、Allowをクリックすれば、<code>redirect_uri</code>に指定されているページが表示されるわけです。</p>
+
+<p>QRコード表示用のHTMLでは、次のAPIを使用して、ログインしているユーザーの情報を取得してきています。</p>
+
+<pre><code class="javascript">function getMemberId() {
+  $.getJSON('https://api.meetup.com/2/member/self/?only=id,name&amp;access_token='+ getToken(), displayQRCode);
+}
+</code></pre>
+
+<p>ここで取れた値が、先ほどの「2. Google Formの準備」で説明したコードの<code>data</code>の部分に渡ってくるわけです。</p>
+
+<pre><code class="javascript">function createGoogleFormURL(data) {
+  var obj = {
+    "entry.1744035444" : data.id,
+    "entry.2031666715" : data.name
+  };
+  return "https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?" + $.param(obj);
+}
+</code></pre>
+
+<h3>4. QRコードの表示</h3>
+
+<p>あとは、<a href="https://github.com/jeromeetienne/jquery-qrcode"><code>jquery.qrcode.min.js</code></a>を使用してURLを表示するだけです。</p>
+
+<pre><code class="javascript">function displayQRCode(data) {
+  $('#qrcode').qrcode({width: 128,height: 128, text:createGoogleFormURL(data)});
+}
+</code></pre>
+
+<p>サイズとURLを指定するだけですね。</p>
+
+<h2>まとめ</h2>
+
+<p>あとは、受付で、参加者の方が表示してくれたQRコードをスマホのQRコードリーダーやカメラで読み込めばGoogle Formが開いて必要な情報は入っているので、「送信ボタン」を押せば参加者リストが出来上がっていくという形になります。</p>
+
+<p>毎回勉強会の前日に、前回のGoogle Formを「コピー」してから、各回の勉強会の登録者フォームを作成しています。
+コピーすることにより、Google Formの<code>&lt;input&gt;</code>タグに使用される<code>name</code>もそのままコピーされるので、
+QRコード生成用のHTMLを書き換える部分の手間が減る形になっています（気づくまで数回かかったw）。</p>
+
+<p>ですので、QRコードのHTMLの中身としては、「勉強会のページへのリンク」、「Google Formへのリンク」の2つを書き換えてから毎回アップロードしているだけとなっています。</p>
+
+<p>このやり方が、スマートかどうかはわからないですが、受付アプリがない中、Meetup.comから取得した参加者リストのExcelやプリントアウトしたリストを元に参加者をチェックするよりは、手間が省けてるんじゃないかなぁと。</p>
+
+<p>残念ながら、QRコードの存在を知らないでそのまま勉強会にくる人がいるので、受付で最低一人はMeetup.comの参加者リストから、
+名前を検索してチェックするという作業もやってもらってます。
+QRコードを持ってきた方がすんなり受付を通過できるようになってますので、ぜひQRコードを持って勉強会にきてもらえればと。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[勉強会運営座談会ってのをやってみた]]></title>
@@ -338,70 +491,6 @@ Elastic Cloudのインスタンスを起動したままにしておけば、デ�
 
 
 <p> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[検索座談会ってのをやってみた]]></title>
-    <link href="http://blog.johtani.info/blog/2017/05/25/search-meetup/"/>
-    <updated>2017-05-25T00:24:13+09:00</updated>
-    <id>http://blog.johtani.info/blog/2017/05/25/search-meetup</id>
-    <content type="html"><![CDATA[<p>久々のブログ。
-Elasticsearch勉強会を主催してますが、
-プロダクトを超えて、検索で共通してある課題とか、悩みとか、あるかなぁと。
-その辺りを話す場所を考えてみるのいいかもと思い、検索座談会ってのを5人でやってみた。</p>
-
-<!-- more -->
-
-
-<p>とりあえず、初めてなので、5名ほどで。プロダクトはかぶってない感じでした。</p>
-
-<h3>話した議題はこの辺り。</h3>
-
-<ul>
-<li>形態素解析の辞書は何を使ってる？有償のもの？
-
-<ul>
-<li>そもそも形態素解析？</li>
-</ul>
-</li>
-<li>辞書の更新とかは？
-
-<ul>
-<li>シノニムってどうしてる？</li>
-</ul>
-</li>
-<li>サジェストとかのデータはどう作ってる？どうしてる？
-
-<ul>
-<li>検索ログとかから作ってる？</li>
-</ul>
-</li>
-<li>検索結果のランキングって検索結果だけで決めるの？
-
-<ul>
-<li>検索漏れとかキーワードのミスマッチとかどうしてる？</li>
-</ul>
-</li>
-</ul>
-
-
-<h3>今後話したい内容はこの辺かな？</h3>
-
-<ul>
-<li>緯度経度系の検索</li>
-<li>画像検索、音声検索</li>
-<li>検索のキーワードの調査とかしてる人とかいるかな？</li>
-<li>どんな機能が欲しい？</li>
-<li>前処理としてはどんなことをしてる？</li>
-</ul>
-
-
-<p>このあとどうしていくかはまだ考え中。知り合いを捕まえて、どんなことしてるかを聞きにいくのもいいし、議題みたいなことを決めて、それを話してくれそうな人にコンタクトして議論するのもありかなぁ。
-普通の勉強会みたいなのにするかもしれないし。
-とりあえず、どのくらい興味を持ってる人がいるのかがわからないので。。。</p>
-
-<p>もちろん、Elasticsearch勉強会は別でやっていきますよ。</p>
 ]]></content>
   </entry>
   
