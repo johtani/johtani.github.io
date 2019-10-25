@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 勉強会 | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/mian-qiang-hui/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2019-10-10T16:55:50+09:00</updated>
+  <updated>2019-10-25T21:39:00+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,554 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Bonfire Data & Science #1に参加しました]]></title>
+    <link href="http://blog.johtani.info/blog/2019/10/25/bonefire-01/"/>
+    <updated>2019-10-25T19:40:02+09:00</updated>
+    <id>http://blog.johtani.info/blog/2019/10/25/bonefire-01</id>
+    <content type="html"><![CDATA[<p>Bonfire Data &amp; Science #1にブログ枠で参加してきました。
+ということで、メモです。</p>
+
+<!-- more -->
+
+
+<ul>
+<li>日時 : 2019/10/25 19:00 - 21:30</li>
+<li>場所 : Yahoo! Japan</li>
+<li>サイト : <a href="https://yj-meetup.connpass.com/event/148121/">https://yj-meetup.connpass.com/event/148121/</a></li>
+<li>ハッシュタグ: <a href="https://twitter.com/search?q=%23yjbonfire%20&amp;src=typed_query&amp;f=live">#yjbonfire</a></li>
+</ul>
+
+
+<h2>概要</h2>
+
+<p>Data &amp; Scienceとは？
+データとサイエンスに関わる人達の情報共有のための勉強会/交流会</p>
+
+<p>サイトから引用です。</p>
+
+<pre><code>第1回のテーマは「画像検索」です！
+
+最近EC系のサイトで類似画像検索が出来るようになったけどどうやってるの？
+画像検索のモデルってどうしてるの？
+画像検索のインフラはどうしてるの？
+私たちの会社でも画像検索を用いたサービスを構築できるだろうか？
+こういった疑問に答えたり、いま抱えている悩みを解決するヒントを得る場になればと思っています。
+
+今回は、画像検索を行なっているヤフー, メルカリ, ZOZOテクノロジーズの3社に事例と基盤技術について登壇いただきます。
+</code></pre>
+
+<p>QAはこちら。<a href="https://app.sli.do/event/w3wayjmv/live/questions">https://app.sli.do/event/w3wayjmv/live/questions</a></p>
+
+<h2>Mercari画像検索について(仮)</h2>
+
+<ul>
+<li><p>発表者：荒瀬晃介(株式会社メルカリ / AIエンジニアリングチーム)</p></li>
+<li><p>AIエンジニアチーム</p></li>
+<li>写真検索プロジェクトのTech Lead</li>
+<li>iOSのみで提供の写真検索</li>
+<li>システムオーバービュー
+
+<ul>
+<li>MobileNet v2で特徴抽出</li>
+<li>ANNのインデックスを使ってDBに入れる</li>
+</ul>
+</li>
+<li>論文も発表済み（3本）
+
+<ul>
+<li>今日の発表はこの内の2本を元に話をします。</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>C2Cでの問題点</h4>
+
+<ul>
+<li>商品は床やテーブル上で撮影</li>
+<li>クエリは着用（着ている）画像が使われやすい。
+
+<ul>
+<li>人が写ってる写真が結果に多いと業者が出展しているように見えてしまう。
+
+<h4>提案手法</h4></li>
+</ul>
+</li>
+<li>人が写ってるものから人の代表ベクトルを抜き取る (クエリ時にのみ処理を実施しているので変更が容易)</li>
+<li>特徴変換ベクトル
+
+<ul>
+<li>トップスなど、分類ごとに学習させてからベクトルを構成</li>
+</ul>
+</li>
+<li>なんでMobileNet v2?
+
+<ul>
+<li>エッジデバイスでの処理を見据えて選択</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>インフラ</h4>
+
+<ul>
+<li>Docker + k8s</li>
+<li>CRDを使ってる？</li>
+<li>training
+
+<ul>
+<li>コンテナベースパイプライン
+
+<ul>
+<li>いくつかのバッチ処理を工程ごとにパイプライン化</li>
+<li>バッチ実行情報をカスタムリソースとしている＝再実行が簡単（復旧作業が容易）</li>
+</ul>
+</li>
+<li>画像を扱う＝ダウンロードが時間がかかる -> 復旧しやすいようにPVにある程度キャッシュさせている</li>
+</ul>
+</li>
+<li><p>Serving&hellip;</p>
+
+<ul>
+<li>GCP側</li>
+</ul>
+</li>
+<li><p>なぜ2つに別れてるんだろう？実際のサービスも2つに分かれてたりするんだろうか？</p></li>
+</ul>
+
+
+<h4>将来の展望</h4>
+
+<ul>
+<li>Realtime Image Search
+
+<ul>
+<li>カメラでものを写している状態でそれが何かを検索できる。</li>
+<li>物体検出＋特徴抽出をエッジで行うためできる</li>
+</ul>
+</li>
+<li>エッジの性能により違いが出てきたりするっぽい</li>
+</ul>
+
+
+<h4>QA</h4>
+
+<ul>
+<li>Q: 業者が想定されると、購入意欲を下げるというのは実験した結果？それとも想像？
+
+<ul>
+<li>A: 実験はしていないが、e-commerceにおいての研究がある</li>
+</ul>
+</li>
+<li>Q: どういう理由でマルチクラウドにしたんでしょう?
+
+<ul>
+<li>A: 画像のマスターがAWS。メルカリのマイクロサービスはGKEなので、サービング環境がGCP</li>
+</ul>
+</li>
+<li>Q: 画像の内、服のエリアが大部分で体の面積が少ない場合と、メガネや帽子のように、アイテムの方の面積が少ない場合で、トレーニングに必要なデータ数は変わりましたか？
+
+<ul>
+<li>A: カテゴリによる性質の違うはある。ので、改善は必要。</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>ZOZO画像検索について(仮)</h2>
+
+<ul>
+<li><p>発表者：平田拓也(株式会社ZOZO / AIエンジニアリングチーム)</p></li>
+<li><p>(聞き逃した。。。)</p></li>
+<li>WEAR</li>
+<li>マルチサイズ</li>
+</ul>
+
+
+<h4>チーム構成</h4>
+
+<ul>
+<li>研究所＋ML Opsチーム</li>
+</ul>
+
+
+<h4>使用しているアルゴリズム</h4>
+
+<ul>
+<li>物体検出アルゴリズム</li>
+<li>特徴量抽出アルゴリズム</li>
+<li>近似最近傍探索（approximate nearest neighbor, ANN）</li>
+</ul>
+
+
+<h4>インフラ</h4>
+
+<ul>
+<li>GCPを採用。
+
+<ul>
+<li>BigQuery上にデータ基盤がある</li>
+<li>Managed GPUが必要</li>
+</ul>
+</li>
+<li>なんでk8s?
+
+<ul>
+<li>コンテナ</li>
+<li>Cloud Runがなかった</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>アーキテクチャ</h4>
+
+<ul>
+<li>マイクロサービス化されている</li>
+<li><a href="https://techblog.zozo.com/entry/cloudnext19tokyo-imagesearch">Google Cloud Next 2019 Tokyoでsonotsさんの発表があるよ</a></li>
+</ul>
+
+
+<h4>監視項目</h4>
+
+<ul>
+<li>CPUなどは見ていない</li>
+<li>レスポンスタイムとステータス監視</li>
+<li>リクエスト数</li>
+<li>APM</li>
+<li>使ってるものStackdriver + Datadog + Sentry
+
+<ul>
+<li>Warningが30分で続けたら通知などができるのがStackdriver</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>画像検索の改善のためにやっていること</h4>
+
+<ul>
+<li>課題
+
+<ul>
+<li>レイテンシーが大きい
+
+<ul>
+<li>推論が大変？</li>
+</ul>
+</li>
+<li>急激なトラフィックの増加に対応できない
+
+<ul>
+<li>GPUのスケールアウトが問題 -> 先行投資が必要</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>流れ
+
+<ol>
+<li>キャッシュありなし</li>
+<li>物体検出 (GPU)</li>
+<li>特徴量抽出 (GPU)</li>
+<li>近似最近傍探索</li>
+<li>DBから取得</li>
+</ol>
+</li>
+</ul>
+
+
+<p>2と3が問題</p>
+
+<ul>
+<li>2と3を特徴量DBという形でデータが登録された時点で特徴量などを計算してしまうことでGPUへの依存をなくした。</li>
+<li>Apache AirFlowが便利？</li>
+</ul>
+
+
+<h4>Cloud ComposerとApache AirFlow</h4>
+
+<p>Cloud Composerに関するいくつかのTipsがありました。</p>
+
+<h4>QA</h4>
+
+<ul>
+<li>Q: 推論をCPUでやったらどれぐらい遅いんだろう
+
+<ul>
+<li>A: GPUインスタンス代金 &lt; それと同等の速度を出すためのCPUインスタンス代金</li>
+</ul>
+</li>
+<li>Q: k8sスケールアウト時のリソース割当を最適化する為、resource limit / request標準化 or 時系列分析などから自動調整するなどはされていますか？
+
+<ul>
+<li>A: &hellip;聞き逃した</li>
+</ul>
+</li>
+<li>Q: (TCOを考慮したクラスタ構成) Cloud Composerの値段が高いようなパプリッククラウド利用の課題対策としてプライベートクラウドとのハイブリッド構成にされているのでしょうか？もしハイブリッド構成でしたら、パブリック or クラウドを切り分ける基準はございますか。
+
+<ul>
+<li>A: GKEオンリー</li>
+</ul>
+</li>
+<li>Q: cloud composerでairflowを使う辛い点は？
+
+<ul>
+<li>A: 不安定さ。。。</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>Yahoo!ショッピングにおける画像検索(仮)</h2>
+
+<ul>
+<li>発表者：佐藤 純一(ヤフー株式会社)</li>
+<li>商品検索APIの開発とか検索エンジンの保守とか</li>
+<li>類似画像検索システムの開発が直近の仕事</li>
+</ul>
+
+
+<h4>類似画像検索</h4>
+
+<ul>
+<li>ヤフーショッピング
+
+<ul>
+<li>3億の商品</li>
+<li>ファッション系はビジュアルが重要＝言語による表現が難しい</li>
+</ul>
+</li>
+<li>iOSとAndroid
+
+<ul>
+<li>Androidだとカメラで撮影してから検索みたいなことも可能</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>システム概要</h4>
+
+<ol>
+<li>物体検出</li>
+<li>ノイズ除去</li>
+<li>特徴抽出
+*</li>
+<li>インデックス(NGT) -> <a href="https://github.com/yahoojapan/NGT">https://github.com/yahoojapan/NGT</a></li>
+<li>1000万件を超える</li>
+<li>検索</li>
+<li>アプリの画像をAPIに投げてベクトルから、近いものn件を取得</li>
+</ol>
+
+
+<h4>ベクトル化/インデックス更新</h4>
+
+<ul>
+<li>GPUマシン</li>
+<li>Kafka使ってる</li>
+<li>クラウドストレージに日次？バックアップみたいに保存</li>
+<li>差分更新の仕組みがある</li>
+<li>メンズとレディースは分けている
+
+<ul>
+<li>絞り込み検索のために分離（インデックスのメタデータとしてタグがある）</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>システム構成</h4>
+
+<ul>
+<li>Python</li>
+<li>Kafka</li>
+<li>TensolflowServing</li>
+<li>可視化？監視？はGrafana＋Prometheus</li>
+</ul>
+
+
+<h4>開発を通しての学び</h4>
+
+<ul>
+<li>自動デプロイとかテスト</li>
+<li>検索精度の確認ツールを作る
+
+<ul>
+<li>コレ重要だよね。何が変更してるかとか、何が正しいかってのが必要だし。。。</li>
+</ul>
+</li>
+<li>復旧可能、早期復旧の仕組みを容易</li>
+</ul>
+
+
+<h4>今後の方針</h4>
+
+<ul>
+<li>対象商品の拡大</li>
+<li>物体検出特徴抽出モデルの性能改善</li>
+<li>NGTの検索システムをValdに移行
+
+<ul>
+<li><a href="https://github.com/vdaas/vald">Vald</a>
+
+<ul>
+<li>k8s上で動作、分散検索、分散インデキシングなどの機能を提供予定</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>QA</h4>
+
+<ul>
+<li>Q: iOS(既存の画像)とAndroid(カメラで撮る)で画像検索の方式が違うのはなぜ？
+
+<ul>
+<li>A: アプリの違い</li>
+</ul>
+</li>
+<li>Q: 1枚の写真に沢山写っている中で、対象の商品をどう識別しているんでしょう。靴もトップスもボトムスも写っていたら、かなり難しそう
+
+<ul>
+<li>A: Yahooブラウザの場合は1番大きな領域のものを選択。Yahoo shoppingだと選択可能</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>NGTについて(仮)</h2>
+
+<ul>
+<li>発表者：岩崎 雅二郎(ヤフー株式会社)</li>
+<li>類似画像検索を20年くらいやってる</li>
+</ul>
+
+
+<h4>近傍検索ライブラリ</h4>
+
+<ul>
+<li><p><a href="https://github.com/yahoojapan/NGT">https://github.com/yahoojapan/NGT</a></p>
+
+<ul>
+<li>高次元ベクトルの近傍検索</li>
+<li>ツリーとグラフによるインデックス</li>
+</ul>
+</li>
+<li><p>近傍検索とは?</p>
+
+<ul>
+<li>距離空間上でのクエリの近傍のオブジェクトを取得
+
+<ul>
+<li>k最近傍検索（通常はこっち）</li>
+<li>範囲検索（あんまり使われない）</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>NGTの特徴</p>
+
+<ul>
+<li>世界トップレベルの高速高精度な近似近傍検索</li>
+<li>OSS</li>
+<li>追加削除が可能（削除がとくに難しいらしい）</li>
+<li>多様な利用形態（Python、C++、C、Go、コマンドライン）</li>
+<li>サーバ版NGT（ngtd、vald）を提供</li>
+<li>共有メモリ版でメモリサイズ以上のデータ登録可能</li>
+<li>量子化版NGT（NGTQ）により。。。</li>
+</ul>
+</li>
+<li><p>ANNベンチマークによりテスト</p>
+
+<ul>
+<li>実行環境が決められているらしい。誰が実行しても比較可能</li>
+<li>グラフベースの検索の仕組みのほうが性能がいいというのがベンチマーク結果からわかる</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>なんではやいの？</h4>
+
+<ul>
+<li>インデックス生成
+
+<ul>
+<li>ツリー（グラフの探索起点の取得に利用する。DVP-tree）</li>
+<li>グラフ（ANNG）
+
+<ul>
+<li>ノードを逐次追加しつつ、近傍ノードを検索してから接続するというのを繰り返している</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>検索
+
+<ul>
+<li>ツリーから絞り込みつつ、グラフを検索する</li>
+</ul>
+</li>
+<li>ANNGに課題があるのでONNG（Optimized Nearest Neighbors Graph）に
+
+<ul>
+<li>ノード単位の次数（入出）を最適化</li>
+<li>データセットによって有効な次数が違う。。。</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>NGTを利用した深層学習で。。。</h4>
+
+<ul>
+<li>Yahoo!ラボ FavNavi</li>
+<li>特徴量の構成（低次特徴量（300次元）、カテゴリ特徴量（128次元）、領域アスペクト比（1次元））
+
+<ul>
+<li>個別の特徴量だけだとイマイチな結果になるが、組み合わせるといい感じになる</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>モデル性西洋学習データ</h4>
+
+<p>スライドがあればいいなぁ（表書くの大変だし。。。）</p>
+
+<h4>QA</h4>
+
+<ul>
+<li>Q: 実際のお客さまの利用を考えると、近似近隣の密度が異なるので、近いものばかりの検索結果や遠いものも含んでしまった検索結果が出ると思うのですが、遠いものが含まれてしまうと、閾値でフィルタしたりするのでしょうか?
+
+<ul>
+<li>A: NGTは近いものしかないので、外れ値ってなんでしょう。。。
+
+<ul>
+<li>検索のフィルタリングをある程度している（カテゴリとか）。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<h2>まとめ</h2>
+
+<p>慣れない分野の話を聞きながらざっとメモを取ったものなので役に立つかはわかりませんが。。。</p>
+
+<p>アルゴリズムとかまでは得意ではないんですが、画像「検索」ということで参加してみました。
+実際に画像検索の仕組みがどんな感じでできているのか、どんな技術がつかわれているのか？ってのがわかったのは
+面白かったです。確かに検索のためのキーワードって出てこないことあるしなぁと。
+あー、こんなかばんほしいとか、これなんだろ？みたいなのあるからなぁ。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[勉強会の受付自作？アプリ？HTMLについて]]></title>
@@ -410,87 +958,6 @@ QRコードを持ってきた方がすんなり受付を通過できるように
 今回も、スピーカーの皆さん、会場提供をしていただいた日経さんありがとうございました。</p>
 
 <p>他のユースケースのスピーカーも募集してます。ぜひMeetup.comの概要に記載してあるリンクからスピーカーの応募をお願いします！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[JJUGナイトセミナーで話しました]]></title>
-    <link href="http://blog.johtani.info/blog/2018/07/29/apm-java-at-jjug/"/>
-    <updated>2018-07-29T14:45:30+09:00</updated>
-    <id>http://blog.johtani.info/blog/2018/07/29/apm-java-at-jjug</id>
-    <content type="html"><![CDATA[<p><a href="https://jjug.doorkeeper.jp/events/77485">7/25にJJUGナイトセミナー</a>でElastic Stackの紹介とAPMのJava Agentの紹介をしたので、補足のブログです。
-（久々に書くな。。。）</p>
-
-<!-- more -->
-
-
-<p>スライドとサンプルアプリのリポジトリはこちら。</p>
-
-<ul>
-<li>スライド：<a href="https://speakerdeck.com/johtani/intro-elastic-stack-and-elastic-apm-java">https://speakerdeck.com/johtani/intro-elastic-stack-and-elastic-apm-java</a></li>
-<li>リポジトリ：<a href="https://github.com/johtani/apm-beats-kubernetes-demo/tree/master">https://github.com/johtani/apm-beats-kubernetes-demo/tree/master</a></li>
-</ul>
-
-
-<h3>サンプルアプリ</h3>
-
-<p>勉強会の頭でサンプルアプリへのアクセス用QRコードを用意して質問してもらう感じにしました。</p>
-
-<p><img src="/images/entries/20180729/APM___Beats_demo_app.jpg" width="600"></p>
-
-<p>アプリ自体が質問の受付と、そこにある質問に対して聞きたいかどうかのVoteができる仕組みになっています。
-セッション最後にこの画面をみながら答えました。
-手を挙げていただくよりも、匿名（名前入れるようになってますが、実名である必要はない）で登録できるし、
-みんなが聞きたいかどうかもわかるので便利だなぁと。</p>
-
-<p>元は、Elastic{ON} 2018であった「<a href="https://www.elastic.co/webinars/elasticsearch-log-collection-with-kubernetes-docker-and-containers">Docker &amp; Kubernetes Log Collection and Monitoring with Beats and Elasticsearch</a>」のサンプルアプリです。
-これをSpring Bootに移植して、ちょっとだけサンプルコードを追加したものになります。</p>
-
-<h3>構成とかの補足</h3>
-
-<p>スライド、GitHubのリポジトリのREADMEにある図は、k8s上のサンプルアプリケーションの構成だけでした。
-ElasticsearchとKibanaを含めた図はこんな感じです。</p>
-
-<p><img src="/images/entries/20180729/system-overview.jpg" width="600"></p>
-
-<p>k8s上の各種Beats、APM Serverは一旦Elastic CLoud Elasticsearch Service（AWS Tokyoリージョンにデプロイ）に対してデータを投げます。
-で、KibanaはGKE(k8s on GCP)で動かして、実際に勉強会ではkubectl proxyで接続してから表示していました。
-この構成にしている理由は次の理由です。</p>
-
-<ul>
-<li>Elastic CloudのElasticsearchクラスターにデータを投げている理由
-
-<ul>
-<li>クラスターの起動が簡単。</li>
-<li>データを永続化したい。k8sのアプリは必要がなくなったらデータを削除したいから。</li>
-<li>k8sのdeploymentを書く手間を省く</li>
-<li>普段使ってるので。。。</li>
-</ul>
-</li>
-<li>KibanaをGKEで動かした理由
-
-<ul>
-<li>Elastic Cloudでは<em>「現時点(7/29現在)」</em>で、KibanaでAPM専用のUIを起動できない</li>
-<li>ローカルである必要はない</li>
-</ul>
-</li>
-</ul>
-
-
-<p>といったところです。
-Elastic Cloudのインスタンスを起動したままにしておけば、デモをしなくても、このタイミングのログ、メトリクスを
-再利用して話をすることも可能です。</p>
-
-<h3>まとめ</h3>
-
-<p>ということで、簡単ですが、構成の補足でした。
-勉強会では告知したのですが、今後の勉強会はトピックスごとでやりたいなと。ということで、どんなトピックスに興味があるのか、スピーカーの応募にはどんなツールが話しやすいかなどといったことのアンケートを集めております。ぜひご協力ください！
-また、アンケート、このブログに関する質問がある場合は、<a href="https://twitter.com/johtani">@johtani</a>、もしくはブログへのコメントでお願い致します。</p>
-
-<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">今後の勉強会のやり方などについてアンケートを実施中です。<a href="https://t.co/XU15CHro0n">https://t.co/XU15CHro0n</a> 皆さん是非ご協力ください。ここにない項目については返信をお願いします。 <a href="https://twitter.com/hashtag/elasticsearchjp?src=hash&amp;ref_src=twsrc%5Etfw">#elasticsearchjp</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1021388358730170368?ref_src=twsrc%5Etfw">2018年7月23日</a></blockquote>
-
-
-<p> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
 ]]></content>
   </entry>
   
