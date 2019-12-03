@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2019-12-01T00:14:08+09:00</updated>
+  <updated>2019-12-04T00:55:47+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,128 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Apache LuceneのKuromojiのUniDicビルド対応パッチについて]]></title>
+    <link href="http://blog.johtani.info/blog/2019/12/04/about-lucene-4056/"/>
+    <updated>2019-12-04T00:00:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2019/12/04/about-lucene-4056</id>
+    <content type="html"><![CDATA[<p>これは、<a href="https://qiita.com/advent-calendar/2019/search">情報検索・検索エンジン Advent Calendar 2019</a> の 4 日目の記事です。</p>
+
+<!-- more -->
+
+
+<p>1日目から、質の高いエントリーが続いていましたが、一旦休憩して頂く感じの記事になってます。気軽に読んでくださいw。Advent Calendarつくらないの？と煽ったのもあり、穴を埋めようかなと。　</p>
+
+<h2>発端</h2>
+
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ちょっと先ですがこういうのやります。実装寄りの話やOSS開発に興味がある方，きてください～ / Lucene 版 <a href="https://twitter.com/hashtag/Kuromoji?src=hash&amp;ref_src=twsrc%5Etfw">#Kuromoji</a> のコードを読む会（辞書ビルダー編） <a href="https://t.co/NgEmUohoPo">https://t.co/NgEmUohoPo</a> <a href="https://twitter.com/hashtag/kuromoji?src=hash&amp;ref_src=twsrc%5Etfw">#kuromoji</a></p>&mdash; Tomoko Uchida (@moco_beta) <a href="https://twitter.com/moco_beta/status/1169795202376073217?ref_src=twsrc%5Etfw">September 6, 2019</a></blockquote>
+
+
+<p> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+<p><a href="https://search-tech.connpass.com/event/146365/">「Lucene 版 #Kuromoji のコードを読む会（辞書ビルダー編）」</a>という勉強会があり、参加したところ、UniDicの辞書のビルドがコケるという話を聞いたんで、ちょっとやってみるかと。</p>
+
+<p>ちなみに、Kuromojiとは、Apache Luceneに入っている、日本語向けの形態素解析ライブラリです。IPAdicの辞書を内包しており、SolrやElasticsearchといった、Apache Luceneを利用している検索エンジンで手軽に使える形態素解析ライブラリになっています。が、対応している辞書がデフォルトだとIPAdicなのです。</p>
+
+<h2>問題点</h2>
+
+<p><a href="https://issues.apache.org/jira/browse/LUCENE-4056">LUCENE-4056</a>というIssueが上がっています。</p>
+
+<p><code>build.xml</code>には記載はないけど、<a href="https://github.com/apache/lucene-solr/blob/master/lucene/analysis/kuromoji/src/java/org/apache/lucene/analysis/ja/util/DictionaryBuilder.java#L44">辞書のビルダーは対応していそうな雰囲気</a>を醸し出しているので、試してみたというのが発端？かと。で、実際に動かしてみると動かない点がありましたと。</p>
+
+<p>また、Issueの会話で出ていたUniDicの辞書のライセンスの話もありました。
+ただ、<a href="https://unidic.ninjal.ac.jp">UniDic</a>がライセンスを変更したので、このあたりはクリアできそうかなと。</p>
+
+<h2>パッチ</h2>
+
+<p>ということで、動かしてみていくつか修正してパッチを作りました。</p>
+
+<p><a href="https://github.com/apache/lucene-solr/pull/935">https://github.com/apache/lucene-solr/pull/935</a></p>
+
+<p>最近のLuceneはGitHubでプルリク遅れるのが便利ですね。
+そんなに大したことはやってないです。以下の点が問題だったので直しています。</p>
+
+<ul>
+<li>IPAdicとUniDicで語彙定義ファイルのCSVの形式（カラムの数）が異なる</li>
+<li>unk.defのカラム数も異なる</li>
+</ul>
+
+
+<p>あとは、辞書のダウンロードの部分や<code>build.xml</code>での処理を追加した形です。
+このプルリクを適用したlucene-solrのソースディレクトリを持ってきて、手元でjarをビルドすれば普通はIPAdicの辞書を内包したkuromojiのjarファイルが出来上がります。</p>
+
+<p><code>lucene/analysis/kuromoji/build.xml</code>ファイルを、<a href="https://gist.github.com/johtani/91cfd2753aba2e001c1d39f47666ada7">このGist</a>にあるように変更して、<code>ant build-dict</code>とやれば辞書のビルドが可能です。
+また、<code>cd lucene/;ant jar</code>とすれば、UniDicの辞書を内包したjarファイルもビルドできます(<code>lucene/build/analysis/kuromoji</code>の下にjarファイルができあがります)。</p>
+
+<h2>確認？</h2>
+
+<p>一応、パッチは動くのですが、パッチ自体はUniDicの辞書をビルドする仕組みはオフのままです。なので、テストをどうやろう？というところでやなんで止まっています。。。</p>
+
+<p>ただ、実際に作ったパッチできちんとIPAdicとUniDicがそれぞれビルドできているかの確認はしないとなと。</p>
+
+<p>ということで、2つのjarファイルを読み込んで、それぞれトークナイズして、その出力を表示する<a href="https://github.com/johtani/check-dictionary">ツールを作ってみました</a>。</p>
+
+<p>上記パッチを適用したlucene-solrのソースを持ってきて、IPAdicの辞書を内包したkuromojiのjarファイルと、UniDicの辞書を内包したjarファイルを用意し、ツールの支持に従って、ファイルをディレクトリに配置して、実行すれば以下のような出力がされるようになっています（とりあえず作ったものなので、Javaファイルにトークナイズしたいテキストを書かないといけないのですが）。</p>
+
+<p>たとえば、「自転車と自動車の違いはなんでしょう？」という文字列を入力すると、以下のような出力になりました。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>+++ ipadic ++++++++++++++
+</span><span class='line'>token[0] is [自転車]
+</span><span class='line'>token[1] is [と]
+</span><span class='line'>token[2] is [自動車]
+</span><span class='line'>token[3] is [の]
+</span><span class='line'>token[4] is [違い]
+</span><span class='line'>token[5] is [は]
+</span><span class='line'>token[6] is [なん]
+</span><span class='line'>token[7] is [でしょ]
+</span><span class='line'>token[8] is [う]
+</span><span class='line'>+++ unidic ++++++++++++++
+</span><span class='line'>token[0] is [自転]
+</span><span class='line'>token[1] is [車]
+</span><span class='line'>token[2] is [と]
+</span><span class='line'>token[3] is [自動]
+</span><span class='line'>token[4] is [車]
+</span><span class='line'>token[5] is [の]
+</span><span class='line'>token[6] is [違い]
+</span><span class='line'>token[7] is [は]
+</span><span class='line'>token[8] is [なん]
+</span><span class='line'>token[9] is [でしょう]</span></code></pre></td></tr></table></div></figure>
+
+
+<p>UniDicは[短単位]で語彙が扱われるため、「自転車」や「自動車」がそれぞれ「自転」「車」、「自動」「車」という形でトークナイズされていることがわかります。</p>
+
+<p>どちらがより便利なのか？というのは用途によっても変わってくるかと思いますが、検索の転置インデックスとしては、より短い単語で区切られている方が、より多くの文書にヒットする可能性が高くなるので、便利な可能性が高いです。</p>
+
+<h3>まとめ</h3>
+
+<p>ということで、パッチを作ってみたものの、まだ取り込まれていない状況です。
+着地点をどうするかって話かなと思っています。興味があれば遊んでみていただければと。</p>
+
+<p>将来的には、<a href="https://issues.apache.org/jira/browse/LUCENE-8816">辞書をjarから切り離して別のディレクトリやjarとして使えるようにしよう</a>というIssueも作られています。こちらがすすめば、UniDicだけでなく、その他の辞書を切り替えながら使えるようになる日が来るのではないでしょうか？</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[2019年のElastic StackとElastic]]></title>
@@ -2578,150 +2700,6 @@ Descriptionについてはわかりやすいものを入力しましょう。
 
 <p>これで、カスタムプラグインの開発ができる環境ができました！
 次回は、プロジェクトのディレクトリ構成や、どんなツールが内部で使用されてデータのやり取りが行われているかについて説明します。お楽しみに。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第1回）]]></title>
-    <link href="http://blog.johtani.info/blog/2018/01/19/how-to-make-kibana-plugin-example-analysis-ui/"/>
-    <updated>2018-01-19T15:36:46+09:00</updated>
-    <id>http://blog.johtani.info/blog/2018/01/19/how-to-make-kibana-plugin-example-analysis-ui</id>
-    <content type="html"><![CDATA[<p>あけましておめでとうございます。今年はサボりがちだったブログをちょっとずつ復活させようかと。
-ということで、第1弾として、昨年少し作っていたKibanaのプラグインを何度かに分けて紹介したいと思います。</p>
-
-<p>今回は<a href="https://github.com/johtani/analyze-api-ui-plugin">Analyze UIというプラグイン</a>の紹介です。</p>
-
-<!-- more -->
-
-
-<p>今回はインストール方法と簡単な機能紹介です。
-細かな紹介は個別にやりたいと思います。</p>
-
-<h3>Analyze UI pluginとは？</h3>
-
-<p>Elasticsearchの<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html"><code>_analyze</code>というAPI</a>(個人的に好きなAPIです)をご存知でしょうか？</p>
-
-<p>Elasticsearchは全文検索エンジンで、データの検索には<a href="https://ja.wikipedia.org/wiki/%E8%BB%A2%E7%BD%AE%E3%82%A4%E3%83%B3%E3%83%87%E3%83%83%E3%82%AF%E3%82%B9">転置インデックス</a>というものを使用します。
-Elasticsearchにデータを登録する際に、<code>text</code>型のデータの場合、この転置インデックスのキーとなる単語を決める処理のことを<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis.html">Analysis</a>と呼びます（Analysisの詳細については割愛します。後日説明するかも？）。
-このAnalysisの処理が、入力されたデータの文字列に対してどのように行われて、結果としてどんな単語がキーとして用いられているかを確認できる機能が<code>_analyze</code> APIです。検索で単語がうまくヒットしないな？とか、なんで、こんなので検索結果に出てくるんだ？といった場合、このAPIを利用すると、どのような単語で転置インデックスが作られているかがわかるので、検索にヒットしない/する理由を見つけることができます。</p>
-
-<p>Elasticsearchの便利な点はRESTfulなAPI＋JSONでやりとりができる点なのですが、<code>_analyze</code> APIの結果をJSONで受け取っても、見るのにちょっと苦労します。。。こんな感じ。</p>
-
-<p>リクエスト：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>POST _analyze
-</span><span class='line'>{
-</span><span class='line'>  "analyzer": "kuromoji",
-</span><span class='line'>  "text": "今年はブログをいっぱい書きますよ！"
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>レスポンス：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{
-</span><span class='line'>  "tokens": [
-</span><span class='line'>    {
-</span><span class='line'>      "token": "今年",
-</span><span class='line'>      "start_offset": 0,
-</span><span class='line'>      "end_offset": 2,
-</span><span class='line'>      "type": "word",
-</span><span class='line'>      "position": 0
-</span><span class='line'>    },
-</span><span class='line'>    {
-</span><span class='line'>      "token": "ブログ",
-</span><span class='line'>      "start_offset": 3,
-</span><span class='line'>      "end_offset": 6,
-</span><span class='line'>      "type": "word",
-</span><span class='line'>      "position": 2
-</span><span class='line'>    },
-</span><span class='line'>    {
-</span><span class='line'>      "token": "いっぱい",
-</span><span class='line'>      "start_offset": 7,
-</span><span class='line'>      "end_offset": 11,
-</span><span class='line'>      "type": "word",
-</span><span class='line'>      "position": 4
-</span><span class='line'>    },
-</span><span class='line'>    {
-</span><span class='line'>      "token": "書く",
-</span><span class='line'>      "start_offset": 11,
-</span><span class='line'>      "end_offset": 13,
-</span><span class='line'>      "type": "word",
-</span><span class='line'>      "position": 5
-</span><span class='line'>    }
-</span><span class='line'>  ]
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>このくらいの量であればまだなんとかなりますが、文章が長くなると辛いですよね。</p>
-
-<p>ということで、GUIがあると便利だろうなぁと。で、作ってみましたというのが今日紹介するKibana用のAnalyze UIプラグインです。
-こんな感じで、Kibanaのアプリの一部として動作しブラウザ上で、入力テキストの文字列がどのようにanalyzeされて、単語になるかがわかります。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20180119/analyze_ui_sample_1.jpg" width="800"></p>
-
-<p>（先ほどのAPIのサンプルと同じものを画面で入力した結果になります）。</p>
-
-<h3>インストール方法</h3>
-
-<p>現時点の最新版Kibana（6.1.2）に対応しています。
-Kibanaのディレクトリで<code>kibana-plugin</code>コマンドを利用してインストールします。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>./bin/kibana-plugin install https://github.com/johtani/analyze-api-ui-plugin/releases/download/6.1.2/analyze-api-ui-plugin-6.1.2.zip</span></code></pre></td></tr></table></div></figure>
-
-
-<p>これだけです。
-で、Kibanaを起動していただくと、左のメニューに「Analyze UI」という項目が増えています。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20180119/kibana_menu.jpg" width="400"></p>
-
-<p>クリックすると、Analyze UIが表示されます。</p>
-
-<p>初期画面は入力された文字を特定のAnalyzerで処理した場合の結果を見るための画面です。綱目の説明は画像をご覧ください。</p>
-
-<p><img src="http://blog.johtani.info/images/entries/20180119/intro_analyze_ui_1.jpg" width="800"></p>
-
-<p>先ほどのJSONよりは見やすくなったかと思います。
-そのほかにもいくつか画面や機能があるのですが、今日はこの辺りで。
-「<code>_analyze</code> API便利なんだけど、JSONは。。。」とか「検索うまくできないなぁなんでだろう？」と思っている方は、ぜひ試して見ていただければと。
-問題点などありましたら、GitHubのIssueを登録してください。</p>
 ]]></content>
   </entry>
   

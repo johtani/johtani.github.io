@@ -4,7 +4,7 @@
   <title><![CDATA[Category: lucene | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/lucene/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2019-12-01T00:14:08+09:00</updated>
+  <updated>2019-12-04T00:55:47+09:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -12,6 +12,107 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Apache LuceneのKuromojiのUniDicビルド対応パッチについて]]></title>
+    <link href="http://blog.johtani.info/blog/2019/12/04/about-lucene-4056/"/>
+    <updated>2019-12-04T00:00:00+09:00</updated>
+    <id>http://blog.johtani.info/blog/2019/12/04/about-lucene-4056</id>
+    <content type="html"><![CDATA[<p>これは、<a href="https://qiita.com/advent-calendar/2019/search">情報検索・検索エンジン Advent Calendar 2019</a> の 4 日目の記事です。</p>
+
+<!-- more -->
+
+
+<p>1日目から、質の高いエントリーが続いていましたが、一旦休憩して頂く感じの記事になってます。気軽に読んでくださいw。Advent Calendarつくらないの？と煽ったのもあり、穴を埋めようかなと。　</p>
+
+<h2>発端</h2>
+
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ちょっと先ですがこういうのやります。実装寄りの話やOSS開発に興味がある方，きてください～ / Lucene 版 <a href="https://twitter.com/hashtag/Kuromoji?src=hash&amp;ref_src=twsrc%5Etfw">#Kuromoji</a> のコードを読む会（辞書ビルダー編） <a href="https://t.co/NgEmUohoPo">https://t.co/NgEmUohoPo</a> <a href="https://twitter.com/hashtag/kuromoji?src=hash&amp;ref_src=twsrc%5Etfw">#kuromoji</a></p>&mdash; Tomoko Uchida (@moco_beta) <a href="https://twitter.com/moco_beta/status/1169795202376073217?ref_src=twsrc%5Etfw">September 6, 2019</a></blockquote>
+
+
+<p> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+<p><a href="https://search-tech.connpass.com/event/146365/">「Lucene 版 #Kuromoji のコードを読む会（辞書ビルダー編）」</a>という勉強会があり、参加したところ、UniDicの辞書のビルドがコケるという話を聞いたんで、ちょっとやってみるかと。</p>
+
+<p>ちなみに、Kuromojiとは、Apache Luceneに入っている、日本語向けの形態素解析ライブラリです。IPAdicの辞書を内包しており、SolrやElasticsearchといった、Apache Luceneを利用している検索エンジンで手軽に使える形態素解析ライブラリになっています。が、対応している辞書がデフォルトだとIPAdicなのです。</p>
+
+<h2>問題点</h2>
+
+<p><a href="https://issues.apache.org/jira/browse/LUCENE-4056">LUCENE-4056</a>というIssueが上がっています。</p>
+
+<p><code>build.xml</code>には記載はないけど、<a href="https://github.com/apache/lucene-solr/blob/master/lucene/analysis/kuromoji/src/java/org/apache/lucene/analysis/ja/util/DictionaryBuilder.java#L44">辞書のビルダーは対応していそうな雰囲気</a>を醸し出しているので、試してみたというのが発端？かと。で、実際に動かしてみると動かない点がありましたと。</p>
+
+<p>また、Issueの会話で出ていたUniDicの辞書のライセンスの話もありました。
+ただ、<a href="https://unidic.ninjal.ac.jp">UniDic</a>がライセンスを変更したので、このあたりはクリアできそうかなと。</p>
+
+<h2>パッチ</h2>
+
+<p>ということで、動かしてみていくつか修正してパッチを作りました。</p>
+
+<p><a href="https://github.com/apache/lucene-solr/pull/935">https://github.com/apache/lucene-solr/pull/935</a></p>
+
+<p>最近のLuceneはGitHubでプルリク遅れるのが便利ですね。
+そんなに大したことはやってないです。以下の点が問題だったので直しています。</p>
+
+<ul>
+<li>IPAdicとUniDicで語彙定義ファイルのCSVの形式（カラムの数）が異なる</li>
+<li>unk.defのカラム数も異なる</li>
+</ul>
+
+
+<p>あとは、辞書のダウンロードの部分や<code>build.xml</code>での処理を追加した形です。
+このプルリクを適用したlucene-solrのソースディレクトリを持ってきて、手元でjarをビルドすれば普通はIPAdicの辞書を内包したkuromojiのjarファイルが出来上がります。</p>
+
+<p><code>lucene/analysis/kuromoji/build.xml</code>ファイルを、<a href="https://gist.github.com/johtani/91cfd2753aba2e001c1d39f47666ada7">このGist</a>にあるように変更して、<code>ant build-dict</code>とやれば辞書のビルドが可能です。
+また、<code>cd lucene/;ant jar</code>とすれば、UniDicの辞書を内包したjarファイルもビルドできます(<code>lucene/build/analysis/kuromoji</code>の下にjarファイルができあがります)。</p>
+
+<h2>確認？</h2>
+
+<p>一応、パッチは動くのですが、パッチ自体はUniDicの辞書をビルドする仕組みはオフのままです。なので、テストをどうやろう？というところでやなんで止まっています。。。</p>
+
+<p>ただ、実際に作ったパッチできちんとIPAdicとUniDicがそれぞれビルドできているかの確認はしないとなと。</p>
+
+<p>ということで、2つのjarファイルを読み込んで、それぞれトークナイズして、その出力を表示する<a href="https://github.com/johtani/check-dictionary">ツールを作ってみました</a>。</p>
+
+<p>上記パッチを適用したlucene-solrのソースを持ってきて、IPAdicの辞書を内包したkuromojiのjarファイルと、UniDicの辞書を内包したjarファイルを用意し、ツールの支持に従って、ファイルをディレクトリに配置して、実行すれば以下のような出力がされるようになっています（とりあえず作ったものなので、Javaファイルにトークナイズしたいテキストを書かないといけないのですが）。</p>
+
+<p>たとえば、「自転車と自動車の違いはなんでしょう？」という文字列を入力すると、以下のような出力になりました。</p>
+
+<pre><code>+++ ipadic ++++++++++++++
+token[0] is [自転車]
+token[1] is [と]
+token[2] is [自動車]
+token[3] is [の]
+token[4] is [違い]
+token[5] is [は]
+token[6] is [なん]
+token[7] is [でしょ]
+token[8] is [う]
++++ unidic ++++++++++++++
+token[0] is [自転]
+token[1] is [車]
+token[2] is [と]
+token[3] is [自動]
+token[4] is [車]
+token[5] is [の]
+token[6] is [違い]
+token[7] is [は]
+token[8] is [なん]
+token[9] is [でしょう]
+</code></pre>
+
+<p>UniDicは[短単位]で語彙が扱われるため、「自転車」や「自動車」がそれぞれ「自転」「車」、「自動」「車」という形でトークナイズされていることがわかります。</p>
+
+<p>どちらがより便利なのか？というのは用途によっても変わってくるかと思いますが、検索の転置インデックスとしては、より短い単語で区切られている方が、より多くの文書にヒットする可能性が高くなるので、便利な可能性が高いです。</p>
+
+<h3>まとめ</h3>
+
+<p>ということで、パッチを作ってみたものの、まだ取り込まれていない状況です。
+着地点をどうするかって話かなと思っています。興味があれば遊んでみていただければと。</p>
+
+<p>将来的には、<a href="https://issues.apache.org/jira/browse/LUCENE-8816">辞書をjarから切り離して別のディレクトリやjarとして使えるようにしよう</a>というIssueも作られています。こちらがすすめば、UniDicだけでなく、その他の辞書を切り替えながら使えるようになる日が来るのではないでしょうか？</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[lucene-gosen 4.6.1のリリースに関する注意点]]></title>
