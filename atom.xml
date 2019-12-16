@@ -4,7 +4,7 @@
   <title><![CDATA[@johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2019-12-06T22:59:04+09:00</updated>
+  <updated>2019-12-16T16:06:01+00:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -14,9 +14,72 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Octopress環境のDockerイメージ化]]></title>
+    <link href="http://blog.johtani.info/blog/2019/12/16/dockernize-octopress/"/>
+    <updated>2019-12-16T10:01:01+00:00</updated>
+    <id>http://blog.johtani.info/blog/2019/12/16/dockernize-octopress</id>
+    <content type="html"><![CDATA[<p>最近使っていたPCが手元からなくなったので、16インチ Macbook Proをセットアップしているところです。
+で、時間もあるのでこれまでほったらかしてきた、このブログの環境をちょっと変更しようかなと。</p>
+
+<!-- more -->
+
+
+<p>まずは、変更するにしても、Octopressのブログの環境自体は必要です。
+実際に、移行する前のこの記事自体も書いているわけですし。</p>
+
+<p>ただ、今後なくなる環境をローカル環境にセットアップするのもどうかと思い、Docker環境にしてみました。</p>
+
+<h3>参考</h3>
+
+<p>&ldquo;Octopress Docker image&#8221;でググって出てきたサイトを参考にしました。</p>
+
+<p>参考ブログ：<a href="http://pappanyn.me/blog/2017/04/12/octopress-in-a-docker-container/">Octopress in a Docker Container</a></p>
+
+<h3>セットアップからDockerイメージのビルドまで</h3>
+
+<ol>
+<li>Docker for Mac自体もインストールしていなかったので、インストールしておきます。</li>
+<li>参考ブログの方がGitHubのリポジトリにDockerfileをアップしてくれているので、手順に従い、cloneします。
+
+<ol>
+<li>cloneしたDockerfileの3行目に<code>ENV LC_ALL C.UTF-8</code>を追加します（UTF-8でブログを書いており、previewした場合にエラーが出たため）</li>
+<li>参考ブログにある「Build the docker image」の手順に従い、Gemfile、.gitconfigをコピーしてイメージをビルドします。</li>
+</ol>
+</li>
+<li>参考ブログの「Rakefile」にあるように、自分の<code>octopress/Rakefile</code>の<code>Process.spawn(...)</code>にアドレスを追加します（Dockerコンテナの外からアクセスできるように）</li>
+<li>自分のoctopressにある<code>Gemfile.lock</code>を削除しました（ビルドしたイメージにはいるGemと一部バージョンが異なる記載のものがあったため）</li>
+</ol>
+
+
+<p>ここまでで、</p>
+
+<h3>Docker run</h3>
+
+<p>実際にコンテナを実行するためのスクリプトを書きました（書いたと言っても参考ブログにある起動コマンドを叩いてるだけですが。。。）</p>
+
+<p><code>launch-octopress-docker.sh</code>というファイル名で以下のコマンドを実行してるだけです。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>!/bin/sh
+</span><span class='line'>docker run -p 4000:4000 --rm --volume /Users/johtani/projects/blog/octopress:/octopress --volume /Users/johtani/.ssh:/home/blogger/.ssh -ti blog/octopress /bin/bash</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このシェルを起動すると、Dockerコンテナにbashで接続し、<code>/octopress</code>ディレクトリにログインしています。
+あとは、いつものように<code>rake new_post["...."]</code>で新規記事のテンプレートを作成したりすればOKです。</p>
+
+<p><code>rake generate; rake preview</code>と実行してからローカルのブラウザで<code>http://localhost:4000</code>に接続すればプレビューも可能。</p>
+
+<p>ということで、このDockerファイルとかを持っておけば、他の環境でもかんたんにOctopressの環境が再現できそうです。
+先人の知恵有り難し。
+これで、クリーンなまま他のブログ環境に移行できそう。</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[退職します]]></title>
     <link href="http://blog.johtani.info/blog/2019/12/06/leaving-elastic/"/>
-    <updated>2019-12-06T15:51:30+09:00</updated>
+    <updated>2019-12-06T06:51:30+00:00</updated>
     <id>http://blog.johtani.info/blog/2019/12/06/leaving-elastic</id>
     <content type="html"><![CDATA[<p>本日、Elasticでの最終出社日でした。実際の退職日はまだ先ですが、有休消化という感じです。</p>
 
@@ -43,9 +106,9 @@ Elasticを離れはしますが、検索自体にはまだまだ興味がある�
   
   <entry>
     <title type="html"><![CDATA[Apache LuceneのKuromojiのUniDicビルド対応パッチについて]]></title>
-    <link href="http://blog.johtani.info/blog/2019/12/04/about-lucene-4056/"/>
-    <updated>2019-12-04T00:00:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2019/12/04/about-lucene-4056</id>
+    <link href="http://blog.johtani.info/blog/2019/12/03/about-lucene-4056/"/>
+    <updated>2019-12-03T15:00:00+00:00</updated>
+    <id>http://blog.johtani.info/blog/2019/12/03/about-lucene-4056</id>
     <content type="html"><![CDATA[<p>これは、<a href="https://qiita.com/advent-calendar/2019/search">情報検索・検索エンジン Advent Calendar 2019</a> の 4 日目の記事です。</p>
 
 <!-- more -->
@@ -165,9 +228,9 @@ Elasticを離れはしますが、検索自体にはまだまだ興味がある�
   
   <entry>
     <title type="html"><![CDATA[2019年のElastic StackとElastic]]></title>
-    <link href="http://blog.johtani.info/blog/2019/12/01/whats-happen-at-elastic-in-2019/"/>
-    <updated>2019-12-01T00:00:00+09:00</updated>
-    <id>http://blog.johtani.info/blog/2019/12/01/whats-happen-at-elastic-in-2019</id>
+    <link href="http://blog.johtani.info/blog/2019/11/30/whats-happen-at-elastic-in-2019/"/>
+    <updated>2019-11-30T15:00:00+00:00</updated>
+    <id>http://blog.johtani.info/blog/2019/11/30/whats-happen-at-elastic-in-2019</id>
     <content type="html"><![CDATA[<p><a href="https://qiita.com/advent-calendar/2018/elasticsearch">Elastic stack (Elasticsearch) Advent Calendar 2019</a>の1日目の記事になります。</p>
 
 <p>まだ、1ヶ月を残してますが、簡単に今年起こったことを振り返ってみようと思います。毎年恒例ですね、ここ数年。</p>
@@ -288,7 +351,7 @@ Elastic Cloud を使うようになって設計方針やら変わったことに
   <entry>
     <title type="html"><![CDATA[Bonfire Data & Science #1に参加しました]]></title>
     <link href="http://blog.johtani.info/blog/2019/10/25/bonefire-01/"/>
-    <updated>2019-10-25T19:40:02+09:00</updated>
+    <updated>2019-10-25T10:40:02+00:00</updated>
     <id>http://blog.johtani.info/blog/2019/10/25/bonefire-01</id>
     <content type="html"><![CDATA[<p>Bonfire Data &amp; Science #1にブログ枠で参加してきました。
 ということで、メモです。</p>
@@ -845,7 +908,7 @@ Elastic Cloud を使うようになって設計方針やら変わったことに
   <entry>
     <title type="html"><![CDATA[Elasticsearch NEXT STEP 2を頂きました]]></title>
     <link href="http://blog.johtani.info/blog/2019/10/10/review-es-next-step-2/"/>
-    <updated>2019-10-10T15:56:29+09:00</updated>
+    <updated>2019-10-10T06:56:29+00:00</updated>
     <id>http://blog.johtani.info/blog/2019/10/10/review-es-next-step-2</id>
     <content type="html"><![CDATA[<p>この間の<a href="https://www.meetup.com/ja-JP/Tokyo-Elastic-Fantastics/events/264954133/">Elasticsearch勉強会</a>でAcroquest Technologyの人たちが<a href="http://acro-engineer.hatenablog.com/entry/2019/09/19/120000">技術書展7で販売されていた書籍</a>を頂いてしまいました。なので、軽く読んでの感想と宣伝です（これ、電子版とかで買えないのかな？）。</p>
 
@@ -878,7 +941,7 @@ Elastic Cloud を使うようになって設計方針やら変わったことに
   <entry>
     <title type="html"><![CDATA[勉強会の受付自作？アプリ？HTMLについて]]></title>
     <link href="http://blog.johtani.info/blog/2019/06/19/qr-code-with-meetup-dot-com/"/>
-    <updated>2019-06-19T19:10:44+09:00</updated>
+    <updated>2019-06-19T10:10:44+00:00</updated>
     <id>http://blog.johtani.info/blog/2019/06/19/qr-code-with-meetup-dot-com</id>
     <content type="html"><![CDATA[<p>Twitterで「Meetup.comに切り替えたらー」みたいな話があったので、
 受付用アプリとかなくてという話になったので、普段Elasticsearch勉強会で使用している
@@ -1056,9 +1119,9 @@ QRコードを持ってきた方がすんなり受付を通過できるように
   
   <entry>
     <title type="html"><![CDATA[勉強会運営座談会ってのをやってみた]]></title>
-    <link href="http://blog.johtani.info/blog/2019/04/26/meetup-organizer-drinkup/"/>
-    <updated>2019-04-26T00:02:06+09:00</updated>
-    <id>http://blog.johtani.info/blog/2019/04/26/meetup-organizer-drinkup</id>
+    <link href="http://blog.johtani.info/blog/2019/04/25/meetup-organizer-drinkup/"/>
+    <updated>2019-04-25T15:02:06+00:00</updated>
+    <id>http://blog.johtani.info/blog/2019/04/25/meetup-organizer-drinkup</id>
     <content type="html"><![CDATA[<p><a href="https://www.meetup.com/ja-JP/Tokyo-Elastic-Fantastics/">Elasticsearch勉強会</a>や<a href="https://search-tech.connpass.com">検索技術勉強会</a>やってるんだけど、独学で勉強会やってるなーと思い、みんなはどうやってるんだろうとツイートしてみたところ。</p>
 
 <blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">あー、勉強会運営座談会したい。</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1113015829195481088?ref_src=twsrc%5Etfw">2019年4月2日</a></blockquote>
@@ -1155,7 +1218,7 @@ QRコードを持ってきた方がすんなり受付を通過できるように
   <entry>
     <title type="html"><![CDATA[Search Engineering Tech Talk(検索技術勉強会)の運営として参加して始めてみました。]]></title>
     <link href="http://blog.johtani.info/blog/2019/02/26/start-search-engineering-tech-talk/"/>
-    <updated>2019-02-26T23:38:00+09:00</updated>
+    <updated>2019-02-26T14:38:00+00:00</updated>
     <id>http://blog.johtani.info/blog/2019/02/26/start-search-engineering-tech-talk</id>
     <content type="html"><![CDATA[<p>どーも、johtaniです。</p>
 
@@ -1205,7 +1268,7 @@ QRコードを持ってきた方がすんなり受付を通過できるように
   <entry>
     <title type="html"><![CDATA[今年の振り返りと来年の抱負（2018）]]></title>
     <link href="http://blog.johtani.info/blog/2018/12/31/looking-back-2018/"/>
-    <updated>2018-12-31T16:14:45+09:00</updated>
+    <updated>2018-12-31T07:14:45+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/12/31/looking-back-2018</id>
     <content type="html"><![CDATA[<p>今年も振り返りブログをかけてます。よかったw</p>
 
@@ -1374,9 +1437,9 @@ Elastic Stackの入門的な話をさせていただいたので、興味があ�
   
   <entry>
     <title type="html"><![CDATA[Elastic Stack 7.0で入ってくる新機能をちょっと紹介]]></title>
-    <link href="http://blog.johtani.info/blog/2018/12/25/whats-new-in-elastic-stack-7/"/>
-    <updated>2018-12-25T00:00:01+09:00</updated>
-    <id>http://blog.johtani.info/blog/2018/12/25/whats-new-in-elastic-stack-7</id>
+    <link href="http://blog.johtani.info/blog/2018/12/24/whats-new-in-elastic-stack-7/"/>
+    <updated>2018-12-24T15:00:01+00:00</updated>
+    <id>http://blog.johtani.info/blog/2018/12/24/whats-new-in-elastic-stack-7</id>
     <content type="html"><![CDATA[<p><a href="https://qiita.com/advent-calendar/2018/elasticsearch">Elastic stack (Elasticsearch) Advent Calendar 2018</a>の25日目の記事になります。
 今年最後のAdvent Calendarです！来年も忘れてなければやるはず！</p>
 
@@ -1445,7 +1508,7 @@ Elasticのドキュメントの良いところは、masterブランチのドキ�
   <entry>
     <title type="html"><![CDATA[2018年のElastic StackとElastic]]></title>
     <link href="http://blog.johtani.info/blog/2018/12/01/whats-happen-at-elastic-in-2018/"/>
-    <updated>2018-12-01T10:48:38+09:00</updated>
+    <updated>2018-12-01T01:48:38+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/12/01/whats-happen-at-elastic-in-2018</id>
     <content type="html"><![CDATA[<p><a href="https://qiita.com/advent-calendar/2018/elasticsearch">Elastic stack (Elasticsearch) Advent Calendar 2018</a>の1日目の記事になります。</p>
 
@@ -1622,9 +1685,9 @@ Elasticは英語のブログも活発に書かれているのですが、今後�
   
   <entry>
     <title type="html"><![CDATA[新規導入した長期出張用のアイテムをいくつか紹介]]></title>
-    <link href="http://blog.johtani.info/blog/2018/10/18/items-for-long-businesstrip/"/>
-    <updated>2018-10-18T01:34:55+09:00</updated>
-    <id>http://blog.johtani.info/blog/2018/10/18/items-for-long-businesstrip</id>
+    <link href="http://blog.johtani.info/blog/2018/10/17/items-for-long-businesstrip/"/>
+    <updated>2018-10-17T16:34:55+00:00</updated>
+    <id>http://blog.johtani.info/blog/2018/10/17/items-for-long-businesstrip</id>
     <content type="html"><![CDATA[<p>（転職する少し前までパスポートすら持ってなかったのに）今の会社に転職してから、半年に1度の割合で海外への出張が発生する生活を送っています。
 4年目になりますが、今回いくつか新しいガジェット？アイテム？を出張用に導入したので感想を書いておこうかなと。</p>
 
@@ -1721,7 +1784,7 @@ Elasticは英語のブログも活発に書かれているのですが、今後�
   <entry>
     <title type="html"><![CDATA[第25回Elasticsearch勉強会を開催しました。]]></title>
     <link href="http://blog.johtani.info/blog/2018/10/17/26th-elasticsearch-tokyo-meetup/"/>
-    <updated>2018-10-17T17:33:50+09:00</updated>
+    <updated>2018-10-17T08:33:50+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/10/17/26th-elasticsearch-tokyo-meetup</id>
     <content type="html"><![CDATA[<p>毎月開催の2回目になります。
 今回は日経さんの会場をお借りしての開催となりました。</p>
@@ -1820,7 +1883,7 @@ Elasticは英語のブログも活発に書かれているのですが、今後�
   <entry>
     <title type="html"><![CDATA[JJUGナイトセミナーで話しました]]></title>
     <link href="http://blog.johtani.info/blog/2018/07/29/apm-java-at-jjug/"/>
-    <updated>2018-07-29T14:45:30+09:00</updated>
+    <updated>2018-07-29T05:45:30+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/07/29/apm-java-at-jjug</id>
     <content type="html"><![CDATA[<p><a href="https://jjug.doorkeeper.jp/events/77485">7/25にJJUGナイトセミナー</a>でElastic Stackの紹介とAPMのJava Agentの紹介をしたので、補足のブログです。
 （久々に書くな。。。）</p>
@@ -1901,7 +1964,7 @@ Elastic Cloudのインスタンスを起動したままにしておけば、デ�
   <entry>
     <title type="html"><![CDATA[Analyze UIとKibanaのプラグインの作成方法（第3回）]]></title>
     <link href="http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/"/>
-    <updated>2018-04-20T15:30:01+09:00</updated>
+    <updated>2018-04-20T06:30:01+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture</id>
     <content type="html"><![CDATA[<p><a href="http://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin/">第2回</a>から少し間が空いてしまいましたが、templateで作成したプラグインのディレクトリ構成とどういう流れでデータがやり取りされるかについてみていきます。
 （2018/02月時点で作成したディレクトリ構成にしたがって説明します）
@@ -2246,7 +2309,7 @@ templateで作成したプラグインでは、&#8221;title&#8221;など表示�
   <entry>
     <title type="html"><![CDATA[カンファレンス情報の探し方（CfP、スポンサー応募、開催期間など）？]]></title>
     <link href="http://blog.johtani.info/blog/2018/03/24/how-to-find-conferences/"/>
-    <updated>2018-03-24T13:50:12+09:00</updated>
+    <updated>2018-03-24T04:50:12+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/03/24/how-to-find-conferences</id>
     <content type="html"><![CDATA[<p> #MANABIYA のブースでセッション時間の合間はお客さん少ないので、ブログを書いてみたり。
 ここ数年、スポンサーとして色々なカンファレンスに参加してるんですが、それについてちょっと気なることがあったので。</p>
@@ -2291,7 +2354,7 @@ Google Formなどで入力してもらえるようにして何か作るのもあ
   <entry>
     <title type="html"><![CDATA[第1章の05から06までやってみた（言語処理100本ノック）]]></title>
     <link href="http://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/"/>
-    <updated>2018-03-20T21:34:45+09:00</updated>
+    <updated>2018-03-20T12:34:45+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06</id>
     <content type="html"><![CDATA[<p>Rustで言語処理100本ノックの続きで、05と06です。</p>
 
@@ -2361,7 +2424,7 @@ sliceは特定のシーケンス（配列）に対してある特定のサイズ
   <entry>
     <title type="html"><![CDATA[第1章の03から04までやってみた（言語処理100本ノック）]]></title>
     <link href="http://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04/"/>
-    <updated>2018-02-19T18:34:08+09:00</updated>
+    <updated>2018-02-19T09:34:08+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04</id>
     <content type="html"><![CDATA[<p>Rustで言語処理100本ノックの続きで、03と04です。</p>
 
@@ -2420,7 +2483,7 @@ HashMapでもいいんですが、文字列で出力した時にキーが並ん�
   <entry>
     <title type="html"><![CDATA[第1章の00から02までやってみた（言語処理100本ノック）]]></title>
     <link href="http://blog.johtani.info/blog/2018/02/15/nlp100-ch01-00to02/"/>
-    <updated>2018-02-15T21:59:01+09:00</updated>
+    <updated>2018-02-15T12:59:01+00:00</updated>
     <id>http://blog.johtani.info/blog/2018/02/15/nlp100-ch01-00to02</id>
     <content type="html"><![CDATA[<p>「鉄は熱いうちに打て」ということで、言語処理100本ノックの第1章の00から02を実装してみました。</p>
 
@@ -2473,32 +2536,6 @@ next()のタプル返す関数作って、とかでなんかできたりする�
 説明するのが簡単だ。</p>
 
 <p>とりあえず、今日はこの辺まで。なんか、いい知恵あれば教えてください！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[言語処理100本ノックはじめました(Rust)]]></title>
-    <link href="http://blog.johtani.info/blog/2018/02/14/start-nlp100-with-rust/"/>
-    <updated>2018-02-14T19:52:31+09:00</updated>
-    <id>http://blog.johtani.info/blog/2018/02/14/start-nlp100-with-rust</id>
-    <content type="html"><![CDATA[<p>ども。新しいもの始めないと頭が退化する。。。ということで、こちら（
-<a href="http://blog.katsyoshi.org/blog/2018/01/16/happy-new-year-and-new-language/">happy new year and new language - katsyoshiのめもみたいなもの</a>）のブログに触発されて、言語処理100本ノックをはじめてみました。</p>
-
-<!-- more -->
-
-
-<p><a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#ch1">言語処理100本ノック</a>とは、自然言語処理になるのかな、東北大学の研究室の先生が公開している言語処理に関する実践的な課題をベースにプログラミングなどのスキルを学んでいくための問題集です。
-元々はPythonを対象とされているようですが、Rustでやってみようかと。
-まぁ、先ほどあげたブログの二番煎じです。。。
-ちなみに、インスパイアされた元のブログの方はRust book 2nd editionを読み終えたらしいですが、私はかじった程度です（ダメかも？）。</p>
-
-<p>NLPもRustもかじった程度なので、苦戦しそうですが、ちょっとずつやっていこうかなと。
-ということで、準備運動の第1章から始めようかと。
-GitHubにちょっとずつあげていく予定です。
-<a href="https://github.com/johtani/nlp100-rust">https://github.com/johtani/nlp100-rust</a></p>
-
-<p>まぁ、まずは宣言のブログを書いてみただけです。
-続いてなかったら、叱咤激励してください。叱咤だけかも？</p>
 ]]></content>
   </entry>
   

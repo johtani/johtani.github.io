@@ -4,7 +4,7 @@
   <title><![CDATA[Category: octopress | @johtaniの日記 2nd]]></title>
   <link href="http://blog.johtani.info/blog/categories/octopress/atom.xml" rel="self"/>
   <link href="http://blog.johtani.info/"/>
-  <updated>2019-12-06T22:59:04+09:00</updated>
+  <updated>2019-12-16T16:06:01+00:00</updated>
   <id>http://blog.johtani.info/</id>
   <author>
     <name><![CDATA[johtani]]></name>
@@ -14,9 +14,70 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Octopress環境のDockerイメージ化]]></title>
+    <link href="http://blog.johtani.info/blog/2019/12/16/dockernize-octopress/"/>
+    <updated>2019-12-16T10:01:01+00:00</updated>
+    <id>http://blog.johtani.info/blog/2019/12/16/dockernize-octopress</id>
+    <content type="html"><![CDATA[<p>最近使っていたPCが手元からなくなったので、16インチ Macbook Proをセットアップしているところです。
+で、時間もあるのでこれまでほったらかしてきた、このブログの環境をちょっと変更しようかなと。</p>
+
+<!-- more -->
+
+
+<p>まずは、変更するにしても、Octopressのブログの環境自体は必要です。
+実際に、移行する前のこの記事自体も書いているわけですし。</p>
+
+<p>ただ、今後なくなる環境をローカル環境にセットアップするのもどうかと思い、Docker環境にしてみました。</p>
+
+<h3>参考</h3>
+
+<p>&ldquo;Octopress Docker image&#8221;でググって出てきたサイトを参考にしました。</p>
+
+<p>参考ブログ：<a href="http://pappanyn.me/blog/2017/04/12/octopress-in-a-docker-container/">Octopress in a Docker Container</a></p>
+
+<h3>セットアップからDockerイメージのビルドまで</h3>
+
+<ol>
+<li>Docker for Mac自体もインストールしていなかったので、インストールしておきます。</li>
+<li>参考ブログの方がGitHubのリポジトリにDockerfileをアップしてくれているので、手順に従い、cloneします。
+
+<ol>
+<li>cloneしたDockerfileの3行目に<code>ENV LC_ALL C.UTF-8</code>を追加します（UTF-8でブログを書いており、previewした場合にエラーが出たため）</li>
+<li>参考ブログにある「Build the docker image」の手順に従い、Gemfile、.gitconfigをコピーしてイメージをビルドします。</li>
+</ol>
+</li>
+<li>参考ブログの「Rakefile」にあるように、自分の<code>octopress/Rakefile</code>の<code>Process.spawn(...)</code>にアドレスを追加します（Dockerコンテナの外からアクセスできるように）</li>
+<li>自分のoctopressにある<code>Gemfile.lock</code>を削除しました（ビルドしたイメージにはいるGemと一部バージョンが異なる記載のものがあったため）</li>
+</ol>
+
+
+<p>ここまでで、</p>
+
+<h3>Docker run</h3>
+
+<p>実際にコンテナを実行するためのスクリプトを書きました（書いたと言っても参考ブログにある起動コマンドを叩いてるだけですが。。。）</p>
+
+<p><code>launch-octopress-docker.sh</code>というファイル名で以下のコマンドを実行してるだけです。</p>
+
+<pre><code>!/bin/sh
+docker run -p 4000:4000 --rm --volume /Users/johtani/projects/blog/octopress:/octopress --volume /Users/johtani/.ssh:/home/blogger/.ssh -ti blog/octopress /bin/bash
+</code></pre>
+
+<p>このシェルを起動すると、Dockerコンテナにbashで接続し、<code>/octopress</code>ディレクトリにログインしています。
+あとは、いつものように<code>rake new_post["...."]</code>で新規記事のテンプレートを作成したりすればOKです。</p>
+
+<p><code>rake generate; rake preview</code>と実行してからローカルのブラウザで<code>http://localhost:4000</code>に接続すればプレビューも可能。</p>
+
+<p>ということで、このDockerファイルとかを持っておけば、他の環境でもかんたんにOctopressの環境が再現できそうです。
+先人の知恵有り難し。
+これで、クリーンなまま他のブログ環境に移行できそう。</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Octopress始めました]]></title>
     <link href="http://blog.johtani.info/blog/2013/06/01/first-octopress/"/>
-    <updated>2013-06-01T23:57:00+09:00</updated>
+    <updated>2013-06-01T23:57:00+00:00</updated>
     <id>http://blog.johtani.info/blog/2013/06/01/first-octopress</id>
     <content type="html"><![CDATA[<p>昨年から、ブログをどうしようかって話をしていて、そのままになっていたのですが、Octopress＋Github Pagesというのがあるらしいと聞きつけて（Twitterで見かけたのかなぁ？）ちょっとやってみました。</p>
 
