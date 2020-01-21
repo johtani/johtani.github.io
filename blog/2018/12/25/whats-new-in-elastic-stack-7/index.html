@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Elastic Stack 7.0で入ってくる新機能をちょっと紹介" />
+    <meta property="og:title" content="Elastic Stack 7.0で入ってくる新機能をちょっと紹介" />
+    <meta property="twitter:title" content="Elastic Stack 7.0で入ってくる新機能をちょっと紹介" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Elastic Stack 7.0で入ってくる新機能をちょっと紹介-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2018/12/25/whats-new-in-elastic-stack-7/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                    </div>
+                    <h1>Elastic Stack 7.0で入ってくる新機能をちょっと紹介</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Tuesday, December 25, 2018
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>TOC</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#kibanaのk7-design-kibana">Kibanaのk7 design (kibana)</a></li>
+        <li><a href="#zen2-elasticsearch">Zen2 (elasticsearch)</a></li>
+        <li><a href="#新しいデータタイプ-elasticsearch">新しいデータタイプ (elasticsearch)</a></li>
+        <li><a href="#filebeat-supports-netflow-beats">Filebeat supports NetFlow (beats)</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p><a href="https://qiita.com/advent-calendar/2018/elasticsearch">Elastic stack (Elasticsearch) Advent Calendar 2018</a>の25日目の記事になります。
+今年最後のAdvent Calendarです！来年も忘れてなければやるはず！</p>
+<p>今日は、すでにalpha2までリリースされた7系でどんな変更が入るのかをちょっとだけ紹介します。
+ほんとにちょっとだけですよ。</p>
+<!-- more -->
+<h3 id="kibanaのk7-design-kibana">Kibanaのk7 design (kibana)</h3>
+<p><a href="https://www.elastic.co/guide/en/kibana/master/release-notes-7.0.0-alpha1.html#K7-design-7.0.0">Kibanaの新デザインです。K7って呼ぶのかな？</a></p>
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20181225/k7dashboard.png" />
+    </div>
+    <a href="/images/entries/20181225/k7dashboard.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>まだ、メニューと一部が実装されているだけですが、7.0.0でガラッと変わりそうです。
+そのほかの画面の<a href="https://github.com/elastic/kibana/issues?utf8=%E2%9C%93&amp;q=is%3Aissue+is%3Aopen+k7">Issueはこちら</a>です。
+&ldquo;k7&quot;で検索しただけですが。メタIssueが見つからなかったんで。<a href="https://github.com/elastic/kibana/issues/25736">例えば、こんな感じでアプリとかのスイッチとかがこんな感じになるよというデザイン案が観れたりします</a>。</p>
+<h3 id="zen2-elasticsearch">Zen2 (elasticsearch)</h3>
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/modules-discovery.html">Elasticsearchの新しいクラスター管理機構アルゴリズム</a>になります。
+Zenと呼ばれる独自実装のものを6系までは使っていましたが、7系向けに変更がかかりました。
+実際には、Nodeを探す仕組み、Masterの選出アルゴリズム、クラスター状態の管理などを行います。
+上記のリンクにあるようにドキュメントも詳しくなりました。
+信頼性をさらに向上し、設定ミスを起こしにくくして、より使いやすくという目的で様々な変更が加えられています。
+これが、<a href="https://github.com/elastic/elasticsearch/issues/32006">メタIssue</a>かな？
+アルゴリズムの変更や、クラスターの状態の管理の方法などの変更に関するIssueやPRにリンクが貼ってあります。</p>
+<h3 id="新しいデータタイプ-elasticsearch">新しいデータタイプ (elasticsearch)</h3>
+<h4 id="featurefeature-vector-datatype">Feature/Feature vector datatype</h4>
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/feature.html">ドキュメントはこちら</a>と<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/feature-vector.html">こちら</a></p>
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/query-dsl-feature-query.html">feature query</a>と合わせて使用するためのフィールドで、しかもクエリのスコア計算「のみ」に使用するフィールドになります。
+検索条件やソート、Aggregationの対象ではなく、クエリのスコアに影響させたい値を入れておくためのフィールドです。
+6から追加された機能の「<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/search-uri-request.html">track_total_hits</a>」をfalseにした時と合わせると、function_scoreなどで計算をしていた場合よりも、検索性能が上がるという利点まであります。
+ちなみに、「track_total_hits」は検索ヒット数を計算しないで、上位のデータを取得する時にクエリを早くするといったことができる機能になります。
+<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/index-modules-index-sorting.html">Index Sorting</a>と組み合わせることで威力が発揮できる仕組みになるはずです。</p>
+<h3 id="filebeat-supports-netflow-beats">Filebeat supports NetFlow (beats)</h3>
+<p><a href="https://www.elastic.co/guide/en/beats/filebeat/master/filebeat-input-netflow.html">NetFlowが入力</a>として追加されます。
+Filebeatと言いつつ、File以外の入力が徐々に増えてきてますね（UDPやTCPにも対応しましたし）。
+ネットワーク機器などの監視を行う方などにはさらに便利になってくるのではないでしょうか？
+（私はこの辺りは不得手なので、誰か使ってみてもらえればと！）</p>
+<h2 id="まとめ">まとめ</h2>
+<p>まだ、序の口って感じですが、今年はこの辺で。7系ではここであげた以外にも様々な機能が追加されています（もしくは予定です）。
+Elasticのドキュメントの良いところは、masterブランチのドキュメントも公開されていることです。
+ドキュメントのバージョンを<code>7.0.0-alpha2</code>にすれば、masterブランチで追加されたページが見れるので、
+興味のある方は眺めてみていただければと。物によって、リリースノートが書かれていなかったりするので注意は必要ですが。</p>
+<p>今年もあと数日になりましたが、Advent Calendarへの参加ありがとうございました！
+来年ももちろんやりますので、年始からネタを考えてくださいね。</p>
+<p>来年一発目は、<a href="https://www.meetup.com/ja-JP/Tokyo-Elastic-Fantastics/events/257301177/">第28回Elasticsearch勉強会 - 6.5機能紹介 -</a>になります。ウェビナーでも紹介しましたが、6.5で入った様々な新機能をデモありで紹介する予定です。
+興味のある方はぜひご参加ください。</p>
+<p>では、来年もよろしくお願いいたします。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2018/12/01/whats-happen-at-elastic-in-2018/" data-toggle="tooltip" data-placement="top" title="2018年のElastic StackとElastic">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2018/12/31/looking-back-2018/" data-toggle="tooltip" data-placement="top" title="今年の振り返りと来年の抱負（2018）">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>

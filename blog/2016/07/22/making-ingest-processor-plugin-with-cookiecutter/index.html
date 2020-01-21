@@ -1,811 +1,814 @@
-
 <!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <title>Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp - @johtaniの日記 2nd</title>
-  <meta name="author" content="johtani">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  
-  <meta name="description" content="久しぶりに、技術的なブログ書いてます。 Ingest Processorのプラグインを作ってみたくなったので、書いてみました。
-ただ書いてみるんじゃ3番煎じになりそうなので、cookiecutterを使ってみました。 と言っても、同僚のAlexがcookiecutter-elasticsearch &hellip;">
-  
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
 
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <link rel="canonical" href="http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="/javascripts/ender.js"></script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
-<script language="JavaScript">
-$(document).ready( function () {
-   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
-})
-</script>
-<!-- Swiftype -->
-<script type="text/javascript">
-  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
-  (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
-  e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
-  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
 
-  _st('install','AwrzzMSUo45A2C2Nyaqx','2.0.0');
-</script>
+    
+    <meta name="title" content="Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp" />
+    <meta property="og:title" content="Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp" />
+    <meta property="twitter:title" content="Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp" />
+    
 
-  
-  <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-41371795-1']);
-    _gaq.push(['_trackPageview']);
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
 
-    (function() {
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-  </script>
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
 
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
 
 </head>
 
-<body>
-  <div id="navigation">
-    <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-  <li><a href="#" class="st-search-show-outputs">Search&#8230;<img src="/images/search.png"/> </a></li>
-</ul>
 
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
 </nav>
-  </div>
-  <header role="banner"><hgroup>
-  <h1><a href="/">@johtaniの日記 2nd</a></h1>
-  
-    <h2>@johtani &#8216;s blog 2nd edition</h2>
-  
-</hgroup>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
 
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        <a class="tag" href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                    </div>
+                    <h1>Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Friday, July 22, 2016
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
 </header>
-  <div id="body"  >
-    <div id="main">
-      <div id="content">
-        <div>
-<article class="hentry" role="article">
-  
-  <header>
-    
-      <h1 class="entry-title">Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp</h1>
-    
-    
-      <p class="meta">
-        
 
 
 
 
+<article>
+    <div class="container">
+        <div class="row">
 
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
 
-
-
-  
-
-
-
-<time datetime="2016-07-22T04:26:56+00:00" pubdate data-updated="true"><time class='entry-date' datetime='2016-07-22T04:26:56+00:00'><span class='date'>2016-07-22</span></time></time>
-        
-      </p>
-    
-  </header>
-
-
-<div class="entry-content"><p>久しぶりに、技術的なブログ書いてます。</p>
-
+                
+                <header>
+                    <h2>TOC</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#cookiecutterの使い方">Cookiecutterの使い方</a></li>
+        <li><a href="#プロジェクトのintellij-idea用のファイルを生成">プロジェクトのIntelliJ IDEA用のファイルを生成</a></li>
+        <li><a href="#コーディング">コーディング</a></li>
+        <li><a href="#テストのコーディング">テストのコーディング</a></li>
+        <li><a href="#テストの実行とzipの生成">テストの実行とZipの生成</a></li>
+        <li><a href="#kuromoji_pos_extractの利用方法">kuromoji_pos_extractの利用方法</a></li>
+        <li><a href="#alexのテンプレートで困った点">Alexのテンプレートで困った点</a></li>
+        <li><a href="#まとめ">まとめ</a></li>
+      </ul>
+    </li>
+    <li><a href="#参考ブログ元ネタ">参考ブログ（元ネタ？）</a></li>
+  </ul>
+</nav>
+                
+                <p>久しぶりに、技術的なブログ書いてます。</p>
 <p>Ingest Processorのプラグインを作ってみたくなったので、書いてみました。
 ただ書いてみるんじゃ3番煎じになりそうなので、<a href="https://cookiecutter.readthedocs.io/en/latest/readme.html">cookiecutter</a>を使ってみました。</p>
-
 <!-- more -->
-
-
-<p>と言っても、同僚のAlexが<a href="https://discuss.elastic.co/t/cookiecutter-template-for-writing-ingest-processors/52985">cookiecutter-elasticsearch-ingest-processor</a>と言うテンプレートを作ってくれているのを使っただけですが。（<a href="https://discuss.elastic.co">https://discuss.elastic.co</a> に投稿された記事で、使い方がアニメgifで説明されててわかりやすいです）</p>
-
+<p>と言っても、同僚のAlexが<a href="https://discuss.elastic.co/t/cookiecutter-template-for-writing-ingest-processors/52985">cookiecutter-elasticsearch-ingest-processor</a>と言うテンプレートを作ってくれているのを使っただけですが。（https://discuss.elastic.co に投稿された記事で、使い方がアニメgifで説明されててわかりやすいです）</p>
 <p><a href="https://cookiecutter.readthedocs.io/en/latest/readme.html">cookiecutter</a>とは、コマンドラインで質問に答えると、テンプレートからプロジェクトが生成できるツールです。
 Elasticでは、カスタムBeatを作る時に利用する例がいつかの日本語ブログや発表資料で話題になっていました。
 これのIngest Processorのプラグインバージョンです。</p>
-
 <p>今回は、NEologdも使ってみたかったので、Lucene Kuromoji for NEologdを利用して
 指定した品詞の単語だけを抽出するProcessorを作ってみました。</p>
-
-<p>GitHubのプロジェクト：<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract</a></p>
-
-<h3>Cookiecutterの使い方</h3>
-
+<p>GitHubのプロジェクト：https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract</p>
+<h3 id="cookiecutterの使い方">Cookiecutterの使い方</h3>
 <p><a href="https://cookiecutter.readthedocs.io/en/latest/readme.html">Cookiecutterのインストールはサイト</a>をご覧ください。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>cookiecutter gh:spinscale/cookiecutter-elasticsearch-ingest-processor</span></code></pre></td></tr></table></div></figure>
-
-
-<p>あとは、出てくる以下の項目を指定するだけです。</p>
-
+<pre><code>cookiecutter gh:spinscale/cookiecutter-elasticsearch-ingest-processor
+</code></pre><p>あとは、出てくる以下の項目を指定するだけです。</p>
 <ul>
 <li><code>processor_type</code> : Ingest Processorのタイプ名です。<code>kuromoji_part_of_speech_extract</code>としました。（Alexのだと<code>_</code>を使うとちょっと問題があるので後述）</li>
 <li><code>description</code> : readme.mdに利用されます。</li>
 <li><code>developer_name</code> : 名前を記載。Javaのファイルのヘッダに利用</li>
 <li><code>elasticsearch_version</code> : デフォルトで<code>5.0.0-alpha4</code>が指定されているので、特に指定せず</li>
 </ul>
-
-
 <p>以上の質問に答えたら、プロジェクトのディレクトリ構造が出来上がってます。
 プロジェクトのビルドなどにはGradleを利用します。</p>
-
-<h3>プロジェクトのIntelliJ IDEA用のファイルを生成</h3>
-
+<h3 id="プロジェクトのintellij-idea用のファイルを生成">プロジェクトのIntelliJ IDEA用のファイルを生成</h3>
 <p>build.gradleファイルでGradleのideaプラグインがapplyされているので、以下のコマンドを叩けばIntelliJ IDEAのプロジェクトファイル（？）が生成され、IntelliJで開けばすぐに開発ができる状態にできます。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gradle idea</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>コーディング</h3>
-
+<pre><code>gradle idea
+</code></pre><h3 id="コーディング">コーディング</h3>
 <p>あとは、必要処理をコーディングします。
 実際にコーディングするクラスは<code>org.elasticsearch.plugin.ingest.kuromoji_part_of_speech_extract</code>のパッケージにある以下の2つです。（パッケージ名にはprocessor_typeの名前が指定されている）</p>
-
 <ul>
 <li>IngestKuromojiPartOfSpeechExtractPlugin</li>
 <li>KuromojiPartOfSpeechExtractProcessor</li>
 </ul>
-
-
-<h4>IngestKuromojiPartOfSpeechExtractPlugin</h4>
-
+<h4 id="ingestkuromojipartofspeechextractplugin">IngestKuromojiPartOfSpeechExtractPlugin</h4>
 <p>Pluginというクラスは、プラグインをNodeのModuleとして登録する処理を書くクラスとなります。
 生成してすぐは、次のような形になっています。（※importやクラス定義の部分は省略しています。）</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Java" data-lang="Java"><span style="color:#f92672">.</span><span style="color:#f92672">.</span><span style="color:#f92672">.</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> Setting<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> YOUR_SETTING <span style="color:#f92672">=</span>
+            <span style="color:#66d9ef">new</span> Setting<span style="color:#f92672">&lt;</span><span style="color:#f92672">&gt;</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;ingest.kuromoji_part_of_speech_extract.setting&#34;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;foo&#34;</span><span style="color:#f92672">,</span> <span style="color:#f92672">(</span>value<span style="color:#f92672">)</span> <span style="color:#f92672">-</span><span style="color:#f92672">&gt;</span> value<span style="color:#f92672">,</span> Setting<span style="color:#f92672">.</span><span style="color:#a6e22e">Property</span><span style="color:#f92672">.</span><span style="color:#a6e22e">NodeScope</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='Java'><span class='line'><span class="o">...</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Setting</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">YOUR_SETTING</span> <span class="o">=</span>
-</span><span class='line'>            <span class="k">new</span> <span class="n">Setting</span><span class="o">&lt;&gt;(</span><span class="s">&quot;ingest.kuromoji_part_of_speech_extract.setting&quot;</span><span class="o">,</span> <span class="s">&quot;foo&quot;</span><span class="o">,</span> <span class="o">(</span><span class="n">value</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">value</span><span class="o">,</span> <span class="n">Setting</span><span class="o">.</span><span class="na">Property</span><span class="o">.</span><span class="na">NodeScope</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Setting</span><span class="o">&lt;?&gt;&gt;</span> <span class="n">getSettings</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="n">YOUR_SETTING</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onModule</span><span class="o">(</span><span class="n">NodeModule</span> <span class="n">nodeModule</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">nodeModule</span><span class="o">.</span><span class="na">registerProcessor</span><span class="o">(</span><span class="n">KuromojiPartOfSpeechExtractProcessor</span><span class="o">.</span><span class="na">TYPE</span><span class="o">,</span>
-</span><span class='line'>                <span class="o">(</span><span class="n">registry</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">KuromojiPartOfSpeechExtractProcessor</span><span class="o">.</span><span class="na">Factory</span><span class="o">());</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'><span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure>
+    <span style="color:#a6e22e">@Override</span>
+    <span style="color:#66d9ef">public</span> List<span style="color:#f92672">&lt;</span>Setting<span style="color:#f92672">&lt;</span><span style="color:#f92672">?</span><span style="color:#f92672">&gt;</span><span style="color:#f92672">&gt;</span> getSettings<span style="color:#f92672">(</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+        <span style="color:#66d9ef">return</span> Arrays<span style="color:#f92672">.</span><span style="color:#a6e22e">asList</span><span style="color:#f92672">(</span>YOUR_SETTING<span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    <span style="color:#f92672">}</span>
 
-
-<p><code>YOUR_SETTING</code>プロパティと<code>getSettings()</code>メソッドは<code>elasticsearch.yml</code>で指定したい設定を記述する場合の例になります。今回は特に必要ないので両方削除しました。
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">onModule</span><span style="color:#f92672">(</span>NodeModule nodeModule<span style="color:#f92672">)</span> <span style="color:#66d9ef">throws</span> IOException <span style="color:#f92672">{</span>
+        nodeModule<span style="color:#f92672">.</span><span style="color:#a6e22e">registerProcessor</span><span style="color:#f92672">(</span>KuromojiPartOfSpeechExtractProcessor<span style="color:#f92672">.</span><span style="color:#a6e22e">TYPE</span><span style="color:#f92672">,</span>
+                <span style="color:#f92672">(</span>registry<span style="color:#f92672">)</span> <span style="color:#f92672">-</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">new</span> KuromojiPartOfSpeechExtractProcessor<span style="color:#f92672">.</span><span style="color:#a6e22e">Factory</span><span style="color:#f92672">(</span><span style="color:#f92672">)</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    <span style="color:#f92672">}</span>
+<span style="color:#f92672">.</span><span style="color:#f92672">.</span><span style="color:#f92672">.</span>
+</code></pre></div><p><code>YOUR_SETTING</code>プロパティと<code>getSettings()</code>メソッドは<code>elasticsearch.yml</code>で指定したい設定を記述する場合の例になります。今回は特に必要ないので両方削除しました。
 最終系は<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">GitHubのコード</a>をご覧ください。</p>
-
-<h4>KuromojiPartOfSpeechExtractProcessor</h4>
-
+<h4 id="kuromojipartofspeechextractprocessor">KuromojiPartOfSpeechExtractProcessor</h4>
 <p>Processorは実際にIngest Nodeで行う処理を書くところです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Java" data-lang="Java">
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String TYPE <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;kuromoji_part_of_speech_extract&#34;</span><span style="color:#f92672">;</span>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class='Java'><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TYPE</span> <span class="o">=</span> <span class="s">&quot;kuromoji_part_of_speech_extract&quot;</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">field</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">targetField</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">public</span> <span class="nf">KuromojiPartOfSpeechExtractProcessor</span><span class="o">(</span><span class="n">String</span> <span class="n">tag</span><span class="o">,</span> <span class="n">String</span> <span class="n">field</span><span class="o">,</span> <span class="n">String</span> <span class="n">targetField</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">tag</span><span class="o">);</span>
-</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">field</span> <span class="o">=</span> <span class="n">field</span><span class="o">;</span>
-</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">targetField</span> <span class="o">=</span> <span class="n">targetField</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">IngestDocument</span> <span class="n">ingestDocument</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">String</span> <span class="n">content</span> <span class="o">=</span> <span class="n">ingestDocument</span><span class="o">.</span><span class="na">getFieldValue</span><span class="o">(</span><span class="n">field</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
-</span><span class='line'>        <span class="c1">// TODO implement me!</span>
-</span><span class='line'>        <span class="n">ingestDocument</span><span class="o">.</span><span class="na">setFieldValue</span><span class="o">(</span><span class="n">targetField</span><span class="o">,</span> <span class="n">content</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getType</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">TYPE</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">Factory</span> <span class="kd">extends</span> <span class="n">AbstractProcessorFactory</span><span class="o">&lt;</span><span class="n">KuromojiPartOfSpeechExtractProcessor</span><span class="o">&gt;</span> <span class="o">{</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="nd">@Override</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="n">KuromojiPartOfSpeechExtractProcessor</span> <span class="nf">doCreate</span><span class="o">(</span><span class="n">String</span> <span class="n">processorTag</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">config</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">String</span> <span class="n">field</span> <span class="o">=</span> <span class="n">readStringProperty</span><span class="o">(</span><span class="n">TYPE</span><span class="o">,</span> <span class="n">processorTag</span><span class="o">,</span> <span class="n">config</span><span class="o">,</span> <span class="s">&quot;field&quot;</span><span class="o">);</span>
-</span><span class='line'>            <span class="n">String</span> <span class="n">targetField</span> <span class="o">=</span> <span class="n">readStringProperty</span><span class="o">(</span><span class="n">TYPE</span><span class="o">,</span> <span class="n">processorTag</span><span class="o">,</span> <span class="n">config</span><span class="o">,</span> <span class="s">&quot;target_field&quot;</span><span class="o">,</span> <span class="s">&quot;default_field_name&quot;</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="k">return</span> <span class="k">new</span> <span class="nf">KuromojiPartOfSpeechExtractProcessor</span><span class="o">(</span><span class="n">processorTag</span><span class="o">,</span> <span class="n">field</span><span class="o">,</span> <span class="n">targetField</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>    <span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">final</span> String field<span style="color:#f92672">;</span>
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">final</span> String targetField<span style="color:#f92672">;</span>
 
+    <span style="color:#66d9ef">public</span> <span style="color:#a6e22e">KuromojiPartOfSpeechExtractProcessor</span><span style="color:#f92672">(</span>String tag<span style="color:#f92672">,</span> String field<span style="color:#f92672">,</span> String targetField<span style="color:#f92672">)</span> <span style="color:#66d9ef">throws</span> IOException <span style="color:#f92672">{</span>
+        <span style="color:#66d9ef">super</span><span style="color:#f92672">(</span>tag<span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+        <span style="color:#66d9ef">this</span><span style="color:#f92672">.</span><span style="color:#a6e22e">field</span> <span style="color:#f92672">=</span> field<span style="color:#f92672">;</span>
+        <span style="color:#66d9ef">this</span><span style="color:#f92672">.</span><span style="color:#a6e22e">targetField</span> <span style="color:#f92672">=</span> targetField<span style="color:#f92672">;</span>
+    <span style="color:#f92672">}</span>
 
-<p><code>TYPE</code>が<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/put-pipeline-api.html">Ingest APIのPipelineでProcessorを指定するときに使う名前</a>になります。ここは、cookiecutterの時にprocessor_typeに入力した文字列になっています。
+    <span style="color:#a6e22e">@Override</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">execute</span><span style="color:#f92672">(</span>IngestDocument ingestDocument<span style="color:#f92672">)</span> <span style="color:#66d9ef">throws</span> Exception <span style="color:#f92672">{</span>
+        String content <span style="color:#f92672">=</span> ingestDocument<span style="color:#f92672">.</span><span style="color:#a6e22e">getFieldValue</span><span style="color:#f92672">(</span>field<span style="color:#f92672">,</span> String<span style="color:#f92672">.</span><span style="color:#a6e22e">class</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+        <span style="color:#75715e">// TODO implement me!
+</span><span style="color:#75715e"></span>        ingestDocument<span style="color:#f92672">.</span><span style="color:#a6e22e">setFieldValue</span><span style="color:#f92672">(</span>targetField<span style="color:#f92672">,</span> content<span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    <span style="color:#f92672">}</span>
+
+    <span style="color:#a6e22e">@Override</span>
+    <span style="color:#66d9ef">public</span> String <span style="color:#a6e22e">getType</span><span style="color:#f92672">(</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+        <span style="color:#66d9ef">return</span> TYPE<span style="color:#f92672">;</span>
+    <span style="color:#f92672">}</span>
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Factory</span> <span style="color:#66d9ef">extends</span> AbstractProcessorFactory<span style="color:#f92672">&lt;</span>KuromojiPartOfSpeechExtractProcessor<span style="color:#f92672">&gt;</span> <span style="color:#f92672">{</span>
+
+        <span style="color:#a6e22e">@Override</span>
+        <span style="color:#66d9ef">public</span> KuromojiPartOfSpeechExtractProcessor <span style="color:#a6e22e">doCreate</span><span style="color:#f92672">(</span>String processorTag<span style="color:#f92672">,</span> Map<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">,</span> Object<span style="color:#f92672">&gt;</span> config<span style="color:#f92672">)</span> <span style="color:#66d9ef">throws</span> Exception <span style="color:#f92672">{</span>
+            String field <span style="color:#f92672">=</span> readStringProperty<span style="color:#f92672">(</span>TYPE<span style="color:#f92672">,</span> processorTag<span style="color:#f92672">,</span> config<span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;field&#34;</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+            String targetField <span style="color:#f92672">=</span> readStringProperty<span style="color:#f92672">(</span>TYPE<span style="color:#f92672">,</span> processorTag<span style="color:#f92672">,</span> config<span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;target_field&#34;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;default_field_name&#34;</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+
+            <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> KuromojiPartOfSpeechExtractProcessor<span style="color:#f92672">(</span>processorTag<span style="color:#f92672">,</span> field<span style="color:#f92672">,</span> targetField<span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+        <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+
+</code></pre></div><p><code>TYPE</code>が<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/put-pipeline-api.html">Ingest APIのPipelineでProcessorを指定するときに使う名前</a>になります。ここは、cookiecutterの時にprocessor_typeに入力した文字列になっています。
 <code>kuromoji_part_of_speech_extract</code>だと長いので、<code>kuromoji_pos_extract</code>に変えました。</p>
-
 <p><code>execute()</code>メソッドに<code>// TODO implement me!</code>とあります。
 この部分に実際の処理を記述していきます。</p>
-
 <p>あとは、<code>Factory</code>クラスでIngest APIで指定された設定項目を読み込みます。
 今回作成した<code>elasticsearch-ingest-kuromoji-pos-extract</code>では品詞を指定する必要があるので、<code>pos_tags</code>を指定できるように処理を追加しました。</p>
-
 <p>私が実装したものの説明をするとちょっと長くなりそうなので、<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">GitHubのコード</a>をご覧ください。</p>
-
-<h3>テストのコーディング</h3>
-
+<h3 id="テストのコーディング">テストのコーディング</h3>
 <p>テストのクラスもテンプレートで生成されています。</p>
-
 <ul>
 <li>KuromojiPartOfSpeechExtractProcessorTests</li>
 <li>KuromojiPartOfSpeechExtractRestIT</li>
 </ul>
-
-
-<h4>KuromojiPartOfSpeechExtractProcessorTests</h4>
-
+<h4 id="kuromojipartofspeechextractprocessortests">KuromojiPartOfSpeechExtractProcessorTests</h4>
 <p>Processorクラスのテストになります。生成直後は次のような感じです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-Java" data-lang="Java"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">testThatProcessorWorks</span><span style="color:#f92672">(</span><span style="color:#f92672">)</span> <span style="color:#66d9ef">throws</span> Exception <span style="color:#f92672">{</span>
+    Map<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">,</span> Object<span style="color:#f92672">&gt;</span> document <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;</span><span style="color:#f92672">&gt;</span><span style="color:#f92672">(</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    document<span style="color:#f92672">.</span><span style="color:#a6e22e">put</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;source_field&#34;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;fancy source field content&#34;</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    IngestDocument ingestDocument <span style="color:#f92672">=</span> RandomDocumentPicks<span style="color:#f92672">.</span><span style="color:#a6e22e">randomIngestDocument</span><span style="color:#f92672">(</span>random<span style="color:#f92672">(</span><span style="color:#f92672">)</span><span style="color:#f92672">,</span> document<span style="color:#f92672">)</span><span style="color:#f92672">;</span>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='Java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">testThatProcessorWorks</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-</span><span class='line'>    <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">document</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
-</span><span class='line'>    <span class="n">document</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;source_field&quot;</span><span class="o">,</span> <span class="s">&quot;fancy source field content&quot;</span><span class="o">);</span>
-</span><span class='line'>    <span class="n">IngestDocument</span> <span class="n">ingestDocument</span> <span class="o">=</span> <span class="n">RandomDocumentPicks</span><span class="o">.</span><span class="na">randomIngestDocument</span><span class="o">(</span><span class="n">random</span><span class="o">(),</span> <span class="n">document</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">KuromojiPartOfSpeechExtractProcessor</span> <span class="n">processor</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">KuromojiPartOfSpeechExtractProcessor</span><span class="o">(</span><span class="n">randomAsciiOfLength</span><span class="o">(</span><span class="mi">10</span><span class="o">),</span> <span class="s">&quot;source_field&quot;</span><span class="o">,</span> <span class="s">&quot;target_field&quot;</span><span class="o">);</span>
-</span><span class='line'>    <span class="n">processor</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">ingestDocument</span><span class="o">);</span>
-</span><span class='line'>    <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">data</span> <span class="o">=</span> <span class="n">ingestDocument</span><span class="o">.</span><span class="na">getSourceAndMetadata</span><span class="o">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">assertThat</span><span class="o">(</span><span class="n">data</span><span class="o">,</span> <span class="n">hasKey</span><span class="o">(</span><span class="s">&quot;target_field&quot;</span><span class="o">));</span>
-</span><span class='line'>    <span class="n">assertThat</span><span class="o">(</span><span class="n">data</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;target_field&quot;</span><span class="o">),</span> <span class="n">is</span><span class="o">(</span><span class="s">&quot;fancy source field content&quot;</span><span class="o">));</span>
-</span><span class='line'>    <span class="c1">// TODO add fancy assertions here</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
+    KuromojiPartOfSpeechExtractProcessor processor <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> KuromojiPartOfSpeechExtractProcessor<span style="color:#f92672">(</span>randomAsciiOfLength<span style="color:#f92672">(</span>10<span style="color:#f92672">)</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;source_field&#34;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;target_field&#34;</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    processor<span style="color:#f92672">.</span><span style="color:#a6e22e">execute</span><span style="color:#f92672">(</span>ingestDocument<span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    Map<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">,</span> Object<span style="color:#f92672">&gt;</span> data <span style="color:#f92672">=</span> ingestDocument<span style="color:#f92672">.</span><span style="color:#a6e22e">getSourceAndMetadata</span><span style="color:#f92672">(</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
 
-
-<p>テストメソッドも実装されていますが、パラメータの追加の設定処理やアサーションが書かれてません。
+    assertThat<span style="color:#f92672">(</span>data<span style="color:#f92672">,</span> hasKey<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;target_field&#34;</span><span style="color:#f92672">)</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    assertThat<span style="color:#f92672">(</span>data<span style="color:#f92672">.</span><span style="color:#a6e22e">get</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;target_field&#34;</span><span style="color:#f92672">)</span><span style="color:#f92672">,</span> is<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;fancy source field content&#34;</span><span style="color:#f92672">)</span><span style="color:#f92672">)</span><span style="color:#f92672">;</span>
+    <span style="color:#75715e">// TODO add fancy assertions here
+</span><span style="color:#75715e"></span><span style="color:#f92672">}</span>
+</code></pre></div><p>テストメソッドも実装されていますが、パラメータの追加の設定処理やアサーションが書かれてません。
 実装に合わせて、アサーションや設定処理を追加しましょう。</p>
-
-<h4>KuromojiPartOfSpeechExtractRestIT</h4>
-
+<h4 id="kuromojipartofspeechextractrestit">KuromojiPartOfSpeechExtractRestIT</h4>
 <p>こちらはIntegration Testになります。
 実際にElasticsearchに対して外部からAPIを叩くような感じです。
 APIを叩くときに利用するJSONの設定やアサーションは<code>src/test/resources</code>にyamlファイルがあります。</p>
-
 <ul>
 <li>10_basic.yaml</li>
 <li>20_kuromoji_part_of_speech_extract_processor.yaml</li>
 </ul>
-
-
 <p><code>10_basic.yaml</code>はプラグインがインストールされているかの確認のテストです。特に変更する必要はないです。</p>
-
 <p><code>20_kuromoji_part_of_speech_extract_processor.yaml</code>は実際にコーディングしたProcessorが動くかどうかのテストです。</p>
-
 <p>テストの内容については、<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">GitHubのコード</a>をご覧ください。</p>
-
-<h3>テストの実行とZipの生成</h3>
-
+<h3 id="テストの実行とzipの生成">テストの実行とZipの生成</h3>
 <p>テストの実行とZipの生成は次のコマンドを実行すればOKです。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='Java'><span class='line'><span class="n">gradle</span> <span class="n">check</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>テストに問題があった場合は、コケますし、問題なければ<code>SUCCESS</code>と表示が出ます。
+<pre><code>gradle check
+</code></pre><p>テストに問題があった場合は、コケますし、問題なければ<code>SUCCESS</code>と表示が出ます。
 成功した場合は<code>build/distributions/</code>というディレクトリにzipファイルができています。
 これをElasticsearchのpluginコマンドでインストールすれば動きます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='Java'><span class='line'><span class="n">bin</span><span class="o">/</span><span class="n">plugin</span> <span class="n">install</span> <span class="nl">file:</span><span class="c1">///path/to/elasticsearch-ingest-kuromoji-pos-extract/build/distribution/ingest-kuromoji_part_of_speech_extract-0.0.1-SNAPSHOT.zip</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>kuromoji_pos_extractの利用方法</h3>
-
+<pre><code>bin/plugin install file:///path/to/elasticsearch-ingest-kuromoji-pos-extract/build/distribution/ingest-kuromoji_part_of_speech_extract-0.0.1-SNAPSHOT.zip
+</code></pre><h3 id="kuromoji_pos_extractの利用方法">kuromoji_pos_extractの利用方法</h3>
 <p>Ingest APIには便利な<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/simulate-pipeline-api.html">Simulate Pipeline API</a>があります。</p>
-
 <p>ということで、<a href="https://github.com/neologd/mecab-ipadic-neologd/blob/master/README.ja.md">mecab-ipadic-NEologd</a>にあったサンプルの文章を使って、使い方の説明です。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class='JSON'><span class='line'><span class="err">POST</span> <span class="err">_ingest/pipeline/_simulate</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;pipeline&quot;</span> <span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;description&quot;</span> <span class="p">:</span> <span class="s2">&quot;kuromoji neologd extract test&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="nt">&quot;processors&quot;</span> <span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;kuromoji_pos_extract&quot;</span> <span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;field&quot;</span> <span class="p">:</span> <span class="s2">&quot;body&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;target_field&quot;</span> <span class="p">:</span> <span class="s2">&quot;noun_field&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;pos_tags&quot;</span> <span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>          <span class="s2">&quot;名詞-固有名詞-組織&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="s2">&quot;名詞-固有名詞-一般&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="s2">&quot;名詞-固有名詞-人名-一般&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="s2">&quot;名詞-固有名詞-地域-一般&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="s2">&quot;名詞-固有名詞-地域-国&quot;</span>
-</span><span class='line'>          <span class="p">]</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>      <span class="p">]</span>
-</span><span class='line'>  <span class="p">},</span>
-</span><span class='line'>  <span class="nt">&quot;docs&quot;</span> <span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;_index&quot;</span><span class="p">:</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;_id&quot;</span><span class="p">:</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;_source&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;body&quot;</span> <span class="p">:</span> <span class="s2">&quot;10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。&quot;</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="p">]</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>結果はこちら。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='JSON'><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;docs&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;doc&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;_index&quot;</span><span class="p">:</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;_id&quot;</span><span class="p">:</span> <span class="s2">&quot;id&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;_source&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;noun_field&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>            <span class="s2">&quot;10日&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s2">&quot;中居正広のミになる図書館&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s2">&quot;テレビ朝日&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s2">&quot;SMAP&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s2">&quot;中居正広&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="s2">&quot;篠原信一&quot;</span>
-</span><span class='line'>          <span class="p">],</span>
-</span><span class='line'>          <span class="nt">&quot;body&quot;</span><span class="p">:</span> <span class="s2">&quot;10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。&quot;</span>
-</span><span class='line'>        <span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;_ingest&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;timestamp&quot;</span><span class="p">:</span> <span class="s2">&quot;2016-07-22T06:18:49.007+0000&quot;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">]</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>noun_field</code>に固有名詞の単語が抜き出せているのがわかるかと思います。</p>
-
-<h3>Alexのテンプレートで困った点</h3>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON"><span style="color:#960050;background-color:#1e0010">P</span><span style="color:#960050;background-color:#1e0010">O</span><span style="color:#960050;background-color:#1e0010">S</span><span style="color:#960050;background-color:#1e0010">T</span> <span style="color:#960050;background-color:#1e0010">_</span><span style="color:#960050;background-color:#1e0010">i</span><span style="color:#960050;background-color:#1e0010">n</span><span style="color:#960050;background-color:#1e0010">g</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">s</span><span style="color:#960050;background-color:#1e0010">t</span><span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">p</span><span style="color:#960050;background-color:#1e0010">i</span><span style="color:#960050;background-color:#1e0010">p</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">l</span><span style="color:#960050;background-color:#1e0010">i</span><span style="color:#960050;background-color:#1e0010">n</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">_</span><span style="color:#960050;background-color:#1e0010">s</span><span style="color:#960050;background-color:#1e0010">i</span><span style="color:#960050;background-color:#1e0010">m</span><span style="color:#960050;background-color:#1e0010">u</span><span style="color:#960050;background-color:#1e0010">l</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">t</span><span style="color:#960050;background-color:#1e0010">e</span>
+{
+  <span style="color:#f92672">&#34;pipeline&#34;</span> : {
+    <span style="color:#f92672">&#34;description&#34;</span> : <span style="color:#e6db74">&#34;kuromoji neologd extract test&#34;</span>,
+    <span style="color:#f92672">&#34;processors&#34;</span> : [
+      {
+        <span style="color:#f92672">&#34;kuromoji_pos_extract&#34;</span> : {
+        <span style="color:#f92672">&#34;field&#34;</span> : <span style="color:#e6db74">&#34;body&#34;</span>,
+        <span style="color:#f92672">&#34;target_field&#34;</span> : <span style="color:#e6db74">&#34;noun_field&#34;</span>,
+        <span style="color:#f92672">&#34;pos_tags&#34;</span> : [
+          <span style="color:#e6db74">&#34;名詞-固有名詞-組織&#34;</span>,
+          <span style="color:#e6db74">&#34;名詞-固有名詞-一般&#34;</span>,
+          <span style="color:#e6db74">&#34;名詞-固有名詞-人名-一般&#34;</span>,
+          <span style="color:#e6db74">&#34;名詞-固有名詞-地域-一般&#34;</span>,
+          <span style="color:#e6db74">&#34;名詞-固有名詞-地域-国&#34;</span>
+          ]
+        }
+      }
+      ]
+  },
+  <span style="color:#f92672">&#34;docs&#34;</span> : [
+    {
+      <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;index&#34;</span>,
+      <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;type&#34;</span>,
+      <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;id&#34;</span>,
+      <span style="color:#f92672">&#34;_source&#34;</span>: {
+        <span style="color:#f92672">&#34;body&#34;</span> : <span style="color:#e6db74">&#34;10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。&#34;</span>
+      }
+    }
+    ]
+}
+</code></pre></div><p>結果はこちら。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-JSON" data-lang="JSON">{
+  <span style="color:#f92672">&#34;docs&#34;</span>: [
+    {
+      <span style="color:#f92672">&#34;doc&#34;</span>: {
+        <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;index&#34;</span>,
+        <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;id&#34;</span>,
+        <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;type&#34;</span>,
+        <span style="color:#f92672">&#34;_source&#34;</span>: {
+          <span style="color:#f92672">&#34;noun_field&#34;</span>: [
+            <span style="color:#e6db74">&#34;10日&#34;</span>,
+            <span style="color:#e6db74">&#34;中居正広のミになる図書館&#34;</span>,
+            <span style="color:#e6db74">&#34;テレビ朝日&#34;</span>,
+            <span style="color:#e6db74">&#34;SMAP&#34;</span>,
+            <span style="color:#e6db74">&#34;中居正広&#34;</span>,
+            <span style="color:#e6db74">&#34;篠原信一&#34;</span>
+          ],
+          <span style="color:#f92672">&#34;body&#34;</span>: <span style="color:#e6db74">&#34;10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。&#34;</span>
+        },
+        <span style="color:#f92672">&#34;_ingest&#34;</span>: {
+          <span style="color:#f92672">&#34;timestamp&#34;</span>: <span style="color:#e6db74">&#34;2016-07-22T06:18:49.007+0000&#34;</span>
+        }
+      }
+    }
+  ]
+}
+</code></pre></div><p><code>noun_field</code>に固有名詞の単語が抜き出せているのがわかるかと思います。</p>
+<h3 id="alexのテンプレートで困った点">Alexのテンプレートで困った点</h3>
 <p>テンプレートは便利だったのですが、<code>processor_type</code>に<code>_</code>を使用したタイプ名を指定すると次のような問題（？）が発生しました。</p>
-
 <ul>
 <li>クラス名が<code>Kuromoji_part_of_speech_extractProcessor</code>となってしまう</li>
 </ul>
-
-
 <p>深刻な問題ではないのですが、JavaだとCamel Caseが普通なのでちょっと気になって。
 ということで、<a href="https://github.com/spinscale/cookiecutter-elasticsearch-ingest-processor/pull/1">プルリク</a>作って出してみました。まだ取り込まれてないかな。</p>
-
 <p>取り込み前に使いたい方は以下のコマンドを実行してください。
 <code>processor_class_name</code>という項目が増えています。
 デフォルトだと<code>processor_type</code>の<code>_</code>の部分を取り除きつつCamel Caseにしたものが入ります。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='JSON'><span class='line'><span class="err">cookiecutter</span> <span class="err">gh:johtani/cookiecutter-elasticsearch-ingest-processor</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>まとめ</h3>
-
+<pre><code>cookiecutter gh:johtani/cookiecutter-elasticsearch-ingest-processor
+</code></pre><h3 id="まとめ">まとめ</h3>
 <p>ということで、とりあえず作ってみましたというものになります。
 特徴的な単語（固有名詞だけ）を抜き出して、別のフィールドにできるので、タグみたいなものをこれを使って前処理で作れるようになるかなぁと。</p>
-
-<h2>参考ブログ（元ネタ？）</h2>
-
+<h2 id="参考ブログ元ネタ">参考ブログ（元ネタ？）</h2>
 <p>インスパイア元となったブログです。</p>
-
 <ul>
 <li><a href="http://dev.classmethod.jp/server-side/elasticsearch/ingest-plugin-useragent/">User Agentを解析するIngest Pluginを書いてみた</a></li>
 <li><a href="http://blog.cybozu.io/entry/2016/07/05/080000">Elasticsearch 5.0.0のIngest Node用プラグインを書いた話</a></li>
 </ul>
 
-</div>
 
+                
 
-  <footer>
-    <p class="meta">
-      
-  
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2016/06/30/broken-something-in-this-year/" data-toggle="tooltip" data-placement="top" title="よく物が壊れる年">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2016/12/01/elasticsearch-5-dot-0-highlight/" data-toggle="tooltip" data-placement="top" title="Elasticsearch 5.0の便利機能紹介？">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
 
-<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+                
+<div id="disqus-comment"></div>
 
-      
-
-
-
-
-
-
-
-
-  
-
-
-
-<time datetime="2016-07-22T04:26:56+00:00" pubdate data-updated="true"><time class='entry-date' datetime='2016-07-22T04:26:56+00:00'><span class='date'>2016-07-22</span></time></time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>, <a class='category' href='/blog/categories/plugin/'>plugin</a>
-  
-</span>
-
-
-    </p>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
     
-      <div class="sharing">
-  
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/" >Tweet</a>
-  
-  
-  <div class="g-plusone" data-size="medium"></div>
-  
-  
-    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
-  
-  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
-      data-hatena-bookmark-layout="standard"
-      data-hatena-bookmark-url="http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/">
-    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
-        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
-        style="border: none">
-  </a>
-</div>
-<script type="text/javascript"><!--
-google_ad_client = "ca-pub-8434618569803086";
-/* blog after sharing */
-google_ad_slot = "2760031654";
-google_ad_width = 468;
-google_ad_height = 60;
-//-->
-</script>
-<script type="text/javascript"
-src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
-
     
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2016/06/30/broken-something-in-this-year/" title="Previous Post: よく物が壊れる年">&laquo; よく物が壊れる年</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2016/12/01/elasticsearch-5-dot-0-highlight/" title="Next Post: Elasticsearch 5.0の便利機能紹介？">Elasticsearch 5.0の便利機能紹介？ &raquo;</a>
-      
-    </p>
-  </footer>
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
 </article>
 
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-</div>
-  </section>
-
-</div>
-
-<aside class="sidebar">
-  
-    <section>
-  <h1>About Me</h1>
-  <a href="http://twitter.com/johtani"><img class="about_me" src="/images/about_me2.jpg" alt="後頭部"/></a>
-  <p>コワモテの検索好きエンジニアです。検索技術勉強会の運営などをやっています。<br/><br/>
-Elasticsearchなど検索エンジンや検索のサービスなどに興味があります。<br/>
-<a href="http://code.google.com/p/lucene-gosen/">lucene-gosen</a>のコミッターもやっています。</p>
-↓データ分析基盤（可視化）本も出てます！<br/>
-<iframe style="width:120px;height:240px;" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" src="https://rcm-fe.amazon-adsystem.com/e/cm?ref=qf_sp_asin_til&t=johtani-22&m=amazon&o=9&p=8&l=as1&IS2=1&detail=1&asins=477419218X&linkId=ead5cb07f0cdfa55537b25378d4638e8&bc1=000000&lt1=_blank&fc1=333333&lc1=0066C0&bg1=FFFFFF&f=ifr">
-    </iframe>
-</section>
-<section>
-  <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elastic/'>elastic (3)</a></li><li><a href='/blog/categories/elasticon/'>elasticon (1)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (99)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/found-dot-no/'>found.no (1)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (13)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (7)</a></li><li><a href='/blog/categories/lucene/'>lucene (2)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (4)</a></li><li><a href='/blog/categories/misc/'>misc (9)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/nlp100/'>nlp100 (4)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (2)</a></li><li><a href='/blog/categories/plugin/'>plugin (15)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/rust/'>rust (4)</a></li><li><a href='/blog/categories/sense/'>sense (1)</a></li><li><a href='/blog/categories/shield/'>shield (2)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/timelion/'>timelion (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/watcher/'>watcher (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/kanhuarensu/'>カンファレンス (1)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/suponsa/'>スポンサー (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (37)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (7)</a></li><li><a href='/blog/categories/shu-ji/'>書籍 (1)</a></li><li><a href='/blog/categories/ben/'>本 (5)</a></li><li><a href='/blog/categories/jian-suo/'>検索 (1)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (3)</a></li></ul>
-</section>
-<section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2019/12/31/looking-back-2019/">今年の振り返りと来年の抱負（2019）</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/23/whats-window-group-of-terminal/">macOS標準のターミナルのウィンドウグループが便利</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/23/whats-window-group-of-terminal/">macOS標準のターミナルのウィンドウグループが便利</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/18/introduce-homeshick/">homeshick導入</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/17/move-to-zsh/">zshへの移行</a>
-      </li>
-    
-  </ul>
-</section>
-<script type="text/javascript"><!--
-google_ad_client = "ca-pub-8434618569803086";
-/* blog2 */
-google_ad_slot = "5207297251";
-google_ad_width = 250;
-google_ad_height = 250;
-//-->
-</script>
-<script type="text/javascript"
-src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
-
-<section>
-  <h1>GitHub Repos</h1>
-  <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  
-  <a href="https://github.com/johtani">@johtani</a> on GitHub
-  
-  <script type="text/javascript">
-    $.domReady(function(){
-        if (!window.jXHR){
-            var jxhr = document.createElement('script');
-            jxhr.type = 'text/javascript';
-            jxhr.src = '/javascripts/libs/jXHR.js';
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(jxhr, s);
-        }
-
-        github.showRepos({
-            user: 'johtani',
-            count: 0,
-            skip_forks: true,
-            target: '#gh_repos'
-        });
-    });
-  </script>
-  <script src="/javascripts/github.js" type="text/javascript"> </script>
-</section>
 
 
-<section>
-  <h1>On Twitter:</h1>
-  <div>
-    <p><br /><a href="http://twitter.com/johtani" target="_blank">My Tweets, on Twitter.</a></p>
-    <a href="http://twitter.com/johtani" class="twitter-follow-button" data-show-count="">Follow @johtani</a>
-  </div>
-</section>
 
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
 
-  
-</aside>
+                    
 
-
-      </div>
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
     </div>
-    <footer role="contentinfo"><p>
-  Copyright &copy; 2019 - johtani -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
-</p>
-
 </footer>
-    
 
-<script type="text/javascript">
-      var disqus_shortname = 'johtaniblog2nd';
-      
-        
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/';
-        var disqus_url = 'http://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/';
-        var disqus_script = 'embed.js';
-      
-    (function () {
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    }());
-</script>
-
-
-
-<div id="fb-root"></div>
-<script>(function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) {return;}
-  js = d.createElement(s); js.id = id;
-  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
-
-
-
-  <script type="text/javascript">
-    (function() {
-      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
-      script.src = 'https://apis.google.com/js/plusone.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
-    })();
-  </script>
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
 
 
 
 <script>
-(function(w,d){
-    var c,e=d.createDocumentFragment(),f=d.getElementsByTagName("script")[0],
-    a=function(a,b){if(!d.getElementById(b)){c=d.createElement("script");
-    c.src=a;c.id=b||null;c.async=true;e.appendChild(c);}};
-
-    w.___gcfg={lang:"ja"};
-    a("https://apis.google.com/js/plusone.js");
-
-
-    a("//platform.twitter.com/widgets.js");
-
-
-    a("//connect.facebook.net/ja_JP/all.js#xfbml=1","facebook-jssdk");
-
-    a("//b.st-hatena.com/js/bookmark_button_wo_al.js");
-    f.parentNode.insertBefore(e,f);
-})(this,document);
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
 </script>
 
 
-  </div>
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
 </body>
 </html>

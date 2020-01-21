@@ -1,910 +1,852 @@
-
 <!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <title>Aggregations - ファセットよりも柔軟な集計 - @johtaniの日記 2nd</title>
-  <meta name="author" content="johtani">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  
-  <meta name="description" content="こんなツイートを見つけたので、Aggregationのサンプルでも書こうかなと。（前から書こうと思ってたんですが。。。） @elasticsearch Hi, Would you please tell me the way to do &quot;Pivot Faceting&quot; &hellip;">
-  
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
 
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <link rel="canonical" href="http://blog.johtani.info/blog/2014/05/07/aggregation-example/">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="/stylesheets/table.css" rel="stylesheet" type="text/css">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="/javascripts/ender.js"></script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="/atom.xml" rel="alternate" title="@johtaniの日記 2nd" type="application/atom+xml">
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=Arvo:400,400italic,700,700italic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=Merienda:700" rel="stylesheet" type="text/css">
-<script language="JavaScript">
-$(document).ready( function () {
-   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
-})
-</script>
-<!-- Swiftype -->
-<script type="text/javascript">
-  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
-  (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
-  e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
-  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
 
-  _st('install','AwrzzMSUo45A2C2Nyaqx','2.0.0');
-</script>
+    
+    <meta name="title" content="Aggregations - ファセットよりも柔軟な集計" />
+    <meta property="og:title" content="Aggregations - ファセットよりも柔軟な集計" />
+    <meta property="twitter:title" content="Aggregations - ファセットよりも柔軟な集計" />
+    
 
-  
-  <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-41371795-1']);
-    _gaq.push(['_trackPageview']);
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
 
-    (function() {
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-  </script>
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
 
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Aggregations - ファセットよりも柔軟な集計-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2014/05/07/aggregation-example/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
 
 </head>
 
-<body>
-  <div id="navigation">
-    <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-  <li><a href="#" class="st-search-show-outputs">Search&#8230;<img src="/images/search.png"/> </a></li>
-</ul>
 
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
 </nav>
-  </div>
-  <header role="banner"><hgroup>
-  <h1><a href="/">@johtaniの日記 2nd</a></h1>
-  
-    <h2>@johtani &#8216;s blog 2nd edition</h2>
-  
-</hgroup>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
 
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                    </div>
+                    <h1>Aggregations - ファセットよりも柔軟な集計</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Wednesday, May 7, 2014
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
 </header>
-  <div id="body"  >
-    <div id="main">
-      <div id="content">
-        <div>
-<article class="hentry" role="article">
-  
-  <header>
-    
-      <h1 class="entry-title">Aggregations - ファセットよりも柔軟な集計</h1>
-    
-    
-      <p class="meta">
-        
 
 
 
 
+<article>
+    <div class="container">
+        <div class="row">
 
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
 
-
-
-  
-
-
-
-<time datetime="2014-05-07T18:57:00+00:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-05-07T18:57:00+00:00'><span class='date'>2014-05-07</span></time></time>
-        
-      </p>
-    
-  </header>
-
-
-<div class="entry-content"><p>こんなツイートを見つけたので、Aggregationのサンプルでも書こうかなと。（前から書こうと思ってたんですが。。。）</p>
-
+                
+                <header>
+                    <h2>TOC</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#問題">問題</a></li>
+    <li><a href="#インデックスとデータの登録">インデックスとデータの登録</a></li>
+    <li><a href="#ファセット">ファセット</a></li>
+    <li><a href="#aggregations">Aggregations</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>こんなツイートを見つけたので、Aggregationのサンプルでも書こうかなと。（前から書こうと思ってたんですが。。。）</p>
 <blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/elasticsearch">@elasticsearch</a> Hi, Would you please tell me the way to do &quot;Pivot Faceting&quot; like Solr-4.0 in elasticsearch-1.1.1 or prior version? Thank you.</p>&mdash; Y.Kentaro (@yoshi_ken) <a href="https://twitter.com/yoshi_ken/statuses/462073860062322688">2014, 5月 2</a></blockquote>
-
-
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
 <p>ちなみに、Aggregationは1.0.0から導入された機能なので、ElasticSearch Server日本語版には掲載されていない機能になります。（ごめんなさい）</p>
-
 <!-- more -->
-
-
 <p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations.html">公式ガイドのAggregationsのページ</a>はこちらになりますが、実例があったほうがいいかなと。</p>
-
 <p><a href="http://twitter.com/yoshi_ken">@yoshi_ken</a> さんから実例のサンプルの指定もいただいたので、ブログを書くのが非常に楽です。ありがとうございます。</p>
-
-<h2>問題</h2>
-
+<h2 id="問題">問題</h2>
 <p><a href="https://gist.github.com/y-ken/40d99c3a137247ba8eac">元ネタ（gist）</a></p>
-
 <p>次のような不動産系のデータがあるとします。</p>
-
 <ul>
 <li>id</li>
 <li>物件名</li>
 <li>都道府県（東京、神奈川、&hellip;..）</li>
 <li>物件種別（賃貸、売買、&hellip;..）</li>
 </ul>
-
-
 <p>この時、都道府県別に、物件種別ごとの件数を取得したいという趣旨です。</p>
-
 <ul>
 <li>東京
-
 <ul>
 <li>賃貸: xxx件</li>
 <li>売買: yyy件</li>
 </ul>
 </li>
 <li>神奈川
-
 <ul>
 <li>賃貸: xxx件</li>
 <li>売買: yyy件 &hellip;</li>
 </ul>
 </li>
 </ul>
-
-
 <p>これを、Elasticsearchでどうやって取得するかという問題です。</p>
-
-<h2>インデックスとデータの登録</h2>
-
+<h2 id="インデックスとデータの登録">インデックスとデータの登録</h2>
 <p>まずは、インデックスを作ります。
 あくまでもサンプルなので、全部not_analyzedにしてますが、そのへんは適宜変更してください。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">#</span> <span class="err">create</span> <span class="err">index</span>
-</span><span class='line'><span class="err">PUT</span> <span class="err">/pref_aggs</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;settings&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;number_of_shards&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>  <span class="p">},</span>
-</span><span class='line'>  <span class="nt">&quot;mappings&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;japan&quot;</span> <span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;_id&quot;</span> <span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;path&quot;</span> <span class="p">:</span> <span class="s2">&quot;id&quot;</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="nt">&quot;index&quot;</span><span class="p">:</span> <span class="s2">&quot;not_analyzed&quot;</span><span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>_id</code>を使用して、データ登録時に<code>id</code>フィールドにある文字列をそのままIDとして登録できるように指定してあります。</p>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#960050;background-color:#1e0010">c</span><span style="color:#960050;background-color:#1e0010">r</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">t</span><span style="color:#960050;background-color:#1e0010">e</span> <span style="color:#960050;background-color:#1e0010">i</span><span style="color:#960050;background-color:#1e0010">n</span><span style="color:#960050;background-color:#1e0010">d</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">x</span>
+<span style="color:#960050;background-color:#1e0010">P</span><span style="color:#960050;background-color:#1e0010">U</span><span style="color:#960050;background-color:#1e0010">T</span> <span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">p</span><span style="color:#960050;background-color:#1e0010">r</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">f</span><span style="color:#960050;background-color:#1e0010">_</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">g</span><span style="color:#960050;background-color:#1e0010">g</span><span style="color:#960050;background-color:#1e0010">s</span>
+{
+  <span style="color:#f92672">&#34;settings&#34;</span>: {
+    <span style="color:#f92672">&#34;number_of_shards&#34;</span>: <span style="color:#ae81ff">2</span>
+  },
+  <span style="color:#f92672">&#34;mappings&#34;</span>: {
+    <span style="color:#f92672">&#34;japan&#34;</span> : {
+      <span style="color:#f92672">&#34;_id&#34;</span> : {
+        <span style="color:#f92672">&#34;path&#34;</span> : <span style="color:#e6db74">&#34;id&#34;</span>
+      },
+      <span style="color:#f92672">&#34;properties&#34;</span>: {
+        <span style="color:#f92672">&#34;id&#34;</span>: {<span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>, <span style="color:#f92672">&#34;index&#34;</span>: <span style="color:#e6db74">&#34;not_analyzed&#34;</span>},
+        <span style="color:#f92672">&#34;name&#34;</span>: {<span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>, <span style="color:#f92672">&#34;index&#34;</span>: <span style="color:#e6db74">&#34;not_analyzed&#34;</span>},
+        <span style="color:#f92672">&#34;pref&#34;</span>: {<span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>, <span style="color:#f92672">&#34;index&#34;</span>: <span style="color:#e6db74">&#34;not_analyzed&#34;</span>},
+        <span style="color:#f92672">&#34;type&#34;</span>: {<span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>, <span style="color:#f92672">&#34;index&#34;</span>: <span style="color:#e6db74">&#34;not_analyzed&#34;</span>}
+      }
+    }
+  }
+}
+</code></pre></div><p><code>_id</code>を使用して、データ登録時に<code>id</code>フィールドにある文字列をそのままIDとして登録できるように指定してあります。</p>
 <p>登録するデータは次のようなものを適当に100件程度作ってりました。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id0&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name0&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;01_北海道&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id1&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name1&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;09_栃木県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id2&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name2&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;38_愛媛県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id3&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name3&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;40_福岡県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id4&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name4&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;35_山口県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;id5&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name5&quot;</span><span class="p">,</span> <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="s2">&quot;12_千葉県&quot;</span><span class="p">,</span> <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="err">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>データの登録には、前に紹介した方法「<a href="http://blog.johtani.info/blog/2014/04/24/usage-stream2es/">stream2esと複数データの登録</a>」を用いました。</p>
-
-<h2>ファセット</h2>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{<span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;id0&#34;</span>, <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;name0&#34;</span>, <span style="color:#f92672">&#34;pref&#34;</span>: <span style="color:#e6db74">&#34;01_北海道&#34;</span>, <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;売買&#34;</span>}
+{<span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;id1&#34;</span>, <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;name1&#34;</span>, <span style="color:#f92672">&#34;pref&#34;</span>: <span style="color:#e6db74">&#34;09_栃木県&#34;</span>, <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;売買&#34;</span>}
+{<span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;id2&#34;</span>, <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;name2&#34;</span>, <span style="color:#f92672">&#34;pref&#34;</span>: <span style="color:#e6db74">&#34;38_愛媛県&#34;</span>, <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;賃貸&#34;</span>}
+{<span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;id3&#34;</span>, <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;name3&#34;</span>, <span style="color:#f92672">&#34;pref&#34;</span>: <span style="color:#e6db74">&#34;40_福岡県&#34;</span>, <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;賃貸&#34;</span>}
+{<span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;id4&#34;</span>, <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;name4&#34;</span>, <span style="color:#f92672">&#34;pref&#34;</span>: <span style="color:#e6db74">&#34;35_山口県&#34;</span>, <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;売買&#34;</span>}
+{<span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;id5&#34;</span>, <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;name5&#34;</span>, <span style="color:#f92672">&#34;pref&#34;</span>: <span style="color:#e6db74">&#34;12_千葉県&#34;</span>, <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;賃貸&#34;</span>}
+<span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span>
+</code></pre></div><p>データの登録には、前に紹介した方法「<a href="http://blog.johtani.info/blog/2014/04/24/usage-stream2es/">stream2esと複数データの登録</a>」を用いました。</p>
+<h2 id="ファセット">ファセット</h2>
 <p>このようなデータがある場合に、まず思いつくのはファセットによる取得です。
 いささか強引ですが。。。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">G</span><span style="color:#960050;background-color:#1e0010">E</span><span style="color:#960050;background-color:#1e0010">T</span> <span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">p</span><span style="color:#960050;background-color:#1e0010">r</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">f</span><span style="color:#960050;background-color:#1e0010">_</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">g</span><span style="color:#960050;background-color:#1e0010">g</span><span style="color:#960050;background-color:#1e0010">s</span><span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">j</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">p</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">n</span><span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">_</span><span style="color:#960050;background-color:#1e0010">s</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">r</span><span style="color:#960050;background-color:#1e0010">c</span><span style="color:#960050;background-color:#1e0010">h</span>
+{
+  <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">0</span>,
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;match_all&#34;</span>: {}
+  },
+  <span style="color:#f92672">&#34;facets&#34;</span>: {
+    <span style="color:#f92672">&#34;type_賃貸&#34;</span>: {
+      <span style="color:#f92672">&#34;terms&#34;</span>: {
+        <span style="color:#f92672">&#34;order&#34;</span>: <span style="color:#e6db74">&#34;term&#34;</span>,
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;pref&#34;</span>,
+        <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">50</span>
+      }, <span style="color:#f92672">&#34;facet_filter&#34;</span>: {<span style="color:#f92672">&#34;term&#34;</span>: {<span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;賃貸&#34;</span> }}
+    },
+    <span style="color:#f92672">&#34;type_売買&#34;</span>: {
+      <span style="color:#f92672">&#34;terms&#34;</span>: {
+        <span style="color:#f92672">&#34;order&#34;</span>: <span style="color:#e6db74">&#34;term&#34;</span>,
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;pref&#34;</span>,
+        <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">50</span>
+      }, <span style="color:#f92672">&#34;facet_filter&#34;</span>: {<span style="color:#f92672">&#34;term&#34;</span>: {<span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;売買&#34;</span> }}
+    }
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/pref_aggs/japan/_search</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;match_all&quot;</span><span class="p">:</span> <span class="p">{}</span>
-</span><span class='line'>  <span class="p">},</span>
-</span><span class='line'>  <span class="nt">&quot;facets&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;type_賃貸&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="s2">&quot;term&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>      <span class="p">},</span> <span class="nt">&quot;facet_filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span> <span class="p">}}</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="nt">&quot;type_売買&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="s2">&quot;term&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>      <span class="p">},</span> <span class="nt">&quot;facet_filter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span> <span class="p">}}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>facet_filter</code>を使用して、<code>type</code>フィールドによる個別の絞込を行っています。
+  }
+}
+</code></pre></div><p><code>facet_filter</code>を使用して、<code>type</code>フィールドによる個別の絞込を行っています。
 あとは、<code>pref</code>フィールドのファセットを取得すれば、出力は次のようになります。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="nt">&quot;took&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;timed_out&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;_shards&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;successful&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;failed&quot;</span><span class="p">:</span> <span class="mi">0</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;max_score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">[]</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;facets&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;type_賃貸&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>         <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;terms&quot;</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;missing&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">52</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;other&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;01_青森県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;03_宮城県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">3</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="err">...</span>
-</span><span class='line'>      <span class="err">}</span><span class="p">,</span>
-</span><span class='line'>      <span class="s2">&quot;type_売買&quot;</span><span class="err">:</span> <span class="p">{</span>
-</span><span class='line'>         <span class="nt">&quot;_type&quot;</span><span class="p">:</span> <span class="s2">&quot;terms&quot;</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;missing&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;other&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>         <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;02_岩手県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;term&quot;</span><span class="p">:</span> <span class="s2">&quot;04_秋田県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="err">...</span>
-</span><span class='line'><span class="err">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>望んでいた形式とは少し異なりますが、<code>facet_filter</code>する回数を少なくするため、
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+   <span style="color:#f92672">&#34;took&#34;</span>: <span style="color:#ae81ff">6</span>,
+   <span style="color:#f92672">&#34;timed_out&#34;</span>: <span style="color:#66d9ef">false</span>,
+   <span style="color:#f92672">&#34;_shards&#34;</span>: {
+      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">2</span>,
+      <span style="color:#f92672">&#34;successful&#34;</span>: <span style="color:#ae81ff">2</span>,
+      <span style="color:#f92672">&#34;failed&#34;</span>: <span style="color:#ae81ff">0</span>
+   },
+   <span style="color:#f92672">&#34;hits&#34;</span>: {
+      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">100</span>,
+      <span style="color:#f92672">&#34;max_score&#34;</span>: <span style="color:#ae81ff">0</span>,
+      <span style="color:#f92672">&#34;hits&#34;</span>: []
+   },
+   <span style="color:#f92672">&#34;facets&#34;</span>: {
+      <span style="color:#f92672">&#34;type_賃貸&#34;</span>: {
+         <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;terms&#34;</span>,
+         <span style="color:#f92672">&#34;missing&#34;</span>: <span style="color:#ae81ff">0</span>,
+         <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">52</span>,
+         <span style="color:#f92672">&#34;other&#34;</span>: <span style="color:#ae81ff">0</span>,
+         <span style="color:#f92672">&#34;terms&#34;</span>: [
+            {
+               <span style="color:#f92672">&#34;term&#34;</span>: <span style="color:#e6db74">&#34;00_北海道&#34;</span>,
+               <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#ae81ff">1</span>
+            },
+            {
+               <span style="color:#f92672">&#34;term&#34;</span>: <span style="color:#e6db74">&#34;01_青森県&#34;</span>,
+               <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#ae81ff">2</span>
+            },
+            {
+               <span style="color:#f92672">&#34;term&#34;</span>: <span style="color:#e6db74">&#34;03_宮城県&#34;</span>,
+               <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#ae81ff">3</span>
+            },
+            <span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span>
+      <span style="color:#960050;background-color:#1e0010">}</span>,
+      <span style="color:#e6db74">&#34;type_売買&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+         <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;terms&#34;</span>,
+         <span style="color:#f92672">&#34;missing&#34;</span>: <span style="color:#ae81ff">0</span>,
+         <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">48</span>,
+         <span style="color:#f92672">&#34;other&#34;</span>: <span style="color:#ae81ff">0</span>,
+         <span style="color:#f92672">&#34;terms&#34;</span>: [
+            {
+               <span style="color:#f92672">&#34;term&#34;</span>: <span style="color:#e6db74">&#34;00_北海道&#34;</span>,
+               <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#ae81ff">2</span>
+            },
+            {
+               <span style="color:#f92672">&#34;term&#34;</span>: <span style="color:#e6db74">&#34;02_岩手県&#34;</span>,
+               <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#ae81ff">1</span>
+            },
+            {
+               <span style="color:#f92672">&#34;term&#34;</span>: <span style="color:#e6db74">&#34;04_秋田県&#34;</span>,
+               <span style="color:#f92672">&#34;count&#34;</span>: <span style="color:#ae81ff">1</span>
+            },
+            <span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span>
+<span style="color:#960050;background-color:#1e0010">}</span>
+</code></pre></div><p>望んでいた形式とは少し異なりますが、<code>facet_filter</code>する回数を少なくするため、
 ファセットは都道府県のフィールドを指定したためです。
 アプリで頑張って入れ替えてください。。。</p>
-
-<p>この場合、&#8217;type&#8217;の個数がわかっているので、頑張ってこのような記述ができました。
+<p>この場合、&lsquo;type'の個数がわかっているので、頑張ってこのような記述ができました。
 ただ、<code>type</code>が増えた時にアプリの修正とかが必要になりますよね。</p>
-
-<h2>Aggregations</h2>
-
+<h2 id="aggregations">Aggregations</h2>
 <p>ということで、Aggregationsの出番です。
 ファセットよりも柔軟に、検索結果に対していろいろな集計が行える機能になります。
 一見に如かずということで、クエリを紹介します。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">GET</span> <span class="err">/pref_aggs/japan/_search</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>  <span class="nt">&quot;query&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;match_all&quot;</span><span class="p">:</span> <span class="p">{}</span>
-</span><span class='line'>  <span class="p">},</span>
-</span><span class='line'>  <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;_term&quot;</span><span class="p">:</span> <span class="s2">&quot;asc&quot;</span>
-</span><span class='line'>        <span class="p">},</span>
-</span><span class='line'>        <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>            <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">10</span>
-</span><span class='line'>          <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>ファセットよりもシンプルですし、<code>賃貸</code>といったような値を指定していません。
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">G</span><span style="color:#960050;background-color:#1e0010">E</span><span style="color:#960050;background-color:#1e0010">T</span> <span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">p</span><span style="color:#960050;background-color:#1e0010">r</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">f</span><span style="color:#960050;background-color:#1e0010">_</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">g</span><span style="color:#960050;background-color:#1e0010">g</span><span style="color:#960050;background-color:#1e0010">s</span><span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">j</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">p</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">n</span><span style="color:#960050;background-color:#1e0010">/</span><span style="color:#960050;background-color:#1e0010">_</span><span style="color:#960050;background-color:#1e0010">s</span><span style="color:#960050;background-color:#1e0010">e</span><span style="color:#960050;background-color:#1e0010">a</span><span style="color:#960050;background-color:#1e0010">r</span><span style="color:#960050;background-color:#1e0010">c</span><span style="color:#960050;background-color:#1e0010">h</span>
+{
+  <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">0</span>,
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;match_all&#34;</span>: {}
+  },
+  <span style="color:#f92672">&#34;aggs&#34;</span>: {
+    <span style="color:#f92672">&#34;pref&#34;</span>: {
+      <span style="color:#f92672">&#34;terms&#34;</span>: {
+        <span style="color:#f92672">&#34;order&#34;</span>: {
+          <span style="color:#f92672">&#34;_term&#34;</span>: <span style="color:#e6db74">&#34;asc&#34;</span>
+        },
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;pref&#34;</span>,
+        <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">50</span>
+      },
+      <span style="color:#f92672">&#34;aggs&#34;</span>: {
+        <span style="color:#f92672">&#34;type&#34;</span>: {
+          <span style="color:#f92672">&#34;terms&#34;</span>: {
+            <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;type&#34;</span>,
+            <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">10</span>
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre></div><p>ファセットよりもシンプルですし、<code>賃貸</code>といったような値を指定していません。
 <code>aggs</code>というのが<code>aggregations</code>機能を指定している部分になります。
 検索結果は次のように出力されます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="nt">&quot;took&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;timed_out&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
-</span><span class='line'>   <span class="nt">&quot;_shards&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;successful&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;failed&quot;</span><span class="p">:</span> <span class="mi">0</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;max_score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;hits&quot;</span><span class="p">:</span> <span class="p">[]</span>
-</span><span class='line'>   <span class="p">},</span>
-</span><span class='line'>   <span class="nt">&quot;aggregations&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>         <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;00_北海道&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>                  <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>                     <span class="p">{</span>
-</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;売買&quot;</span><span class="p">,</span>
-</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>                     <span class="p">},</span>
-</span><span class='line'>                     <span class="p">{</span>
-</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">,</span>
-</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>                     <span class="p">}</span>
-</span><span class='line'>                  <span class="p">]</span>
-</span><span class='line'>               <span class="p">}</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>               <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;01_青森県&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>               <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>                  <span class="nt">&quot;buckets&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span class='line'>                     <span class="p">{</span>
-</span><span class='line'>                        <span class="nt">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;賃貸&quot;</span><span class="p">,</span>
-</span><span class='line'>                        <span class="nt">&quot;doc_count&quot;</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>                     <span class="p">}</span>
-</span><span class='line'>                  <span class="p">]</span>
-</span><span class='line'>               <span class="p">}</span>
-</span><span class='line'>            <span class="p">},</span>
-</span><span class='line'>            <span class="err">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Aggregationsの結果は、望んでいた通りの出力になっています。</p>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+   <span style="color:#f92672">&#34;took&#34;</span>: <span style="color:#ae81ff">4</span>,
+   <span style="color:#f92672">&#34;timed_out&#34;</span>: <span style="color:#66d9ef">false</span>,
+   <span style="color:#f92672">&#34;_shards&#34;</span>: {
+      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">2</span>,
+      <span style="color:#f92672">&#34;successful&#34;</span>: <span style="color:#ae81ff">2</span>,
+      <span style="color:#f92672">&#34;failed&#34;</span>: <span style="color:#ae81ff">0</span>
+   },
+   <span style="color:#f92672">&#34;hits&#34;</span>: {
+      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">100</span>,
+      <span style="color:#f92672">&#34;max_score&#34;</span>: <span style="color:#ae81ff">0</span>,
+      <span style="color:#f92672">&#34;hits&#34;</span>: []
+   },
+   <span style="color:#f92672">&#34;aggregations&#34;</span>: {
+      <span style="color:#f92672">&#34;pref&#34;</span>: {
+         <span style="color:#f92672">&#34;buckets&#34;</span>: [
+            {
+               <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;00_北海道&#34;</span>,
+               <span style="color:#f92672">&#34;doc_count&#34;</span>: <span style="color:#ae81ff">3</span>,
+               <span style="color:#f92672">&#34;type&#34;</span>: {
+                  <span style="color:#f92672">&#34;buckets&#34;</span>: [
+                     {
+                        <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;売買&#34;</span>,
+                        <span style="color:#f92672">&#34;doc_count&#34;</span>: <span style="color:#ae81ff">2</span>
+                     },
+                     {
+                        <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;賃貸&#34;</span>,
+                        <span style="color:#f92672">&#34;doc_count&#34;</span>: <span style="color:#ae81ff">1</span>
+                     }
+                  ]
+               }
+            },
+            {
+               <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;01_青森県&#34;</span>,
+               <span style="color:#f92672">&#34;doc_count&#34;</span>: <span style="color:#ae81ff">2</span>,
+               <span style="color:#f92672">&#34;type&#34;</span>: {
+                  <span style="color:#f92672">&#34;buckets&#34;</span>: [
+                     {
+                        <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;賃貸&#34;</span>,
+                        <span style="color:#f92672">&#34;doc_count&#34;</span>: <span style="color:#ae81ff">2</span>
+                     }
+                  ]
+               }
+            },
+            <span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span>
+</code></pre></div><p>Aggregationsの結果は、望んでいた通りの出力になっています。</p>
 <p>クエリの構成を見てみましょう。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;aggs&quot;</span><span class="err">:</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nt">&quot;pref&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="err">#1</span>
-</span><span class='line'>    <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nt">&quot;order&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;_term&quot;</span><span class="p">:</span> <span class="s2">&quot;asc&quot;</span>
-</span><span class='line'>      <span class="p">},</span>
-</span><span class='line'>      <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;pref&quot;</span><span class="p">,</span>
-</span><span class='line'>      <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">50</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="nt">&quot;aggs&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="err">#2</span>
-</span><span class='line'>      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nt">&quot;terms&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span class='line'>          <span class="nt">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span>
-</span><span class='line'>          <span class="nt">&quot;size&quot;</span><span class="p">:</span> <span class="mi">10</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>最初の#1の<code>pref</code>は出力を扱いやすくするためにつけているラベルになります。好きな名前をつけることが可能です。
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#e6db74">&#34;aggs&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+  <span style="color:#f92672">&#34;pref&#34;</span>: { <span style="color:#960050;background-color:#1e0010">#</span><span style="color:#960050;background-color:#1e0010">1</span>
+    <span style="color:#f92672">&#34;terms&#34;</span>: {
+      <span style="color:#f92672">&#34;order&#34;</span>: {
+        <span style="color:#f92672">&#34;_term&#34;</span>: <span style="color:#e6db74">&#34;asc&#34;</span>
+      },
+      <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;pref&#34;</span>,
+      <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">50</span>
+    },
+    <span style="color:#f92672">&#34;aggs&#34;</span>: {  <span style="color:#960050;background-color:#1e0010">#</span><span style="color:#960050;background-color:#1e0010">2</span>
+      <span style="color:#f92672">&#34;type&#34;</span>: {
+        <span style="color:#f92672">&#34;terms&#34;</span>: {
+          <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;type&#34;</span>,
+          <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">10</span>
+        }
+      }
+    }
+  }
+}
+</code></pre></div><p>最初の#1の<code>pref</code>は出力を扱いやすくするためにつけているラベルになります。好きな名前をつけることが可能です。
 次の<code>terms</code>がAggregationのタイプ（どのような集計をして欲しいか）になります。
 今回は、<code>pref</code>フィールドにある単語(term)毎に、集計をしたいので、<code>terms</code>を指定します。
 その他にどんなタイプがあるかは、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-aggregations.html">公式ガイド</a>をご覧ください。</p>
-
 <p>次に、さらに<code>type</code>フィールドで集計したいので、#2の部分で後続のAggregationを指定しています。
 都道府県同様、<code>type</code>フィールドにある単語毎に集計するために、<code>terms</code>を指定します。</p>
-
 <p>これで、先ほどのような結果が出力できます。
 ちなみに、さらに<code>type</code>の中に他の種別で集計したいという場合は、さらに<code>aggs</code>を追加していけばOKです。</p>
-
 <p>Aggregationは非常に柔軟な集計を可能にする機能です。ただし、検索結果に対して集計処理を行っているため、
 メモリやCPUなどのリソースを消費するので注意が必要です。</p>
-
 <p>Aggregationの説明については、<a href="https://www.found.no/foundation/elasticsearch-aggregations/">こちらのFound.noのブログ（英語）</a>がわかりやすかったので参考にしてみてください。</p>
-
-<h2>まとめ</h2>
-
+<h2 id="まとめ">まとめ</h2>
 <p>非常に簡単ですが、Aggregationsについて紹介しました。
 その他にもAggregationsでできることがあるので、後日別のサンプルを用意して説明しようかと思います。</p>
-
 <p>100件のデータやここまでの操作については、<a href="https://gist.github.com/johtani/08dee5fb4da62037ef9e">gist</a>にあるので、興味がある方はご覧いただければと。
 stream2esの操作以外は、<a href="http://blog.johtani.info/blog/2014/01/29/simple-introduction-and-first-impression-es-marvel/">Marvelに付属のsense</a>を利用しています。</p>
-</div>
 
 
-  <footer>
-    <p class="meta">
-      
-  
+                
 
-<span class="byline author vcard">Posted by <span class="fn">johtani</span></span>
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/" data-toggle="tooltip" data-placement="top" title="elasticsearch-kopfの紹介（aliases画面）">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2014/05/09/reading-agile-data-science/" data-toggle="tooltip" data-placement="top" title="アジャイルデータサイエンスが届きました">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
 
-      
+                
+<div id="disqus-comment"></div>
 
-
-
-
-
-
-
-
-  
-
-
-
-<time datetime="2014-05-07T18:57:00+00:00" pubdate data-updated="true"><time class='entry-date' datetime='2014-05-07T18:57:00+00:00'><span class='date'>2014-05-07</span></time></time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>
-  
-</span>
-
-
-    </p>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
     
-      <div class="sharing">
-  
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.johtani.info/blog/2014/05/07/aggregation-example/" data-via="johtani" data-counturl="http://blog.johtani.info/blog/2014/05/07/aggregation-example/" >Tweet</a>
-  
-  
-  <div class="g-plusone" data-size="medium"></div>
-  
-  
-    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
-  
-  <a href="http://b.hatena.ne.jp/entry/" class="hatena-bookmark-button"
-      data-hatena-bookmark-layout="standard"
-      data-hatena-bookmark-url="http://blog.johtani.info/blog/2014/05/07/aggregation-example/">
-    <img src="http://b.st-hatena.com/images/entry-button/button-only.gif"
-        alt="このエントリーをはてなブックマークに追加" width="20" height="20"
-        style="border: none">
-  </a>
-</div>
-<script type="text/javascript"><!--
-google_ad_client = "ca-pub-8434618569803086";
-/* blog after sharing */
-google_ad_slot = "2760031654";
-google_ad_width = 468;
-google_ad_height = 60;
-//-->
-</script>
-<script type="text/javascript"
-src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
-
     
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/" title="Previous Post: elasticsearch-kopfの紹介（aliases画面）">&laquo; elasticsearch-kopfの紹介（aliases画面）</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2014/05/09/reading-agile-data-science/" title="Next Post: アジャイルデータサイエンスが届きました">アジャイルデータサイエンスが届きました &raquo;</a>
-      
-    </p>
-  </footer>
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
 </article>
 
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-</div>
-  </section>
-
-</div>
-
-<aside class="sidebar">
-  
-    <section>
-  <h1>About Me</h1>
-  <a href="http://twitter.com/johtani"><img class="about_me" src="/images/about_me2.jpg" alt="後頭部"/></a>
-  <p>コワモテの検索好きエンジニアです。検索技術勉強会の運営などをやっています。<br/><br/>
-Elasticsearchなど検索エンジンや検索のサービスなどに興味があります。<br/>
-<a href="http://code.google.com/p/lucene-gosen/">lucene-gosen</a>のコミッターもやっています。</p>
-↓データ分析基盤（可視化）本も出てます！<br/>
-<iframe style="width:120px;height:240px;" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" src="https://rcm-fe.amazon-adsystem.com/e/cm?ref=qf_sp_asin_til&t=johtani-22&m=amazon&o=9&p=8&l=as1&IS2=1&detail=1&asins=477419218X&linkId=ead5cb07f0cdfa55537b25378d4638e8&bc1=000000&lt1=_blank&fc1=333333&lc1=0066C0&bg1=FFFFFF&f=ifr">
-    </iframe>
-</section>
-<section>
-  <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/aws/'>aws (3)</a></li><li><a href='/blog/categories/basho/'>basho (1)</a></li><li><a href='/blog/categories/cloudera/'>cloudera (4)</a></li><li><a href='/blog/categories/cloudera-search/'>cloudera search (6)</a></li><li><a href='/blog/categories/cloudsearch/'>cloudsearch (1)</a></li><li><a href='/blog/categories/coffee/'>coffee (1)</a></li><li><a href='/blog/categories/curator/'>curator (2)</a></li><li><a href='/blog/categories/elastic/'>elastic (3)</a></li><li><a href='/blog/categories/elasticon/'>elasticon (1)</a></li><li><a href='/blog/categories/elasticsearch/'>elasticsearch (99)</a></li><li><a href='/blog/categories/fluentd/'>fluentd (3)</a></li><li><a href='/blog/categories/found-dot-no/'>found.no (1)</a></li><li><a href='/blog/categories/hadoop/'>hadoop (5)</a></li><li><a href='/blog/categories/hive/'>hive (1)</a></li><li><a href='/blog/categories/java/'>java (1)</a></li><li><a href='/blog/categories/jjug/'>jjug (1)</a></li><li><a href='/blog/categories/jvm/'>jvm (1)</a></li><li><a href='/blog/categories/kibana/'>kibana (13)</a></li><li><a href='/blog/categories/kibana4/'>kibana4 (1)</a></li><li><a href='/blog/categories/kuromoji/'>kuromoji (2)</a></li><li><a href='/blog/categories/logstash/'>logstash (7)</a></li><li><a href='/blog/categories/lucene/'>lucene (2)</a></li><li><a href='/blog/categories/lucene-gosen/'>lucene-gosen (1)</a></li><li><a href='/blog/categories/manifoldcf/'>manifoldcf (2)</a></li><li><a href='/blog/categories/marvel/'>marvel (4)</a></li><li><a href='/blog/categories/misc/'>misc (9)</a></li><li><a href='/blog/categories/morphlines/'>morphlines (2)</a></li><li><a href='/blog/categories/nlp100/'>nlp100 (4)</a></li><li><a href='/blog/categories/norikra/'>norikra (1)</a></li><li><a href='/blog/categories/octopress/'>octopress (2)</a></li><li><a href='/blog/categories/plugin/'>plugin (15)</a></li><li><a href='/blog/categories/puppet/'>puppet (1)</a></li><li><a href='/blog/categories/release/'>release (1)</a></li><li><a href='/blog/categories/riak/'>riak (5)</a></li><li><a href='/blog/categories/rust/'>rust (4)</a></li><li><a href='/blog/categories/sense/'>sense (1)</a></li><li><a href='/blog/categories/shield/'>shield (2)</a></li><li><a href='/blog/categories/solr/'>solr (18)</a></li><li><a href='/blog/categories/sonatype/'>sonatype (1)</a></li><li><a href='/blog/categories/stream2es/'>stream2es (1)</a></li><li><a href='/blog/categories/timelion/'>timelion (1)</a></li><li><a href='/blog/categories/travel/'>travel (1)</a></li><li><a href='/blog/categories/vagrant/'>vagrant (1)</a></li><li><a href='/blog/categories/watcher/'>watcher (1)</a></li><li><a href='/blog/categories/wikipedia/'>wikipedia (3)</a></li><li><a href='/blog/categories/xperia-z/'>xperia z (1)</a></li><li><a href='/blog/categories/yokozuna/'>yokozuna (5)</a></li><li><a href='/blog/categories/zoomdata/'>zoomdata (1)</a></li><li><a href='/blog/categories/orairi/'>オライリー (2)</a></li><li><a href='/blog/categories/kanhuarensu/'>カンファレンス (1)</a></li><li><a href='/blog/categories/supiritiyuaru/'>スピリチュアル (1)</a></li><li><a href='/blog/categories/suponsa/'>スポンサー (1)</a></li><li><a href='/blog/categories/mian-qiang-hui/'>勉強会 (37)</a></li><li><a href='/blog/categories/gan-xiang-wen/'>感想文 (1)</a></li><li><a href='/blog/categories/zhen-rifan-ri/'>振り返り (7)</a></li><li><a href='/blog/categories/shu-ji/'>書籍 (1)</a></li><li><a href='/blog/categories/ben/'>本 (5)</a></li><li><a href='/blog/categories/jian-suo/'>検索 (1)</a></li><li><a href='/blog/categories/zhuan-zhi/'>転職 (3)</a></li></ul>
-</section>
-<section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2019/12/31/looking-back-2019/">今年の振り返りと来年の抱負（2019）</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/23/whats-window-group-of-terminal/">macOS標準のターミナルのウィンドウグループが便利</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/23/whats-window-group-of-terminal/">macOS標準のターミナルのウィンドウグループが便利</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/18/introduce-homeshick/">homeshick導入</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2019/12/17/move-to-zsh/">zshへの移行</a>
-      </li>
-    
-  </ul>
-</section>
-<script type="text/javascript"><!--
-google_ad_client = "ca-pub-8434618569803086";
-/* blog2 */
-google_ad_slot = "5207297251";
-google_ad_width = 250;
-google_ad_height = 250;
-//-->
-</script>
-<script type="text/javascript"
-src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
-
-<section>
-  <h1>GitHub Repos</h1>
-  <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  
-  <a href="https://github.com/johtani">@johtani</a> on GitHub
-  
-  <script type="text/javascript">
-    $.domReady(function(){
-        if (!window.jXHR){
-            var jxhr = document.createElement('script');
-            jxhr.type = 'text/javascript';
-            jxhr.src = '/javascripts/libs/jXHR.js';
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(jxhr, s);
-        }
-
-        github.showRepos({
-            user: 'johtani',
-            count: 0,
-            skip_forks: true,
-            target: '#gh_repos'
-        });
-    });
-  </script>
-  <script src="/javascripts/github.js" type="text/javascript"> </script>
-</section>
 
 
-<section>
-  <h1>On Twitter:</h1>
-  <div>
-    <p><br /><a href="http://twitter.com/johtani" target="_blank">My Tweets, on Twitter.</a></p>
-    <a href="http://twitter.com/johtani" class="twitter-follow-button" data-show-count="">Follow @johtani</a>
-  </div>
-</section>
 
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
 
-  
-</aside>
+                    
 
-
-      </div>
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
     </div>
-    <footer role="contentinfo"><p>
-  Copyright &copy; 2019 - johtani -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a></span>
-</p>
-
 </footer>
-    
 
-<script type="text/javascript">
-      var disqus_shortname = 'johtaniblog2nd';
-      
-        
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://blog.johtani.info/blog/2014/05/07/aggregation-example/';
-        var disqus_url = 'http://blog.johtani.info/blog/2014/05/07/aggregation-example/';
-        var disqus_script = 'embed.js';
-      
-    (function () {
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    }());
-</script>
-
-
-
-<div id="fb-root"></div>
-<script>(function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) {return;}
-  js = d.createElement(s); js.id = id;
-  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
-
-
-
-  <script type="text/javascript">
-    (function() {
-      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
-      script.src = 'https://apis.google.com/js/plusone.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
-    })();
-  </script>
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
 
 
 
 <script>
-(function(w,d){
-    var c,e=d.createDocumentFragment(),f=d.getElementsByTagName("script")[0],
-    a=function(a,b){if(!d.getElementById(b)){c=d.createElement("script");
-    c.src=a;c.id=b||null;c.async=true;e.appendChild(c);}};
-
-    w.___gcfg={lang:"ja"};
-    a("https://apis.google.com/js/plusone.js");
-
-
-    a("//platform.twitter.com/widgets.js");
-
-
-    a("//connect.facebook.net/ja_JP/all.js#xfbml=1","facebook-jssdk");
-
-    a("//b.st-hatena.com/js/bookmark_button_wo_al.js");
-    f.parentNode.insertBefore(e,f);
-})(this,document);
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
 </script>
 
 
-  </div>
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
 </body>
 </html>
