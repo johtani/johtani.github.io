@@ -184,6 +184,8 @@
                         
                         
                         
+                        <br>Last Modified on Wednesday, January 29, 2020
+                        
                     </span>
                 </div>
             </div>
@@ -369,7 +371,21 @@ ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
 </div>
 
 <p>これらのページはAlgoliaに登録しないようにするのが良さそうかな?と考えているところです(考えてるだけ)。</p>
-<h2 id="まとめ">まとめ</h2>
+<p><strong>2020/01/29更新</strong></p>
+<p><code>list.algolia.json</code>を編集して、記事だけをインデックスするように修正しました。
+テーマに存在する<code>layouts/_default/list.algolia.json</code>を、自分のところにコピーし、次のように変更しました。if文を1行追加して、<code>post</code>という種類のものだけを出力するようにしました。</p>
+<pre><code>{{/* Generates a valid Algolia search index */}}
+{{- $.Scratch.Add &quot;index&quot; slice -}}
+{{- $section := $.Site.GetPage &quot;section&quot; .Section }}
+{{- range .Site.AllPages -}}
+  {{- if or (and (.IsDescendant $section) (and (not .Draft) (not .Params.private))) $section.IsHome -}}
+    {{- if (and (eq .Section &quot;post&quot;) (ne .URL &quot;/post/&quot;)) -}}
+      {{- $.Scratch.Add &quot;index&quot; (dict &quot;objectID&quot; .UniqueID &quot;date&quot; .Date.UTC.Unix &quot;description&quot; .Description &quot;dir&quot; .Dir &quot;expirydate&quot; .ExpiryDate.UTC.Unix &quot;fuzzywordcount&quot; .FuzzyWordCount &quot;keywords&quot; .Keywords &quot;kind&quot; .Kind &quot;lang&quot; .Lang &quot;lastmod&quot; .Lastmod.UTC.Unix &quot;permalink&quot; .Permalink &quot;publishdate&quot; .PublishDate &quot;readingtime&quot; .ReadingTime &quot;relpermalink&quot; .RelPermalink &quot;html&quot; .Params.Description &quot;title&quot; .Title &quot;type&quot; .Type &quot;url&quot; .URL &quot;weight&quot; .Weight &quot;wordcount&quot; .WordCount &quot;section&quot; .Section &quot;tags&quot; .Params.Tags &quot;categories&quot; .Params.Categories &quot;author&quot; .Params.authors &quot;content&quot; .Params.Description &quot;excerpt_html&quot; .Params.Description &quot;excerpt_text&quot; .Params.Description &quot;summary&quot; .Summary)}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $.Scratch.Get &quot;index&quot; | jsonify -}}
+</code></pre><h2 id="まとめ">まとめ</h2>
 <p>これで、ブログ内記事検索ができるようになります。
 Algoliaは個人の非商用利用の場合、フリープランが用意されているのがありがたいですね。
 まだ、Hugoと連携しただけで、Algolia自体でどんな機能があって、どんなことができそうかといったところは調べていませんが、簡単に利用できるのはとても助かります。</p>
