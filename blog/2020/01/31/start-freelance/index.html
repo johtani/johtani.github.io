@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="ブログ移行日記(その4) - 検索機能(Algolia)の導入" />
-    <meta property="og:title" content="ブログ移行日記(その4) - 検索機能(Algolia)の導入" />
-    <meta property="twitter:title" content="ブログ移行日記(その4) - 検索機能(Algolia)の導入" />
+    <meta name="title" content="フリーランスはじめました(仮)" />
+    <meta property="og:title" content="フリーランスはじめました(仮)" />
+    <meta property="twitter:title" content="フリーランスはじめました(仮)" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>ブログ移行日記(その4) - 検索機能(Algolia)の導入-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>フリーランスはじめました(仮)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/01/28/troduce-algolia/">
+    <link rel="canonical" href="/blog/2020/01/31/start-freelance/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -167,12 +167,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
-                            ブログ
+                        <a class="tag" href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
                         </a>
                         
                     </div>
-                    <h1>ブログ移行日記(その4) - 検索機能(Algolia)の導入</h1>
+                    <h1>フリーランスはじめました(仮)</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -180,11 +180,9 @@
                             johtani
                          
                         on 
-                        Tuesday, January 28, 2020
+                        Friday, January 31, 2020
                         
                         
-                        
-                        <br>Last Modified on Wednesday, January 29, 2020
                         
                     </span>
                 </div>
@@ -212,184 +210,27 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#参考記事">参考記事</a></li>
-    <li><a href="#algoliaとは">Algoliaとは?</a></li>
-    <li><a href="#algoliaのサービス登録からインデックス作成">Algoliaのサービス登録からインデックス作成</a></li>
-    <li><a href="#hugo側で必要な設定">Hugo側で必要な設定</a>
-      <ul>
-        <li><a href="#npm関連の作業">npm関連の作業</a></li>
-        <li><a href="#検索関連の設定">検索関連の設定</a></li>
-      </ul>
-    </li>
-    <li><a href="#algoliaへのデータ登録方法">Algoliaへのデータ登録方法</a></li>
-    <li><a href="#今後の課題">今後の課題</a></li>
-    <li><a href="#まとめ">まとめ</a></li>
+    <li><a href="#結論">結論</a></li>
+    <li><a href="#現在の心境">現在の心境</a></li>
   </ul>
 </nav>
                 
-                <p>ブログ移行日記(その4)です。前回まではこちら。</p>
-<ul>
-<li><a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記(その1)</a></li>
-<li><a href="/blog/2020/01/23/convert-md-from-octopress-to-hugo/">ブログ移行日記(その2)</a></li>
-<li><a href="/blog/2020/01/24/setting-hugo/">ブログ移行日記(その3)</a></li>
-</ul>
-<p>前回までで、なんとなく移行は終わってます。
-今回はテーマで使えるようになっているブログの検索機能の導入の話です。</p>
-<p>検索サービスは<a href="https://www.algolia.com/">Algolia</a>を利用します。
-OctopressのころはElastic社のサービスである<a href="https://www.elastic.co/jp/site-search">Elastic Site Search</a>の機能を利用して、クローリングしてから検索できるようにしていましたが、Hugoで導入できるモジュール?があったので、今回からこちらに移行しました。</p>
-<h2 id="参考記事">参考記事</h2>
-<ul>
-<li><a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia">Clean White ThemeのREADME(Algoliaの設定方法)</a></li>
-<li>参考ブログ:<a href="https://blog.uni-3.app/2019/01/02/hugo-algolia-search/">hugoで作ったblogにalgoliaで全文検索機能を追加する</a></li>
-</ul>
-<h2 id="algoliaとは">Algoliaとは?</h2>
-<p>検索のas-a-serviceをやっている会社です。<a href="https://en.wikipedia.org/wiki/Algolia">Wikipediaによると本社はサンフランシスコにあるみたいですね</a>(フランスの会社のイメージでした。起業された方がフランス出身だからかなぁ?)。
-クラウドで検索インデックスを保持でき、API経由で検索したり登録したりできる感じのサービスです。内部で使われているのはOSSではない独自の検索エンジンです。</p>
-<p>クラウドで提供されているサービスなのでサクッと検索を使い始めることができるのがいい点ですね。
-また、<a href="https://www.algolia.com/pricing/">小さな非商用のプロジェクトにフリーで利用できるプラン</a>も提供されているようです(2020年1月現在)。</p>
-<h2 id="algoliaのサービス登録からインデックス作成">Algoliaのサービス登録からインデックス作成</h2>
-<p><a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia">私が利用しているテーマで設定する方法</a>の記載があったので手順の通りにやってみました。
-大きく2つの作業(Algolia側とHugo側)が必要です。まずは、Algoliaで必要な作業から。作業の流れだけ記載しておきます。<a href="https://forestry.io/blog/search-with-algolia-in-hugo/#3-create-your-index-in-algolia">詳細は「Static site search with Hugo + Algolia」の3)</a>を確認してください。</p>
-<ol>
-<li>Algoliaのサインアップ(すでにアカウントがあれば不要)</li>
-<li>New Applicationの作成(名前とプランの指定)</li>
-<li>リージョンの指定</li>
-<li>インデックス名の指定</li>
-<li>APIキーを確認</li>
-</ol>
-<p>です。これで、Algolia側の準備は完了です。</p>
-<p>今回は関係ないですが、Algoliaの管理画面で、利用状況(データ登録などの操作回数、クエリの回数、インデックスに保存されているレコード数)の確認が可能です。
-ほかにも有料プランを利用すると<a href="https://www.algolia.com/doc/guides/getting-insights-and-analytics/search-analytics/out-of-the-box-analytics/">Analytics</a>などもできるようです。</p>
-<h2 id="hugo側で必要な設定">Hugo側で必要な設定</h2>
-<p>今度はHugo側です。Hugoのサイトのディレクトリに移動してからの作業です。</p>
-<p>仕組みとしては、</p>
-<ol>
-<li>Hugoのoutput機能でAlgolia向けのJSONファイルを生成する</li>
-<li>Node.jsのライブラリを使用してAlgoliaに1.で生成したJSONを登録、更新する</li>
-<li>検索画面の作成</li>
-</ol>
-<p>という流れになります。
-ですので、作業としては以下のとおりです。</p>
-<ol>
-<li>Output出力の設定(すでにテーマ側で設定されているので、特に作業は必要なし)</li>
-<li>npm環境の構築(Hugoのconfig.tomlと同じディレクトリ階層)
-<ol>
-<li>Node.jsのインストール(必要であれば)</li>
-<li>npm環境の初期化</li>
-<li>npmでatomic-algoliaのインストール</li>
-<li>atomic-algolia向けの設定(登録のためのAPI関連の設定)</li>
-<li>Algolia向けJSONの出力設定</li>
-</ol>
-</li>
-<li>検索関連の設定
-<ol>
-<li>content/search/placeholder.mdの作成</li>
-<li>検索用のAPIキーなどを設定</li>
-</ol>
-</li>
-</ol>
-<h3 id="npm関連の作業">npm関連の作業</h3>
-<p>以下、npm関連の作業です。</p>
-<ol>
-<li>Node.jsのインストール(必要であれば)
-<ul>
-<li>割愛します。環境に合わせてインストールしてください。私はnvm経由でインストールしています。</li>
-</ul>
-</li>
-<li>npm環境の初期化
-<ul>
-<li>Hugoのディレクトリで<code>nvm init</code>を実行</li>
-</ul>
-</li>
-<li>npmでatomic-algoliaのインストール
-<ul>
-<li>Hugoのディレクトリで<code>npm install atomic-algolia --save</code></li>
-</ul>
-</li>
-<li>atomic-algolia向けの設定(登録のためのAPI関連の設定)
-<ul>
-<li>Hugoのディレクトリに<code>.env</code>ファイルを作成し、以下を設定します。</li>
-</ul>
-</li>
-<li>Algolia向けJSONの出力設定
-<ul>
-<li>特に変更なし(<code>config.toml</code>に少し設定があります)。</li>
-</ul>
-</li>
-</ol>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">ALGOLIA_APP_ID<span style="color:#f92672">=</span>AlgoliaのApplication ID
-ALGOLIA_ADMIN_KEY<span style="color:#f92672">=</span>AlgoliaのAdmin API Key
-ALGOLIA_INDEX_NAME<span style="color:#f92672">=</span>先程作ったインデックス名
-ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
-</code></pre></div><p>最後の<code>ALGOLIA_INDEX_FILE</code>は固定文字列でいいと思います。
-<code>hugo</code>コマンドを実行すると<code>public</code>ディレクトリ配下に<code>algolia.json</code>というファイルが生成され、Algolia登録用のJSONが出力されています。</p>
-<blockquote>
-<p>余談 : algolia.jsonの出力の設定は、config.tomlに記載があります。また、JSONファイルのテンプレート自体は<code>themes/hugo-theme-cleanwhite/layouts/_default/list.algolia.json</code>にあります。Algoliaに登録するデータの構造など変更をする場合はこのテンプレートをカスタマイズすれば良さそうです。</p>
-</blockquote>
-<h3 id="検索関連の設定">検索関連の設定</h3>
-<p>実際に検索の画面を表示するために、検索用の画面と、検索用のAPIの設定が必要です。</p>
-<ol>
-<li>content/search/placeholder.mdの作成
-<ul>
-<li><code>/search/</code>が検索用のページになります。空のファイルです。実際にはJavaScriptが検索用の窓を表示したりしてくれます(これが必要な理由がまだ不明だなぁ)。</li>
-</ul>
-</li>
-<li>検索用のAPIキーなどを設定
-<ul>
-<li>検索のためのAPIキーなどの設定が必要となります。<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/exampleSite/config.toml#L32">テーマ作者の方のサンプルの<code>config.toml</code>にパラメータは用意されています</a>。</li>
-</ul>
-</li>
-</ol>
-<p>以下の値を設定します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml">  <span style="color:#a6e22e">algolia_search</span> = <span style="color:#66d9ef">true</span>
-  <span style="color:#a6e22e">algolia_appId</span> = <span style="color:#e6db74">&#34;AlgoliaのApplication ID&#34;</span>
-  <span style="color:#a6e22e">algolia_indexName</span> = <span style="color:#e6db74">&#34;作成したインデックス名&#34;</span>
-  <span style="color:#a6e22e">algolia_apiKey</span> = <span style="color:#e6db74">&#34;AlgoliaのSearch-Only API Key&#34;</span>
-</code></pre></div><p>以上でAlgolia関連の設定などの作業が終了です。</p>
-<h2 id="algoliaへのデータ登録方法">Algoliaへのデータ登録方法</h2>
-<p>最後に、実際にデータを登録する必要があります。
-手順は、以下のとおりです。</p>
-<ol>
-<li><code>hugo</code>コマンドの実行(htmlと一緒に登録データの<code>algolia.json</code>を生成)</li>
-<li><code>npm run algolia</code>コマンドの実行(atomic-algoliaを利用してAlgoliaにデータを登録)</li>
-</ol>
-<p>設定などが問題なければ、Algoliaの管理画面で登録ができているはずです。
-実際にブログのデプロイには<code>deploy.sh</code>というファイルをこちらを元に作成して使っています。このなかで、<code>hugo</code>コマンド実行後に<code>npm run algolia</code>を実行するようにしいます。</p>
-<h2 id="今後の課題">今後の課題</h2>
-<p>Hugoで生成された記事はそれぞれのブログポスト以外に、タグごとのページも生成されています。
-こちらも実はAlgoliaのインデックスに登録されていて、タグを入力すると、タグ名のリンクが出てきます。</p>
-<p>こちらは<code>elasticsearch</code>で検索したときの検索結果です。1件目はタグページです。</p>
+                <p>12月に<a href="/blog/2019/12/06/leaving-elastic/">退職します</a>ブログを書きましたが、その後どうなったのか?という話をしてないなと思ったので、一応現在の状況を書き留めておこううかと。</p>
+<h2 id="結論">結論</h2>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">実際にはフリーランスとして働き始めてます。検索周りをお手伝いするお仕事を。読解いとこあれば所属するつもりでもいるし。</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1221819238811230208?ref_src=twsrc%5Etfw">January 27, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20200128/tag.png" />
-    </div>
-    <a href="/images/entries/20200128/tag.png" itemprop="contentUrl"></a>
-  </figure>
-</div>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">フリーランスとして最初の仕事はElasticsearchではなく、Azure Cognitive Searchの支援だったりします。Esで困ってる方の手伝いもしますので、興味ある方はDMください。</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1223087120014725122?ref_src=twsrc%5Etfw">January 31, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<p>これらのページはAlgoliaに登録しないようにするのが良さそうかな?と考えているところです(考えてるだけ)。</p>
-<p><strong>2020/01/29更新</strong></p>
-<p><code>list.algolia.json</code>を編集して、記事だけをインデックスするように修正しました。
-テーマに存在する<code>layouts/_default/list.algolia.json</code>を、自分のところにコピーし、次のように変更しました。if文を1行追加して、<code>post</code>という種類のものだけを出力するようにしました。</p>
-<pre><code>{{/* Generates a valid Algolia search index */}}
-{{- $.Scratch.Add &quot;index&quot; slice -}}
-{{- $section := $.Site.GetPage &quot;section&quot; .Section }}
-{{- range .Site.AllPages -}}
-  {{- if or (and (.IsDescendant $section) (and (not .Draft) (not .Params.private))) $section.IsHome -}}
-    {{- if (and (eq .Section &quot;post&quot;) (ne .URL &quot;/post/&quot;)) -}}
-      {{- $.Scratch.Add &quot;index&quot; (dict &quot;objectID&quot; .UniqueID &quot;date&quot; .Date.UTC.Unix &quot;description&quot; .Description &quot;dir&quot; .Dir &quot;expirydate&quot; .ExpiryDate.UTC.Unix &quot;fuzzywordcount&quot; .FuzzyWordCount &quot;keywords&quot; .Keywords &quot;kind&quot; .Kind &quot;lang&quot; .Lang &quot;lastmod&quot; .Lastmod.UTC.Unix &quot;permalink&quot; .Permalink &quot;publishdate&quot; .PublishDate &quot;readingtime&quot; .ReadingTime &quot;relpermalink&quot; .RelPermalink &quot;html&quot; .Params.Description &quot;title&quot; .Title &quot;type&quot; .Type &quot;url&quot; .URL &quot;weight&quot; .Weight &quot;wordcount&quot; .WordCount &quot;section&quot; .Section &quot;tags&quot; .Params.Tags &quot;categories&quot; .Params.Categories &quot;author&quot; .Params.authors &quot;content&quot; .Params.Description &quot;excerpt_html&quot; .Params.Description &quot;excerpt_text&quot; .Params.Description &quot;summary&quot; .Summary)}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- $.Scratch.Get &quot;index&quot; | jsonify -}}
-</code></pre><h2 id="まとめ">まとめ</h2>
-<p>これで、ブログ内記事検索ができるようになります。
-Algoliaは個人の非商用利用の場合、フリープランが用意されているのがありがたいですね。
-まだ、Hugoと連携しただけで、Algolia自体でどんな機能があって、どんなことができそうかといったところは調べていませんが、簡単に利用できるのはとても助かります。</p>
-<p>まぁ、個人ブログの検索機能ってそんなに使う人はいないんですが、自分としては便利かなぁと。</p>
+<p>2020年1月24日が、正式なElasticの退職日でした(有給休暇消化してた)。
+で、現在のステータスはこのツイートです。</p>
+<h2 id="現在の心境">現在の心境</h2>
+<p>どこかに就職してガッツリ検索もやりたいし、いろんな会社の検索やElastic Stackに関するお手伝いをするのにも興味があるし、どちらにも興味がある状況です。まぁ、検索に興味が尽きないというのだけは決まってますかね。</p>
+<p>悩んでいるところに、幸いにもAzure Search周りで手伝ってほしいという話が舞い込んできたので、フリーランスとしてお手伝いをさせていただいてます(現時点で、半稼働で、が3月末まで)。</p>
+<p>Elastic Stackなどの知見もあるのでのお手伝いをするというのもありかなぁと。お仕事発注してもいいな?という方があれば、TwitterのDMなど、連絡をいただければと。</p>
+<p>現在の状況でした。</p>
+<p>副業ができる会社に就職するのがどっちもできていいのかも?</p>
 
 
                 
@@ -398,15 +239,10 @@ Algoliaは個人の非商用利用の場合、フリープランが用意され�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/01/24/setting-hugo/" data-toggle="tooltip" data-placement="top" title="ブログ移行日記(その3) - Hugoの設定と微調整(テーマに合わせた)">&larr;
+                        <a href="/blog/2020/01/28/troduce-algolia/" data-toggle="tooltip" data-placement="top" title="ブログ移行日記(その4) - 検索機能(Algolia)の導入">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/01/31/start-freelance/" data-toggle="tooltip" data-placement="top" title="フリーランスはじめました(仮)">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
