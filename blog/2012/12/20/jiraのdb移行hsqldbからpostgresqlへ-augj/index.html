@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="JIRAのDB移行（HSQLDBからPostgreSQLへ）#augj(Jugemより移植)" />
+    <meta property="og:title" content="JIRAのDB移行（HSQLDBからPostgreSQLへ）#augj(Jugemより移植)" />
+    <meta property="twitter:title" content="JIRAのDB移行（HSQLDBからPostgreSQLへ）#augj(Jugemより移植)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>JIRAのDB移行（HSQLDBからPostgreSQLへ）#augj(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2012/12/20/jira%E3%81%AEdb%E7%A7%BB%E8%A1%8Chsqldb%E3%81%8B%E3%82%89postgresql%E3%81%B8-augj/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/jira" title="JIRA">
+                            JIRA
+                        </a>
+                        
+                    </div>
+                    <h1>JIRAのDB移行（HSQLDBからPostgreSQLへ）#augj(Jugemより移植)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Thursday, December 20, 2012
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents"></nav>
+                
+                <p>Atlassian Advent Calendar 2012の20日目。（急遽参戦）
+（某イケメンにMT（改変リツイート）されたので書いてみました）
+久々に、勉強会以外のエントリです。（Solrとかlucene-gosenじゃないんだが。。。）</p>
+<p>私は、最近忘れっぽくなってきてしまったので、さくらVPSを借りてJIRAを立てて、タスク管理とかに使い始めました。
+有料ツールなので、まずは、評価版から入れましたと。
+評価版をインストールするときに、楽なのでHSQLDBを選択していました。が、
+インストール時に「HSQLDBは評価版だけで使用してください。正式版ではサポートしてないです」みたいなことを言われていたので、PostgreSQLに切り替えようかと。
+ちなみに、MySQLも選択肢としてはあったのですが、PostgreSQLのほうが触ってるし（つかいこなせてるわけではない）、補完機能になれてるというのもありPostgreSQLを選んでみました。</p>
+<p>作業のログとして、ブログ書いとこうと思いたったのでメモ的に残しておきます。</p>
+<p>作業の流れはこんなかんじでした。
+（基本的にはサポートサイトの<a href="https://confluence.atlassian.com/display/JIRA052/Switching+Databases#SwitchingDatabases-differenttype">ここ</a>に載ってます。サポートいいね。）
+この手順通りでいいみたい。</p>
+<p>###1.  JIRAのデータのバックアップ（JIRAの管理画面からバックアップ）</p>
+<hr>
+<p>まずは管理画面へ。ページ右上に管理へのリンクがあるのでクリック。
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20121220/20121220_2548699.jpg" alt="管理画面へ"/>
+    </div>
+    <a href="/images/entries/20121220/20121220_2548699.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+</p>
+<p>開いた管理画面の右下あたりにエクスポート（バックアップ）へのリンクがあります。
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20121220/20121220_2548700.jpg" alt="管理画面右下のこのへん"/>
+    </div>
+    <a href="/images/entries/20121220/20121220_2548700.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+</p>
+<p>クリックしたあとに、エクスポートのファイル指定画面が現れるので、ファイル名を指定してバックアップボタンを押します。
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20121220/20121220_2548714.jpg" alt="ファイル指定画面"/>
+    </div>
+    <a href="/images/entries/20121220/20121220_2548714.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+</p>
+<p>バックアップが完了するとバックアップファイルの場所が表示されます。
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20121220/20121220_2548701.jpg" alt="完了画面"/>
+    </div>
+    <a href="/images/entries/20121220/20121220_2548701.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+</p>
+<p>###2. JIRAの停止</p>
+<hr>
+<p>バックアップが終わったのでJIRAを停止します。</p>
+<p>###3.  PostgreSQLのインストール（yum）
+PostgreSQLが入ってないので、yum installします。（軟弱者なので）</p>
+<pre><code>
+yum install postgresql-server
+</code></pre><p>####initdbで四苦八苦
+PostgreSQLはインストールしただけでは起動できません。なので、初期化をします。
+yumでインストールしたPostgreSQLだとつぎのコマンドでinitdbできるようです。（これが罠でした）</p>
+<pre><code>
+service postgresql initdb
+</code></pre><p>このコマンドでinitdbすると、encodingが指定できませんでした。（私がしらないだけという話も。。。）
+encodingを指定できていないと、このあと4.を実行するときにエラーが出ました。（これも回避方法あるのかも。）
+ということで、結局、昔とった杵柄なやり方でinitdbコマンドで&ndash;encoding=UTF8 &ndash;no-localeを指定しました。</p>
+<pre><code>
+initdb --encoding=UTF8 --no-locale -D/var/lib/pgsql/data
+service postgresql start
+</code></pre><p>これで初期化が完了するので、PostgreSQLを起動します。</p>
+<p>###4.  JIRA用DBとユーザの作成</p>
+<hr>
+<p>まずは、ユーザの作成。そして、DB作成</p>
+<pre><code>
+createuser jirauser
+createdb -E UNICODE jiradb
+</code></pre><p>テーブルなど作成しません。あとの処理がやってくれます。</p>
+<p>###5.  JIRAにJDBCドライバを入れる（必要なかった。）</p>
+<hr>
+<p>warじゃないJIRAをインストールした場合はすでに入ってるみたいです。
+ここを見るとわかります。JIRA Installation Directoryの下のlibですかね。</p>
+<pre><code>
+/opt/atlassian/jira/lib
+</code></pre><p>###<del>6.  マニュアルでPostgreSQLの接続設定（あれ、これいらないのか。）</del></p>
+<hr>
+<p>~~　コンソールオンリーなので、JIRAが提供してくれているツールが使えないため、手で設定。
+　/var/atlassian/application-data/jira
+　にあるdbconfig.xmlを修正~~
+ちゃんと英語読めってことですね。。。必要なかったです。。。</p>
+<p>###7.  JIRAのdbconfig.xmlを削除</p>
+<hr>
+<p>DB接続の設定を初期セットアップウィザードで再設定するため、dbconfig.xmlを消します。
+（一応、インストールディレクトリとホームディレクトリとかバックアップしたほうがいいみたい）
+場所はここ。
+中身はdbcpとかのデータソースの設定に似てました。
+今は、HSQLDBのJDBCドライバが記載されてました。</p>
+<pre><code>
+rm /var/atlassian/application-data/jira/dbconfig.xml
+</code></pre><p>###8.  JIRAの起動</p>
+<hr>
+<p>7.のファイルを消したあとにJIRAを起動します。</p>
+<pre><code>
+service jira start
+</code></pre><p>###9.  JIRAにアクセスとDB接続設定</p>
+<hr>
+<p>アクセスすると、インストールした時と同じDB接続の指定を行うセットアップウィザードの画面が現れます。
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20121220/20121220_2548715.jpg" alt="最初のセットアップ画面"/>
+    </div>
+    <a href="/images/entries/20121220/20121220_2548715.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+</p>
+<p>今回はJIRAサーバの外にあるPostgreSQLなので、「外部」を選んで四角で囲んだ部分を入力します。
+入力したら、「接続テスト」を押して接続できることを確認したら「次へ」を押します。
+マシンのスペックにもよると思いますが、ここでJIRAサーバがDBに接続してテーブルのCREATEなどDBのセットアップを実行してるのでちょっと時間がかかります。</p>
+<p>###10. バックアップしたデータのインポート</p>
+<hr>
+<p>DBのセットアップが終わったら、アプリケーションのセットアップ画面が出てきます。
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20121220/20121220_2548716.jpg" alt="インポートファイル指定画面へ"/>
+    </div>
+    <a href="/images/entries/20121220/20121220_2548716.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+新規インストールではないので、「ここ」にある「既存のデータをインポート」リンクをクリックします。
+すると、インポートファイルの指定画面が現れるので、1.でバックアップしたファイル名を指定してインポートします。
+すると、インポート中画面が出てきます。
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20121220/20121220_2548817.jpg" alt="インポート中画面"/>
+    </div>
+    <a href="/images/entries/20121220/20121220_2548817.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+で、インポートが完了すると無事JIRAにログインできますと。</p>
+<hr>
+<p>とこんなかんじです。
+私の場合は、まだJIRAをインストールしてから間もないため、チケットの数が少なかったり、添付ファイルが無かったりなので、すぐにインポートが完了しました。
+添付ファイルがある場合は、別途添付ファイルが保存されているディレクトリのバックアップと復旧などもあるみたいです。
+最初にも書きましたが、ドキュメントのサイトに「Switching Databases」という項目があり、そのページの手順で問題なく切り替えできました。
+次は、定期的にデータをバックアップするのを考えないとですかね。</p>
+<p>いやぁブログ書くのが、思いの外、手こずりました。
+手こずった原因はスクリーンショットだったんですけどね。。。
+safariでページ全体のスクリーンショットがとれなかったので、結局Chromeで<a href="http://awesomescreenshot.com/">Awesome Screenshotプラグイン</a>使いました。
+safariの拡張もあるんですが、ページ全体のスクリーンショットがうまく動かないみたいです。。。
+ということで、備忘録でした。（次はちゃんとSolrとかの記事書かないとなー。その前に忘年ブログかな）</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2012/12/11/%E7%AC%AC%E4%B8%80%E5%9B%9E-jetbrains%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97-jbugj-%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/" data-toggle="tooltip" data-placement="top" title="第一回 JetBrainsユーザーグループ #jbugj に参加してきました(Jugemより移植)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2012/12/31/%E4%BB%8A%E5%B9%B4%E3%81%AE%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A%E3%81%A8%E6%9D%A5%E5%B9%B4%E3%81%AE%E6%8A%B1%E8%B2%A02012/" data-toggle="tooltip" data-placement="top" title="今年の振り返りと来年の抱負（2012）(Jugemより移植)">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>

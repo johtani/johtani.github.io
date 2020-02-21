@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Hadoopソースコードリーディング第8回に参加しました。#hadoopreading(Jugemより移植)" />
+    <meta property="og:title" content="Hadoopソースコードリーディング第8回に参加しました。#hadoopreading(Jugemより移植)" />
+    <meta property="twitter:title" content="Hadoopソースコードリーディング第8回に参加しました。#hadoopreading(Jugemより移植)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Hadoopソースコードリーディング第8回に参加しました。#hadoopreading(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2012/02/09/hadoop%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E3%83%AA%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E7%AC%AC8%E5%9B%9E%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F-hadoopreading/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                    </div>
+                    <h1>Hadoopソースコードリーディング第8回に参加しました。#hadoopreading(Jugemより移植)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Thursday, February 9, 2012
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents"></nav>
+                
+                <p>また、勉強会ログです、すみません。。。
+直接業務とは関係ないのですが、今回はリクルートの中野さんが話しをされるというので顔を出してきました。
+もちろん、内容も気になりましたというのもありますが。
+実際には中野さんは2分くらいしか喋らなかったんですけどね。。。</p>
+<p>今回は、最初のセッションはちゃんとしたソースコードリーディングでした。
+Hadoopの入力としてデータをHDFSじゃなくて、MongoDBから取得するときに利用するMultipleInputの実装をしてみたというお話でした。
+MongoDBやHadoopを知らないと（私はあんまり知らない。。。）少しきつかったかもしれないです。
+幸い、HadoopのMultipleInputについては以前、すこしだけ見たことがあったので、かろうじてついていけました。
+最初の部分を聞きのがしてしまったので合っているか自信がないのですが、10genから出ている<a href="https://github.com/mongodb/mongo-hadoop">mongo-hadoop</a>の使い勝手、効率の悪そうなところに手を入れた話しがベースになっているんでしょうか？（ツッコミあるとうれしいです）
+気になったのは、MongoDBのデータをHadoopから直接取りに行くというユースケースがどういう場合に出てくるのかという点です。
+ネットワークやMongoDBの負荷がHadoop処理へのボトルネックになるんじゃないかしらという懸念がありそうだなと。
+発表を聞いていて感じたのは、やっぱりソース書いて動かさないとダメだよねぇ、自分も手を動かそうというところです。
+リクルートさんの発表は波乱万丈（？）でした。
+最後まで話しを聴いたあとに思った感想は「こんなに話して大丈夫なのかな？」「いろんな人を敵に回してない？」というものです。
+実際に昨年の夏くらいからEMCの草薙さんも検証メンバーに入って、リクルート社内での活用シーンをベースにMapRの検証をいろんな項目でやられたようです。（ある程度の詳細は以下のメモ参照）
+で、最終的な結論はまだ出ていないのですが、最後に出てきた検討中の比較対象が某C社のCDH。
+どちらかというとCDHの方に傾いてる感じに取れる終わり方で心配になりました。。。
+会場が会場だからというのもあったのかなぁ？
+mesosというキーワードが出てきたのが気になりました。単語だけは以前Twitterで流れてきたのを目にしてたのですが、どんなものかという概要がわかったのは収穫でした。
+リクルートさんの資料はどこまで公開されるかわからないですが、もう一度見たい気がします。（mesosの部分だけでも公開して欲しい）</p>
+<p>ということで、以下はいつもの自分用メモです。</p>
+<hr>
+<p>日時： 2012年2月8日（水） 19:00～21:30 （受付開始 18:40）
+場所： 豊洲センタービルアネックス（NTTデータ、豊洲駅直通）</p>
+<p>◎日本OSS貢献者賞・奨励賞のご案内　@hamaken
+　<a href="http://ossforum.jp/ossaward7th">日本OSS貢献者賞・奨励賞</a></p>
+<p>◎『オレオレMultipleInputを作る方法（仮）』@muddydixon さん
+<a href="http://www.slideshare.net/muddydixon/multipleinput">http://www.slideshare.net/muddydixon/multipleinput</a></p>
+<pre><code>
+　hadoopからMongoDBを利用する方法を紹介
+　CDH3u2かu3で試しました。
+　10genからも出てるけど使いにくい？から作った？
+　MongoMultipleInputs.addInputPath
+　　で色々簡単に使えるようにしたかった。
+　　絞り込みしてデータをMapperにとり込みたかったため。
+　　　＝絞り込みできないと必要なデータ以外も取得できてしまいJSONのパース処理がオーバヘッドになるから。
+　com.mongodb.hadoop.input.DelegatingInputFormat
+　　mongodbの環境にあわせて多くのsplitを生成する。
+　mongosへのアクセスはメタ情報の取り出しだけ。
+　あとは、個々のサーバにアクセスしてるのでデータ取り出しが高速？
+</code></pre><p>◎『MapRってどうよ？ - 実際に使ってみた感触を紹介します』
+　 - リクルート 中野さん、高林さん、大坪さん</p>
+<pre><code>
+　MapRの説明資料がなかったので、EMCの草薙さんが出てきて説明を開始。
+
+　Greenplum MRはMapRテクノロジが開発した実装のOEM版。
+　EMCは特に手を加えず。
+　※MapRについては前回のMapR勉強会の記事を御覧くださいな。
+　Q：JavaのAPI互換と言われている部分はHadoopのどのバージョン？
+　A：CDH3u2に近いパッチが当たってるらしい。
+　Q：DFSIO性能の比較対象のHadoopはどのバージョン？
+　A：手元に資料は残念ながらないです。
+
+　ここからリクルートさん。
+　検証内容：性能検証
+　　中古車サイトで利用されている3つのHiveに置き換えてみた。
+　結果（パーティション圧縮）
+　　MapRのほうが約1.3倍高速に（そこまで速くならなかった？）
+　結果（非パーティション圧縮）
+　　MapRのほうが約1.7倍高速に（そこまで速くならなかった？）
+　　ビルドイン圧縮はGzip圧縮と比較して高速
+　※チューニング次第では結果変わるかもね。
+
+　機能検証：マルチテナント検証
+　　目的：
+　　　複数ユーザに対して1つのクラスタを提供する
+　　　セキュリティの担保（）
+　　　余剰リソースの有効活用
+　　　複数ユーザのJobの並列実行？
+　　結果１（ユーザ権限まわり）
+　　　MapRのユーザはLinuxユーザに準拠。
+　　　同じmaprユーザでもUIDがずれてるとエラーが起きる。
+　　　MapR内のPermissionは内部のクラスタ、ボリュームの権限定義が可能
+　　　※Volumeは管理者に付加的な情報を与えるような存在
+　　　Job実行はHadoopと一緒のアクセス権。
+　　　
+　　結果２（FairScheduler）
+　　　MapRではデフォルトとなっている。
+　　　複数テナントからの同時ジョブ実行の動作を確認。
+　　　poolをベースにタスクを割り当ててく。
+　　　min/max値にあわせてslotが利用される模様
+　　結果３（Load処理（Hive）、Job実行（HiveのSelect））
+　　　じゃらんPVデータ１ヶ月分をロード。
+　　　NFS→MFS
+　　結果４（フェイルオーバー）
+　　　HA機能
+　　　ノード切り替え時間、タスクの復旧までの時間とか。
+　　結果５（DirectNFSでの転送）
+　　　NFSGatewayをクライアント側にした場合との違いなど。
+　　　クライアント側に載せた場合、通信量が減るから速度が出てる。
+　Mesos概要
+　　Apache IncubatorのOSS。C++により実装
+　　効率的なリソース分離、リソース共有機能を提供するクラスタマネージャ。
+　Mesosでの検証
+　　マルチテナント（ユーザ権限）硬い。
+　　リソース制限ができない。などなど。
+　MapRとMesosの比較
+　　資料期待！
+　リクルートとしてのMapRの評価
+　　保守/サポート/教育が充実してるのが重要。速度だけじゃない。
+　　けど、まだ検討中です。
+　Q：クラスタに対するパーミッションの権限情報はどこで管理されてるの？
+　　　どこが落ちたときにそのパーミッションの情報がとれなくなる？
+　A：CLDBで管理されてます。
+　Q：CLDB内部でのデータはバイナリ？DBを別途持ってる？
+　A：HDFS上にボリュームが作られてそこに吐き出されてる。
+　Q：Jobのスケジュールの情報とかはどこに？
+　A：Job管理データはJobTracker用のボリュームに保存されてる。
+　　　それを別の人が引き継ぐ。
+　Q：ボリュームが壊れたら？
+　A：さすがに壊れたら引き継げない。
+　　　けど、壊れにくくしてあるのが売り？
+　Q：MapRのチューニングのポイントはどんなものがあるの？
+　A：チューニングに関しては256Mのchunkサイズを64Mに減らした場合の化粧しかしてない。Apache Hadoopの方は若干チューニングした。
+　Q：DFSのシリアライズは？ボンディングとかでもできるんじゃないの？
+　A：そこはやってないのでやってみます。
+　Q：MapRでの8台構成で全部のせてみた場合、CLDBのリソースはどのくらいもっていってるの？
+　A：結構使ってる。CLDBを3台以上にしたらサポート対象外。
+　Q：CLDBを3台に制限してる理由は？
+　A：わからない。
+　Q：本番MapR、検証CDHというのはあり？
+　A：M3を開発環境で利用して欲しいですね。（ステマ？）開発目的だとM5を無償提供してほしいなー（EMCへのお願い？）
+　Q：Pigの検証は？
+　A：リクルートではHiveを利用してたので検証してない。
+
+
+次回は3月ころかなぁ？だそうです。
+</code></pre>
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2012/02/05/fluentd-meetup-japan%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F/" data-toggle="tooltip" data-placement="top" title="Fluentd Meetup Japanに参加しました。(Jugemより移植)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2012/02/21/lucene-gosen%E3%81%A8synonymfilter%E3%82%92%E5%88%A9%E7%94%A8%E3%81%99%E3%82%8B%E3%81%A8%E3%81%8D%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9%E5%95%8F%E9%A1%8C%E7%82%B9%E7%B7%A8/" data-toggle="tooltip" data-placement="top" title="lucene-gosenとSynonymFilterを利用するときの注意点（問題点編）(Jugemより移植)">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>

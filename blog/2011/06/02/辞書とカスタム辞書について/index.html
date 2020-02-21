@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="辞書とカスタム辞書について(Jugemより移植)" />
+    <meta property="og:title" content="辞書とカスタム辞書について(Jugemより移植)" />
+    <meta property="twitter:title" content="辞書とカスタム辞書について(Jugemより移植)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>辞書とカスタム辞書について(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2011/06/02/%E8%BE%9E%E6%9B%B8%E3%81%A8%E3%82%AB%E3%82%B9%E3%82%BF%E3%83%A0%E8%BE%9E%E6%9B%B8%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                    </div>
+                    <h1>辞書とカスタム辞書について(Jugemより移植)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Thursday, June 2, 2011
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#辞書の特性について">辞書の特性について</a></li>
+        <li><a href="#カスタム辞書について">カスタム辞書について</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                
+                <h3 id="辞書の特性について">辞書の特性について</h3>
+<p>現在lucene-gosenでは以下の2つの辞書が利用可能です。
+簡単に違いについて説明します。</p>
+<p>IPAdicの辞書について</p>
+<ul>
+<li>バージョン：2.6.0（※IPAdicとして公開されている最新は2.7.0）</li>
+<li>最終更新日：2003/06/19</li>
+<li>登録単語数：約24万語</li>
+<li>NAIST-Jdicができたためか、更新されていない</li>
+</ul>
+<p>NAIST-Jdic-for-ChaSenの辞書について</p>
+<ul>
+<li>バージョン：0.4.3（※NAISTとして公開されている最新はMeCab用の辞書0.6.3）</li>
+<li>最終更新日：2008/07/07</li>
+<li>登録単語数：約28万語</li>
+<li>IPAdicの後継として整備。品詞の定義など大まかな仕様は共通。</li>
+<li>IPAdicと異なり、アルファベットや数字が1文字ずつ単語として登録されている。</li>
+</ul>
+<p>IPAdicとNAIST-Jdicで大きな違いはアルファベットと数字の扱いについてです。
+次のような文章をそれぞれの辞書で解析した結果は次のようになります。(SolrのField Analysisの画面です。思いの外大きいのでサムネイルのみですが。)
+「このComputerは、10回に1回の割合で起動中に青い画面が表示されます。」
+○IPAdicの場合
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20110602/20110602_1866934.png" alt="IPAdicの解析結果"/>
+    </div>
+    <a href="/images/entries/20110602/20110602_1866934.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<br clear="all">
+○NAIST-Jdicの場合
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20110602/20110602_1866935.png" alt="NAIST-Jdicの解析結果"/>
+    </div>
+    <a href="/images/entries/20110602/20110602_1866935.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<br clear="all">
+「Computer」と「10」という単語の区切り方が異なることがわかります。
+この違いは、辞書のエントリが異なるために発生します。
+NAIST-Jdicでは、数字（例：「1」）やアルファベット（例：「a」）が個々のエントリで登録されているため、分割された単語として認識されます。</p>
+<p>※この問題への対応方法はまた後日。</p>
+<h3 id="カスタム辞書について">カスタム辞書について</h3>
+<p>実際のデータを形態素解析したい場合、辞書に存在しない単語を登録して、1単語として認識させたい場合があります。（固有名詞など）
+このような場合にカスタム辞書を利用することで、新しい単語を辞書に登録することが可能になります。
+カスタム辞書を利用する手順としては次のようになります。</p>
+<ol>
+<li>カスタム辞書ファイルの作成</li>
+<li>作成した辞書ファイルを利用したjarファイルの生成</li>
+</ol>
+<p>まずは辞書ファイルの作成についてです。
+以下では、naist-chasen(NAIST-Jdic)の辞書を例として説明します。（ディレクトリの違いだけで、IPAdicでも同じ方法でOKです。）</p>
+<p>lucene-gosenでは辞書のコンパイルに2つのフェーズが存在します。</p>
+<ol>
+<li>gosen用辞書を生成する前処理（中間csvファイルの生成）</li>
+<li>gosen用バイナリ辞書の生成</li>
+</ol>
+<p>カスタム辞書は1の出力の形式(=中間csvファイル=dictionary.csv)にあわせたCSVファイルとして作成します。
+CSVの各カラムは次のような意味を持っています。</p>
+<table border="1">
+<tr>
+<td>単語</td>
+<td>単語の生起コスト</td>
+<td>品詞</td>
+<td>品詞細分類1</td>
+<td>品詞細分類2</td>
+<td>品詞細分類3</td>
+<td>活用型</td>
+<td>活用形</td>
+<td>基本形</td>
+<td>読み</td>
+<td>発音</td>
+</tr>
+</table>
+3カラム目以降は「素性（そせい？）」と呼ばれる項目です。ipadic、naist-jdicでは「品詞」「品詞細分類1」「品詞細分類2」「品詞細分類3」「活用型」「活用形」「基本形」「読み」「発音」となります。
+※「見出し語」「形態素生起コスト」「素性」と呼ばれる項目を表形式にする。
+厳密な品詞の体系に関してはIPAdicやNAIST-Jdicのサイトをご覧ください（説明できるレベルにはまだまだなっていないので。。。）
+今回は、固有名詞（人名、地名など）を追加するという例でカスタム辞書について説明します。
+固有名詞として「達川」という人名を追加してみましょう。
+まずは、次のようなエントリをもつ「custom-dic.csv」ファイルを作成します。ファイルはUTF-8で保存してください。
+コストはすでにあるエントリで似たようなエントリのコストを真似します。（今回は固有名詞,人名で似ているものを採用）。ちなみに、コストは小さいほど単語として出てきやすくなります。
+※カスタム辞書にはSenで利用していたものが利用できます。
+<hr>
+<span style="background-color:#FFFFFF; color:#FF0000">**<em>"達川",2245,名詞,固有名詞,人名,名,*,*,"達川","タツカワ","タツカワ"</em>**</span>
+<hr>
+<p>上記ファイルを、先日紹介した$LUCENE-GOSEN/dictionary/ディレクトリにコピーします。
+では、カスタム辞書を含んだlucene-gosenのjarを作成しましょう。
+カスタム辞書のビルドは$LUCENE-GOSEN/dictionary/で行います。
+また、カスタム辞書の指定はCSVファイル名をantの引数で指定します。次がコマンドの例になります。</p>
+<pre><code>
+$ cd lucene-gosen-trunk
+$ cd dictionary
+$ ant -Ddictype=naist-chasen clean-sen
+$ ant -Ddictype=naist-chasen -Dcustom.dics=&quot;../custom-dic.csv&quot; compile
+$ cd ..
+$ ant -Ddictype=naist-chasen
+</code></pre><p>上記コマンドの例で&quot;clean-sen&quot;というタスクを実行しています。これは、すでに出来上がっているgosen用のバイナリ辞書を削除するタスクになります。すでにgosen用の辞書が作成されている場合には辞書の再生成が行われないためです。
+また、複数のファイルを利用したい場合は-Dcustom.dics=&quot;custom-dic.csv custom-dic2.csv&quot;という形でスペース区切りでファイル名を記述すればOKです。</p>
+<p>カスタム辞書を適用する前と適用後の違いは次のとおりです。
+適用前
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20110602/20110602_1867257.png" alt="カスタム辞書適用前"/>
+    </div>
+    <a href="/images/entries/20110602/20110602_1867257.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<br clear="all">
+適用後
+
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20110602/20110602_1867258.png" alt="カスタム辞書適用後"/>
+    </div>
+    <a href="/images/entries/20110602/20110602_1867258.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<br clear="all"></p>
+<p>簡単ですが、以上がカスタマイズ辞書を利用する方法でした。
+ちなみに、この記事を書く前にすでにカスタム辞書の件を書いている<a href="http://d.hatena.ne.jp/shinobu_aoki/20110525/1306342970">ブログ</a>がありました。。。こちらも参考にしてください。
+今回の例でいくつかSolrのanalysis画面を利用して説明してきました。Solrでのlucene-gosenの利用方法についてはまた後日記載したいと思います。
+※参考までに。Solrでの利用方法は<a href="http://lucene.jugem.jp/">こちら</a>にも記載してあります。</p>
+<p>また、IPAdicなどの辞書について記載のある書籍を見つけましたので、参考になれば。</p>
+
+
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/4625434394/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=4625434394&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/4625434394/?tag=johtani-22">
+      アプリケーションソフトの基礎 (講座ITと日本語研究)
+      </a>
+    </p>
+  </div>
+</div>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2011/05/26/%E3%82%BD%E3%83%BC%E3%82%B9%E3%81%8B%E3%82%89%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89%E3%81%A8%E6%A7%8B%E6%88%90/" data-toggle="tooltip" data-placement="top" title="ソースからのビルドと構成(Jugemより移植)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2011/06/06/lucene-gosen%E3%81%AEtokenfilter%E3%81%9F%E3%81%A1/" data-toggle="tooltip" data-placement="top" title="lucene-gosenのTokenFilterたち(Jugemより移植)">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>

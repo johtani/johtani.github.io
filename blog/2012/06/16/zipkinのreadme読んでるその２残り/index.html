@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="ZipkinのReadme読んでる（その２、残り）(Jugemより移植)" />
+    <meta property="og:title" content="ZipkinのReadme読んでる（その２、残り）(Jugemより移植)" />
+    <meta property="twitter:title" content="ZipkinのReadme読んでる（その２、残り）(Jugemより移植)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>ZipkinのReadme読んでる（その２、残り）(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2012/06/16/zipkin%E3%81%AEreadme%E8%AA%AD%E3%82%93%E3%81%A7%E3%82%8B%E3%81%9D%E3%81%AE%EF%BC%92%E6%AE%8B%E3%82%8A/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/zipkin" title="Zipkin">
+                            Zipkin
+                        </a>
+                        
+                    </div>
+                    <h1>ZipkinのReadme読んでる（その２、残り）(Jugemより移植)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Saturday, June 16, 2012
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents"></nav>
+                
+                <p>「鉄は熱いうちに打て」ということで、残りも勢いでメモ。
+まだ、見直しとかしてない状態なのでおかしいところとかありますが。。。
+図とか入れるのはまた今度。</p>
+<p><b>　Transport（転送）</b></p>
+<pre><code>
+　ZipkinとHadoopに異なるサービスからのトレースを送信するのにScribeを利用します。
+　ScribeはFacebookにより開発されました。
+　システムの各サーバで実行できるデーモンとして作成されています。
+　ログメッセージをListenし、カテゴリごとのcorrectレシーバーに配送します。
+
+</code></pre><p><b>　Zipkin collector daemon</b></p>
+<pre><code>
+　トレースデータがZipkinコレクターデーモンに配送されたらvalidかどうかをチェックしてから保管し、インデックスを作成します。
+
+</code></pre><p><b>　Storage</b></p>
+<pre><code>
+　ストレージにはCassandraを選びました。
+　スケーラブルで、柔軟なスキーマをもっており、Twitter内部で大変使われています。
+　このコンポーネントをプラガブルにしようと試みましたが、困難なため、ここでは公開しません。
+
+</code></pre><p><b>　Zipkin query daemon</b></p>
+<pre><code>
+　保存、インデックスされたデータを探す方法が必要です。
+</code></pre><p>　クエリーデーモンはユーザに対して簡単なThriftAPIを公開しており、トレースを探すことが可能です。<a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift">Thrift file</a>を見て下さい。</p>
+<p><b>　UI</b></p>
+<pre><code>
+　多くのユーザはUI経由でデータにアクセスします。
+</code></pre><p>　Visualizeに<a href="http://d3js.org/">D3</a>を利用したRailsアプリケーションです。
+　UIの認証は実装していないことに注意してください。</p>
+<p><b>モジュール</b>
+　<a href="https://github.com/twitter/zipkin/raw/master/doc/modules.png">Zipkin内部のモジュール関連図</a></p>
+<p>##インストール___
+<b>　<a href="http://cassandra.apache.org/">Cassandra</a></b></p>
+<pre><code>
+　ZipkinはCassandraをストレージにしています。Cassandraクラスタが必要になります。
+　1. Cassandraサイトを参考にしてクラスタを構築してください。
+　2. Zipkin Cassandraスキーマを利用します。つぎのコマンドでスキーマが作成できます。
+</code></pre><pre><code>
+bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassandra-schema.txt
+</code></pre><p><b>　<a href="http://zookeeper.apache.org/">Zookeeper</a></b></p>
+<pre><code>
+　Zipkinは協調のためにZooKeeperを利用します。
+　これは、保存すべきサーバをサンプルレートで決定し、サーバを登録します。？
+　1. ZooKeeperのサイトを参考にインストールしてください。
+</code></pre><p><b>　<a href="https://github.com/facebook/scribe">Scribe</a></b></p>
+<pre><code>
+　Scribeはトレースデータを配送するのに利用するロギングフレームワークです。
+　ネットワーク保存先としてZipkinコレクターデーモンを指定する必要があります。
+
+　Scribeの設定は次のようにします。
+</code></pre><pre><code>
+&lt;store&amp;gt;
+  category=zipkin
+  type=network
+  remote_host=zk://zookeeper-hostname:2181/scribe/zipkin
+  remote_port=9410
+  use_conn_pool=yes
+  default_max_msg_before_reconnect=50000
+  allowable_delta_before_reconnect=12500
+  must_succeed=no
+&lt;/store&amp;gt;
+</code></pre><pre><code>
+　注意：上記設定は、カテゴリーにより送信ホストを見つけるためにZooKeeperを利用するサポートのScribeのTwitterバージョンを使用する方法です。
+　コレクターのためのDNSエントリーを利用したりもできます。
+</code></pre><p><b>　Zipkinサーバ</b>
+　Zipkinサーバは<a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>、<a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>そしてJDK6で開発しました。</p>
+<pre><code>
+ 1. git clone https://github.com/twitter/zipkin.git
+ 2. cd zipkin
+ 3. cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala
+ 4. cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala
+ 5. Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.
+ 6. bin/sbt update package-dist (This downloads SBT 0.11.2 if it doesn't already exist)
+ 7. scp dist/zipkin*.zip [server]
+ 8. ssh [server]
+ 9. unzip zipkin*.zip
+10. mkdir -p /var/log/zipkin
+11. zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-prod.scala
+12. zipkin-server/scripts/query.sh -f zipkin-server/config/query-prod.scala
+</code></pre><pre><code>
+　SBTでコレクターとクエリサービスを起動します。
+　Scribeコレクターサービスの起動方法は次の通り。
+</code></pre><pre><code>
+bin/sbt 'project zipkin-scribe' 'run -f zipkin-scribe/config/collector-dev.scala'
+</code></pre><pre><code>
+　クエリサービスは次の通り
+</code></pre><pre><code>
+bin/sbt 'project zipkin-server' 'run -f zipkin-server/config/query-dev.scala'
+</code></pre><p><b>　Zipkin UI</b></p>
+<pre><code>
+　UIはRails3アプリです。
+　1. 設定をZooKeeperサーバでアップデートします。これはクエリデーモンを見つけるのに利用します。
+　2. Rails3アプリケーションサーバにデプロイします。テストの場合は次のようにすることもできます。
+</code></pre><pre><code>
+bundle install &amp;amp;&amp;amp; bundle exec rails server.
+</code></pre><p><b>　zipkin-tracer gem</b></p>
+<pre><code>
+　zipkin-tracer gemをトレースしたいRailsアプリケーションにRack Handlerで追加します。
+　config.ruにつぎの記載をします。
+</code></pre><pre><code>
+  use ZipkinTracer::RackHandler
+  run &lt;YOUR_APPLICATION&gt;
+</code></pre><pre><code>
+　もし、アプリケーションのstatic assetsがRailsで提供されれば、リクエストがトレースされます。
+
+</code></pre><p>##　Running a Hadoop job<hr></p>
+<pre><code>
+　ScribeからHadoopにログを保存する設定をすることも可能です。
+　これをすると、Zipkin自身でオンザフライで簡単に作れないデータから様々なレポートが作成可能です。
+</code></pre><p>　ScalaでHadoopのジョブをかける<a href="https://github.com/twitter/scalding">Scalding</a>というライブラリを利用します。</p>
+<div style=" margin-left: 2em;">
+```
+<p>　1. Hadoopジョブを実行するためのfatなjarを作成します。
+　2. scald.rbをjarをコピーしたいホスト名とjobを実行するホスト名に書き換えます。
+　3. 必要なら、scald.rbのjarファイルのバージョンを更新します。
+　4. scald.rbスクリプトを利用してジョブを実行できます。</p>
+<pre><code class="language-</div>" data-lang="</div>"></code></pre><p>./scald.rb &ndash;hdfs com.twitter.zipkin.hadoop.[classname] &ndash;date yyyy-mm-ddThh:mm yyyy-mm-ddThh:mm &ndash;output [dir]</p>
+<pre><code>
+##計測ライブラリの利用方法&lt;hr&gt;
+</code></pre><p>　計測のためのライブラリとプロトコルがちょっとだけあります。
+　しかし、もっと計測するための役に立つものを望んでいます。
+　開始する前にトレースデータがどんな構造なのかを知る必要があります。</p>
+<p>　　・Annotation - 値、タイムスタンプ、ホストを含みます。
+　　・Span - 特定のRPCに相当するAnnotationの集合
+　　・Trace - あるルートSpanにぶら下がるSpanの集合</p>
+<p>　Zipkinに送信するトレースデータです。</p>
+<pre><code>　これらの詳細な記述は[こちら](https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinCore.thrift)を見て下さい。
+</code></pre><p>　その他にトレースデータの重要なものは、トレースされたサービス間でやり取りされる情報である、軽量なヘッダーです。
+　トレースヘッダは次のものから構成されます。</p>
+<p>　・Trace Id - トレース全体のID
+　・Span Id - 個々のリクエストのID
+　・Optional Parent Span Id - このリクエストが他のリクエストの一部として生成されたら付与される
+　・Sampled boolean - トレースすべきかどうかを表すフラグ</p>
+<p>　データタイプについて、理解したので、どのように計測が行われるかを順をおってみてみましょう
+　例はFinagleのHTTPがどのようにトレースされるかを示しています。
+　他のライブラリやプロトコルはもちろん、異なりますが、基本的な部分は一緒です。</p>
+<pre><code>&lt;b&gt;　サーバサイド&lt;/b&gt;
+　1. 到達したリクエストのトレースヘッダー存在するかどうかを調べます。存在すれば、なら、このリクエストに対して関連するIDとします。トレースヘッダーがなければ、サンプリング対象かどうかを決めて、新しいTrace Id、Span Idを生成します。参考には[HttpSererTracingFilter](https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala)を見て下さい。
+
+　2. もし、現在のリクエストがサンプリングされる場合、サービス名、ホスト名、スパン名（例えば、http get/put）、その他のAnnotationのような情報を集めます。
+　　リクエスト受信時には「server received」というAnnotationを生成し、処理が終了して結果を返すときに「server send」というAnnotationを生成します。
+　　参考には[HttpServerTracingFilter](https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala)を見てください。
+
+　3. 生成されたトレースデータはServerBuilderにより設定されたトレーサーに渡されます。
+　　デバッグのためのConsoleTracerが例としてありますが、ZipkinTracerになります。
+　　トレースデータを[ZipkinTracer](https://github.com/twitter/finagle/tree/master/finagle-zipkin)が受け取った時、Span Idにより集約されます。
+
+　4. ZipkinTracerが&quot;end of span&quot;イベント（&quot;server received&quot;アノテーションやタイムアウトのような）を受け取ると、Thrift構造としてデータを集約してScribeに送ります。もし、そのようなイベントが発生しない場合、ZipkinTracerはいつかそのデータを送信します？？？おかしい？。データ送信のための他の方法も追加します。
+　ThriftやScribeのようなものですが、JSONやHttpかもしれません？
+
+&lt;b&gt;　クライアントサイド&lt;/b&gt;
+　1. リクエストを送る前にそれがトレースの一部かどうかをチェックします。
+　　サーバで利用されているとします。　
+　　サーバは、リクエストを処理してすでに付与されているトレースIDを割り当てます。
+　　トレースIDを再利用しますが、この新しいリクエストには新しいスパンIDを生成します。
+　　また、親のスパンIDが存在すれば、前のスパンIDに設定します。
+　　[ここ(TracingFilter)](https://github.com/twitter/finagle/blob/master/finagle-core/src/main/scala/com/twitter/finagle/tracing/TracingFilter.scala)や[ここ(Trace)](https://github.com/twitter/finagle/blob/master/finagle-core/src/main/scala/com/twitter/finagle/tracing/Trace.scala)が参考になります。
+
+　2. サーバサイドと同様に、送信されるHttpリクエストにトレースヘッダーを追加するための[HttpClientTracingFilter](https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala)があります。
+
+　3. リクエスト送信前の「client send」やサーバからの返信を受信した「client receive」のようなアノテーションを生成します。
+
+　4. サーバサイドと同様に、データがZipkinにデータを送るZipkinTracerに到達します。
+
+</code></pre>
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2012/06/15/zipkin%E3%81%AEreadme%E3%82%92%E8%AA%AD%E3%82%93%E3%81%A7%E3%82%8B%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E5%91%A8%E3%82%8A%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/" data-toggle="tooltip" data-placement="top" title="ZipkinのReadmeを読んでる（クライアント周りについて）(Jugemより移植)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2012/06/18/lucene-gosen%E3%81%AEunidic%E5%AF%BE%E5%BF%9C/" data-toggle="tooltip" data-placement="top" title="lucene-gosenのUniDic対応(Jugemより移植)">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Partial UpdateとcopyFieldのバグ【Solr 4.0 ALPHA】(Jugemより移植)" />
+    <meta property="og:title" content="Partial UpdateとcopyFieldのバグ【Solr 4.0 ALPHA】(Jugemより移植)" />
+    <meta property="twitter:title" content="Partial UpdateとcopyFieldのバグ【Solr 4.0 ALPHA】(Jugemより移植)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Partial UpdateとcopyFieldのバグ【Solr 4.0 ALPHA】(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2012/07/13/partial-update%E3%81%A8copyfield%E3%81%AE%E3%83%90%E3%82%B0solr-4-0-alpha/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                    </div>
+                    <h1>Partial UpdateとcopyFieldのバグ【Solr 4.0 ALPHA】(Jugemより移植)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Friday, July 13, 2012
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents"></nav>
+                
+                <p>今日はSolr 4.0 ALPHAの興味深い機能があったので紹介です。
+数日前に<a href="http://solr.pl/en/2012/07/09/solr-4-0-partial-documents-update/">「Solr 4.0: Partial documents update」</a>という記事を見つけました。</p>
+<p>Solrには、ドキュメント（RDBで言うレコード）のデータを更新したい場合には、特定のフィールドだけを更新するという機能がありませんでした。
+ですので、特定の項目（例えば、priceなど）を更新したい場合、ドキュメントの全データをSolrに再度上書き登録するという処理をしなければなりませんでした。
+RDBを触っていた方が、Solrを始めた場合に必ず使いづらいと思われる点だと思います。</p>
+<p>で、4.0でその機能がありますという、<a href="http://solr.pl/en/2012/07/09/solr-4-0-partial-documents-update/">「Solr 4.0: Partial documents update」</a>の記事を見つけました。
+ただ、SolrのWikiや4.0 ALPHAの紹介のページには「partial update」という記述が見当たりません。
+（あれ、これかな？<a href="http://wiki.apache.org/solr/Per%20Steffensen/Update%20semantics">Update semantics</a>）
+あと、まだ完成していないので、載っていないのかもしれないです。（この<a href="https://issues.apache.org/jira/browse/SOLR-139">チケットSOLR-139</a>が部分更新に関するもののはず。チケット番号をみても古くから望まれている機能だということがわかります。）</p>
+<p>ということで、調べてみました。</p>
+<p>###機能概要</p>
+<hr>
+<p>Solrの機能として、特定のフィールドのみを更新するという機能です。
+あくまでも、Solrレベルでの機能となり、Luceneの機能を利用したものではありません。
+つぎのような流れになっています。</p>
+<ol>
+<li>Solrに対して特定フィールドを更新したいという形のドキュメントを投げる</li>
+<li>Solrはドキュメントを受け取ると、内部のインデックスに保存してあるデータを取り出す</li>
+<li>取り出したドキュメントオブジェクトに対して、更新対象フィールドの値だけデータを更新する</li>
+<li>ドキュメントオブジェクトをインデックスに保存する</li>
+</ol>
+<p>このような流れです。
+まぁ、言われてみれば当たり前な処理です。
+ただし、この機能を使う場合はいくつかの前提条件があります。</p>
+<p>###前提条件</p>
+<hr>
+<p>前提条件はつぎのとおりです。</p>
+<ul>
+<li>すべてのフィールドをstored=&quot;true&quot;にする</li>
+<li>「<em>version</em>」という特殊なフィールドを用意する</li>
+</ul>
+<p>1点目は、データの保存方法についてです。
+先ほど流れに書きましたが、Solrが内部に保存してあるデータを取り出して、更新対象以外のデータを保存しなおしてくれます。
+このため、stored=&quot;true&quot;にしておかないと、元のデータがSolr内部で取得できません。</p>
+<p>2点目の「<em>version</em>」というフィールドは4.0から導入されたフィールドです。
+SolrCloudに必要な機能としてドキュメントのバージョン管理を行うために導入されたフィールドだと思います。（あまり詳しく調べていない。。。）
+SolrCloud内でレプリカの更新などに使ってるのかなぁと（そのうち調べます。）
+以上の2点が前提条件です。すべてのデータをstored=&quot;true&quot;としなければならない点は、インデックスのサイズや性能に関わってくるので考えて利用するほうがいいかと思います。</p>
+<p>###利用方法</p>
+<hr>
+<p>Solrのサンプルデータ（exampledocs/mem.xml）を例として利用します。
+部分更新を行うにはつぎのような形のデータを投げると部分更新が可能です。
+（JSONでの更新のサンプルについては、<a href="http://solr.pl/en/2012/07/09/solr-4-0-partial-documents-update/">こちらの記事</a>を参考にしてください。）
+####XMLのサンプル（partial_update.xmlというファイルで保存する）</p>
+<pre><code>&lt;add&amp;gt;
+&lt;doc&amp;gt;
+  &lt;field name=&quot;id&quot;&amp;gt;VS1GB400C3&lt;/field&amp;gt;
+  &lt;field name=&quot;_version_&quot;&amp;gt;バージョン番号&lt;/field&amp;gt;
+  &lt;field name=&quot;cat&quot; update=&quot;add&quot;&amp;gt;cats_and_dogs&lt;/field&amp;gt;
+  &lt;field name=&quot;popularity&quot; update=&quot;inc&quot;&amp;gt;10&lt;/field&amp;gt;
+  &lt;!-- set empty for SOLR-3502 bug --&amp;gt;
+  &lt;field name=&quot;price_c&quot; update=&quot;set&quot;&amp;gt;0.0,USD&lt;/field&amp;gt;
+&lt;/doc&amp;gt;
+&lt;/add&amp;gt;
+</code></pre><p>上記サンプルのうち、<b>バージョン番号</b>の部分は、現在Solrに登録してある値を指定します。（Solrの管理画面で検索すれば表示されます。）
+上記ファイルを「SOLR_HOME/example/exampledocs」に保存し、同フォルダにてつぎのコマンドを実行すると、部分更新されるのがわかります。
+Solrに更新であるというフィールドがわかるように、fieldタグにupdateという属性を指定してあります。</p>
+<pre><code>
+java -Durl=http://localhost:8983/solr/update?versions=on -Dout=yes -jar post.jar partial_update.xml
+</code></pre><p>ちなみに、上記post.jarのオプションで、「-Durl」「-Dout」を追加してあります。
+「-Durl」はverions=onというパラメータを追加したいためです。
+「-Dout」はPOSTした結果をターミナルに表示するために追加しています。
+これらのオプションを指定すると、データ更新後のバージョンが取得できるようになります。</p>
+<p>####更新に利用できるコマンド？
+部分更新にはつぎの3つのコマンド？（正式名は不明）が用意されています。fieldタグのupdate属性に指定します。</p>
+<table class="list_view">
+  <thead>
+    <tr>
+      <th>コマンド？</th>
+      <th>説明</th>
+    </tr> 
+  </thead>
+<tbody>
+<tr>
+  <td>add</td>
+  <td>値を追加します。multiValuedのフィールドでない場合はエラーが出ます。</td>
+</tr>
+<tr>
+  <td>set</td>
+  <td>値を新規に登録しなおします。現在入っているデータは無くなります</td>
+</tr>
+<tr>
+<td>inc</td>
+<td>指定された数値を加算（数値形式のみ）</td>
+</tr>
+</tbody>
+</table>
+以上が、部分更新の機能になります。
+ちなみに、登録されているバージョンと更新データに入っているバージョンが異なる場合はエラーが発生する仕組みになっているようです。
+<p>それとは別に、この機能を調べていて、copyFieldのバグにぶつかってしまいました。。。
+multiValuedでない、copyFieldを利用しているしている場合には注意が必要です。</p>
+<p>###copyFieldのバグ（SOLR-3502）</p>
+<hr>
+<p>4.0-ALPHA（3.6.0でも再現しました。）のexampleのデータで部分更新の機能を確認できると言いました。
+ただし、「price_c」というフィールドのせいで、2回部分更新を行うと2回目にエラーが発生します。
+根本的な問題は、部分更新ではなく<a href="https://issues.apache.org/jira/browse/SOLR-3502">copyFieldのバグ</a>のようです。（部分更新の処理にも問題は有るような気がしますが。。。）</p>
+<p>バグの内容はつぎのとおりです。</p>
+<ul>
+<li>multiValued=&quot;false&quot;のフィールドをdestに指定</li>
+<li>srcに指定されたフィールドに値を設定（exampleのpriceフィールドに「1」を指定）</li>
+<li>destに指定されたフィールドに値を設定（exampleのprice_cフィールドに「2,USD」を指定）</li>
+</ul>
+<p>上記のように設定した場合、「price_c」フィールドに、指定された値＋「price」の値がcopyにより追加されます。
+通常は「price_c」フィールドはmultiValued=&quot;false&quot;なのでエラーが出るはずなのですが、エラーが発生せず2つの値が登録されてしまいます。</p>
+<p>このバグのため、exampleのデータを利用して部分更新を行うとつぎのような状態が発生します。
+更新を行う対象のデータはprice、price_cフィールド以外のフィールドとします。</p>
+<ul>
+<li>1回目の登録後：priceフィールド「&ldquo;185.0&rdquo;」、price_cフィールド「&ldquo;185.0,USD&rdquo;」</li>
+<li>2回目の登録後：priceフィールド「&ldquo;185.0&rdquo;」、price_cフィールド「[&ldquo;185.0,USD&rdquo;,&ldquo;185.0,USD&rdquo;]」</li>
+<li>3回目の登録：エラーが発生</li>
+</ul>
+<p>部分更新の処理で、すでに登録済みのデータをSolrが自動で取り出すため、2回目の登録処理にて「price_c」の登録済みの値がSolrから取り出され、さらにcopyField設定により、「price」の値が追加されます。
+本当は2回目の登録でエラーが発生すべきなのですが、バグのためエラーが発生せずに登録できてしまいます。
+部分更新の処理としては、copyフィールドのdestに指定されているフィールドの値を取り出さないほうがいいような気もしますが、きちんと考えてないのでなんとも言えないです。（制約事項とする形のほうがいいかもしれません）</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2012/07/13/mir%E8%BC%AA%E8%AA%AD%E4%BC%9A%E5%A7%8B%E3%82%81%E3%81%BE%E3%81%97%E3%81%9F/" data-toggle="tooltip" data-placement="top" title="MIR輪読会始めました(Jugemより移植)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="/blog/2012/07/28/python-developers-festa-2012-07%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%97%E3%82%83%E3%81%B9%E3%81%A3%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F-pyfes/" data-toggle="tooltip" data-placement="top" title="Python Developers Festa 2012.07に参加してしゃべってきました #pyfes(Jugemより移植)">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>
