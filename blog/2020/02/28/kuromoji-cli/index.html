@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="実践Rust入門の3章を読んでるところ" />
-    <meta property="og:title" content="実践Rust入門の3章を読んでるところ" />
-    <meta property="twitter:title" content="実践Rust入門の3章を読んでるところ" />
+    <meta name="title" content="KuromojiのCLIコマンドとpicocliとGraalVM" />
+    <meta property="og:title" content="KuromojiのCLIコマンドとpicocliとGraalVM" />
+    <meta property="twitter:title" content="KuromojiのCLIコマンドとpicocliとGraalVM" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>実践Rust入門の3章を読んでるところ-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>KuromojiのCLIコマンドとpicocliとGraalVM-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/02/23/bicycle-book-chap3/">
+    <link rel="canonical" href="/blog/2020/02/28/kuromoji-cli/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -167,16 +167,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/rust" title="rust">
-                            rust
-                        </a>
-                        
-                        <a class="tag" href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
-                            読書
+                        <a class="tag" href="/tags/misc" title="misc">
+                            misc
                         </a>
                         
                     </div>
-                    <h1>実践Rust入門の3章を読んでるところ</h1>
+                    <h1>KuromojiのCLIコマンドとpicocliとGraalVM</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -184,7 +180,7 @@
                             johtani
                          
                         on 
-                        Sunday, February 23, 2020
+                        Friday, February 28, 2020
                         
                         
                         
@@ -214,53 +210,82 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#疑問点">疑問点</a></li>
-    <li><a href="#便利なツール">便利なツール</a></li>
+    <li><a href="#kuromoji-cli">Kuromoji-CLI</a></li>
+    <li><a href="#picocli">picocli</a></li>
+    <li><a href="#graalvm">GraalVM</a></li>
+    <li><a href="#辞書が読み込めなかった">辞書が読み込めなかった</a></li>
+    <li><a href="#完成">完成</a>
+      <ul>
+        <li><a href="#参考資料">参考資料</a></li>
+      </ul>
+    </li>
+    <li><a href="#まだ途中">まだ途中?</a></li>
   </ul>
 </nav>
                 
-                <p>これまでのはこちら。読書メモなので、本と合わせて読んでいただくのが良いです。</p>
+                <h2 id="kuromoji-cli">Kuromoji-CLI</h2>
+<p><a href="https://qiita.com/mosuka/items/0fdaaf91f5530d427dc7">Rust初心者がRust製の日本語形態素解析器の開発を引き継いでみた</a>という記事にありますが、LinderaというRust製の日本語形態素解析が出てきました。KuromojiのRustクローンみたいなものです。
+で、作者の人とのチャットの中で、「MeCabみたいなKuromojiのCLIないですかね？誰か知りませんか？」という話になりました。</p>
+<p>自分は普段はKuromojiの確認をするのは、Elasticsearch関連もしくは、Azure Searchなどだったりするので、
+当たり前のようにKibanaを立ち上げたり、REST APIを叩いてましたが、たしかにコマンドラインインタフェースあると便利かも?
+と思い、作ってみるかということに。</p>
+<h2 id="picocli">picocli</h2>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">いま、JavaでかんたんなCLI作るとなったら何がおすすめ？</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1232486871772459009?ref_src=twsrc%5Etfw">February 26, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>で、いつものツイートです。で、<a href="https://github.com/remkop/picocli">picocli</a>という返信がありました。
+JavaでCLIのプログラムを書くのが簡単になりそうだと。
+<a href="https://picocli.info/">ドキュメント</a>もしっかりしてます。サンプルも載ってるし。</p>
+<p><a href="https://github.com/johtani/kuromoji-cli/blob/master/src/main/java/info/johtani/misc/cli/kuromoji/KuromojiCli.java#L38">Annotationで、コマンドの説明などパラメータ、オプションなどが記述でき、必須チェックなども可能です</a>。</p>
+<p>また、オプションの説明文に関しては、テンプレートを用いることで、取りうる値をEnumの値で出力してくれたりといった便利機能まで備わっていました。</p>
+<h2 id="graalvm">GraalVM</h2>
+<p>また、<a href="https://remkop.github.io/presentations/20190906/">GRAALVMとPICOCLIでJAVAのネイティブコマンドラインアプリを作ろう</a>というスライドも教えてもらい、ネイティブコマンドまで作れるらしいと。
+なんて便利なんでしょう!ってことで、こちらもチャレンジしてみました。
+GraalVMがどんなものかはなんとなくは知ってたのですが、何者だろう?とツイートしたところ、これまた返信が。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">っ 資料はかなり古いので現行版と乖離はあるけど概念は変わってないので..<a href="https://t.co/KRQjhNdD9f">https://t.co/KRQjhNdD9f</a></p>&mdash; たむたむ🛌 (@tamtam180) <a href="https://twitter.com/tamtam180/status/1232654053458399233?ref_src=twsrc%5Etfw">February 26, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">「OCHaCafe2 #2 一体何モノなの？GraalVM入門編」の時の資料です。ご参考まで。<a href="https://t.co/NiKdIfRvTj">https://t.co/NiKdIfRvTj</a></p>&mdash; Takahiro Kitayama (@kitayama_t) <a href="https://twitter.com/kitayama_t/status/1232657370410389505?ref_src=twsrc%5Etfw">February 26, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>本当に、Twitter便利ですね。</p>
+<p>GraalVMがどんなものかもいただいた資料でサクッと理解できました。
+ただ、picocliが実はものすごく良くできており、自分でインストールする必要も実はありませんでした。</p>
+<p><a href="https://github.com/palantir/gradle-graal">gradle-graal</a>というGradleのプラグインと、
+<a href="https://github.com/remkop/picocli/tree/master/picocli-codegen">Picocli Code Generation</a>を利用することで、
+以下のコマンドを実行することで、ネイティブコマンドアプリが作成できました。</p>
+<pre><code>gradle nativeImage
+</code></pre><p><code>build.gradle</code>ファイルに記述したのは、以下のような項目です。</p>
 <ul>
-<li><a href="/blog/2020/01/31/start-reading-bicycle-book">実践Rust入門はじめました</a></li>
+<li><a href="https://github.com/johtani/kuromoji-cli/blob/master/build.gradle#L4">pluginの利用</a></li>
+<li><a href="https://github.com/johtani/kuromoji-cli/blob/master/build.gradle#L28">picocli-codegenをannotationProcessorとして呼び出し</a></li>
+<li><a href="https://github.com/johtani/kuromoji-cli/blob/master/build.gradle#L39">jarに関する記述(メインクラスと依存するJarを含める設定)</a></li>
+<li><a href="https://github.com/johtani/kuromoji-cli/blob/master/build.gradle#L46">ネイティブコマンドの名前とか(gradle-graalの設定)</a></li>
 </ul>
-<p>3章のクイックツアーを読んでます。
-バイトニックソート自体の理解はちょっとおいておいて、読み進めています。
-いくつか疑問に思ったことがあったので、またメモを。
-まだ、3.5.7の手前ですが。</p>
-<h2 id="疑問点">疑問点</h2>
-<ol>
-<li>
-<p>3.4.1のジェネリクス対応のテストケースの部分で、既存のu32用のテストケースの入力のデータ列に<code>Vec&lt;u32&gt;</code>という型注釈をつけるのですが、
-追加した文字列の入力データには注釈をここではつけないのはなんでなんだろう?<em>ちなみに、なくても動いた。バージョンの違いとかあるのかしら?</em></p>
-</li>
-<li>
-<p>3.4.6のmatch文</p>
+<h2 id="辞書が読み込めなかった">辞書が読み込めなかった</h2>
+<p>で、native imageを作って実行しましたが、Kuromojiが内包している辞書ファイルが読み込めませんでした。
+どうやら、picocli-codegenの自動生成では対応できない、リソース関連設定が必要らしいと。</p>
+<p><a href="https://github.com/remkop/picocli/tree/master/picocli-codegen#other-options">picocli-godegenの設定</a>を見ていて見つけたのが、<code>other.resource.patterns</code>というオプションでした。</p>
+<p><a href="https://github.com/johtani/kuromoji-cli/blob/master/build.gradle#L35">kuromoji-cliのbuild.gradleに</a>、その設定を加えたら辞書が読み込めるようになりました。</p>
+<p>この設定をどうやって書くのか?というのを探すのにちょっと時間がかかりました。Picocli作者のRemko Popmaさんの<a href="https://github.com/remkop/picocli-native-image-demo/blob/master/build.gradle">サンプルリポジトリに設定を利用した<code>build.gradle</code></a>がありました。サンプル本当にありがたいですね。</p>
+<h2 id="完成">完成</h2>
+<p>出来上がったのは、<a href="https://github.com/johtani/kuromoji-cli">kuromoji-cli</a>というリポジトリになります。
+内部で利用しているのはAtilikaのKuromojiです。LuceneのKuromojiではないのでご注意を(LuceneのKuromojiで最初やってみたのですが、リフレクションなどが多用されてて、Single Imageにするのが手間がかかりそうだった)。
+コマンドのポータビリティはそれほど無いと理解してる(あってる?)ので、利用してみたい方は、リポジトリをクローンしてからビルドしてみてください。</p>
+<h3 id="参考資料">参考資料</h3>
 <ul>
-<li><code>match</code>文の引数?が<code>*order</code>になっていたが、<code>order</code>でも実行できた。引数にくるのが参照だから<code>*</code>が付いてるんだとも運だが、なくても動くのはコンパイラがよしなに解釈してくれてるからかな?</li>
+<li><a href="https://www.atilika.com/ja/kuromoji/">kuromoji</a></li>
+<li><a href="https://picocli.info/">Picocliドキュメント</a></li>
+<li><a href="https://www.slideshare.net/tamrin69/getting-started-graalvm">Getting Started GraalVM / GraalVM超入門</a></li>
+<li><a href="https://speakerdeck.com/hhiroshell/graalvm-for-beginners">一体何モノなの? GraalVM入門編 / GraalVM for beginners</a></li>
 </ul>
-</li>
-</ol>
-<h2 id="便利なツール">便利なツール</h2>
-<p>Rust標準のツールの説明がいくつか3章で紹介されてて便利だったのでメモ。</p>
-<ol>
-<li>rustfmt</li>
-</ol>
-<p>フォーマッター。デフォルトでフォーマット機能が付いてるの便利ですね。言語として決まってると、プロジェクトごとに悩まなくていいってのがありますし。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-zsh" data-lang="zsh">rustfmt ファイル名
-</code></pre></div><p>という形で使えるみたい。
-プロジェクトごとだと<code>cargo fmt</code>のほうが楽そうかな。</p>
-<ol start="2">
-<li>標準ライブラリAPIドキュメントをブラウザで閲覧</li>
-</ol>
-<pre><code>rustup doc --std
-</code></pre><p>これでデフォルトブラウザでRustの公式ドキュメントが開きます。
-しかもローカルファイルだからサクサク。検索バーもついてて便利です。</p>
-<ol start="3">
-<li>エラーのドキュメントを閲覧</li>
-</ol>
-<pre><code>rustc --explain 308
-</code></pre><p>コンパイル時にエラーが出たときに、<code>error[E0308]</code>のようにコンソールに出てきます。
-ヒントも出てくるのですが、詳細が上記のコマンドで読めるみたいです。</p>
+<h2 id="まだ途中">まだ途中?</h2>
+<p>ほかにもあると便利かも?という機能があればIssueやPRを上げてください。
+とりあえず、頭にあるのは以下のとおりです。</p>
+<ul>
+<li>JSONの出力はまだ未対応</li>
+<li>いろんな辞書をAtilikaのKuromojiはサポートしてるのでそのへんも対応してみる?</li>
+</ul>
 
 
                 
@@ -269,15 +294,10 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/02/21/best-buy-2019/" data-toggle="tooltip" data-placement="top" title="2019年に買ってよかったもの">&larr;
+                        <a href="/blog/2020/02/23/bicycle-book-chap3/" data-toggle="tooltip" data-placement="top" title="実践Rust入門の3章を読んでるところ">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/02/28/kuromoji-cli/" data-toggle="tooltip" data-placement="top" title="KuromojiのCLIコマンドとpicocliとGraalVM">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
