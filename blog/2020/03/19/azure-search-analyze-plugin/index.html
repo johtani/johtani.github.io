@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Visual Studio Codeのプラグインを作ってみた(Azure Search Analyze Client)" />
+    <meta property="og:title" content="Visual Studio Codeのプラグインを作ってみた(Azure Search Analyze Client)" />
+    <meta property="twitter:title" content="Visual Studio Codeのプラグインを作ってみた(Azure Search Analyze Client)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Visual Studio Codeのプラグインを作ってみた(Azure Search Analyze Client)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2020/03/19/azure-search-analyze-plugin/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/syntax.css">
+    
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/docco.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/azure-search" title="azure search">
+                            azure search
+                        </a>
+                        
+                        <a class="tag" href="/tags/visual-studio-code" title="visual studio code">
+                            visual studio code
+                        </a>
+                        
+                    </div>
+                    <h1>Visual Studio Codeのプラグインを作ってみた(Azure Search Analyze Client)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Thursday, March 19, 2020
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#動機">動機</a>
+      <ul>
+        <li><a href="#余談">余談</a></li>
+      </ul>
+    </li>
+    <li><a href="#概要と機能">概要と機能</a>
+      <ul>
+        <li><a href="#入力値設定用のドキュメント作成">入力値設定用のドキュメント作成</a></li>
+        <li><a href="#結果表示">結果表示</a></li>
+      </ul>
+    </li>
+    <li><a href="#visual-studio-codeのプラグインの作り方">Visual Studio Codeのプラグインの作り方</a></li>
+    <li><a href="#今後の対応">今後の対応?</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <h2 id="動機">動機</h2>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/search/search-what-is-azure-search">Azure Cognitive Search</a>を検索エンジンに使っているお客さんを手伝っています。
+そこで、<a href="https://noti.st/johtani/halVGM">検索の基本的な話</a>をさせていただきました(もともとJJUGナイトセミナーでしゃべる予定だったスライドがベース)。</p>
+<p>で、Elasticsearchなどの転置インデックスを利用している検索エンジンで検索の基本的な動作がどうなっているかを理解するのに、
+個人的には一番重要だと思っているのがAnalysis(Analyze)の機能です。
+転置インデックスの単語の切り出し方がどうなっているかによって、望んだ単語でうまく検索できているかいないかなどがわかります。</p>
+<p><a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/test-analyzer">Azure Cognitive SearchもAnalyze Text</a>というAPIを提供してくれています(内部的にはElasticsearchだし)。
+APIはあるのですが、返ってくる結果はJSONです。また、他のAnalyzerの設定との違いなどをみたくなったりもします。
+やはり、普段使っているツールなどで簡単にどういう単語が出てくるかがわかるとうれしんじゃないかなぁ?と。</p>
+<p>ということで、最初はPythonでちょっとAPI呼び出して、カンマ区切りで出力するものを作ってみたのですが、GUIとかあると便利かなぁという話になりました。
+最近、ブログ書いたりするのにVisual Studio Codeを使い始めているので、これなら使いやすいかなと。
+ということで、Visual Studio Codeの拡張機能(プラグイン?)としてインストールできる<a href="https://github.com/johtani/azure-search-analyze-client">ツール</a>を作ってみました。
+Azure Cognitive Searchを使っている人向けなので、ニッチなツールですが。。。</p>
+<h3 id="余談">余談</h3>
+<p>Elastic Stack(Elasticsearch)向けにはKibanaのプラグインでAnalyze APIを可視化するツールを作ってます。
+<a href="https://github.com/johtani/analyze-api-ui-plugin">analyze-api-ui-plugin</a>です。Elastic Stack、特にKibanaを必ず利用する方はこちらを使うと便利かもです。</p>
+<h2 id="概要と機能">概要と機能</h2>
+<ul>
+<li><a href="https://github.com/johtani/azure-search-analyze-client">GitHub リポジトリ</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=johtani.azure-search-analyze-client&amp;ssr=false#overview">Visual Studio Marketplaceのページ</a></li>
+</ul>
+<p>Marketplaceに公開しているので、<code>johtani</code>や<code>Azure Search Analyze Client</code>などで検索してもらえれば出てきてインストールができます。</p>
+<p>機能としては、以下の2つです。</p>
+<ol>
+<li>テンプレートから入力値設定用のドキュメントを作成(<code>Untitled-1</code>というドキュメントをエディタに新しく開く)</li>
+<li>Azure Cognitive SearchのAnalyze Text APIを呼び出して、結果をHTMLのテーブル形式で表示</li>
+</ol>
+<h3 id="入力値設定用のドキュメント作成">入力値設定用のドキュメント作成</h3>
+<p>APIの呼び出しに必要な情報を記入してもらうのに、いくつか案を考えました。</p>
+<ul>
+<li>プラグインの設定に記入してもらう</li>
+<li>環境変数とかを読み出す</li>
+<li>テキストとして保存したファイルを使う</li>
+</ul>
+<p>設定や環境変数だと、異なる環境に接続したりするときに、わざわざ設定し直すのがめんどくさいかもと。
+で、愛用していた<a href="https://marketplace.visualstudio.com/items?itemName=humao.rest-client">REST API Client</a>を真似するのが良いかもという結論になり、<code>.analyze</code>という拡張子のファイルから必要な項目を読み出して、APIを呼び出す形にしてあります。</p>
+<p><code>Command Palette</code>(左下の歯車マークもしくは、メニューのViewから開ける)から<code>Azure Search Analyze Client: Create Azure Search Analyze Request</code>というコマンドを選びます。</p>
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200319/command_palette.png" />
+    </div>
+    <a href="/images/entries/20200319/command_palette.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>すると、以下のようなファイルがエディタに開きます。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200319/input_template.png" />
+    </div>
+    <a href="/images/entries/20200319/input_template.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>これらの項目をまずは埋めていきます。
+それぞれの値がどういったものかは<a href="https://github.com/johtani/azure-search-analyze-client">GitHubのREADME</a>を御覧ください。</p>
+<p>入力値エラー(存在チェックしかしていない)がある場合は、ダイアログが表示されます。</p>
+<h3 id="結果表示">結果表示</h3>
+<p>値を入力したら、設定値と<code>###</code>の間に表示されている<code>Analyze text with analyzers</code>というグレーの文字をクリックします。すると、APIにリクエストを送信し、結果が返ってきて、別のパネルとして表示されます。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200319/response.png" />
+    </div>
+    <a href="/images/entries/20200319/response.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>複数のAnalyzerを入力値に設定すると、それぞれがどのような区切り方をするかがわかります。
+文字の下にある<code>[0:2]</code>は、その単語がもとの文章の何文字目から何文字目までに出現しているかというオフセットの表示になります。</p>
+<p>もし、Analyzer名の設定ミスなどで指定されたAnalyzerがない場合は、結果画面にエラーが表示されるようにしています。</p>
+<p>以上が簡単な機能の説明です。
+簡単なと言いつつ、これだけしか機能がありませんが。</p>
+<h2 id="visual-studio-codeのプラグインの作り方">Visual Studio Codeのプラグインの作り方</h2>
+<p>プラグイン自体の作り方に関しては<a href="https://code.visualstudio.com/api/get-started/your-first-extension">Visual Studio CodeのGetting Started</a>がわかりやすかったです。
+APIや機能が豊富なので、最初はちょっと戸惑いましたが、<a href="https://github.com/microsoft/vscode-extension-samples">サンプルもGitHubで多数公開</a>されています。</p>
+<p>あとは、<a href="https://marketplace.visualstudio.com/items?itemName=humao.rest-client">REST API Client</a>を参考にさせていただきました。</p>
+<p>Getting Startedを一通り読むことで、なんとなくプラグインの作成からMarketplaceへのリリースまでが完了できました。
+(TypeScriptに慣れていないのがあるので、プログラミング自体は手間取りましたが。。。)</p>
+<h2 id="今後の対応">今後の対応?</h2>
+<p>いまのところ、こんなところを考えていますが、こんな機能がほしい、バグが有るなどあれば、GitHubにIssueを上げていただければと(使う人すくないだろうけど)。</p>
+<ul>
+<li>いろいろなエラーに関する対応</li>
+<li>Readmeに画像をアップ</li>
+<li>アイコン作成?</li>
+<li>自動補完機能?</li>
+</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>Visual Studio Codeの拡張機能を作ってみました。
+Yeomanによるプロジェクトテンプレートが用意されているので、とりあえず、Hello worldを作るのは簡単でした。
+試行錯誤しつつTypeScriptを書いたので、TypeScriptっぽくないところなどもあるかもですが、誰かの役に立つツールになってくれれば良いなぁと。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2020/03/02/finish-bicycle-book-chap3/" data-toggle="tooltip" data-placement="top" title="実践Rust入門の3章を読み終わった">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>
