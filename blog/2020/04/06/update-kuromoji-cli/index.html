@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Rust the book - 第5章" />
-    <meta property="og:title" content="Rust the book - 第5章" />
-    <meta property="twitter:title" content="Rust the book - 第5章" />
+    <meta name="title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
+    <meta property="og:title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
+    <meta property="twitter:title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Rust the book - 第5章-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>KuromojiのCLIコマンドにJSON出力とラティス出力を追加-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/04/02/chap5-rust-the-book/">
+    <link rel="canonical" href="/blog/2020/04/06/update-kuromoji-cli/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,20 +157,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/rust" title="rust">
-                            rust
-                        </a>
-                        
-                        <a class="tag" href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
-                            読書
-                        </a>
-                        
-                        <a class="tag" href="/tags/rust-the-book" title="rust-the-book">
-                            rust-the-book
+                        <a class="tag" href="/tags/misc" title="misc">
+                            misc
                         </a>
                         
                     </div>
-                    <h1>Rust the book - 第5章</h1>
+                    <h1>KuromojiのCLIコマンドにJSON出力とラティス出力を追加</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -178,7 +170,7 @@
                             johtani
                          
                         on 
-                        Thursday, April 2, 2020
+                        Monday, April 6, 2020
                         
                         
                         
@@ -208,136 +200,124 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#第5章">第5章</a>
-      <ul>
-        <li><a href="#定義とインスタンス化">定義とインスタンス化</a></li>
-        <li><a href="#プログラム例">プログラム例</a></li>
-        <li><a href="#メソッド記法">メソッド記法</a></li>
-      </ul>
-    </li>
+    <li><a href="#json出力">JSON出力</a></li>
+    <li><a href="#viterbiラティス出力">Viterbiラティス出力</a></li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>前回の記事はこちら。自分用のメモなので、読みにくいかもです。</p>
+                <p>Kuromoji-CLIの使い方などについては過去のブログを御覧ください。</p>
 <ul>
-<li><a href="/blog/2020/03/23/start-reading-rust-the-book/">Rust the Bookを読み始めた</a></li>
-<li><a href="/blog/2020/03/26/chap4-rust-the-book/">Rust the book - 第4章</a></li>
+<li><a href="/post/2020/02/28/kuromoji-cli/">KuromojiのCLIコマンドとpicocliとGraalVM</a></li>
+<li><a href="https://github.com/johtani/kuromoji-cli">GitHubリポジトリ</a></li>
 </ul>
-<h2 id="第5章">第5章</h2>
-<p>構造体です。勝手知ったるなんとやら?オブジェクト指向的な部分は問題ないかなぁと。</p>
-<h3 id="定義とインスタンス化">定義とインスタンス化</h3>
-<ul>
-<li><code>struct</code>で定義</li>
-<li>インスタンスの生成は引数は順不同でOK</li>
-<li>構造体のインスタンスを可変にするとフィールドの値も変更可能
-<ul>
-<li>特定のフィールドのみ可変にすることは不可能</li>
-</ul>
-</li>
-<li>インスタンス化する関数の最後でreturnなしでインスタンスの返却を暗黙にできる(return書いてほしいな。。。)</li>
-<li>インスタンス化時にフィールド初期化省略記法が可能(これはちょっと便利?)</li>
-<li>構造体更新記法<code>..user1</code>のように、明示的に設定されていない他のフィールドをコピーしてくれる機能あり</li>
-</ul>
-<h4 id="タプル構造体">タプル構造体</h4>
-<ul>
-<li>タプル構造体!? <code>struct Color(i32, i32, i32);</code>
-<ul>
-<li>いつ使うんだろう?</li>
-</ul>
-</li>
-</ul>
-<h4 id="ユニット様構造体">ユニット様構造体</h4>
-<ul>
-<li>ユニット様構造体 = フィールドのない構造体。トレイトを実装したいけどインスタンスで持つ値はない場合に利用</li>
-</ul>
-<h4 id="ライフタイム">ライフタイム</h4>
-<ul>
-<li>構造体が参照を持つときにライフタイムという話が出てくる。なるほど。
-<ul>
-<li>ライフタイム指定子が必要になる -&gt; 10章での話</li>
-</ul>
-</li>
-</ul>
-<h3 id="プログラム例">プログラム例</h3>
-<ul>
-<li>タプルを引数かぁ。タプルは慣れないので構造体作りそう</li>
-<li>Debugトレイトと<code>{:?}</code>という書き方
-<ul>
-<li><code>derive(Debug)</code>でデバッグ用のトレイトを自動で実装=継承してくれる</li>
-<li><code>{:#?}</code>だとpretty printになる(改行とか入る)</li>
-</ul>
-</li>
-</ul>
-<p>この辺の便利なトレイとは<a href="https://doc.rust-jp.rs/book/second-edition/appendix-03-derivable-traits.html">付録C</a>にあるらしい。この辺はやりながら覚えるしかないか。</p>
-<h3 id="メソッド記法">メソッド記法</h3>
-<ul>
-<li>最初の引数は必ず<code>self</code></li>
-<li><code>impl</code>は構造体とは別の場所に書く = Javaのクラスとは違う</li>
-</ul>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Rectangle</span> {
-    width: <span style="color:#66d9ef">u32</span>,
-    height: <span style="color:#66d9ef">u32</span>,
-}
+<p>Issueだけ上げていたJSON出力対応をしました。
+また、ラティス(後述)の出力対応もしました。</p>
+<h2 id="json出力">JSON出力</h2>
+<p><a href="https://github.com/lindera-morphology/lindera-cli#output-format">Lindera</a>がJSON出力に対応してるのでそれを真似しました。
+<code>-o json</code>で指定していただくと、次のようなJSONが出力されます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">% echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -o json
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">[
+  {
+    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;春眠&#34;</span>,
+    <span style="color:#f92672">&#34;detail&#34;</span>: [
+      <span style="color:#e6db74">&#34;名詞&#34;</span>,
+      <span style="color:#e6db74">&#34;一般&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;春眠&#34;</span>,
+      <span style="color:#e6db74">&#34;シュンミン&#34;</span>,
+      <span style="color:#e6db74">&#34;シュンミン&#34;</span>
+    ]
+  },
+  {
+    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;暁&#34;</span>,
+    <span style="color:#f92672">&#34;detail&#34;</span>: [
+      <span style="color:#e6db74">&#34;名詞&#34;</span>,
+      <span style="color:#e6db74">&#34;一般&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;暁&#34;</span>,
+      <span style="color:#e6db74">&#34;アカツキ&#34;</span>,
+      <span style="color:#e6db74">&#34;アカツキ&#34;</span>
+    ]
+  },
+  {
+    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;を&#34;</span>,
+    <span style="color:#f92672">&#34;detail&#34;</span>: [
+      <span style="color:#e6db74">&#34;助詞&#34;</span>,
+      <span style="color:#e6db74">&#34;格助詞&#34;</span>,
+      <span style="color:#e6db74">&#34;一般&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;を&#34;</span>,
+      <span style="color:#e6db74">&#34;ヲ&#34;</span>,
+      <span style="color:#e6db74">&#34;ヲ&#34;</span>
+    ]
+  },
+  {
+    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;覚え&#34;</span>,
+    <span style="color:#f92672">&#34;detail&#34;</span>: [
+      <span style="color:#e6db74">&#34;動詞&#34;</span>,
+      <span style="color:#e6db74">&#34;自立&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;一段&#34;</span>,
+      <span style="color:#e6db74">&#34;未然形&#34;</span>,
+      <span style="color:#e6db74">&#34;覚える&#34;</span>,
+      <span style="color:#e6db74">&#34;オボエ&#34;</span>,
+      <span style="color:#e6db74">&#34;オボエ&#34;</span>
+    ]
+  },
+  {
+    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;ず&#34;</span>,
+    <span style="color:#f92672">&#34;detail&#34;</span>: [
+      <span style="color:#e6db74">&#34;助動詞&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;*&#34;</span>,
+      <span style="color:#e6db74">&#34;特殊・ヌ&#34;</span>,
+      <span style="color:#e6db74">&#34;連用ニ接続&#34;</span>,
+      <span style="color:#e6db74">&#34;ぬ&#34;</span>,
+      <span style="color:#e6db74">&#34;ズ&#34;</span>,
+      <span style="color:#e6db74">&#34;ズ&#34;</span>
+    ]
+  }
+]
+</code></pre></div><h2 id="viterbiラティス出力">Viterbiラティス出力</h2>
+<p>Kuromojiが内部でトークンをどのように切り出すかを計算するためのViterbiのラティスです。これを<a href="http://www.graphviz.org/">Graphviz</a>というツールのDOTフォーマットのファイルとして出力できるメソッドがデバッグ用ですが、Kuromojiに用意されています。
+こちらを呼び出して出力するオプション<code>-v</code>(もしくは<code>--viterbi</code>)を追加しました。
+<strong>注意点として、このオプションを指定すると、DOTファイルが標準出力に出力され、トークンの結果は標準エラーに出力されます。</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -v &gt; viterbi.dot
+</code></pre></div><p><code>.dot</code>ファイル自体は画像ではないので、Graphvizの<code>dot</code>コマンドにて画像ファイルに変換する必要があります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">dot -Tpng viterbi.dot -oviterbi.png
+</code></pre></div><p>これで、PNGファイルが出来上がります。出来上がったファイルはこんな感じです。</p>
 
-<span style="color:#66d9ef">impl</span> Rectangle {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">area</span>(<span style="color:#f92672">&amp;</span>self) -&gt; <span style="color:#66d9ef">u32</span> {
-        self.width <span style="color:#f92672">*</span> self.height
-    }
-}
-</code></pre></div><ul>
-<li>参照じゃない<code>self</code>も使えるらしい。どういうときに使うんだろう?</li>
-</ul>
-<h4 id="関連関数">関連関数</h4>
-<ul>
-<li><code>self</code>なしの関数をimplにかける。Javaのスタティックメソッドみたいな感じ</li>
-</ul>
-<h4 id="その他">その他</h4>
-<ul>
-<li><code>impl</code>ブロックがあちこちにかける。これはつらいな。。。</li>
-<li>2つにわかれた<code>impl</code>ブロックに同じメソッドを書いてみたら、CLionのプラグインではエラーを検知してもらえなかった。
-<ul>
-<li>cargo buildではきちんとエラーが表示された。</li>
-</ul>
-</li>
-<li>
-<blockquote>
-<p>複数のimplブロックが有用になるケースは第10章で見ますが、そこではジェネリック型と、トレイトについて議論します。</p>
-</blockquote>
-<ul>
-<li>人の構造体に自分のトレイトを適用したりもできる。</li>
-</ul>
-</li>
-</ul>
-<h4 id="実験">実験</h4>
-<p>スコープとかどうなりそう?って実験もしてみた。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#66d9ef">trait</span> Hoge {
-        <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">trim</span>(<span style="color:#f92672">&amp;</span>self);
-    }
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200406/viterbi.png" />
+    </div>
+    <a href="/images/entries/20200406/viterbi.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
 
-    <span style="color:#66d9ef">impl</span> Hoge <span style="color:#66d9ef">for</span> String {
-        <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">trim</span>(<span style="color:#f92672">&amp;</span>self) {
-            println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;hogehoge {}&#34;</span>, <span style="color:#f92672">&amp;</span>self);
-        }
-    }
-    <span style="color:#66d9ef">let</span> c <span style="color:#f92672">=</span> String::from(<span style="color:#e6db74">&#34;hoge&#34;</span>);
-    c.trim();
-    println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, fuga(<span style="color:#f92672">&amp;</span>c));
-}
-
-<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">fuga</span>(d: <span style="color:#66d9ef">&amp;</span>String) -&gt; <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span> {
-    d.trim()
-}
-</code></pre></div><p>出力はこんな感じ</p>
-<pre><code>hogehoge hoge
-hoge
-</code></pre><h2 id="まとめ">まとめ</h2>
-<p>気になったのは以下の点。そのうち分かるようになってくるのかな。</p>
-<ul>
-<li>構造体更新記法はどういったときに使うのを想定して作ったんだろう?とか</li>
-<li>可変長引数はマクロじゃないとだめ</li>
-</ul>
+<p>画像を見ていただくと、緑色のパスがあるのがわかります。
+こちらが、Kuromojiが実際に採用した形態素のリストです。それ以外のパスは不採用だったパスとなります。</p>
+<p>ちなみに、macOSで1行で画像表示まで行うにはこんな感じで実行します。
+<code>open</code>コマンドでpreviewアプリを指定することで画像が表示できます。
+Windowsは。。。わかりません、すみません。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">% echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -v -o json | dot -Tpng | open -f -a preview.app
+</code></pre></div><h2 id="まとめ">まとめ</h2>
+<p>これ以前に複数辞書対応などもしていました。
+今回は2つの出力形式を追加してみました。
+特にViterbiラティス出力については、内部的にどのようなコスト計算で最終的な結果が出てきているかという理解に役立ちます。想定していない切れ方の場合は、そもそも想定している形態素になっていないか、コスト計算で不採用だったかなどを確認できますので、使ってみると面白いかもです。</p>
 
 
                 
@@ -346,15 +326,10 @@ hoge
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/03/26/working-facility/" data-toggle="tooltip" data-placement="top" title="自宅の作業環境(2020)">&larr;
+                        <a href="/blog/2020/04/02/chap5-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第5章">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/04/06/update-kuromoji-cli/" data-toggle="tooltip" data-placement="top" title="KuromojiのCLIコマンドにJSON出力とラティス出力を追加">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
