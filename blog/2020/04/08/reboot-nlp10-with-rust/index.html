@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
-    <meta property="og:title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
-    <meta property="twitter:title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
+    <meta name="title" content="言語処理100本ノック、再び" />
+    <meta property="og:title" content="言語処理100本ノック、再び" />
+    <meta property="twitter:title" content="言語処理100本ノック、再び" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>KuromojiのCLIコマンドにJSON出力とラティス出力を追加-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>言語処理100本ノック、再び-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/04/06/update-kuromoji-cli/">
+    <link rel="canonical" href="/blog/2020/04/08/reboot-nlp10-with-rust/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,12 +157,16 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/misc" title="misc">
-                            misc
+                        <a class="tag" href="/tags/rust" title="Rust">
+                            Rust
+                        </a>
+                        
+                        <a class="tag" href="/tags/nlp100" title="nlp100">
+                            nlp100
                         </a>
                         
                     </div>
-                    <h1>KuromojiのCLIコマンドにJSON出力とラティス出力を追加</h1>
+                    <h1>言語処理100本ノック、再び</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -170,7 +174,7 @@
                             johtani
                          
                         on 
-                        Monday, April 6, 2020
+                        Wednesday, April 8, 2020
                         
                         
                         
@@ -200,124 +204,47 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#json出力">JSON出力</a></li>
-    <li><a href="#viterbiラティス出力">Viterbiラティス出力</a></li>
+    <li>
+      <ul>
+        <li><a href="#00-文字列の逆順">00. 文字列の逆順</a></li>
+        <li><a href="#01-パタトクカシーー">01. 「パタトクカシーー」</a></li>
+        <li><a href="#02-パトカータクシーパタトクカシーー">02. 「パトカー」＋「タクシー」＝「パタトクカシーー」</a></li>
+      </ul>
+    </li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>Kuromoji-CLIの使い方などについては過去のブログを御覧ください。</p>
-<ul>
-<li><a href="/post/2020/02/28/kuromoji-cli/">KuromojiのCLIコマンドとpicocliとGraalVM</a></li>
-<li><a href="https://github.com/johtani/kuromoji-cli">GitHubリポジトリ</a></li>
-</ul>
-<p>Issueだけ上げていたJSON出力対応をしました。
-また、ラティス(後述)の出力対応もしました。</p>
-<h2 id="json出力">JSON出力</h2>
-<p><a href="https://github.com/lindera-morphology/lindera-cli#output-format">Lindera</a>がJSON出力に対応してるのでそれを真似しました。
-<code>-o json</code>で指定していただくと、次のようなJSONが出力されます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">% echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -o json
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">[
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;春眠&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;名詞&#34;</span>,
-      <span style="color:#e6db74">&#34;一般&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;春眠&#34;</span>,
-      <span style="color:#e6db74">&#34;シュンミン&#34;</span>,
-      <span style="color:#e6db74">&#34;シュンミン&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;暁&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;名詞&#34;</span>,
-      <span style="color:#e6db74">&#34;一般&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;暁&#34;</span>,
-      <span style="color:#e6db74">&#34;アカツキ&#34;</span>,
-      <span style="color:#e6db74">&#34;アカツキ&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;を&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;助詞&#34;</span>,
-      <span style="color:#e6db74">&#34;格助詞&#34;</span>,
-      <span style="color:#e6db74">&#34;一般&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;を&#34;</span>,
-      <span style="color:#e6db74">&#34;ヲ&#34;</span>,
-      <span style="color:#e6db74">&#34;ヲ&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;覚え&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;動詞&#34;</span>,
-      <span style="color:#e6db74">&#34;自立&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;一段&#34;</span>,
-      <span style="color:#e6db74">&#34;未然形&#34;</span>,
-      <span style="color:#e6db74">&#34;覚える&#34;</span>,
-      <span style="color:#e6db74">&#34;オボエ&#34;</span>,
-      <span style="color:#e6db74">&#34;オボエ&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;ず&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;助動詞&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;特殊・ヌ&#34;</span>,
-      <span style="color:#e6db74">&#34;連用ニ接続&#34;</span>,
-      <span style="color:#e6db74">&#34;ぬ&#34;</span>,
-      <span style="color:#e6db74">&#34;ズ&#34;</span>,
-      <span style="color:#e6db74">&#34;ズ&#34;</span>
-    ]
-  }
-]
-</code></pre></div><h2 id="viterbiラティス出力">Viterbiラティス出力</h2>
-<p>Kuromojiが内部でトークンをどのように切り出すかを計算するためのViterbiのラティスです。これを<a href="http://www.graphviz.org/">Graphviz</a>というツールのDOTフォーマットのファイルとして出力できるメソッドがデバッグ用ですが、Kuromojiに用意されています。
-こちらを呼び出して出力するオプション<code>-v</code>(もしくは<code>--viterbi</code>)を追加しました。
-<strong>注意点として、このオプションを指定すると、DOTファイルが標準出力に出力され、トークンの結果は標準エラーに出力されます。</strong></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -v &gt; viterbi.dot
-</code></pre></div><p><code>.dot</code>ファイル自体は画像ではないので、Graphvizの<code>dot</code>コマンドにて画像ファイルに変換する必要があります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">dot -Tpng viterbi.dot -oviterbi.png
-</code></pre></div><p>これで、PNGファイルが出来上がります。出来上がったファイルはこんな感じです。</p>
+                <p>今回もツイートから。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">言語処理100本ノックの2020年版を公開しました。最近の自然言語処理の研究動向を反映し、深層ニューラルネットワークに関する問題を追加しました。留学生も一緒に取り組めるように多言語化を進め、その第１弾として英訳を部分公開しています（40番以降は順次公開予定）。 <a href="https://t.co/52h362PIQQ">https://t.co/52h362PIQQ</a></p>&mdash; Naoaki Okazaki (@chokkanorg) <a href="https://twitter.com/chokkanorg/status/1247312205671874561?ref_src=twsrc%5Etfw">April 6, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20200406/viterbi.png" />
-    </div>
-    <a href="/images/entries/20200406/viterbi.png" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<p>画像を見ていただくと、緑色のパスがあるのがわかります。
-こちらが、Kuromojiが実際に採用した形態素のリストです。それ以外のパスは不採用だったパスとなります。</p>
-<p>ちなみに、macOSで1行で画像表示まで行うにはこんな感じで実行します。
-<code>open</code>コマンドでpreviewアプリを指定することで画像が表示できます。
-Windowsは。。。わかりません、すみません。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">% echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -v -o json | dot -Tpng | open -f -a preview.app
-</code></pre></div><h2 id="まとめ">まとめ</h2>
-<p>これ以前に複数辞書対応などもしていました。
-今回は2つの出力形式を追加してみました。
-特にViterbiラティス出力については、内部的にどのようなコスト計算で最終的な結果が出てきているかという理解に役立ちます。想定していない切れ方の場合は、そもそも想定している形態素になっていないか、コスト計算で不採用だったかなどを確認できますので、使ってみると面白いかもです。</p>
+<p><a href="https://nlp100.github.io/ja/">言語処理100本ノック</a>が2020年版になったそうです。
+そうです、2年前に初めて、<a href="http://localhost:1313/blog/2018/03/20/nlp100-ch01-05to06/">準備運動</a>で止まっていたんです!(衝撃的な続かなさ。。。)</p>
+<p>ということで、Rust the bookも読んでいることだし、過去のプログラムをチェックしつつ再開しようかなと。
+ということで、いくつかリファクタリングしてみました。</p>
+<p><a href="">ソースはリポジトリ</a>を御覧ください。</p>
+<h3 id="00-文字列の逆順">00. 文字列の逆順</h3>
+<p><a href="https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L6">2年前の実装</a>では、<code>chars()</code>メソッドで取り出したあとに、<code>collect()</code>でVecにしていたのですが、<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.rev">RustのIteratorトレイトに<code>rev()</code>という便利なメソッドが存在していました</a>。</p>
+<p>ということで、これを取り出すと、最初の文字列の逆順で文字を取り出すIteratorが取得できます。
+あとは、<a href="https://doc.rust-lang.org/std/iter/trait.FromIterator.html#tymethod.from_iter">Stringが実装してくれている<code>from_iter</code></a>に渡せば文字列が出来上がります。</p>
+<h3 id="01-パタトクカシーー">01. 「パタトクカシーー」</h3>
+<p>ストリーム処理っぽい書き方に変更しました。
+2年前はIteratorを取り出して、詰替していましたが、
+<code>enumerate()</code>で添字と文字のタプルのイテレータに変換し、
+<code>filter</code>で添字が偶数のときだけフィルタリングして、
+<code>map</code>で対象の文字をまとめたイテレータにします。
+で、最後はそれを元に文字列を生成することにしました。
+<code>iter</code>を使わないでそのまま<code>String::from_iter</code>の引数に渡すことも可能ですね。</p>
+<h3 id="02-パトカータクシーパタトクカシーー">02. 「パトカー」＋「タクシー」＝「パタトクカシーー」</h3>
+<p>2年前は<a href="https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L30">2つのIteratorを<code>loop</code>で回して頑張って結合してました</a>。
+ではなく、<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.zip"><code>zip()</code></a>を使って、2つのイテレータを組み合わせる方法に替えてみました。
+このとき、2つの文字列が違う文字数の場合の処理として、長い方から取り出した文字をあとに結合する処理を追加で記述しました。
+ちょっとスマートな感じになりましたかね?</p>
+<p><code>zip</code>したあとに出てきたタプルの文字列を結合するのに<code>format!</code>マクロを使いましたが、他にいい方法有るかなぁ?</p>
+<h2 id="まとめ">まとめ</h2>
+<p>とりあえず最初の3つをリファクタリングしてみました。
+残りもやりつつ、準備運動以降もがんばるぞと。</p>
 
 
                 
@@ -326,15 +253,10 @@ Windowsは。。。わかりません、すみません。</p>
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/04/02/chap5-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第5章">&larr;
+                        <a href="/blog/2020/04/06/update-kuromoji-cli/" data-toggle="tooltip" data-placement="top" title="KuromojiのCLIコマンドにJSON出力とラティス出力を追加">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/04/08/reboot-nlp10-with-rust/" data-toggle="tooltip" data-placement="top" title="言語処理100本ノック、再び">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
