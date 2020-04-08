@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
-    <meta property="og:title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
-    <meta property="twitter:title" content="KuromojiのCLIコマンドにJSON出力とラティス出力を追加" />
+    <meta name="title" content="Rust the book - 第6章" />
+    <meta property="og:title" content="Rust the book - 第6章" />
+    <meta property="twitter:title" content="Rust the book - 第6章" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>KuromojiのCLIコマンドにJSON出力とラティス出力を追加-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Rust the book - 第6章-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/04/06/update-kuromoji-cli/">
+    <link rel="canonical" href="/blog/2020/04/07/chap6-rust-the-book/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,12 +157,20 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/misc" title="misc">
-                            misc
+                        <a class="tag" href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        <a class="tag" href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        <a class="tag" href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
                         </a>
                         
                     </div>
-                    <h1>KuromojiのCLIコマンドにJSON出力とラティス出力を追加</h1>
+                    <h1>Rust the book - 第6章</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -170,7 +178,7 @@
                             johtani
                          
                         on 
-                        Monday, April 6, 2020
+                        Tuesday, April 7, 2020
                         
                         
                         
@@ -200,124 +208,77 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#json出力">JSON出力</a></li>
-    <li><a href="#viterbiラティス出力">Viterbiラティス出力</a></li>
+    <li><a href="#第6章">第6章</a>
+      <ul>
+        <li><a href="#enumを定義する">Enumを定義する</a></li>
+        <li><a href="#match制御フロー演算子">match制御フロー演算子</a></li>
+        <li><a href="#if-letで簡潔な制御フロー">if letで簡潔な制御フロー</a></li>
+      </ul>
+    </li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>Kuromoji-CLIの使い方などについては過去のブログを御覧ください。</p>
+                <p>前回の記事はこちら。自分用のメモなので、読みにくいかもです。</p>
 <ul>
-<li><a href="/post/2020/02/28/kuromoji-cli/">KuromojiのCLIコマンドとpicocliとGraalVM</a></li>
-<li><a href="https://github.com/johtani/kuromoji-cli">GitHubリポジトリ</a></li>
+<li><a href="/blog/2020/03/23/start-reading-rust-the-book/">Rust the Bookを読み始めた</a></li>
+<li><a href="/blog/2020/03/26/chap4-rust-the-book/">Rust the book - 第4章</a></li>
+<li><a href="/blog/2020/04/02/chap5-rust-the-book/">Rust the book - 第5章</a></li>
 </ul>
-<p>Issueだけ上げていたJSON出力対応をしました。
-また、ラティス(後述)の出力対応もしました。</p>
-<h2 id="json出力">JSON出力</h2>
-<p><a href="https://github.com/lindera-morphology/lindera-cli#output-format">Lindera</a>がJSON出力に対応してるのでそれを真似しました。
-<code>-o json</code>で指定していただくと、次のようなJSONが出力されます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">% echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -o json
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">[
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;春眠&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;名詞&#34;</span>,
-      <span style="color:#e6db74">&#34;一般&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;春眠&#34;</span>,
-      <span style="color:#e6db74">&#34;シュンミン&#34;</span>,
-      <span style="color:#e6db74">&#34;シュンミン&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;暁&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;名詞&#34;</span>,
-      <span style="color:#e6db74">&#34;一般&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;暁&#34;</span>,
-      <span style="color:#e6db74">&#34;アカツキ&#34;</span>,
-      <span style="color:#e6db74">&#34;アカツキ&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;を&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;助詞&#34;</span>,
-      <span style="color:#e6db74">&#34;格助詞&#34;</span>,
-      <span style="color:#e6db74">&#34;一般&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;を&#34;</span>,
-      <span style="color:#e6db74">&#34;ヲ&#34;</span>,
-      <span style="color:#e6db74">&#34;ヲ&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;覚え&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;動詞&#34;</span>,
-      <span style="color:#e6db74">&#34;自立&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;一段&#34;</span>,
-      <span style="color:#e6db74">&#34;未然形&#34;</span>,
-      <span style="color:#e6db74">&#34;覚える&#34;</span>,
-      <span style="color:#e6db74">&#34;オボエ&#34;</span>,
-      <span style="color:#e6db74">&#34;オボエ&#34;</span>
-    ]
-  },
-  {
-    <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;ず&#34;</span>,
-    <span style="color:#f92672">&#34;detail&#34;</span>: [
-      <span style="color:#e6db74">&#34;助動詞&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;*&#34;</span>,
-      <span style="color:#e6db74">&#34;特殊・ヌ&#34;</span>,
-      <span style="color:#e6db74">&#34;連用ニ接続&#34;</span>,
-      <span style="color:#e6db74">&#34;ぬ&#34;</span>,
-      <span style="color:#e6db74">&#34;ズ&#34;</span>,
-      <span style="color:#e6db74">&#34;ズ&#34;</span>
-    ]
-  }
-]
-</code></pre></div><h2 id="viterbiラティス出力">Viterbiラティス出力</h2>
-<p>Kuromojiが内部でトークンをどのように切り出すかを計算するためのViterbiのラティスです。これを<a href="http://www.graphviz.org/">Graphviz</a>というツールのDOTフォーマットのファイルとして出力できるメソッドがデバッグ用ですが、Kuromojiに用意されています。
-こちらを呼び出して出力するオプション<code>-v</code>(もしくは<code>--viterbi</code>)を追加しました。
-<strong>注意点として、このオプションを指定すると、DOTファイルが標準出力に出力され、トークンの結果は標準エラーに出力されます。</strong></p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -v &gt; viterbi.dot
-</code></pre></div><p><code>.dot</code>ファイル自体は画像ではないので、Graphvizの<code>dot</code>コマンドにて画像ファイルに変換する必要があります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">dot -Tpng viterbi.dot -oviterbi.png
-</code></pre></div><p>これで、PNGファイルが出来上がります。出来上がったファイルはこんな感じです。</p>
-
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20200406/viterbi.png" />
-    </div>
-    <a href="/images/entries/20200406/viterbi.png" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<p>画像を見ていただくと、緑色のパスがあるのがわかります。
-こちらが、Kuromojiが実際に採用した形態素のリストです。それ以外のパスは不採用だったパスとなります。</p>
-<p>ちなみに、macOSで1行で画像表示まで行うにはこんな感じで実行します。
-<code>open</code>コマンドでpreviewアプリを指定することで画像が表示できます。
-Windowsは。。。わかりません、すみません。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">% echo <span style="color:#e6db74">&#34;春眠暁を覚えず&#34;</span> | build/graal/kuromoji -v -o json | dot -Tpng | open -f -a preview.app
-</code></pre></div><h2 id="まとめ">まとめ</h2>
-<p>これ以前に複数辞書対応などもしていました。
-今回は2つの出力形式を追加してみました。
-特にViterbiラティス出力については、内部的にどのようなコスト計算で最終的な結果が出てきているかという理解に役立ちます。想定していない切れ方の場合は、そもそも想定している形態素になっていないか、コスト計算で不採用だったかなどを確認できますので、使ってみると面白いかもです。</p>
+<h2 id="第6章">第6章</h2>
+<p>Enumです。<code>match</code>式に大活躍</p>
+<h3 id="enumを定義する">Enumを定義する</h3>
+<ul>
+<li>列挙型は取りうる値をすべて<em>列挙</em>できる。これが名前の由来</li>
+<li>列挙型と列挙子
+<ul>
+<li>2連コロン(<code>::</code>)で列挙子を指定可能</li>
+</ul>
+</li>
+<li>列挙子にデータ(構造体も)が格納可能。
+<ul>
+<li><a href="https://doc.rust-lang.org/stable/std/net/enum.IpAddr.html">標準ライブラリに実装例あり。</a></li>
+</ul>
+</li>
+<li>疑問:<code>Write(String)</code>とかはタプルの表現になるのかな?
+<ul>
+<li>と思ったが、タプルでは1つだけの変数を持つものは定義(正確には定義できるが、内部で普通の変数にもどされてるっぽい)できなかった。</li>
+</ul>
+</li>
+<li>メソッド定義も可能
+<ul>
+<li>関連関数もできる? -&gt; できる</li>
+</ul>
+</li>
+</ul>
+<h4 id="optionの紹介">Optionの紹介</h4>
+<ul>
+<li>Rustに<code>null</code>はない。代わりにOptionがある</li>
+<li>Noneを指定する場合に型が必要。Someの場合はすでに値が入るから推測可能なため。</li>
+</ul>
+<h3 id="match制御フロー演算子">match制御フロー演算子</h3>
+<ul>
+<li>アーム -&gt; matchしたときの処理のこと
+<ul>
+<li>短い場合は波括弧は不要</li>
+</ul>
+</li>
+<li>returnなしでmatchが書いてあるだけだと、慣れない場合に値を返していることに気づかないかも(実際気づけてないかも)</li>
+<li>Enumが値を持っているときに、値の束縛がmatch式で可能</li>
+<li>すべての列挙子を網羅していないことをコンパイラが検知してくれるのはすごく助かる。
+<ul>
+<li>ただし、<code>_</code>を利用していなければだけど</li>
+</ul>
+</li>
+</ul>
+<h3 id="if-letで簡潔な制御フロー">if letで簡潔な制御フロー</h3>
+<ul>
+<li>enumで1つのパターンのときに処理をしたい場合に使えるmatchの糖衣構文</li>
+<li>elseもかけるよ。</li>
+</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>enumに慣れていないので、値や構造体を持つenumを利用するという想像ができないことがありそうだなぁと読みながら思いました。
+それになれると、色々とプログラムがシンプルに書ける部分が多くなりそうかな。</p>
 
 
                 
@@ -326,13 +287,13 @@ Windowsは。。。わかりません、すみません。</p>
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/04/02/chap5-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第5章">&larr;
+                        <a href="/blog/2020/04/06/update-kuromoji-cli/" data-toggle="tooltip" data-placement="top" title="KuromojiのCLIコマンドにJSON出力とラティス出力を追加">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2020/04/07/chap6-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第6章">Next
+                        <a href="/blog/2020/04/08/reboot-nlp10-with-rust/" data-toggle="tooltip" data-placement="top" title="言語処理100本ノック、再び">Next
                             Post &rarr;</a>
                     </li>
                     
