@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="言語処理100本ノック、再び" />
-    <meta property="og:title" content="言語処理100本ノック、再び" />
-    <meta property="twitter:title" content="言語処理100本ノック、再び" />
+    <meta name="title" content="第1章の03から06まで(言語処理100本ノック2020)" />
+    <meta property="og:title" content="第1章の03から06まで(言語処理100本ノック2020)" />
+    <meta property="twitter:title" content="第1章の03から06まで(言語処理100本ノック2020)" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>言語処理100本ノック、再び-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>第1章の03から06まで(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/04/08/reboot-nlp10-with-rust/">
+    <link rel="canonical" href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -166,7 +166,7 @@
                         </a>
                         
                     </div>
-                    <h1>言語処理100本ノック、再び</h1>
+                    <h1>第1章の03から06まで(言語処理100本ノック2020)</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +174,7 @@
                             johtani
                          
                         on 
-                        Wednesday, April 8, 2020
+                        Thursday, April 9, 2020
                         
                         
                         
@@ -206,45 +206,51 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#00-文字列の逆順">00. 文字列の逆順</a></li>
-        <li><a href="#01-パタトクカシーー">01. 「パタトクカシーー」</a></li>
-        <li><a href="#02-パトカータクシーパタトクカシーー">02. 「パトカー」＋「タクシー」＝「パタトクカシーー」</a></li>
+        <li><a href="#03-円周率">03. 円周率</a></li>
+        <li><a href="#04-元素記号">04. 元素記号</a></li>
+        <li><a href="#05-n-gram">05. n-gram</a></li>
+        <li><a href="#06-集合">06. 集合</a></li>
       </ul>
     </li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>今回もツイートから。</p>
-<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">言語処理100本ノックの2020年版を公開しました。最近の自然言語処理の研究動向を反映し、深層ニューラルネットワークに関する問題を追加しました。留学生も一緒に取り組めるように多言語化を進め、その第１弾として英訳を部分公開しています（40番以降は順次公開予定）。 <a href="https://t.co/52h362PIQQ">https://t.co/52h362PIQQ</a></p>&mdash; Naoaki Okazaki (@chokkanorg) <a href="https://twitter.com/chokkanorg/status/1247312205671874561?ref_src=twsrc%5Etfw">April 6, 2020</a></blockquote>
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-<p><a href="https://nlp100.github.io/ja/">言語処理100本ノック</a>が2020年版になったそうです。
-そうです、2年前に初めて、<a href="http://localhost:1313/blog/2018/03/20/nlp100-ch01-05to06/">準備運動</a>で止まっていたんです!(衝撃的な続かなさ。。。)</p>
-<p>ということで、Rust the bookも読んでいることだし、過去のプログラムをチェックしつつ再開しようかなと。
-ということで、いくつかリファクタリングしてみました。</p>
-<p><a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs">ソースはリポジトリ</a>を御覧ください。</p>
-<h3 id="00-文字列の逆順">00. 文字列の逆順</h3>
-<p><a href="https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L6">2年前の実装</a>では、<code>chars()</code>メソッドで取り出したあとに、<code>collect()</code>でVecにしていたのですが、<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.rev">RustのIteratorトレイトに<code>rev()</code>という便利なメソッドが存在していました</a>。</p>
-<p>ということで、これを取り出すと、最初の文字列の逆順で文字を取り出すIteratorが取得できます。
-あとは、<a href="https://doc.rust-lang.org/std/iter/trait.FromIterator.html#tymethod.from_iter">Stringが実装してくれている<code>from_iter</code></a>に渡せば文字列が出来上がります。</p>
-<h3 id="01-パタトクカシーー">01. 「パタトクカシーー」</h3>
-<p>ストリーム処理っぽい書き方に変更しました。
-2年前はIteratorを取り出して、詰替していましたが、
-<code>enumerate()</code>で添字と文字のタプルのイテレータに変換し、
-<code>filter</code>で添字が偶数のときだけフィルタリングして、
-<code>map</code>で対象の文字をまとめたイテレータにします。
-で、最後はそれを元に文字列を生成することにしました。
-<code>iter</code>を使わないでそのまま<code>String::from_iter</code>の引数に渡すことも可能ですね。</p>
-<h3 id="02-パトカータクシーパタトクカシーー">02. 「パトカー」＋「タクシー」＝「パタトクカシーー」</h3>
-<p>2年前は<a href="https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L30">2つのIteratorを<code>loop</code>で回して頑張って結合してました</a>。
-ではなく、<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.zip"><code>zip()</code></a>を使って、2つのイテレータを組み合わせる方法に替えてみました。
-このとき、2つの文字列が違う文字数の場合の処理として、長い方から取り出した文字をあとに結合する処理を追加で記述しました。
-ちょっとスマートな感じになりましたかね?</p>
-<p><code>zip</code>したあとに出てきたタプルの文字列を結合するのに<code>format!</code>マクロを使いましたが、他にいい方法有るかなぁ?</p>
+                <p>Rustで言語処理100本ノックのリファクタリングの続き。</p>
+<p>前回は<a href="https://blog.johtani.info/blog/2020/04/08/reboot-nlp10-with-rust/">こちら</a>。</p>
+<p>コードも載せたほうが見やすいかなぁ?</p>
+<h3 id="03-円周率">03. 円周率</h3>
+<p><a href="https://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04/#03-%E5%86%86%E5%91%A8%E7%8E%87">2年前はこちら</a>。
+どちらかというとJavaっぽい書き方かな?
+入れ物を用意して、入力を整形して、それからループを回す感じで書いてました。</p>
+<p><a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L50">今回は1行で収めてみました</a>。
+Rustっぽく、<code>return</code>を省略してみました。
+あとは、Iteratorを組み合わせる感じでやってます。
+アルファベットの文字数ということで、<code>is_alphabetic()</code>メソッドでfilterしてます。</p>
+<h3 id="04-元素記号">04. 元素記号</h3>
+<p><a href="https://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04/#04-%E5%85%83%E7%B4%A0%E8%A8%98%E5%8F%B7">2年前はこちら</a>。
+エラー処理が多いのと、文字の扱いがちょっと</p>
+<p>ここまで同様に<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L64">極力イテレータを利用する</a>という方針でリファクタリングしました。
+あとは、エラー処理を除去してます。
+正常系だけのテストなのでスッキリさせました。</p>
+<p>こういった、ストリーム系?の書き方の場合にエラー処理をどう入れるかってところはちょっと悩みどころになるんじゃないかなぁ?と思いつつ、イレギュラーなものは後回しで(あとにやるのかなぁ?)</p>
+<h3 id="05-n-gram">05. n-gram</h3>
+<p><a href="https://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/#05-n-gram">2年前はこちら</a>。
+これまでと同じく、入れ物を作ってから処理をしてます。</p>
+<p>同じく、<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L82">極力イテレータを利用する形</a>で実装しました。
+いくつか型の変換が必要なので、<code>.map()</code>を呼び出して詰め替えたりしています。</p>
+<h3 id="06-集合">06. 集合</h3>
+<p><a href="https://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/#06-%E9%9B%86%E5%90%88">2年前はこちら</a>。
+独自に実装しています。</p>
+<p>せっかく<code>05</code>で文字n-gramの配列を返す処理を実装しているので、
+そちらを呼び出して、Setに入れるという処理に書き換えました。
+その後の集合に対する処理については特にリファクタリングしてないです。</p>
 <h2 id="まとめ">まとめ</h2>
-<p>とりあえず最初の3つをリファクタリングしてみました。
-残りもやりつつ、準備運動以降もがんばるぞと。</p>
+<p>2年前にやってたところまでは追いつきました。
+07は特にリファクタリングする必要がないので、次は08からの予定です。</p>
+<p>リファクタリングしているときになるのは、速度とかでしょうか。
+実装の違いでなにか差が出るのかどうかはちょっと気になるところですが、
+今回の目的ではないので、目をつぶって進める予定です。</p>
 
 
                 
@@ -253,15 +259,10 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/04/07/chap6-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第6章">&larr;
+                        <a href="/blog/2020/04/08/reboot-nlp10-with-rust/" data-toggle="tooltip" data-placement="top" title="言語処理100本ノック、再び">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/" data-toggle="tooltip" data-placement="top" title="第1章の03から06まで(言語処理100本ノック2020)">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
