@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="第1章の03から06まで(言語処理100本ノック2020)" />
-    <meta property="og:title" content="第1章の03から06まで(言語処理100本ノック2020)" />
-    <meta property="twitter:title" content="第1章の03から06まで(言語処理100本ノック2020)" />
+    <meta name="title" content="Rust the book - 第8章" />
+    <meta property="og:title" content="Rust the book - 第8章" />
+    <meta property="twitter:title" content="Rust the book - 第8章" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>第1章の03から06まで(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Rust the book - 第8章-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/">
+    <link rel="canonical" href="/blog/2020/04/16/chap8-rust-the-book/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,16 +157,20 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/rust" title="Rust">
-                            Rust
+                        <a class="tag" href="/tags/rust" title="rust">
+                            rust
                         </a>
                         
-                        <a class="tag" href="/tags/nlp100" title="nlp100">
-                            nlp100
+                        <a class="tag" href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        <a class="tag" href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
                         </a>
                         
                     </div>
-                    <h1>第1章の03から06まで(言語処理100本ノック2020)</h1>
+                    <h1>Rust the book - 第8章</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +178,7 @@
                             johtani
                          
                         on 
-                        Thursday, April 9, 2020
+                        Thursday, April 16, 2020
                         
                         
                         
@@ -204,53 +208,152 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li>
+    <li><a href="#第8章">第8章</a>
       <ul>
-        <li><a href="#03-円周率">03. 円周率</a></li>
-        <li><a href="#04-元素記号">04. 元素記号</a></li>
-        <li><a href="#05-n-gram">05. n-gram</a></li>
-        <li><a href="#06-集合">06. 集合</a></li>
+        <li><a href="#ベクタ型">ベクタ型</a></li>
+        <li><a href="#文字列型">文字列型</a></li>
+        <li><a href="#ハッシュマップ">ハッシュマップ</a></li>
       </ul>
     </li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>Rustで言語処理100本ノックのリファクタリングの続き。</p>
-<p>前回は<a href="/blog/2020/04/08/reboot-nlp10-with-rust/">こちら</a>。</p>
-<p>コードも載せたほうが見やすいかなぁ?</p>
-<h3 id="03-円周率">03. 円周率</h3>
-<p><a href="/blog/2018/02/19/nlp100-ch01-03to04/#03-%E5%86%86%E5%91%A8%E7%8E%87">2年前はこちら</a>。
-どちらかというとJavaっぽい書き方かな?
-入れ物を用意して、入力を整形して、それからループを回す感じで書いてました。</p>
-<p><a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L50">今回は1行で収めてみました</a>。
-Rustっぽく、<code>return</code>を省略してみました。
-あとは、Iteratorを組み合わせる感じでやってます。
-アルファベットの文字数ということで、<code>is_alphabetic()</code>メソッドでfilterしてます。</p>
-<h3 id="04-元素記号">04. 元素記号</h3>
-<p><a href="/blog/2018/02/19/nlp100-ch01-03to04/#04-%E5%85%83%E7%B4%A0%E8%A8%98%E5%8F%B7">2年前はこちら</a>。
-エラー処理が多いのと、文字の扱いがちょっと</p>
-<p>ここまで同様に<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L64">極力イテレータを利用する</a>という方針でリファクタリングしました。
-あとは、エラー処理を除去してます。
-正常系だけのテストなのでスッキリさせました。</p>
-<p>こういった、ストリーム系?の書き方の場合にエラー処理をどう入れるかってところはちょっと悩みどころになるんじゃないかなぁ?と思いつつ、イレギュラーなものは後回しで(あとにやるのかなぁ?)</p>
-<h3 id="05-n-gram">05. n-gram</h3>
-<p><a href="/blog/2018/03/20/nlp100-ch01-05to06/#05-n-gram">2年前はこちら</a>。
-これまでと同じく、入れ物を作ってから処理をしてます。</p>
-<p>同じく、<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L82">極力イテレータを利用する形</a>で実装しました。
-いくつか型の変換が必要なので、<code>.map()</code>を呼び出して詰め替えたりしています。</p>
-<h3 id="06-集合">06. 集合</h3>
-<p><a href="/blog/2018/03/20/nlp100-ch01-05to06/#06-%E9%9B%86%E5%90%88">2年前はこちら</a>。
-独自に実装しています。</p>
-<p>せっかく<code>05</code>で文字n-gramの配列を返す処理を実装しているので、
-そちらを呼び出して、Setに入れるという処理に書き換えました。
-その後の集合に対する処理については特にリファクタリングしてないです。</p>
+                <p>前回の記事はこちら。自分用のメモなので、読みにくいかもです。</p>
+<ul>
+<li><a href="/blog/2020/03/23/start-reading-rust-the-book/">Rust the Bookを読み始めた</a></li>
+<li><a href="/blog/2020/03/26/chap4-rust-the-book/">Rust the book - 第4章</a></li>
+<li><a href="/blog/2020/04/02/chap5-rust-the-book/">Rust the book - 第5章</a></li>
+<li><a href="/blog/2020/04/07/chap6-rust-the-book/">Rust the book - 第6章</a></li>
+</ul>
+<h2 id="第8章">第8章</h2>
+<p>7章はパッケージなので後回しにして、8章に入ります。
+8章はコレクションです。</p>
+<h3 id="ベクタ型">ベクタ型</h3>
+<ul>
+<li>ベクタは同じ型の値だけ保持可能。
+<ul>
+<li>ジェネリクスで型を指定可能 - <code>Vec&lt;i32&gt;</code>とか。</li>
+</ul>
+</li>
+<li><code>vec!</code>マクロで初期値とか設定すると便利。</li>
+<li>ベクタに値を追加するのは<code>push</code>。もちろん値が変わるので元のベクタには<code>mut</code>が必要</li>
+<li>ベクタのスコープ(ライフサイクル)は要素に対する参照があるのとないので話が変わってくる
+<ul>
+<li>メモリの確保などの影響で、ベクタ全体に対して借用の規則が矯正されると。</li>
+</ul>
+</li>
+<li>ベクタの値を読むのはいくつか方法あり
+<ul>
+<li><code>get</code>メソッドはOptionを返す</li>
+<li><code>&amp;v[2]</code>の添字記法の場合はパニックの可能性あり</li>
+</ul>
+</li>
+<li>走査(唐突に参照外しが出てきた)
+<ul>
+<li>単純に値を取り出す場合は<code>for - in &amp;v</code></li>
+</ul>
+</li>
+<li>Enumをベクタにいれることで、異なる型も保持可能(まぁ、Enumの型では固定されるけど)。
+<ul>
+<li>これだけのためにEnumを使うことってあるのかな?</li>
+<li>トレイとオブジェクトに関する文章はちょっとわかりにくい。。。</li>
+</ul>
+</li>
+</ul>
+<p>説明以外のメソッドなどについてはAPIドキュメント見ましょうと(リンクも張ってくれてると嬉しいなぁと思ったり。まぁ、バージョンとかの絡みがあるから難しいか)。</p>
+<h3 id="文字列型">文字列型</h3>
+<ul>
+<li>
+<p>文字列はUTF-8でエンコードされた文字を扱うための型。</p>
+</li>
+<li>
+<p><code>str</code>は文字列データへの参照。</p>
+</li>
+<li>
+<p><code>String</code>型は言語のコアではなく、標準ライブラリに入っている文字列型。</p>
+<ul>
+<li>他にもあるのか。。。<code>OsString</code>とか。。。</li>
+</ul>
+</li>
+<li>
+<p>文字リテラルはDisplayトレイトを実装していると。</p>
+</li>
+<li>
+<p><code>.to_string()</code> = <code>String::from</code></p>
+</li>
+<li>
+<p>Stringはコレクションだから追加とかが可能なのか、なるほど。</p>
+</li>
+<li>
+<p><code>push_str</code>と<code>push</code></p>
+</li>
+<li>
+<p><a href="https://doc.rust-jp.rs/book/second-edition/ch08-02-strings.html#a%E6%BC%94%E7%AE%97%E5%AD%90%E3%81%BE%E3%81%9F%E3%81%AFformat%E3%83%9E%E3%82%AF%E3%83%AD%E3%81%A7%E9%80%A3%E7%B5%90"><code>+</code>演算子での参照</a>。</p>
+<ul>
+<li><code>&amp;String</code>は<code>&amp;str</code>に型強制(キャスト?)してくれる。してくれる場合としてくれない場合もあるのかな?<code>s2</code>の所有権は奪わない形で扱うので<code>s2</code>はこのあとも使えていると。</li>
+<li>ここでは、<code>s1</code>を変更したあとに所有権が<code>s3</code>に持っていかれてる?</li>
+<li><code>format!</code>を使うとどの所有権も奪わないので、これを使うほうが考え方は簡単そう。ただし、効率がいいかはわからん。</li>
+</ul>
+</li>
+<li>
+<p>添字記法でのアクセスを<code>String</code>は許容していない</p>
+<ul>
+<li>文字の境界が必ずしも1バイトとは限らないから。</li>
+<li>スライスも同様。</li>
+</ul>
+</li>
+<li>
+<p>基本的には<code>.chars()</code>で文字としてアクセスするのが良い。</p>
+</li>
+<li>
+<p>逆にバイト表現を得る方法はどうするんだろう?</p>
+<ul>
+<li><a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L155">NLP100本ノックでは<code>encode_utf8</code>メソッド使ったけど。</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="ハッシュマップ">ハッシュマップ</h3>
+<ul>
+<li>いろんな呼び方あるよね。Rustではハッシュマップだよ。</li>
+<li>ハッシュマップは<code>use</code>しないと使えない</li>
+<li>キーは1つの型、値も1つの型</li>
+<li>タプルのベクタから<code>collect</code>で生成。なるほど。
+<ul>
+<li>タプルのベクタだと、タプルの中身は同じものであることが言える?
+<ul>
+<li>-&gt; 言える。エレメント数が異なるとコンパイルエラーになった</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://doc.rust-jp.rs/book/second-edition/ch08-03-hash-maps.html#a%E3%83%8F%E3%83%83%E3%82%B7%E3%83%A5%E3%83%9E%E3%83%83%E3%83%97%E3%81%A8%E6%89%80%E6%9C%89%E6%A8%A9">所有権周りの話。</a>
+<ul>
+<li>これ、ベクタのときに話してほしい感じがした。</li>
+<li>値を渡すか参照を渡すかによって話が変わってくる。詳しくは10章</li>
+<li>このあたりが自分が混乱していた元だ。</li>
+</ul>
+</li>
+<li><code>entry</code>と<code>insert</code>の違い
+<ul>
+<li><code>entry</code>の戻り値は<code>Entry</code>というenumで<code>or_insert</code>というメソッドがありそれを使うと存在しない場合だけinsertが呼ばれる。
+<ul>
+<li>これ便利だ。毎回<code>exist</code>あたりで存在チェックしてた気がする。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>or_insert</code>は可変参照<code>&amp;mut V</code>を返す。
+<ul>
+<li>これを<code>let count</code>で束縛するときに、中身が可変かどうかをcountには指定しないのか。。。</li>
+</ul>
+</li>
+</ul>
 <h2 id="まとめ">まとめ</h2>
-<p>2年前にやってたところまでは追いつきました。
-07は特にリファクタリングする必要がないので、次は08からの予定です。</p>
-<p>リファクタリングしているときになるのは、速度とかでしょうか。
-実装の違いでなにか差が出るのかどうかはちょっと気になるところですが、
-今回の目的ではないので、目をつぶって進める予定です。</p>
+<p>一応、大学などで習ってた(はず)ですが、
+スタックとヒープを意識して考えないといけないなぁというのを何度か意識させられた感じです。</p>
+<p>あと、これはRustに限らずですが、それぞれがどんな関数を持っているか、どんなメソッドを持っているか、どんなマクロが存在するかなどを探すときにみんなどうしてるんだろう?
+人に教えてもらっているのか、APIリファレンスを探すのか、そういったところをみんながどういう感じにプログラミング言語を勉強しているか、業務で書いているのかと言うのが気になりました。</p>
 
 
                 
@@ -259,15 +362,10 @@ Rustっぽく、<code>return</code>を省略してみました。
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/04/08/reboot-nlp10-with-rust/" data-toggle="tooltip" data-placement="top" title="言語処理100本ノック、再び">&larr;
+                        <a href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/" data-toggle="tooltip" data-placement="top" title="第1章の03から06まで(言語処理100本ノック2020)">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/04/16/chap8-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第8章">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
