@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="第1章の03から06まで(言語処理100本ノック2020)" />
-    <meta property="og:title" content="第1章の03から06まで(言語処理100本ノック2020)" />
-    <meta property="twitter:title" content="第1章の03から06まで(言語処理100本ノック2020)" />
+    <meta name="title" content="第2章の10から11まで(言語処理100本ノック2020)" />
+    <meta property="og:title" content="第2章の10から11まで(言語処理100本ノック2020)" />
+    <meta property="twitter:title" content="第2章の10から11まで(言語処理100本ノック2020)" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>第1章の03から06まで(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>第2章の10から11まで(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/05/08/reboot-nlp100-finish-ch01/">
+    <link rel="canonical" href="/blog/2020/05/08/rebootnlp100-ch02-10to11/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -166,7 +166,7 @@
                         </a>
                         
                     </div>
-                    <h1>第1章の03から06まで(言語処理100本ノック2020)</h1>
+                    <h1>第2章の10から11まで(言語処理100本ノック2020)</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -204,74 +204,81 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li>
+    <li><a href="#確認用のunixコマンド">確認用のUnixコマンド</a>
       <ul>
-        <li><a href="#08-暗号文">08. 暗号文</a></li>
-        <li><a href="#09-typoglycemia">09. Typoglycemia</a></li>
+        <li><a href="#sedコマンドでのタブの扱い">sedコマンドでのタブの扱い</a></li>
+        <li><a href="#splitコマンドに-nオプションがない">splitコマンドに-nオプションがない</a></li>
       </ul>
     </li>
+    <li><a href="#10-行数のカウント">10. 行数のカウント</a></li>
+    <li><a href="#11-タブをスペースに置換">11. タブをスペースに置換</a></li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>Rustで言語処理100本ノックのリファクタリングの続き。</p>
-<p>前回は<a href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/">こちら</a>。</p>
-<p>とっくに終わってたのに、ブログ書いてなかった。。。</p>
-<h3 id="08-暗号文">08. 暗号文</h3>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">cipher</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">return</span> String::from_iter(text.chars().map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> {
-        <span style="color:#66d9ef">if</span> x.is_ascii_alphanumeric() <span style="color:#f92672">&amp;</span><span style="color:#f92672">&amp;</span> x.is_lowercase() {
-            <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> b <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>; <span style="color:#ae81ff">4</span>];
-            x.encode_utf8(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> b);
-            b[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">219</span> <span style="color:#f92672">-</span> b[<span style="color:#ae81ff">0</span>];
-            char::from(b[<span style="color:#ae81ff">0</span>])
-        } <span style="color:#66d9ef">else</span> {
-            x
-        }
-    }));
+                <p>気づいたら1ヶ月サボってました、ごめんなさい。。。</p>
+<p>Rustで言語処理100本ノックの第2章をはじめました。</p>
+<p>前回は<a href="/blog/2020/05/08/reboot-nlp100-finish-ch01">こちら</a>。</p>
+<h2 id="確認用のunixコマンド">確認用のUnixコマンド</h2>
+<p>確認用のファイルを先に生成して置きました。
+これで、Rustでコードを書いて、作成済みの確認ファイルを元に<code>assert_eq!</code>でチェックするという方式を取ろうかと。</p>
+<p>で、コマンド群は<a href="https://github.com/johtani/nlp100-rust/blob/master/commands/chap02.sh">こちら</a>です。</p>
+<p>Unix/Linuxコマンド、昔から使っています。が、なにかちょっとした文字列処理やファイル処理をやるときは、Javaのプログラム(最近だとPython)を書くというのが基本になってるので、結構、使ったことの無いコマンドが今回ありました。使ったことがなかったのはこちらです。</p>
+<ul>
+<li><code>sed</code></li>
+<li><code>tr</code></li>
+<li><code>expand</code></li>
+<li><code>paste</code></li>
+<li><code>cut</code></li>
+<li><code>split</code></li>
+</ul>
+<p><code>sed</code>とかは普通さわってるだろ?って思われそうですね。。。</p>
+<p>で、コマンドを<code>man</code>で調べつつやりました、macOS上で。
+これがまたいくつか罠があったので書き残しておきます(自分が知らないだけかもしれないので、おかしいところがあったらツッコミお願いします。)。</p>
+<h3 id="sedコマンドでのタブの扱い"><code>sed</code>コマンドでのタブの扱い</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh"><span style="color:#75715e">## sed command for macOS. If using Linux, use &#34;\t&#34; for tab character</span>
+cat $INPUT_FILE_NAME | sed -e <span style="color:#e6db74">&#39;s/	/ /g&#39;</span> &gt; $OUTPUT_DIR/11_sed.txt
+</code></pre></div><p><code>\t</code>で行けると思ったのですが、うまく動きませんでした。<code>&lt;tab&gt;</code>みたいな書き方もあると思うのですが、これも駄目で、結局タブ文字をそのまま打ち込みました。。。
+これ、めんどくさくないですか???
+ちなみに、ターミナルで動作確認して、GitHubにあげてあるシェルファイルにコピペしてたのですが、CLionに貼り付けたらタブ文字がスペースに変換されてしまってて20分くらい悩みました。。。</p>
+<h3 id="splitコマンドに-nオプションがない"><code>split</code>コマンドに<code>-n</code>オプションがない</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">
+LINES<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>cat $OUTPUT_DIR/10.txt<span style="color:#e6db74">`</span>
+SPLIT_LINES<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>echo $LINES/$N | bc<span style="color:#e6db74">`</span>
+split -a <span style="color:#ae81ff">1</span> -l $SPLIT_LINES $INPUT_FILE_NAME $OUTPUT_DIR/16_
+</code></pre></div><p><code>split</code>コマンドについてググると、<code>-n</code>で指定した数のファイルに分割できるという記事がいくつも出てくるのですが、<code>man split</code>をターミナル上でやるとそんなオプションがないと。。。
+macOSがBSD系だからっぽいです。
+ということで、行数を元に、指定した数(<code>N</code>)で行数を割ってから、指定行数ごとにファイルを分割する方式にしました。</p>
+<p>これらのコマンドの違いはHomebrewとかでインストールするとなくなるのかなぁ?(めんどくさいので確認してないですが。。。)</p>
+<p>ってことで、2章のそれぞれの課題の正解ファイルの生成はこれでできたはずです。</p>
+<h2 id="10-行数のカウント">10. 行数のカウント</h2>
+<p><code>wc -l</code>ですね。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// ch02-10 行数のカウント
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">word_count</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; <span style="color:#66d9ef">usize</span> {
+    <span style="color:#66d9ef">let</span> f <span style="color:#f92672">=</span> File::open(file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(f);
+    <span style="color:#66d9ef">return</span> buf.lines().count();
 }
-</code></pre></div><p>Rustの文字列はUTF-8でエンコードされたテキストを保持しているので、文字コード自体は意識していないです。
-<code>chars()</code>でUnicodeスカラー値のイテレータが返ってくるので、1文字ずつ扱えるようになります。</p>
-<p>ただ、1文字をバイトとして扱うのに手こずりました。
-<code>encode_utf8</code>というメソッドを利用して1バイトだけ取り出して、計算するというのをやっています。
-文字種の判別のメソッドが用意されているのは便利ですね。</p>
-<p>なんかもうちょっとスマートにできないのかな?と思いつつ動いたのでこれになってます。</p>
-<h3 id="09-typoglycemia">09. Typoglycemia</h3>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">typoglycemia</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">return</span> text
-        .split_whitespace()
-        .map(<span style="color:#f92672">|</span>word<span style="color:#f92672">|</span> {
-            <span style="color:#66d9ef">if</span> word.len() <span style="color:#f92672">&lt;</span><span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span> {
-                word.to_string()
-            } <span style="color:#66d9ef">else</span> {
-                <span style="color:#66d9ef">let</span> original <span style="color:#f92672">=</span> word.chars().collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>char<span style="color:#f92672">&gt;</span><span style="color:#f92672">&gt;</span>();
-                <span style="color:#66d9ef">let</span> first <span style="color:#f92672">=</span> original.get(<span style="color:#ae81ff">0</span>).unwrap();
-                <span style="color:#66d9ef">let</span> last <span style="color:#f92672">=</span> original.last().unwrap();
-                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> original[<span style="color:#ae81ff">1</span>..original.len() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]
-                    .iter()
-                    .map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> x.clone())
-                    .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>char<span style="color:#f92672">&gt;</span><span style="color:#f92672">&gt;</span>();
-                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> rng <span style="color:#f92672">=</span> thread_rng();
-                typo.shuffle(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> rng);
-                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> String::from_iter(typo.iter());
-                typo.insert(<span style="color:#ae81ff">0</span>, first.clone());
-                typo.push(last.clone());
-                typo
-            }
-        })
-        .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span><span style="color:#f92672">&gt;</span>()
-        .join(<span style="color:#e6db74">&#34; &#34;</span>);
+</code></pre></div><p>ファイルを読み込んで行数を数えます。
+文字列として読み込んで改行コードの数を数えるというのもありかな?と思いましたが、Rustの<code>BufReader</code>に<code>lines()</code>という行のイテレータ?が取れることがわかったので、それでカウントを取りました。</p>
+<h2 id="11-タブをスペースに置換">11. タブをスペースに置換</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// ch02-11 タブをスペースに置換
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tab_2_space</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> f <span style="color:#f92672">=</span> File::open(file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> contents<span style="color:#f92672">=</span> String::new();
+    f.read_to_string(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> contents).expect(<span style="color:#e6db74">&#34;read error&#34;</span>);
+    <span style="color:#66d9ef">return</span> contents.replace(<span style="color:#e6db74">&#34;\t&#34;</span>, <span style="color:#e6db74">&#34; &#34;</span>);
 }
-</code></pre></div><p>一応、1行で記述できたかな?
-まずは、スペースで単語ごとに区切った後に、<code>word</code>(単語)の長さによって、処理を分岐し、単語が5文字以上の場合にランダムに並び替えを行うというのをやっています。
-文字単位で処理を行うために、<code>chars()</code>で1文字ずつ取り出しています。
-最初と最後の文字だけはそのままに、間の文字をランダムにシャッフルするというのをやるのに、もとの<code>word</code>のスライスからコピーした文字列を作り出してから組み立て直すということをやっています。</p>
-<p>コピーしないでゴニョゴニョする方法ってあるのかなぁ?
-思いつかなかったので、結構泥臭い感じの実装になってしまいました。</p>
+</code></pre></div><p>こっちはファイル全体を文字列に読み込んでしまってから、文字列の<code>replace</code>で置換するという方式です。
+ファイルが大きい場合にこれでいいのか?という問題がある気がしますが、まずはこの実装にしました。
+やるとしたら、<code>read</code>メソッドと<code>buffer</code>を用意して、少しずつ読みながら、置換して吐き出す感じでしょうか?
+ちゃんとした文字コードの区切りで取れるかどうかを気にしないと行けないと思うので、思ったよりはめんどくさくなりそう。</p>
+<p><code>BufReader</code>をつかって<code>read_line</code>のほうがましかも?</p>
 <h2 id="まとめ">まとめ</h2>
-<p>めんどくさいので、コードをGitHubのソースコードからではなく、ブログにコードスニペットとしてコピペしました。Hugoでいい感じにGitHubのコードスニペット表示するのないかなぁ?</p>
-<p>ということで、2年越しで1章が終了しました。
-2章もやらないとなぁ。</p>
+<p>ということで、サボっていたのを再開しました。
+Rustのコードを書く前に、Unixコマンドの処理に結構悩みましたw</p>
+<p>Rustのコードとしてはファイル処理なので、今後も役立つ気がしてます。
+ということで、頑張っていくぞと。</p>
 
 
                 
@@ -280,15 +287,10 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/05/07/install-workplace-search/" data-toggle="tooltip" data-placement="top" title="ElasticのWorkplace Searchを触ってみる - その2 - インストールと起動">&larr;
+                        <a href="/blog/2020/05/08/reboot-nlp100-finish-ch01/" data-toggle="tooltip" data-placement="top" title="第1章の03から06まで(言語処理100本ノック2020)">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/05/08/rebootnlp100-ch02-10to11/" data-toggle="tooltip" data-placement="top" title="第2章の10から11まで(言語処理100本ノック2020)">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
