@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Azure Cognitive Searchでの日本語向けAnalyzerの違い" />
+    <meta property="og:title" content="Azure Cognitive Searchでの日本語向けAnalyzerの違い" />
+    <meta property="twitter:title" content="Azure Cognitive Searchでの日本語向けAnalyzerの違い" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Azure Cognitive Searchでの日本語向けAnalyzerの違い-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2020/06/09/difference-analyzers-in-azure-search/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/azure-search" title="azure search">
+                            azure search
+                        </a>
+                        
+                        <a class="tag" href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                    </div>
+                    <h1>Azure Cognitive Searchでの日本語向けAnalyzerの違い</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Tuesday, June 9, 2020
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#analyzerとは">Analyzerとは?</a></li>
+    <li><a href="#2種類のanalyzerの違いはどんなもの">2種類のAnalyzerの違いはどんなもの?</a>
+      <ul>
+        <li><a href="#もとの文章と解析結果一部抜粋">もとの文章と解析結果(一部抜粋)</a></li>
+        <li><a href="#共通点">共通点</a></li>
+      </ul>
+    </li>
+    <li><a href="#じゃあどっちがいいの">じゃあどっちがいいの?</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>Azure Cognitive Searchで日本語を扱うときに、形態素解析器を使いたい場合、2種類のAnalyzerが用意されています。今回はこれらの違いがどんなものかを見ていくことにします。</p>
+<h2 id="analyzerとは">Analyzerとは?</h2>
+<p>まずは、その前にAnalyzerとは何者か?というのを少しだけ。
+Azure Cognitive Searchは<a href="https://ja.wikipedia.org/wiki/%E8%BB%A2%E7%BD%AE%E3%82%A4%E3%83%B3%E3%83%87%E3%83%83%E3%82%AF%E3%82%B9">転置インデックス</a>を内部で作成して、検索を行っています。
+この、転置インデックスは、「単語」がどのドキュメントに入っているか?を素早く見つけることができるデータ構造となっています。</p>
+<p>Azure Cognitive Searchは、この「単語」を入力された文章から生成するときに、Analyzerというものを利用します。
+Analyzerは入力された文章をある規則に則って単語に分割する機能です。
+この「ある規則」が、各種言語や用途によって様々に用意されています。
+今回はこの中の<code>ja.lucene</code>と<code>ja.microsoft</code>という2種類のAnalyzerについて違いを見ていきます。</p>
+<h2 id="2種類のanalyzerの違いはどんなもの">2種類のAnalyzerの違いはどんなもの?</h2>
+<p>このAnalyzerの挙動を見るためのエンドポイントとして<code>analyze</code>というAPIがあります(<a href="https://blog.johtani.info/blog/2020/03/19/azure-search-analyze-plugin/">詳細は昔のブログを参照</a>)。</p>
+<p>このAPIを利用して、Wikipediaのいくつかの文章を単語に区切って見て、
+<code>ja.microsoft</code>がどんな動きをしているのか想像してみます(残念ながら<code>ja.microsoft</code>の仕様?や挙動についてはページが見つからないため)。</p>
+<h3 id="もとの文章と解析結果一部抜粋">もとの文章と解析結果(一部抜粋)</h3>
+<p>文章は、手元のElasticsearchに登録したjawikiのデータからランダムに抽出しています。また、自前のツールで生成したWikipediaのデータなので、まだ一部、見苦しい文字列になっています(そっちもなおさないと)。</p>
+<h4 id="1-砂川熊本県">1. 砂川（熊本県）</h4>
+<blockquote>
+<p>thumb|250px|right|上砂川橋より上流方砂川（すながわ）は、熊本県宇城市・八代郡氷川町を流れる二級河川。</p>
+</blockquote>
+<p>この文字列から抽出された単語で特徴的なものを一部抜粋しました。</p>
+<table>
+<thead>
+<tr>
+<th><code>ja.microsoft</code></th>
+<th><code>ja.lucene</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>250px</td>
+<td>250</td>
+</tr>
+<tr>
+<td></td>
+<td>px</td>
+</tr>
+<tr>
+<td>上砂</td>
+<td>上, 上砂川</td>
+</tr>
+<tr>
+<td>川橋</td>
+<td>砂川</td>
+</tr>
+<tr>
+<td></td>
+<td>橋</td>
+</tr>
+<tr>
+<td>宇城</td>
+<td>宇</td>
+</tr>
+<tr>
+<td>市</td>
+<td>城市</td>
+</tr>
+<tr>
+<td>二級</td>
+<td>二</td>
+</tr>
+<tr>
+<td>^</td>
+<td>級</td>
+</tr>
+</tbody>
+</table>
+<p>まず、最初の<code>250px</code>ですが、<code>ja.microsoft</code>では、<code>px</code>が単位であると判定しているのか、数値と合わせた単語として抽出されています。この場合、<code>250</code>で検索しても、この文字列はヒットしない形になるので、ノイズが減ることが考えられるかと。</p>
+<p><code>上砂川橋</code>という文字は、分割の仕方が別れました。
+<code>ja.lucene</code>では、<code>上砂川</code>という単語が地名として辞書に存在するために、このような分割になっています。<code>ja.microsoft</code>のデータは品詞の情報が取れないのですが、<code>上砂</code>、<code>川橋</code>ともに、名詞として辞書に存在しているのではないかなと。<code>ja.lucene</code>には<code>川橋</code>という単語は存在していないようでした。</p>
+<p><code>宇城市</code>(うきし)については、2005年に合併でできた市のようで、<code>ja.lucene</code>が利用している辞書には存在しない可能性があり、<code>宇城</code>という文字が抽出できてないと思われます。</p>
+<p>最後は<code>二級</code>です。<code>ja.lucene</code>では、数字と助数詞として分割されています。こちらも何かしらのロジックにより、<code>二級</code>という1単語でヒットできるように数字と単位?が合わせた単語で出てくる仕組みが<code>ja.microsoft</code>なのかなと。</p>
+<h4 id="2-uefa-u-18女子選手権2000">2. UEFA U-18女子選手権2000</h4>
+<blockquote>
+<p>UEFA U-18女子選手権2000は第3回目のUEFA U-18女子選手権である。決勝トーナメントは2000年7月27日から8月4日までフランスで行われ、ドイツが初優勝を果たした。</p>
+</blockquote>
+<p>この文字列から抽出された単語で特徴的なものを一部抜粋しました。</p>
+<table>
+<thead>
+<tr>
+<th><code>ja.microsoft</code></th>
+<th><code>ja.lucene</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>u-18, u</td>
+<td>u</td>
+</tr>
+<tr>
+<td>18, nn18</td>
+<td>18</td>
+</tr>
+<tr>
+<td>第3回目</td>
+<td>第</td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+</tr>
+<tr>
+<td></td>
+<td>回</td>
+</tr>
+<tr>
+<td></td>
+<td>目</td>
+</tr>
+<tr>
+<td>トーナメント, トナメント</td>
+<td>トーナメント</td>
+</tr>
+<tr>
+<td>2000年</td>
+<td>2000</td>
+</tr>
+<tr>
+<td></td>
+<td>年</td>
+</tr>
+<tr>
+<td>7月</td>
+<td>7</td>
+</tr>
+<tr>
+<td></td>
+<td>月</td>
+</tr>
+<tr>
+<td>27日</td>
+<td>27</td>
+</tr>
+<tr>
+<td></td>
+<td>日</td>
+</tr>
+</tbody>
+</table>
+<p>数字を含む単語<code>第3回目</code>や<code>2000年</code>、<code>7月</code>などは、<code>ja.microsoft</code>は先程と同様、数字と単位の組み合わせを1単語として出力しています。</p>
+<p>また、<code>トーナメント</code>という単語を<code>トナメント</code>という形で、長音を除去した形で出力しています。
+今回の文字列ではないですが、この他に、<code>センター</code>を<code>センター</code>と<code>センタ</code>の2パターンの単語で出力するといったことを行っています。
+<code>ja.lucene</code>の場合、単語の最後に長音がある場合だけ<code>センタ</code>として、長音を除去した単語が出力されます。
+これは、長音の表記ゆれに対応するためではないかなと。たとえば、<code>インターフェース</code>と<code>インタフェース</code>、<code>インターフェイス</code>のように、人や文章によって、間にでてくる長音を使ったり使わなかったりという表記ゆれに対応するためだと思われます。
+その他にも、<code>イプロゥヴェト</code>を<code>イプロゥベト</code>に、<code>ネクスト</code>を<code>ネキスト</code>に、<code>バラエティ</code>を<code>バラエチ</code>にも変換するなどといった処理をしてくれるようです。カタカナの表記ゆれには強そうですね(これどうやってるんだろう?)。</p>
+<p><code>ja.microsoft</code>では、<code>nn18</code>というちょっと変わった単語も出てきていました。純粋な数字の場合は<code>nn</code>と入力してくれるようで、数字だけで検索したい場合に利用できるのかな?これはドキュメントに書いておいてほしいかも?</p>
+<h3 id="共通点">共通点</h3>
+<p><code>ja.lucene</code>、<code>ja.microsoft</code>ともに、共通している動作として、「てにをは」といった単語は除去されていました。違いがあるものとしては、「より」(助詞-格助詞-一般)、「されている」(動詞-自立、動詞-接尾、助詞-接続助詞、動詞-非自立)、「ある」(助動詞)といったものは<code>ja.microsoft</code>では除去されずに出てきていました。
+ストップワード的に「てにをは」あたりを除去をしている感じでしょうか?</p>
+<p>アルファベットで構成されている単語についても、基本はそのまま出力される挙動のようでした。</p>
+<h2 id="じゃあどっちがいいの">じゃあどっちがいいの?</h2>
+<p>残念ながらどちらがいいかは、一長一短かなぁと。
+<code>ja.lucene</code>に関しては、Luceneの仕組みを利用しているので、Elasticsearchなどを使えば、個別の単語についてより詳細の情報を取得することが可能です(品詞、読みなど)。<code>ja.microsoft</code>については、残念ながら手の入れようがないので、そういう動きのものだという割り切った使い方になるでしょうか?
+ただ、長音の除去による表記ゆれなどについては、便利な機能なので、そのあたりの問題に対応したい場合は、<code>ja.microsoft</code>を活用するのも良いかと思います。</p>
+<p>個人的には、より細かい単語としてインデックスに登録できるもののほうが、柔軟な検索には対応できるのではないかなぁと考えています(Kuromojiの辞書をUniDicにするとか?も考えますが、これはAzure Searchではできないですが)。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>Wikipediaのデータをいくつか使って、<code>ja.microsoft</code>と<code>ja.lucene</code>の違いについて、考察してみました。何かの役に立てばと。
+他に、これはどんな感じになるの?などありましたら、コメントいただければと。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2020/05/28/chap10-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第10章">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>
