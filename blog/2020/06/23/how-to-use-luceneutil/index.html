@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="第9回Elasticsearch勉強会を開催しました。#elasticsearchjp" />
-    <meta property="og:title" content="第9回Elasticsearch勉強会を開催しました。#elasticsearchjp" />
-    <meta property="twitter:title" content="第9回Elasticsearch勉強会を開催しました。#elasticsearchjp" />
+    <meta name="title" content="luceneutil - マニアックなツールのセットアップ" />
+    <meta property="og:title" content="luceneutil - マニアックなツールのセットアップ" />
+    <meta property="twitter:title" content="luceneutil - マニアックなツールのセットアップ" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>第9回Elasticsearch勉強会を開催しました。#elasticsearchjp-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>luceneutil - マニアックなツールのセットアップ-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2015/04/17/9th-elasticsearch-jp/">
+    <link rel="canonical" href="/blog/2020/06/23/how-to-use-luceneutil/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,16 +157,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
-                            elasticsearch
-                        </a>
-                        
-                        <a class="tag" href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
-                            勉強会
+                        <a class="tag" href="/tags/lucene" title="lucene">
+                            lucene
                         </a>
                         
                     </div>
-                    <h1>第9回Elasticsearch勉強会を開催しました。#elasticsearchjp</h1>
+                    <h1>luceneutil - マニアックなツールのセットアップ</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +170,7 @@
                             johtani
                          
                         on 
-                        Friday, April 17, 2015
+                        Tuesday, June 23, 2020
                         
                         
                         
@@ -204,78 +200,96 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li>
-      <ul>
-        <li><a href="#チェックイン数など">チェックイン数など</a></li>
-      </ul>
-    </li>
-    <li><a href="#resiliency-in-elasticsearch-and-lucene--igor-motov">Resiliency in Elasticsearch and Lucene / Igor Motov</a></li>
-    <li><a href="#kibana4-whats-new---nathan-zamecnik">Kibana4: What&rsquo;s New ? / Nathan Zamecnik</a></li>
-    <li><a href="#その他感想などのブログ">その他、感想などのブログ</a></li>
-    <li><a href="#まとめ">まとめ</a></li>
+    <li><a href="#とりあえずgit-clone">とりあえずgit clone</a></li>
+    <li><a href="#手順通りに">手順通りに?</a></li>
+    <li><a href="#まだ途中">まだ途中</a></li>
   </ul>
 </nav>
                 
-                <p><a href="https://elasticsearch.doorkeeper.jp/events/23012">第9回Elsticsearch勉強会</a>を開催しました。
-スタッフの皆さん、スピーカーの皆さん、開場提供していただいた<a href="http://recruit-tech.co.jp">リクルートテクノロジーズさん</a>、ありがとうございました！
-次回もよろしくお願いします！参加していただき盛り上げていただいた参加者の皆さんもありがとうございました。</p>
-<!-- more -->
-<p>今回はトレーニングで来日していたIgorとNathanによる特別公演でした。
-昨年同様、<a href="http://samuraism.com">サムライズム</a>の<a href="https://twitter.com/yusuke">@yusuke</a>さんに
-テキスト翻訳していただき、大変助かりました。ほんとうにすごかった。。。</p>
-<h3 id="チェックイン数など">チェックイン数など</h3>
+                <p><a href="https://issues.apache.org/jira/browse/LUCENE-9286">LuceneのFSTの修正に関連して、Kuromojiのパフォーマンス問題が出ているようです</a>。
+この問題自体はLucene 8.6.0以降で直る予定のようなのです(<a href="https://github.com/elastic/elasticsearch/issues/57142">Elasticsearchへの影響範囲についてはこれが参考になるかな?</a>)。
+で、これに関連して、ベンチマーク計らないとねという話が出ていて、
+昔から、LuceneのMikeさんがやっている<a href="http://people.apache.org/~mikemccand/lucenebench/analyzers.html">ベンチマークのグラフ</a>に<a href="https://github.com/mikemccand/luceneutil/issues/64">載せるのがいいよね</a>という話になっていました。
+どうも、これについては、Luceneの中にあるbenchmarkというプロジェクトではなく、MikeさんのGitHubリポジトリにあるプログラムで計測しているようです。</p>
+<p>じゃあ、手元でこれどうやって動かすんだろう?ということでやってみたブログになります。
+おそらく、99.99%の人は興味ないと思うのでスルーしていただくのがいいと思います。備忘録のために書いてます。</p>
+<h2 id="とりあえずgit-clone">とりあえずgit clone</h2>
+<p>公開されているリポジトリは<a href="https://github.com/mikemccand/luceneutil/">こちら</a>です。</p>
+<h2 id="手順通りに">手順通りに?</h2>
+<p>とりあえず、READMEにセットアップなどのやり方があったんで追っていくことに。
+とりあえず動くまでの手順は以下のとおりです。</p>
+<ol>
+<li>ディレクトリを決める
 <ul>
-<li>今回はチェックインした人：119名</li>
-<li>キャンセルしなかった人：45名</li>
-</ul>
-<p>でした。今回はキャンセル待ちのまま当日を迎えた人もいなかったので良かったかなと。
-今回から懇親会ページを別にしてみました。本編の勉強会に参加登録していた方には何度かメールを出していたので、
-見つけていなかった人は以内とは思うのですが、勉強会のページと間違える人がいたらしいという話を聞きました。
-Doorkeeperで1イベントで複数のチケットにそれぞれの参加者数を設定できるようになると嬉しいかもなぁ。</p>
-<p>さて、いつもの通り簡単なメモです。
-本当に簡単にですが。</p>
-<h2 id="resiliency-in-elasticsearch-and-lucene--igor-motov">Resiliency in Elasticsearch and Lucene / Igor Motov</h2>
-<p>スライド：https://speakerdeck.com/elastic/resiliency-in-elasticsearch-and-lucene</p>
-<p>※上記スライドは少し古いバージョンです。公開されたら差し替える予定です。</p>
-<p>サンフランシスコで行われた<a href="https://www.elastic.co/elasticon">Elastic{ON}</a>（弊社初のカンファレンス）で行われたセッションの
-改良版といったところでしょうか。
-話の中で登場した機能などのリンクをざっとアップしておきます。</p>
-<ul>
-<li><a href="http://www.elastic.co/guide/en/elasticsearch/guide/current/fielddata.html">Fielddata</a></li>
-<li><a href="http://www.elastic.co/guide/en/elasticsearch/guide/current/doc-values.html">Doc Values</a></li>
-<li><a href="http://www.elastic.co/guide/en/elasticsearch/resiliency/current/index.html">Resiliency Status</a></li>
-</ul>
-<h2 id="kibana4-whats-new---nathan-zamecnik">Kibana4: What&rsquo;s New ? / Nathan Zamecnik</h2>
-<p>スライド：未定</p>
-<p>Kibana4の紹介をデモを交えてという感じでした。
-こちらは、スライドよりもデモを見てもらうのが一番いいのですが。。。</p>
-<p>いくつかQAがあったので補足を。ちなみに、Issueのラベルに実装される予定のバージョンが付与されてたりします。</p>
-<ul>
-<li>Q：グラフをPDFでエクスポートとかできますか？
-<ul>
-<li>A：4.3.0で実装される予定です。関連Issueはこちら。https://github.com/elastic/kibana/issues/509</li>
+<li><code>$LUCENE_BENCH_HOME</code>が起点になります。名前は何でもいいみたいです。</li>
+<li><code>cd $LUCENE_BENCH_HOME</code></li>
 </ul>
 </li>
-<li>Q：巨大な数値の場合にKB、MBなどといった表示は可能ですか？
+<li>リポジトリをクローン - <code>git clone https://github.com/mikemccand/luceneutil.git util</code>です。
 <ul>
-<li>A：4.1.0で実装される予定です。関連Issueはこちら。https://github.com/elastic/kibana/issues/1543</li>
+<li>コレ自体は問題なし。</li>
+<li><code>cd util</code></li>
 </ul>
 </li>
-<li>Q：地図のズームを固定することはできますか？
+<li>セットアップスクリプトを実行 - <code>python src/python/setup.py -download</code>
 <ul>
-<li>A：4.1.0で実装される予定です。関連Issueはこちら。https://github.com/elastic/kibana/issues/1442</li>
+<li>ここがすごく時間かかります。6GBのファイルをゆっくりダウンロードしてきますので、一晩置いておきましょう(起きたら終わってた)</li>
+<li><code>$LUCENE_BENCH_HOME/data</code>に<code>enwiki-20120502-lines-1k.txt.lzma</code>と<code>wikimedium500.tasks</code>いうファイルがダウンロードされている。</li>
+</ul>
+</li>
+<li>ダウンロードした圧縮ファイルを展開 - <code>unlzma enwiki-20120502-lines-1k.txt.lzma</code>
+<ul>
+<li>macOSに<code>lzma</code>のコマンド入ってるんですね。知らなかった。</li>
+<li>終わったら<code>cd ../</code>で<code>$LUCENE_BENCH_HOME</code>に戻っておく</li>
+</ul>
+</li>
+<li>ベンチマーク対象となるLuceneを用意 - <code>git clone https://github.com/apache/lucene-solr.git</code>
+<ul>
+<li>READMEには<code>lucene_candidate</code>と<code>lucene_baseline</code>って名前でって書いてあったのですが、これだと、この後の実行フェーズでエラーになりました。</li>
+<li><code>trunk</code>と<code>patch</code>というディレクトリにそれぞれ変更しました。<code>localrun.py</code>を実行したらこのディレクトリ名だったので(相変わらず、自分、行きあたりばったりな対応してるなぁ。。。)</li>
+<li>とりあえず動くかどうかを確認したかったので、<code>trunk</code>と<code>patch</code>はどちらもリポジトリを<code>clone</code>したものになってます。動いたのを確認したら、タグを指定して比較したいブランチをチェックアウトする予定。</li>
+</ul>
+</li>
+<li><code>trunk</code>と<code>patch</code>をビルド - <code>ant jar</code>
+*</li>
+<li><code>localrun.py</code>を実行 - <code>cd util</code>そして。。。
+<ul>
+<li>5.で記述したディレクトリ以外に1箇所Pythonのコードを書き換えた。</li>
+<li><code>src/python/benchUtil.py</code>内部に<code>hppc-0.8.1.jar</code>のファイルの存在チェックをしているのだが、2020/06/23時点でのLuceneのリポジトリの依存関係だと<code>hppc-0.8.2.jar</code>になっており、ファイルが見つからないエラーが出たため、<code>0.8.2</code>に書き換えた。970行目付近。</li>
+<li>改めて実行したら成功した。</li>
+</ul>
+</li>
+</ol>
+<h2 id="まだ途中">まだ途中</h2>
+<p>とりあえず、実行するところまではできましたが、結果の見方とかちゃんと調べないとなぁ。
+いくつかローカルで対応したものについてはあとでGitHubにIssue立てとくべきだな。</p>
+<p>と、動くのを確認したので、日本語周りの準備をしてみてるところです。</p>
+<ul>
+<li>
+<p>終わったこと</p>
+<ul>
+<li>日本語のWikipediaのデータ<code>jawiki-20200620-pages-articles.xml.bz2</code>をダウンロードして展開</li>
+</ul>
+</li>
+<li>
+<p>試している途中</p>
+<ul>
+<li>WikipediaExtractorでXMLからデータを抽出 - <code>cat ~/tmp/wiki/jawiki-20200620-pages-articles.xml | python -u src/python/WikipediaExtractor.py -b102400m -o extracted</code>
+<ul>
+<li>これは手順が違うかも????</li>
+</ul>
+</li>
+<li><code>python src/python/wikiXMLToText.py ~/tmp/wiki/20200620-pages-articles.xml ./hoge.txt</code>
+<ul>
+<li>これで、<code>title</code>、<code>日付</code>、<code>本文</code>が抜き出せそう?</li>
+<li>この後に<code>combineWikiFiles.py</code>の実行かな?</li>
 </ul>
 </li>
 </ul>
-<h2 id="その他感想などのブログ">その他、感想などのブログ</h2>
-<ul>
-<li><a href="http://suzuki.tdiary.net/20150415.html#p01">[Elasticsearch] 第9回 Elasticsearch 勉強会へ参加してきた</a></li>
+</li>
 </ul>
-<h2 id="まとめ">まとめ</h2>
-<p>今回は特別バージョンでした。かなり詳しい話だったので面白かったと思います。
-Kibanaはデモを見ていただけましたし。また、海外から人を呼べるといいなぁ。</p>
-<p>次回は6月ごろをめどに計画しようかと。
-スピーカーは随時募集中ですので、コメント、メール、ツイートなど、コンタクトしていただければと思います。 よろしくお願いいたします。</p>
+<p>って感じです。
+誰得だろうこれ???</p>
 
 
                 
@@ -284,15 +298,10 @@ Kibanaはデモを見ていただけましたし。また、海外から人を�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2015/04/13/elasticsearch-1-5-1-released-ja/" data-toggle="tooltip" data-placement="top" title="Elasticsearch 1.5.1リリース（日本語訳）">&larr;
+                        <a href="/blog/2020/06/09/difference-analyzers-in-azure-search/" data-toggle="tooltip" data-placement="top" title="Azure Cognitive Searchでの日本語向けAnalyzerの違い">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2015/04/28/elasticsearch-1-5-2-and-1-4-5-released-ja/" data-toggle="tooltip" data-placement="top" title="Elasticsearch 1.5.2 および 1.4.5リリース（日本語訳）">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 

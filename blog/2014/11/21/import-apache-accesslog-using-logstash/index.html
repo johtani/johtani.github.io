@@ -271,40 +271,40 @@ Logstashは大きく3つのパーツに分かれています。</p>
 <p>設定ファイルは次のようなものになります。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">input {
   file {
-    path <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">/Users/johtani/demo_access_log/*/*.log</span><span style="color:#e6db74">&#34;</span>
-    start_position <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">beginning</span><span style="color:#e6db74">&#34;</span>
+    path <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;/Users/johtani/demo_access_log/*/*.log&#34;</span>
+    start_position <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;beginning&#34;</span>
   }
 }
 
 filter {
   grok {
-    match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> { <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">message</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%{COMBINEDAPACHELOG}</span><span style="color:#e6db74">&#34;</span> }
-    break_on_match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">false</span>
-    tag_on_failure <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">_message_parse_failure</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
+    match <span style="color:#f92672">=&gt;</span> { <span style="color:#e6db74">&#34;message&#34;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;%{COMBINEDAPACHELOG}&#34;</span> }
+    break_on_match <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">false</span>
+    tag_on_failure <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;_message_parse_failure&#34;</span><span style="color:#f92672">]</span>
   }
   date {
-    match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">timestamp</span><span style="color:#e6db74">&#34;</span>, <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">dd/MMM/YYYY:HH:mm:ss Z</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
-    locale <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> en
+    match <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;timestamp&#34;</span>, <span style="color:#e6db74">&#34;dd/MMM/YYYY:HH:mm:ss Z&#34;</span><span style="color:#f92672">]</span>
+    locale <span style="color:#f92672">=&gt;</span> en
   }
   geoip {
-    source <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">clientip</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
+    source <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">]</span>
   }
   grok {
-    match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> { <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">request</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">^/%{WORD:first_path}/%{GREEDYDATA}$</span><span style="color:#e6db74">&#34;</span> }
-    tag_on_failure <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">_request_parse_failure</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
+    match <span style="color:#f92672">=&gt;</span> { <span style="color:#e6db74">&#34;request&#34;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;^/%{WORD:first_path}/%{GREEDYDATA}$&#34;</span> }
+    tag_on_failure <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;_request_parse_failure&#34;</span><span style="color:#f92672">]</span>
   }
   useragent {
-    source <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">agent</span><span style="color:#e6db74">&#34;</span>
-    target <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">useragent</span><span style="color:#e6db74">&#34;</span>
+    source <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;agent&#34;</span>
+    target <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;useragent&#34;</span>
   }
 }
 
 output {
   elasticsearch {
-    host <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">localhost</span><span style="color:#e6db74">&#34;</span>
-    index <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">new_demo_access_log-%{year}</span><span style="color:#e6db74">&#34;</span>
-    cluster <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">demo_cluster</span><span style="color:#e6db74">&#34;</span>
-    protocol <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">http</span><span style="color:#e6db74">&#34;</span>
+    host <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;localhost&#34;</span>
+    index <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;new_demo_access_log-%{year}&#34;</span>
+    cluster <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;demo_cluster&#34;</span>
+    protocol <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;http&#34;</span>
   }
 }
 </code></pre></div><h5 id="1-アクセスログを読み込むinputfile">1. アクセスログを読み込む（input/file）</h5>
@@ -317,8 +317,8 @@ output {
 その他の設定については、公式ガイドをご覧ください。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">input {
   file { <span style="color:#75715e"># a</span>
-    path <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">/Users/johtani/demo_access_log/*/*.log</span><span style="color:#e6db74">&#34;</span> <span style="color:#75715e"># b</span>
-    start_position <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">beginning</span><span style="color:#e6db74">&#34;</span> <span style="color:#75715e"># c</span>
+    path <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;/Users/johtani/demo_access_log/*/*.log&#34;</span> <span style="color:#75715e"># b</span>
+    start_position <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;beginning&#34;</span> <span style="color:#75715e"># c</span>
   }
 }
 </code></pre></div><blockquote>
@@ -350,9 +350,9 @@ Apacheのログのために、<a href="https://github.com/elasticsearch/logstash
 デフォルトだと<code>_grokparsefailure</code>が付与されますが、ここでは、どの処理で失敗したがを判別するために文字列を変更しています。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">filter {
   grok {
-    match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> { <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">message</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%{COMBINEDAPACHELOG}</span><span style="color:#e6db74">&#34;</span> }
-    break_on_match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">false</span>
-    tag_on_failure <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">_message_parse_failure</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
+    match <span style="color:#f92672">=&gt;</span> { <span style="color:#e6db74">&#34;message&#34;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;%{COMBINEDAPACHELOG}&#34;</span> }
+    break_on_match <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">false</span>
+    tag_on_failure <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;_message_parse_failure&#34;</span><span style="color:#f92672">]</span>
   }
   <span style="color:#f92672">...</span>
 </code></pre></div><p><code>clientip</code>、<code>ident</code>、<code>auth</code>、<code>timestamp</code>、<code>verb</code>、<code>request</code>、<code>httpversion</code>、<code>response</code>、<code>bytes</code>、<code>referrer</code>、<code>agent</code>がgrokフィルタにより抜き出された項目です。</p>
@@ -380,8 +380,8 @@ Apacheのログのために、<a href="https://github.com/elasticsearch/logstash
 <p>リアルタイムにアクセスログを読み込む場合は、読み込んだ日時でもほぼ問題はありませんが、過去データの場合はそうもいきません。
 そこで、<a href="http://logstash.net/docs/1.4.2/filters/date"><code>dateフィルタ</code></a>を使用して、<code>@timestamp</code>の値を書き換えます。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">date {
-  match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">timestamp</span><span style="color:#e6db74">&#34;</span>, <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">dd/MMM/YYYY:HH:mm:ss Z</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
-  locale <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> en
+  match <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;timestamp&#34;</span>, <span style="color:#e6db74">&#34;dd/MMM/YYYY:HH:mm:ss Z&#34;</span><span style="color:#f92672">]</span>
+  locale <span style="color:#f92672">=&gt;</span> en
 }
 </code></pre></div><p>上記では、<code>timestamp</code>という項目に対して<code>dd/MMM/YYYY:HH:mm:ss Z</code>という日付パターンの場合に値を書き換える設定となります。
 なお、日付の月の部分が<code>Feb</code>となっているため、<code>locale</code>に<code>en</code>を指定しています。Logstashが動作するマシンの<code>locale</code>が<code>ja</code>などの場合にパースに失敗するためです。</p>
@@ -389,13 +389,13 @@ Apacheのログのために、<a href="https://github.com/elasticsearch/logstash
 <p>どの国からのアクセスかなどを判別したいので、IPアドレスを元にgeoipを利用してより詳細な情報を付与します。
 Logstashでもこの機能が用意されており、簡単に利用ができます。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">geoip {
-  source <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">clientip</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
+  source <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">]</span>
 }
 </code></pre></div><p>これだけです。対象とするIPアドレスのフィールドを指定しているだけです。
 <code>geoip</code>というフィールドが追加され、次のような情報が付与されます。
 国名、緯度経度、タイムゾーンなどです。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-  <span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span>  
+  <span style="color:#960050;background-color:#1e0010">...</span>  
   <span style="color:#f92672">&#34;geoip&#34;</span>: {
     <span style="color:#f92672">&#34;ip&#34;</span>: <span style="color:#e6db74">&#34;IPアドレス&#34;</span>,
     <span style="color:#f92672">&#34;country_code2&#34;</span>: <span style="color:#e6db74">&#34;JP&#34;</span>,
@@ -410,15 +410,15 @@ Logstashでもこの機能が用意されており、簡単に利用ができま
       <span style="color:#ae81ff">36</span>
     ]
   }
-  <span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span><span style="color:#960050;background-color:#1e0010">.</span>
+  <span style="color:#960050;background-color:#1e0010">...</span>
 }
 </code></pre></div><h5 id="5-リクエストのパスの第1階層の抽出filtergrok">5. リクエストのパスの第1階層の抽出（filter/grok）</h5>
 <p>リクエストされたURLは<code>request</code>フィールドにありますが、個別のURLだと、大まかな集計が大変です。
 もちろん、クエリで処理することもできますが、Logstashで処理するついでに、第1階層のディレクトリ名を抽出しておくことで、
 検索や集計を行いやすくしておきます。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">grok {
-  match <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> { <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">request</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">^/%{WORD:first_path}/%{GREEDYDATA}$</span><span style="color:#e6db74">&#34;</span> }
-  tag_on_failure <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">_request_parse_failure</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">]</span>
+  match <span style="color:#f92672">=&gt;</span> { <span style="color:#e6db74">&#34;request&#34;</span> <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;^/%{WORD:first_path}/%{GREEDYDATA}$&#34;</span> }
+  tag_on_failure <span style="color:#f92672">=&gt;</span> <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;_request_parse_failure&#34;</span><span style="color:#f92672">]</span>
 }
 </code></pre></div><p>また、grokフィルタの登場です。
 今回は、<code>WORD:first_path</code>という記述方法で、<code>WORD</code>パターンにマッチした文字列を<code>first_path</code>というフィールドに展開する指定をしています。</p>
@@ -448,10 +448,10 @@ Logstashでもこの機能が用意されており、簡単に利用ができま
 また、年毎のインデックス名にするために<code>%{year}</code>を利用しています。
 <a href="http://logstash.net/docs/1.4.2/configuration#sprintf">sprintf format</a>です。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-ruby" data-lang="ruby">elasticsearch {
-  host <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">localhost</span><span style="color:#e6db74">&#34;</span>
-  index <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">new_demo_access_log-%{year}</span><span style="color:#e6db74">&#34;</span>
-  cluster <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">demo_cluster</span><span style="color:#e6db74">&#34;</span>
-  protocol <span style="color:#f92672">=</span><span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">http</span><span style="color:#e6db74">&#34;</span>
+  host <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;localhost&#34;</span>
+  index <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;new_demo_access_log-%{year}&#34;</span>
+  cluster <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;demo_cluster&#34;</span>
+  protocol <span style="color:#f92672">=&gt;</span> <span style="color:#e6db74">&#34;http&#34;</span>
 }
 </code></pre></div><h2 id="まとめ">まとめ</h2>
 <p>ということで、今回はアクセスログをLogstashにて読み込む時の設定について説明してきました。
