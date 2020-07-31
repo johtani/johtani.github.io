@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Rust the book - 第10章" />
-    <meta property="og:title" content="Rust the book - 第10章" />
-    <meta property="twitter:title" content="Rust the book - 第10章" />
+    <meta name="title" content="検索システムを構成するパーツ(検索システムに関する妄想その2)" />
+    <meta property="og:title" content="検索システムを構成するパーツ(検索システムに関する妄想その2)" />
+    <meta property="twitter:title" content="検索システムを構成するパーツ(検索システムに関する妄想その2)" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Rust the book - 第10章-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>検索システムを構成するパーツ(検索システムに関する妄想その2)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/05/28/chap10-rust-the-book/">
+    <link rel="canonical" href="/blog/2020/07/28/improve-search-no2/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,20 +157,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/rust" title="rust">
-                            rust
-                        </a>
-                        
-                        <a class="tag" href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
-                            読書
-                        </a>
-                        
-                        <a class="tag" href="/tags/rust-the-book" title="rust-the-book">
-                            rust-the-book
+                        <a class="tag" href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
                         </a>
                         
                     </div>
-                    <h1>Rust the book - 第10章</h1>
+                    <h1>検索システムを構成するパーツ(検索システムに関する妄想その2)</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -178,7 +170,7 @@
                             johtani
                          
                         on 
-                        Thursday, May 28, 2020
+                        Tuesday, July 28, 2020
                         
                         
                         
@@ -208,103 +200,172 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#第10章">第10章</a>
+    <li><a href="#検索システム機能を構成するパーツ">検索システム(機能)を構成するパーツ</a>
       <ul>
-        <li><a href="#ジェネリックなデータ型">ジェネリックなデータ型</a></li>
-        <li><a href="#トレイト-共通の振る舞いを定義する">トレイト: 共通の振る舞いを定義する</a></li>
-        <li><a href="#ライフタイムで参照を有効化する">ライフタイムで参照を有効化する</a></li>
+        <li><a href="#ユーザー">ユーザー</a></li>
+        <li><a href="#検索ui">検索UI</a></li>
+        <li><a href="#検索エンジン">検索エンジン</a></li>
+        <li><a href="#データソースコンテンツ">データソース・コンテンツ</a></li>
+        <li><a href="#検索ログ">検索ログ</a></li>
+        <li><a href="#サービス提供者">サービス提供者</a></li>
       </ul>
     </li>
+    <li><a href="#検索機能を作るときの流れ">検索機能を作るときの流れ</a></li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>前回の記事はこちら。自分用のメモなので、読みにくいかもです。</p>
+                <p>先日は「<a href="/blog/2020/07/27/improve-search-no1/">システムの特徴と検索機能について</a>」という感じでふんわり書きました。
+まぁ、頭の中でぼんやり考えてることを文章にしてみた感じです。
+他にもぼんやりしてるものはいくつかあるので今日も書いてみることに。
+検索システム?みたいなツイートも見かけたので、検索システムってこんなイメージですというブログを書いてみました。</p>
+<h2 id="検索システム機能を構成するパーツ">検索システム(機能)を構成するパーツ</h2>
+<p>今回はシステムに組み込まれる検索機能を構成するパーツについて書き出してみようかなと思います。
+パーツといってもユーザー、UI、コンテンツなども入れています。</p>
 <ul>
-<li><a href="/blog/2020/03/23/start-reading-rust-the-book/">Rust the Bookを読み始めた</a></li>
-<li><a href="/blog/2020/03/26/chap4-rust-the-book/">Rust the book - 第4章</a></li>
-<li><a href="/blog/2020/04/02/chap5-rust-the-book/">Rust the book - 第5章</a></li>
-<li><a href="/blog/2020/04/07/chap6-rust-the-book/">Rust the book - 第6章</a></li>
-<li><a href="/blog/2020/04/16/chap8-rust-the-book/">Rust the book - 第8章</a></li>
-<li><a href="/blog/2020/05/14/chap9-rust-the-book/">Rust the book - 第9章</a></li>
-</ul>
-<h2 id="第10章">第10章</h2>
-<p>ジェネリック、トレイト、ライフタイムです。
-手強そう。</p>
-<p>いきなり関数の切り出し方みたいな話が始まって面食らいました。</p>
-<h3 id="ジェネリックなデータ型">ジェネリックなデータ型</h3>
-<p>ジェネリックはJavaにもあるので、それほど理解に苦しむことはなかったです。
-また、OptionやResultですでに経験済みでしたし。</p>
-<p>ただ、<code>impl&lt;T&gt; Point&lt;T&gt;{</code>、このメソッド定義は少し最初は戸惑いました。
-言われてみれば、なるほどなんですけど。</p>
-<p>コンパイル時にコンパイラが単相化を行うことにより、必要最低限なコードを生成してくるというのは理にかなっているなぁと。</p>
-<h3 id="トレイト-共通の振る舞いを定義する">トレイト: 共通の振る舞いを定義する</h3>
-<p>出だしにもありますが、「インターフェイス」という機能に類似していると考えると割とすんなりと理解が進みました。
-ただ、Javaだと、インターフェースはクラスとセットなため、トレイとの実装に関する記述方法は少し戸惑いが。</p>
-<p>デフォルト実装との組み合わせはAbstractに似た処理になるなと考えながら読みすすめました。</p>
-<p>「トレイト境界」という日本語には少し違和感を覚えましたが、線引をして、制限をかけるという理解でいいのかな?</p>
-<p>実際には<code>#[derive()]</code>などで、トレイトを自分で実装する必要がないなどの、便利機能も用意されており、このあたりのコードの追い方がまだ少し慣れていないかもなぁと。便利なんですけど。。。</p>
-<p>少しだけ気になったので、動作確認したのは次の実装です。</p>
-<p>トレイトで宣言されている関数と構造体が独自に実装する関数の名前がかぶるとどうなるのかという実験です。
-構造体独自のメソッドが優先される感じになりそう。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Tweet</span> {
-    <span style="color:#66d9ef">pub</span> username: String,
-    <span style="color:#66d9ef">pub</span> content: String,
-    <span style="color:#66d9ef">pub</span> reply: <span style="color:#66d9ef">bool</span>,
-    <span style="color:#66d9ef">pub</span> retweet: <span style="color:#66d9ef">bool</span>,
-}
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">trait</span> Summary {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String;
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        <span style="color:#75715e">// {}さんからもっと読む
-</span><span style="color:#75715e"></span>        format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;(Read more from {}...)&#34;</span>, self.summarize_author())
-    }
-}
-<span style="color:#66d9ef">impl</span> Tweet {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;hoge {}&#34;</span>, self.username)
-    }
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">to_string</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;fuga&#34;</span>)
-    }
-}
-<span style="color:#66d9ef">impl</span> Summary <span style="color:#66d9ef">for</span> Tweet {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;@{}&#34;</span>, self.username)
-    }
-}
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summary</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Summary</span><span style="color:#f92672">&gt;</span>(hoge: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">T</span>) {
-    println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, hoge.summarize_author());
-}
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#66d9ef">let</span> tweet <span style="color:#f92672">=</span> Tweet {
-        username: String::from(<span style="color:#e6db74">&#34;horse_ebooks&#34;</span>),
-        content: String::from(<span style="color:#e6db74">&#34;of course, as you probably already know, people&#34;</span>),
-        reply: <span style="color:#a6e22e">false</span>,
-        retweet: <span style="color:#a6e22e">false</span>,
-    };
-    println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, tweet.summarize_author());
-    summary(<span style="color:#f92672">&amp;</span>tweet);
-    println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, Summary::summarize_author(<span style="color:#f92672">&amp;</span>tweet));
-}
-</code></pre></div><h3 id="ライフタイムで参照を有効化する">ライフタイムで参照を有効化する</h3>
-<p>言われてみればそうですが、プログラマが色々考えないとまぁ、行けないんですねという感想。</p>
-<p>ただ、借用チェッカーが賢くやってくれるおかげで、全てにライフタイム注釈をつけなくて良くなっているというのがわかりました。
-逆に言うと、なんとなくRustを書き始めてしまったので、それを知らずに書いたせいで、コンパイラに怒られてても「?」となっていたのかと。。。</p>
-<p>疑問点がいくつかあって、</p>
+<li>ユーザー</li>
+<li>検索UI
 <ul>
-<li>通常はどんなライフタイム注釈をみんな書いてるんだろう?<code>'a</code>とかざっくりしすぎてる?</li>
-<li>1つのメソッド、関数にライフタイム注釈が大量に出てくるような書き方をした場合は設計がおかしいのでは?って考えたほうがいいのかも?</li>
-<li>ジェネリックな型とライフタイム引数の順序を入れ替えてみても動くだろ?とおもって入れ替えてみたら怒られた。</li>
+<li>検索窓
+<ul>
+<li>オートコンプリート</li>
 </ul>
-<p>あとは、構造体+ジェネリックが絡んできたら少しこんがらがってきそうっという感じです。
-まぁ、これから先は実際に書いてみないことにはわからないんだろうなと。</p>
+</li>
+<li>検索結果画面
+<ul>
+<li>ファセット</li>
+<li>ソート</li>
+<li>ハイライト</li>
+</ul>
+</li>
+<li>詳細画面
+<ul>
+<li>レコメンド</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>検索エンジン</li>
+<li>コンテンツ</li>
+<li>検索ログ
+<ul>
+<li>クリックログとかも</li>
+</ul>
+</li>
+<li>サービス提供者</li>
+</ul>
+<p>ざっくり書くとこんな感じです。
+システム構成だったり、機能だったり、アクターだったりといろいろなものが混ざってしまっていますが、登場するものはこんなものです。</p>
+<p>ざっくりした繋がりの図はこんな感じです。</p>
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200731/search_system_overview.jpg" />
+    </div>
+    <a href="/images/entries/20200731/search_system_overview.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>それぞれの役割について見ていきましょう。</p>
+<h3 id="ユーザー">ユーザー</h3>
+<p>サイト、システムのユーザーです。
+検索UIを経由して望んだコンテンツを探します。
+探す目的は、サイトによって異なります。
+「何かを購入(ECサイトやオークション)する」だったり、「情報(レシピや社内文書)を見つける」だったりします。
+図では「キーワード」と記載しましたが、最近では自然文(文章)を受け付ける検索もあります。</p>
+<h3 id="検索ui">検索UI</h3>
+<p>サイト、システムが提供するUIです。ユーザーはこのUIにキーワード(質問)を入力し、検索結果を取得します。
+UIにはいくつものパーツがさらに存在します。簡単に例を上げると以下のようなものです。</p>
+<ul>
+<li>検索窓 - キーワードを入れるための入力ボックスです。
+<ul>
+<li>オートコンプリート(自動補完) - サイトによっては、検索窓に何かを入力すると、キーワードを保管したりサジェストしたりしてくれます。</li>
+</ul>
+</li>
+<li>検索結果画面 - 質問にマッチしたコンテンツの一覧を表示する画面です。一覧以外にもいくつか情報が表示されます。
+<ul>
+<li>検索結果一覧 - コンテンツの一覧です。何かしらの基準(日付順や人気順など)によってソートされたものが表示されます。</li>
+<li>ファセット - 検索結果が持っている属性(価格帯、カテゴリ、メーカー名など)の一覧で、絞り込み検索のヒントです。</li>
+<li>ハイライト - 入力したキーワードがどこにマッチしたかがわかるように、強調表示されたスニペット(情報の一部)が出ます。</li>
+</ul>
+</li>
+</ul>
+<p>検索APIとUIに分かれている場合が多いでしょうか?
+処理の流れとしては、検索窓に入力されたキーワードを検索エンジンに問い合わせができるクエリに書き換えてからリクエストを投げます。
+あとは、検索エンジンからのレスポンスにある検索結果を表示できる形に変換して表示するのが役割です。
+また、検索ログの出力もこの部分で担当することが多いです(もしくは、検索エンジン自体がログ出力の機能を持っている場合もあります)。</p>
+<h3 id="検索エンジン">検索エンジン</h3>
+<p>検索に特化したデータ構造を内部に持っているサーバーもしくはサービスです。
+<a href="https://www.elastic.co/elasticsearch/">Elasticsearch</a>や<a href="https://lucene.apache.org/solr/">Apache Solr</a>、<a href="https://azure.microsoft.com/ja-jp/services/search/">Azure Cognitive Search</a>などは転置インデックスと呼ばれるデータ構造になっています。
+検索エンジンの検索処理に対しての主な役割は次の2つです。</p>
+<ul>
+<li>クエリにマッチするコンテンツの集合を決定する</li>
+<li>マッチしたコンテンツを特定の条件で並び替える(ランキング)</li>
+</ul>
+<p>クエリを受け取り、検索結果のリストを返すのが処理の大きな流れです。
+その他に、ファセット、ハイライトといった付加的な処理を実行することがあります。</p>
+<p>また、データ登録(インデキシング/インデクシング)の処理もあります。</p>
+<ul>
+<li>登録するコンテンツを検索に特化したデータ構造にして格納する</li>
+</ul>
+<p>転置インデックスの場合は、入力されたデータ(文章)から単語列を作り出して、単語からコンテンツのIDが判別できる形にする処理になります。</p>
+<p><a href="https://www.algolia.com/">Algolia</a>や<a href="https://www.elastic.co/jp/app-search/">Elastic App Search</a>のようなSaaSであったり、RDBの機能を利用するといった選択肢もあります。</p>
+<h3 id="データソースコンテンツ">データソース・コンテンツ</h3>
+<p>実際に提供したいコンテンツになります。
+コンテンツが保存されている場所は、サイトによって異なります。</p>
+<ul>
+<li>Webの検索サイト - インターネット上のホームページ</li>
+<li>ECサイト - データベースに格納されているアイテムのデータ</li>
+<li>社内文書検索 - ファイルサーバーやWikiなどのファイル、文書</li>
+</ul>
+<p>といった感じです。
+実際には、データソースからコンテンツを検索エンジンに登録する場合は、いくつかの処理(いわゆる前処理)が必要になります。
+社内文書検索やWebの検索サイトの場合は、データを収集するためのクローラーが必要ですし、
+収集したデータから、検索エンジンに登録するデータを加工したり(HTMLタグを除去したり、メタデータ(URL、収集日、タイトル)を付与したり)もします(ETL処理とか言われる)。</p>
+<h3 id="検索ログ">検索ログ</h3>
+<p>検索を提供するだけであれば、必要ありません。
+が、実際に検索がどのような使われ方をしているか?を知るために必要な機能になります。
+この検索ログがユーザーのニーズを読み解くための情報になります。
+検索ログには次のような情報が入ります。</p>
+<ul>
+<li>検索窓に入力された文字列</li>
+<li>入力された文字列でヒットした件数</li>
+</ul>
+<p>検索結果を出したタイミングでのログです。他にも実際にヒットしたコンテンツのIDなどをログに残したり、他のユーザーと区別をつけるために、ユーザーのセッションごとにIDを発行してログに残したりもします。</p>
+<p>また、検索に満足してもらえているかを見るために、実際に検索結果のどのコンテンツに興味をもったのか?という情報も検索ログとして残すことがあります。クリックログなどとも呼ばれます。検索結果のどのドキュメントが実際にクリックされたか(詳細画面に遷移したか)という情報です。1回の検索結果に対してクリックされるごとにログが残ります。
+もちろん、結果に満足しない場合は、クリックされずに、キーワードを変えたり、絞り込み条件がクリックされたりします。</p>
+<p>ECサイトなどの場合は更に、実際に購入されたかどうかといった情報もユーザーのニーズを読み解くための情報となります。
+詳細画面へのクリックログや購入ログについては、検索以外からの流れ(広告やDMだったり、レコメンドだったり)なども考えられます。
+これらのログを元に、検索を改善していくことになります。</p>
+<h3 id="サービス提供者">サービス提供者</h3>
+<p>サイト・システムの提供者です。
+コンテンツの準備、検索UIにはどんな物が必要なのか、サイト・システムにとって良い検索とはなにか?、検索ログからユーザーのニーズを分析して何を改善していくのか?といったことを考えます。
+例としては次のようなことです。</p>
+<ul>
+<li>検索結果に表示するコンテンツとはなにか?</li>
+<li>コンテンツの持っている項目・属性の何を検索対象とするか?</li>
+<li>検索結果の並び順(ランキング)がどんなものがよいのか?</li>
+<li>検索UIにはどんなものを表示するのか?</li>
+</ul>
+<h2 id="検索機能を作るときの流れ">検索機能を作るときの流れ</h2>
+<p>検索機能を構成するパーツにどんなものがあるかを紹介しました。
+実際にシステムに検索機能を追加する場合は、最低限、次のものが必要になります。</p>
+<ul>
+<li>検索UI</li>
+<li>検索エンジン(RDB?SaaS?ミドルウェア?)</li>
+<li>データソース・コンテンツ</li>
+</ul>
+<p>とりあえずこれらがあれば、検索機能を作ることはできるかと。
+ただ、作っただけでは、いいか悪いかの判断がつかないので、どういった使われ方をしているかを知るために検索ログをとったりして、
+改善をしていく必要が出てきます。</p>
 <h2 id="まとめ">まとめ</h2>
-<p>読みました。
-実際にはプログラムを書きながら慣れていく感じだろうなぁと。
-まだまだ、あれ?ジェネリックってどう書くんだっけ?とか、ライフタイム注釈どうやって付けて、使うときはどうすんだ?みたいになりながら、
-出てくるサンプルを少し変えてみてはどうやって動くんだろうこの場合?みたいなことをやってました。
-次は、11章、12章を少しだけ自習しつつ、13章に入る予定です(知り合いと一緒に読みすすめてる)。</p>
+<p>わかってるよそんなことはと言われそうな感じになったかもしれないですが、
+検索の機能を構成するパーツについて紹介してみました。
+細かなはなしは色々とありますが、大まかにはこのような役割のパーツがあります。</p>
+<p>実際にはこれらのパーツを用意すればよいわけではなく、それぞれで検索を良くしていくためにどんなことを考えていくのか?などが出てきます。そのあたりの話はまた、別のブログで書いていく感じでしょうか。こんな感じで書いてくと、終わらない気がしてきたけど。。。
+次はどんなはなしを書くかなぁ。</p>
 
 
                 
@@ -313,15 +374,10 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/05/26/logging-azure-search-request/" data-toggle="tooltip" data-placement="top" title="Azure Cognitive Searchのリクエストのロギング">&larr;
+                        <a href="/blog/2020/07/27/improve-search-no1/" data-toggle="tooltip" data-placement="top" title="システムの特徴と検索機能について(検索システムに関する妄想その1)">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/06/04/chap13-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第13章">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
