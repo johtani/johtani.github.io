@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="検索システムを構成するパーツ(検索システムに関する妄想その2)" />
-    <meta property="og:title" content="検索システムを構成するパーツ(検索システムに関する妄想その2)" />
-    <meta property="twitter:title" content="検索システムを構成するパーツ(検索システムに関する妄想その2)" />
+    <meta name="title" content="TerraformでAzure Cognitive Searchのクラスターを起動" />
+    <meta property="og:title" content="TerraformでAzure Cognitive Searchのクラスターを起動" />
+    <meta property="twitter:title" content="TerraformでAzure Cognitive Searchのクラスターを起動" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>検索システムを構成するパーツ(検索システムに関する妄想その2)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>TerraformでAzure Cognitive Searchのクラスターを起動-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/07/28/improve-search-no2/">
+    <link rel="canonical" href="/blog/2020/08/18/azure-search-with-terraform/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,12 +157,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
-                            検索
+                        <a class="tag" href="/tags/azure-search" title="azure search">
+                            azure search
                         </a>
                         
                     </div>
-                    <h1>検索システムを構成するパーツ(検索システムに関する妄想その2)</h1>
+                    <h1>TerraformでAzure Cognitive Searchのクラスターを起動</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -170,7 +170,7 @@
                             johtani
                          
                         on 
-                        Tuesday, July 28, 2020
+                        Tuesday, August 18, 2020
                         
                         
                         
@@ -200,172 +200,103 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#検索システム機能を構成するパーツ">検索システム(機能)を構成するパーツ</a>
+    <li><a href="#ファイルたち">ファイルたち</a>
       <ul>
-        <li><a href="#ユーザー">ユーザー</a></li>
-        <li><a href="#検索ui">検索UI</a></li>
-        <li><a href="#検索エンジン">検索エンジン</a></li>
-        <li><a href="#データソースコンテンツ">データソース・コンテンツ</a></li>
-        <li><a href="#検索ログ">検索ログ</a></li>
-        <li><a href="#サービス提供者">サービス提供者</a></li>
+        <li><a href="#variablestf"><code>variables.tf</code></a></li>
+        <li><a href="#terraformtf"><code>terraform.tf</code></a></li>
       </ul>
     </li>
-    <li><a href="#検索機能を作るときの流れ">検索機能を作るときの流れ</a></li>
+    <li><a href="#デプロイとか">デプロイとか</a></li>
+    <li><a href="#destroy">Destroy</a></li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>先日は「<a href="/blog/2020/07/27/improve-search-no1/">システムの特徴と検索機能について</a>」という感じでふんわり書きました。
-まぁ、頭の中でぼんやり考えてることを文章にしてみた感じです。
-他にもぼんやりしてるものはいくつかあるので今日も書いてみることに。
-検索システム?みたいなツイートも見かけたので、検索システムってこんなイメージですというブログを書いてみました。</p>
-<h2 id="検索システム機能を構成するパーツ">検索システム(機能)を構成するパーツ</h2>
-<p>今回はシステムに組み込まれる検索機能を構成するパーツについて書き出してみようかなと思います。
-パーツといってもユーザー、UI、コンテンツなども入れています。</p>
+                <p>負荷を計測するために、数回、Azure Cognitive Searchのクラスターを起動したり、停止したりしてました。
+これは、<a href="https://www.terraform.io/">Terraform</a>でやると楽できるのでは?と思ったので、やってみました。
+1パーティションのクラスターなので、全然大したことはないのですが、メモを残しておくためにブログに書いておきます。</p>
+<p>基本的には<a href="https://www.terraform.io/docs/providers/azurerm/r/search_service.html">Terraformの公式ドキュメント</a>にあったものを自分用に変数を抽出しただけです。</p>
+<h2 id="ファイルたち">ファイルたち</h2>
+<p>単にクラスターを起動するためだけなので、2種類のファイルだけ作成しました(1個でもいいかも)。</p>
 <ul>
-<li>ユーザー</li>
-<li>検索UI
+<li><code>variables.tf</code> - 変数用のファイル。いくつかの設定を変数として定義しました。</li>
+<li><code>terraform.tf</code> - Terraform本体のファイル。</li>
+</ul>
+<h3 id="variablestf"><code>variables.tf</code></h3>
+<p>まずは<code>variables.tf</code>です(ファイル内の並びは異なりますが。。。)。terraform.tfで利用する5つの変数です。</p>
 <ul>
-<li>検索窓
-<ul>
-<li>オートコンプリート</li>
+<li>resource_group - リソースグループ名。既存とは異なるリソースグループ名にしました(変に壊してもいいので)。</li>
+<li>machine_type - 価格レベル(SKU)。<a href="https://www.terraform.io/docs/providers/azurerm/r/search_service.html#sku">公式ドキュメントに設定できる値の一覧</a>があります。今回はWikipediaのデータを登録していたのでそれが入るサイズにしています。</li>
+<li>region - 場所(リージョン)。リージョンの一覧はどこにあるんだろう?<a href="https://azure.microsoft.com/en-us/global-infrastructure/geographies/#geographies">これを参考</a>にしましたが。</li>
+<li>partition_size - パーティションのサイズ(=Elasticsearchでのシャードかな?)です。今回は1つでの性能を計測したかったので1にしてあります。</li>
+<li>search_cluster_name - Azure Cognitive Searchのサービス名。<code>search.windows.net</code>名前空間で一意である必要があったので、他の人が使わなそうな名前をつけています。</li>
 </ul>
-</li>
-<li>検索結果画面
-<ul>
-<li>ファセット</li>
-<li>ソート</li>
-<li>ハイライト</li>
-</ul>
-</li>
-<li>詳細画面
-<ul>
-<li>レコメンド</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>検索エンジン</li>
-<li>コンテンツ</li>
-<li>検索ログ
-<ul>
-<li>クリックログとかも</li>
-</ul>
-</li>
-<li>サービス提供者</li>
-</ul>
-<p>ざっくり書くとこんな感じです。
-システム構成だったり、機能だったり、アクターだったりといろいろなものが混ざってしまっていますが、登場するものはこんなものです。</p>
-<p>ざっくりした繋がりの図はこんな感じです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">variable <span style="color:#e6db74">&#34;machine_type&#34;</span> {
+  default = <span style="color:#e6db74">&#34;standard&#34;</span>
+}
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20200731/search_system_overview.jpg" />
-    </div>
-    <a href="/images/entries/20200731/search_system_overview.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
+variable <span style="color:#e6db74">&#34;region&#34;</span> {
+  default = <span style="color:#e6db74">&#34;East Asia&#34;</span>
+}
 
-<p>それぞれの役割について見ていきましょう。</p>
-<h3 id="ユーザー">ユーザー</h3>
-<p>サイト、システムのユーザーです。
-検索UIを経由して望んだコンテンツを探します。
-探す目的は、サイトによって異なります。
-「何かを購入(ECサイトやオークション)する」だったり、「情報(レシピや社内文書)を見つける」だったりします。
-図では「キーワード」と記載しましたが、最近では自然文(文章)を受け付ける検索もあります。</p>
-<h3 id="検索ui">検索UI</h3>
-<p>サイト、システムが提供するUIです。ユーザーはこのUIにキーワード(質問)を入力し、検索結果を取得します。
-UIにはいくつものパーツがさらに存在します。簡単に例を上げると以下のようなものです。</p>
+variable <span style="color:#e6db74">&#34;resource_group&#34;</span> {
+  default = <span style="color:#e6db74">&#34;johtani-wiki-test&#34;</span>
+}
+
+variable <span style="color:#e6db74">&#34;search_cluster_name&#34;</span> {
+  default = <span style="color:#e6db74">&#34;johtani-wikipedia&#34;</span>
+}
+
+variable <span style="color:#e6db74">&#34;partition_size&#34;</span> {
+  default = <span style="color:#ae81ff">1</span>
+}
+</code></pre></div><h3 id="terraformtf"><code>terraform.tf</code></h3>
+<p><code>terraform.tf</code>は以下の通り。<a href="https://www.terraform.io/docs/providers/azurerm/r/search_service.html">Terraformの公式ドキュメントにある例</a>に<code>provider</code>を追加しただけのものになります。</p>
 <ul>
-<li>検索窓 - キーワードを入れるための入力ボックスです。
-<ul>
-<li>オートコンプリート(自動補完) - サイトによっては、検索窓に何かを入力すると、キーワードを保管したりサジェストしたりしてくれます。</li>
+<li>provider - プロバイダーの設定。Azureを利用するという宣言です。<code>features {}</code>がないとエラーになります。空でも必ず指定が必要です。認証周りについては、<a href="https://www.terraform.io/docs/providers/azurerm/guides/azure_cli.html"><code>azure-cli</code>経由で認証する方式</a>を採用しました。<code>azure-cli</code>はHomebrewでインストールしています。</li>
+<li>azurerm_resource_group - リソースグループの設定。<code>variables.tf</code>の<code>resource_group</code>と<code>region</code>を利用しています。必須項目はこの2種類だけです。</li>
+<li>azurerm_search_service - Azure Cognitive Searchの設定。<code>partition_count</code>以外は必須項目です。<code>variables.tf</code>と<code>azurerm_resource_group</code>の設定を利用しています。今回は利用していませんが、レプリカ数なども指定できるようになっています。</li>
 </ul>
-</li>
-<li>検索結果画面 - 質問にマッチしたコンテンツの一覧を表示する画面です。一覧以外にもいくつか情報が表示されます。
-<ul>
-<li>検索結果一覧 - コンテンツの一覧です。何かしらの基準(日付順や人気順など)によってソートされたものが表示されます。</li>
-<li>ファセット - 検索結果が持っている属性(価格帯、カテゴリ、メーカー名など)の一覧で、絞り込み検索のヒントです。</li>
-<li>ハイライト - 入力したキーワードがどこにマッチしたかがわかるように、強調表示されたスニペット(情報の一部)が出ます。</li>
-</ul>
-</li>
-</ul>
-<p>検索APIとUIに分かれている場合が多いでしょうか?
-処理の流れとしては、検索窓に入力されたキーワードを検索エンジンに問い合わせができるクエリに書き換えてからリクエストを投げます。
-あとは、検索エンジンからのレスポンスにある検索結果を表示できる形に変換して表示するのが役割です。
-また、検索ログの出力もこの部分で担当することが多いです(もしくは、検索エンジン自体がログ出力の機能を持っている場合もあります)。</p>
-<h3 id="検索エンジン">検索エンジン</h3>
-<p>検索に特化したデータ構造を内部に持っているサーバーもしくはサービスです。
-<a href="https://www.elastic.co/elasticsearch/">Elasticsearch</a>や<a href="https://lucene.apache.org/solr/">Apache Solr</a>、<a href="https://azure.microsoft.com/ja-jp/services/search/">Azure Cognitive Search</a>などは転置インデックスと呼ばれるデータ構造になっています。
-検索エンジンの検索処理に対しての主な役割は次の2つです。</p>
-<ul>
-<li>クエリにマッチするコンテンツの集合を決定する</li>
-<li>マッチしたコンテンツを特定の条件で並び替える(ランキング)</li>
-</ul>
-<p>クエリを受け取り、検索結果のリストを返すのが処理の大きな流れです。
-その他に、ファセット、ハイライトといった付加的な処理を実行することがあります。</p>
-<p>また、データ登録(インデキシング/インデクシング)の処理もあります。</p>
-<ul>
-<li>登録するコンテンツを検索に特化したデータ構造にして格納する</li>
-</ul>
-<p>転置インデックスの場合は、入力されたデータ(文章)から単語列を作り出して、単語からコンテンツのIDが判別できる形にする処理になります。</p>
-<p><a href="https://www.algolia.com/">Algolia</a>や<a href="https://www.elastic.co/jp/app-search/">Elastic App Search</a>のようなSaaSであったり、RDBの機能を利用するといった選択肢もあります。</p>
-<h3 id="データソースコンテンツ">データソース・コンテンツ</h3>
-<p>実際に提供したいコンテンツになります。
-コンテンツが保存されている場所は、サイトによって異なります。</p>
-<ul>
-<li>Webの検索サイト - インターネット上のホームページ</li>
-<li>ECサイト - データベースに格納されているアイテムのデータ</li>
-<li>社内文書検索 - ファイルサーバーやWikiなどのファイル、文書</li>
-</ul>
-<p>といった感じです。
-実際には、データソースからコンテンツを検索エンジンに登録する場合は、いくつかの処理(いわゆる前処理)が必要になります。
-社内文書検索やWebの検索サイトの場合は、データを収集するためのクローラーが必要ですし、
-収集したデータから、検索エンジンに登録するデータを加工したり(HTMLタグを除去したり、メタデータ(URL、収集日、タイトル)を付与したり)もします(ETL処理とか言われる)。</p>
-<h3 id="検索ログ">検索ログ</h3>
-<p>検索を提供するだけであれば、必要ありません。
-が、実際に検索がどのような使われ方をしているか?を知るために必要な機能になります。
-この検索ログがユーザーのニーズを読み解くための情報になります。
-検索ログには次のような情報が入ります。</p>
-<ul>
-<li>検索窓に入力された文字列</li>
-<li>入力された文字列でヒットした件数</li>
-</ul>
-<p>検索結果を出したタイミングでのログです。他にも実際にヒットしたコンテンツのIDなどをログに残したり、他のユーザーと区別をつけるために、ユーザーのセッションごとにIDを発行してログに残したりもします。</p>
-<p>また、検索に満足してもらえているかを見るために、実際に検索結果のどのコンテンツに興味をもったのか?という情報も検索ログとして残すことがあります。クリックログなどとも呼ばれます。検索結果のどのドキュメントが実際にクリックされたか(詳細画面に遷移したか)という情報です。1回の検索結果に対してクリックされるごとにログが残ります。
-もちろん、結果に満足しない場合は、クリックされずに、キーワードを変えたり、絞り込み条件がクリックされたりします。</p>
-<p>ECサイトなどの場合は更に、実際に購入されたかどうかといった情報もユーザーのニーズを読み解くための情報となります。
-詳細画面へのクリックログや購入ログについては、検索以外からの流れ(広告やDMだったり、レコメンドだったり)なども考えられます。
-これらのログを元に、検索を改善していくことになります。</p>
-<h3 id="サービス提供者">サービス提供者</h3>
-<p>サイト・システムの提供者です。
-コンテンツの準備、検索UIにはどんな物が必要なのか、サイト・システムにとって良い検索とはなにか?、検索ログからユーザーのニーズを分析して何を改善していくのか?といったことを考えます。
-例としては次のようなことです。</p>
-<ul>
-<li>検索結果に表示するコンテンツとはなにか?</li>
-<li>コンテンツの持っている項目・属性の何を検索対象とするか?</li>
-<li>検索結果の並び順(ランキング)がどんなものがよいのか?</li>
-<li>検索UIにはどんなものを表示するのか?</li>
-</ul>
-<h2 id="検索機能を作るときの流れ">検索機能を作るときの流れ</h2>
-<p>検索機能を構成するパーツにどんなものがあるかを紹介しました。
-実際にシステムに検索機能を追加する場合は、最低限、次のものが必要になります。</p>
-<ul>
-<li>検索UI</li>
-<li>検索エンジン(RDB?SaaS?ミドルウェア?)</li>
-<li>データソース・コンテンツ</li>
-</ul>
-<p>とりあえずこれらがあれば、検索機能を作ることはできるかと。
-ただ、作っただけでは、いいか悪いかの判断がつかないので、どういった使われ方をしているかを知るために検索ログをとったりして、
-改善をしていく必要が出てきます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Azureのproviderを指定。</span>
+provider <span style="color:#e6db74">&#34;azurerm&#34;</span> {
+  features {}
+}
+
+<span style="color:#75715e"># リソースグループの設定</span>
+resource <span style="color:#e6db74">&#34;azurerm_resource_group&#34;</span> <span style="color:#e6db74">&#34;wiki-test&#34;</span> {
+  name     = var.resource_group
+  location = var.region
+}
+
+<span style="color:#75715e"># Azure Cognitive Searchの設定</span>
+resource <span style="color:#e6db74">&#34;azurerm_search_service&#34;</span> <span style="color:#e6db74">&#34;search_service&#34;</span> {
+  name                = var.search_cluster_name
+  resource_group_name = azurerm_resource_group.wiki-test.name
+  location            = azurerm_resource_group.wiki-test.location
+  sku                 = var.machine_type
+  partition_count     = var.partition_size
+}
+</code></pre></div><p>以上がファイルです。ほぼ公式ドキュメントのサンプル通りですねw</p>
+<h2 id="デプロイとか">デプロイとか</h2>
+<p>ファイルの準備ができたら実際にデプロイします。
+Azureの環境への認証にはAzure CLIを利用して、事前にログインした状態にします。
+実際にデプロイするまでの手順は次のようになります。</p>
+<ol>
+<li><code>az login</code> - Azureの認証。ブラウザが起動してログイン画面が表示されます。無事認証がOKなら、<code>az</code>コマンドでAzure Cloudの情報が取得できます。</li>
+<li><code>terraform init</code> - 初回だけです。Terraformのワーキングディレクトリの初期化処理を実行します。</li>
+<li><code>terraform plan</code> - Terraform &lt; 0.12の場合は実行。最新版だともういらないみたいだ。</li>
+<li><code>terraform apply</code> - 実際にAzure上にクラスターを起動します。Terraformが隠蔽してくれているので、実際にどんなことをやっているかはわかってないですが。</li>
+</ol>
+<p>以上で、Azure Cognitive Searchのクラスターが起動します。
+すごく簡単です。Webコンソールでチェックすれば、起動していることも確認できます。</p>
+<p>この状態では、クラスターが起動しただけなので、あとは必要に応じてデータをロードしたり、アプリから検索したりと行ったことが可能になります。
+そのへんの話はまた機会があれば。</p>
+<h2 id="destroy">Destroy</h2>
+<p>今回は負荷テスト用にクラスターを起動していましたので、必要なくなれば、クラスターを削除します。Terraformを導入したもう一つの理由がこの簡略化です。
+<code>terraform destroy</code>を実行するだけで、Azure Cognitive Searchのクラスターおよび、リソースグループが削除されます。</p>
 <h2 id="まとめ">まとめ</h2>
-<p>わかってるよそんなことはと言われそうな感じになったかもしれないですが、
-検索の機能を構成するパーツについて紹介してみました。
-細かなはなしは色々とありますが、大まかにはこのような役割のパーツがあります。</p>
-<p>実際にはこれらのパーツを用意すればよいわけではなく、それぞれで検索を良くしていくためにどんなことを考えていくのか?などが出てきます。そのあたりの話はまた、別のブログで書いていく感じでしょうか。こんな感じで書いてくと、終わらない気がしてきたけど。。。
-次はどんなはなしを書くかなぁ。</p>
+<p>ということで、ほぼ公式ドキュメントのままですが、TerraformでAzure Cognitive Searchのクラスターを起動する方法の紹介でした。
+ブログを書いていて、1点気になったのは、ロケーション(リージョン)の一覧はどこにあるんだろう?という点です。azコマンドとかで出てくるのかなぁ?</p>
 
 
                 
@@ -374,15 +305,10 @@ UIにはいくつものパーツがさらに存在します。簡単に例を上
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/07/27/improve-search-no1/" data-toggle="tooltip" data-placement="top" title="システムの特徴と検索機能について(検索システムに関する妄想その1)">&larr;
+                        <a href="/blog/2020/07/28/improve-search-no2/" data-toggle="tooltip" data-placement="top" title="検索システムを構成するパーツ(検索システムに関する妄想その2)">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/08/18/azure-search-with-terraform/" data-toggle="tooltip" data-placement="top" title="TerraformでAzure Cognitive Searchのクラスターを起動">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
