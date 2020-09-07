@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="meteredクレートの紹介" />
+    <meta property="og:title" content="meteredクレートの紹介" />
+    <meta property="twitter:title" content="meteredクレートの紹介" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>meteredクレートの紹介-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2020/09/07/intro-metered-rs/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/rust" title="Rust">
+                            Rust
+                        </a>
+                        
+                    </div>
+                    <h1>meteredクレートの紹介</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Monday, September 7, 2020
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#そもそもの問題">そもそもの問題</a></li>
+    <li><a href="#どんなもの">どんなもの?</a></li>
+    <li><a href="#使い方">使い方</a>
+      <ul>
+        <li><a href="#レジストリの用意">レジストリの用意</a></li>
+        <li><a href="#レジストリの指定と計測対象の指定">レジストリの指定と計測対象の指定</a></li>
+        <li><a href="#計測結果の出力">計測結果の出力</a></li>
+        <li><a href="#出力結果">出力結果</a></li>
+        <li><a href="#気をつけること">気をつけること</a></li>
+        <li><a href="#コード全体">コード全体</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>Rustで便利なクレートを見つけたので、紹介がてら、自分のメモのためにブログに残しておきます。</p>
+<h2 id="そもそもの問題">そもそもの問題</h2>
+<p>Rustで処理を書いていて、なんかちょっと遅いな?どこの処理で時間がかかってるんだろう?
+ということがありませんか?ありますよね?</p>
+<p>というのを調べるために、最初に思いつくのは自分で計測する方法です。
+流石にそれはなぁ、と思ったのでググって出てきた方法を最初は使っていました。</p>
+<ul>
+<li><a href="https://qiita.com/pseudo_foxkeh/items/5d5226e3ffa27631e80d">Rustで実行時間計測</a></li>
+</ul>
+<p>3年前の記事ですが、とりあえず計測する分には問題なかったのでこちらの方が書いていたマクロを拝借していました。
+が、ちょっと面倒なのが戻り値がある処理などのときに、このマクロを挟むのが結構めんどくさいなと。
+また、処理の時間を測りたいのは基本的にはメソッドや関数単位であることが多いです。</p>
+<p>で、さらにググっていて見つけたのが、<a href="https://crates.io/crates/metered">metered</a>でした。</p>
+<h2 id="どんなもの">どんなもの?</h2>
+<p>計測したい部分に<code>#[metric]</code>のようなアノテーションを追加することで計測対象としてくれます。
+あとは、計測したものを保存するレジストリという場所を指定するだけです。
+処理が終わったタイミングなどで、そのレジストリの内容を出力することで、次の情報を計測することができます。</p>
+<ul>
+<li>HitCount : 実行された回数</li>
+<li>ErrorCount : エラーを返した数(<code>Result</code>を戻り値にしているメソッドが対象)</li>
+<li>InFlight : 処理中の回数かな?</li>
+<li>ResponseTime : レスポンスタイム(処理に何秒かかったか)</li>
+<li>Throughput : スループット(1秒あたり何回呼ばれたか)</li>
+</ul>
+<p>とりあえず試してみたのは、ResponseTimeとThroughputです。他のメトリクスはまた後日(機会があれば)。
+また、<code>metered::metric::Metric</code>トレイトというものが用意されているようで、これを実装した独自のメトリクスも扱うことができるようです。</p>
+<h2 id="使い方">使い方</h2>
+<p>使い方としては次のようになります。</p>
+<ul>
+<li>計測対象となるメソッドがある構造体に、メトリクスを保持するためのレジストリを用意</li>
+<li>計測対象にしたい構造体のメソッドに<code>#[measure]</code>を追加(このとき、計測したいものも指定する。)</li>
+</ul>
+<p>あとは、実行したあとに構造体をダンプするとメトリクスが出力されます。</p>
+<h3 id="レジストリの用意">レジストリの用意</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Default, Debug, Serialize)]</span>
+<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">NekoParser</span> {
+    metric_reg: <span style="color:#a6e22e">NekoParserMetricRegistry</span>,
+}
+</code></pre></div><p><code>NekoParserMetricRegistry</code>という型はこのあとの<code>impl</code>のアノテーションで指定する名前になります。
+実際にはこの型の構造体を自分で定義する必要はありません。
+構造体の<code>derive</code>で<code>Default</code>を指定します。構造体のインスタンス化のときに<code>default()</code>メソッドを呼び出して初期化したいためです(おそらくレジストリの初期化をやってくれるのだと思う(<strong>要確認</strong>))。
+レジストリの用意はこれだけです。</p>
+<h3 id="レジストリの指定と計測対象の指定">レジストリの指定と計測対象の指定</h3>
+<p>計測対象側です。少し長いですが、<code>NekoParser</code>のメソッドすべてを掲載しました。
+まずは、1行目でレジストリの名前の指定(<code>registry = NekoParserMetricRegistry</code>)、レジストリのフィールド名(<code>registry_expr = self.metric_reg</code>)、レジストリの可視性(<code>visibility = pub(self)</code>)を定義します。
+2行目では、<code>impl</code>ブロック全体で計測したいメトリクスを指定しています。今回は、スループットとレスポンスタイムを計測したかったので
+<code>#measure([ResponseTime, Throughput])]</code>と2種類を指定しています。
+メトリクスが2種類のため配列で指定していますが、1種類だけの場合は<code>[]</code>の記号は必要ありません。</p>
+<p>あとは、計測したい各メソッドに<code>#[measure]</code>をつけるだけです。
+なお、メソッドごとに<code>#[measure(ErrorCount)]</code>といったかたちで個別にメトリクスを指定することも可能です。
+今回はお試しということもあり、すべて<code>#[measure]</code>だけになっています。
+アノテーションを付けただけで、メソッド自体を変更はしていません。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[metered(registry = NekoParserMetricRegistry, registry_expr = self.metric_reg, visibility = pub(self))]</span>
+<span style="color:#75715e">#[measure([ResponseTime, Throughput]</span>)]
+<span style="color:#66d9ef">impl</span> NekoParser {
+    <span style="color:#75715e">#[measure]</span>
+    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_and_parse_neko</span>(<span style="color:#f92672">&amp;</span>self) {
+        <span style="color:#66d9ef">let</span> file_path <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./data/chap04/neko.txt&#34;</span>;
+        <span style="color:#66d9ef">let</span> file <span style="color:#f92672">=</span> File::open(file_path).unwrap();
+        <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(file);
+        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> out <span style="color:#f92672">=</span> File::create(<span style="color:#e6db74">&#34;./data/chap04/neko.txt.lindera.json&#34;</span>).unwrap();
+        buf.lines().filter_map(<span style="color:#f92672">|</span>item<span style="color:#f92672">|</span> item.ok()).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">let</span> tokens <span style="color:#f92672">=</span> self.tokenize(line.as_str());
+            self.output_tokens(<span style="color:#f92672">&amp;</span>tokens, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> out);
+        });
+    }
+
+    <span style="color:#75715e">#[measure]</span>
+    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">output_tokens</span>(<span style="color:#f92672">&amp;</span>self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>, buf: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> File) {
+        writeln<span style="color:#f92672">!</span>(buf, <span style="color:#e6db74">&#34;{}&#34;</span>, serde_json::to_string(tokens).unwrap())
+            .expect(<span style="color:#e6db74">&#34;Error during output json&#34;</span>);
+    }
+
+    <span style="color:#75715e">#[measure]</span>
+    <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tokenize</span>(<span style="color:#f92672">&amp;</span>self, line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
+        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tokenizer <span style="color:#f92672">=</span> lindera::tokenizer::Tokenizer::new(<span style="color:#e6db74">&#34;normal&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>);
+        <span style="color:#66d9ef">let</span> lindera_tokens <span style="color:#f92672">=</span> tokenizer.tokenize(line);
+        <span style="color:#66d9ef">let</span> tokens <span style="color:#f92672">=</span> lindera_tokens
+            .iter()
+            .map(<span style="color:#f92672">|</span>lindera_token<span style="color:#f92672">|</span> {
+                <span style="color:#66d9ef">let</span> surface <span style="color:#f92672">=</span> lindera_token.text.to_string();
+                <span style="color:#66d9ef">let</span> pos <span style="color:#f92672">=</span> lindera_token.detail[<span style="color:#ae81ff">0</span>].to_string();
+                <span style="color:#66d9ef">let</span> pos1 <span style="color:#f92672">=</span> <span style="color:#66d9ef">if</span> pos <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;UNK&#34;</span> {
+                    lindera_token.detail[<span style="color:#ae81ff">1</span>].to_string()
+                } <span style="color:#66d9ef">else</span> {
+                    String::new()
+                };
+                <span style="color:#66d9ef">let</span> base <span style="color:#f92672">=</span> <span style="color:#66d9ef">if</span> pos <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;UNK&#34;</span> {
+                    lindera_token.detail[<span style="color:#ae81ff">6</span>].to_string()
+                } <span style="color:#66d9ef">else</span> {
+                    String::new()
+                };
+                Token {
+                    surface,
+                    base,
+                    pos,
+                    pos1,
+                }
+            })
+            .collect();
+        <span style="color:#66d9ef">return</span> tokens;
+    }
+}
+</code></pre></div><h3 id="計測結果の出力">計測結果の出力</h3>
+<p>最後は計測結果の出力です。
+今回はテストメソッドで実行して結果を出力する処理を書きました。</p>
+<p><code>let parser = NekoParser::default();</code>で構造体をインスタンス化します。
+あとは、処理をそのまま実行します。</p>
+<p>最後に出力結果をJSON形式の文字列にしてから出力しました。
+<code>let serialized ... println!(&quot;{}&quot;, serialized);</code>という形です。
+簡単ですね!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[cfg(test)]</span>
+<span style="color:#66d9ef">mod</span> tests {
+    <span style="color:#66d9ef">use</span> <span style="color:#66d9ef">crate</span>::chapter04::answer::NekoParser;
+    <span style="color:#66d9ef">use</span> std::path::Path;
+    <span style="color:#75715e">#[test]</span>
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">success_output_tokenlists</span>() {
+        <span style="color:#66d9ef">let</span> parser <span style="color:#f92672">=</span> NekoParser::default();
+        parser.load_and_parse_neko();
+        <span style="color:#66d9ef">let</span> serialized <span style="color:#f92672">=</span> serde_json::to_string(<span style="color:#f92672">&amp;</span>parser).unwrap();
+        println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, serialized);
+        assert<span style="color:#f92672">!</span>(Path::new(<span style="color:#e6db74">&#34;./data/chap04/neko.txt.lindera.json&#34;</span>).exists());
+    }
+}
+</code></pre></div><h3 id="出力結果">出力結果</h3>
+<p>ここまで紹介したものの実行結果は次のような形でした。
+レスポンスタイム、スループットともに、最小、最大、99パーセンタイルなどを出力してくれます。
+出力はメソッド名ごとにくくられているのでとても便利です。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+    <span style="color:#f92672">&#34;metric_reg&#34;</span>: {
+        <span style="color:#f92672">&#34;load_and_parse_neko&#34;</span>: {
+            <span style="color:#f92672">&#34;response_time&#34;</span>: {
+                <span style="color:#f92672">&#34;samples&#34;</span>: <span style="color:#ae81ff">1</span>,
+                <span style="color:#f92672">&#34;min&#34;</span>: <span style="color:#ae81ff">176128</span>,
+                <span style="color:#f92672">&#34;max&#34;</span>: <span style="color:#ae81ff">177151</span>,
+                <span style="color:#f92672">&#34;mean&#34;</span>: <span style="color:#ae81ff">176640.0</span>,
+                <span style="color:#f92672">&#34;stdev&#34;</span>: <span style="color:#ae81ff">0.0</span>,
+                <span style="color:#f92672">&#34;90%ile&#34;</span>: <span style="color:#ae81ff">177151</span>,
+                <span style="color:#f92672">&#34;95%ile&#34;</span>: <span style="color:#ae81ff">177151</span>,
+                <span style="color:#f92672">&#34;99%ile&#34;</span>: <span style="color:#ae81ff">177151</span>,
+                <span style="color:#f92672">&#34;99.9%ile&#34;</span>: <span style="color:#ae81ff">177151</span>,
+                <span style="color:#f92672">&#34;99.99%ile&#34;</span>: <span style="color:#ae81ff">177151</span>
+            },
+            <span style="color:#f92672">&#34;throughput&#34;</span>: {
+                <span style="color:#f92672">&#34;samples&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;min&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;max&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;mean&#34;</span>: <span style="color:#ae81ff">0.0</span>,
+                <span style="color:#f92672">&#34;stdev&#34;</span>: <span style="color:#ae81ff">0.0</span>,
+                <span style="color:#f92672">&#34;90%ile&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;95%ile&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;99%ile&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;99.9%ile&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;99.99%ile&#34;</span>: <span style="color:#ae81ff">0</span>
+            }
+        },
+        <span style="color:#f92672">&#34;output_tokens&#34;</span>: {
+            <span style="color:#f92672">&#34;response_time&#34;</span>: {
+                <span style="color:#f92672">&#34;samples&#34;</span>: <span style="color:#ae81ff">9964</span>,
+                <span style="color:#f92672">&#34;min&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;max&#34;</span>: <span style="color:#ae81ff">143</span>,
+                <span style="color:#f92672">&#34;mean&#34;</span>: <span style="color:#ae81ff">0.03592934564431955</span>,
+                <span style="color:#f92672">&#34;stdev&#34;</span>: <span style="color:#ae81ff">1.5152489085107463</span>,
+                <span style="color:#f92672">&#34;90%ile&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;95%ile&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;99%ile&#34;</span>: <span style="color:#ae81ff">0</span>,
+                <span style="color:#f92672">&#34;99.9%ile&#34;</span>: <span style="color:#ae81ff">6</span>,
+                <span style="color:#f92672">&#34;99.99%ile&#34;</span>: <span style="color:#ae81ff">143</span>
+            },
+            <span style="color:#f92672">&#34;throughput&#34;</span>: {
+                <span style="color:#f92672">&#34;samples&#34;</span>: <span style="color:#ae81ff">174</span>,
+                <span style="color:#f92672">&#34;min&#34;</span>: <span style="color:#ae81ff">39</span>,
+                <span style="color:#f92672">&#34;max&#34;</span>: <span style="color:#ae81ff">71</span>,
+                <span style="color:#f92672">&#34;mean&#34;</span>: <span style="color:#ae81ff">57.103448275862064</span>,
+                <span style="color:#f92672">&#34;stdev&#34;</span>: <span style="color:#ae81ff">3.8417981983375835</span>,
+                <span style="color:#f92672">&#34;90%ile&#34;</span>: <span style="color:#ae81ff">60</span>,
+                <span style="color:#f92672">&#34;95%ile&#34;</span>: <span style="color:#ae81ff">61</span>,
+                <span style="color:#f92672">&#34;99%ile&#34;</span>: <span style="color:#ae81ff">64</span>,
+                <span style="color:#f92672">&#34;99.9%ile&#34;</span>: <span style="color:#ae81ff">71</span>,
+                <span style="color:#f92672">&#34;99.99%ile&#34;</span>: <span style="color:#ae81ff">71</span>
+            }
+        },
+        <span style="color:#f92672">&#34;tokenize&#34;</span>: {
+            <span style="color:#f92672">&#34;response_time&#34;</span>: {
+                <span style="color:#f92672">&#34;samples&#34;</span>: <span style="color:#ae81ff">9964</span>,
+                <span style="color:#f92672">&#34;min&#34;</span>: <span style="color:#ae81ff">12</span>,
+                <span style="color:#f92672">&#34;max&#34;</span>: <span style="color:#ae81ff">79</span>,
+                <span style="color:#f92672">&#34;mean&#34;</span>: <span style="color:#ae81ff">16.897230028101177</span>,
+                <span style="color:#f92672">&#34;stdev&#34;</span>: <span style="color:#ae81ff">2.331145559054724</span>,
+                <span style="color:#f92672">&#34;90%ile&#34;</span>: <span style="color:#ae81ff">19</span>,
+                <span style="color:#f92672">&#34;95%ile&#34;</span>: <span style="color:#ae81ff">20</span>,
+                <span style="color:#f92672">&#34;99%ile&#34;</span>: <span style="color:#ae81ff">24</span>,
+                <span style="color:#f92672">&#34;99.9%ile&#34;</span>: <span style="color:#ae81ff">46</span>,
+                <span style="color:#f92672">&#34;99.99%ile&#34;</span>: <span style="color:#ae81ff">79</span>
+            },
+            <span style="color:#f92672">&#34;throughput&#34;</span>: {
+                <span style="color:#f92672">&#34;samples&#34;</span>: <span style="color:#ae81ff">174</span>,
+                <span style="color:#f92672">&#34;min&#34;</span>: <span style="color:#ae81ff">39</span>,
+                <span style="color:#f92672">&#34;max&#34;</span>: <span style="color:#ae81ff">71</span>,
+                <span style="color:#f92672">&#34;mean&#34;</span>: <span style="color:#ae81ff">57.103448275862064</span>,
+                <span style="color:#f92672">&#34;stdev&#34;</span>: <span style="color:#ae81ff">3.819293076427424</span>,
+                <span style="color:#f92672">&#34;90%ile&#34;</span>: <span style="color:#ae81ff">60</span>,
+                <span style="color:#f92672">&#34;95%ile&#34;</span>: <span style="color:#ae81ff">61</span>,
+                <span style="color:#f92672">&#34;99%ile&#34;</span>: <span style="color:#ae81ff">64</span>,
+                <span style="color:#f92672">&#34;99.9%ile&#34;</span>: <span style="color:#ae81ff">71</span>,
+                <span style="color:#f92672">&#34;99.99%ile&#34;</span>: <span style="color:#ae81ff">71</span>
+            }
+        }
+    }
+}
+</code></pre></div><p>出力内容で気になったのは<code>output_tokens</code>と<code>tokenize</code>の<code>throughput</code>が全く同じ結果が出ていることです。
+なにかバグを踏んでいる気がします。。。(時間を見つけてソースコード読んでみるか。)</p>
+<h3 id="気をつけること">気をつけること</h3>
+<p><code>metered</code>の導入時にわかりにくいコンパイルエラーが出たので備忘録として残しておきます。
+(下からコンパイルエラーを読んでしまうくせがあったのが問題なのですが。。。)
+エラーメッセージは次のとおりです。</p>
+<pre><code>error[E0412]: cannot find type `ResponseTime` in this scope
+  --&gt; src/chapter04/answer.rs:13:12
+   |
+13 | #[measure([ResponseTime, Throughput])]
+   |            ^^^^^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+1  | use metered::ResponseTime;
+   |
+1  | use metered::common::ResponseTime;
+   |
+
+error[E0283]: type annotations needed
+  --&gt; src/chapter04/answer.rs:12:1
+   |
+12 | #[metered(registry = NekoParserMetricRegistry, /* default = self.metrics */ registry_expr = self.metric_reg)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type
+   |
+   = note: cannot satisfy `_: std::default::Default`
+   = note: required by `std::default::Default::default`
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+</code></pre><p>最初のメッセージにはわかりやすく出ていますが、<code>ResponseTime</code>を<code>use</code>せずに利用しようとした場合に以下のようなエラーが出ていました。
+ターミナル画面が狭かったので<code>E0283</code>のエラーが目に入り、何を言ってるんだろう?という状態になってしまいました。
+スクロールアップしたら、答えが載っているのに。。。</p>
+<h3 id="コード全体">コード全体</h3>
+<p>元ネタは<a href="https://blog.johtani.info/blog/2020/09/07/reboot-nlp100-ch04/">NLP100本ノックの第4章</a>です。
+<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter04/answer.rs">コードの全体</a>はGitHubのソースをご覧ください。</p>
+<h2 id="まとめ">まとめ</h2>
+<p><code>metered</code>を簡単ですが紹介してみました。
+導入自体も簡単で、想像していたような使い方ができたので満足しています。
+ほかにもプロファイラなどはあるのかもしれませんが、まずはこれを使っていこうかと思っています。</p>
+<p>バグらしきものがありそうだったりするので、そのへんは今後調査してみようかと。
+まだ、ちょっと試してみただけなので、metered自体のオーバーヘッドや、独自のメトリクスの実装方法、メソッドではなく関数に対して利用する場合にはどうするのか?などいくつか疑問点があるので、今後試してみてまたブログに残しておこうと思います。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2020/09/07/reboot-nlp100-ch04/" data-toggle="tooltip" data-placement="top" title="第4章終了(言語処理100本ノック2020)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>
