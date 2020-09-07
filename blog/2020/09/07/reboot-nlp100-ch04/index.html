@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="第3章終了(言語処理100本ノック2020)" />
-    <meta property="og:title" content="第3章終了(言語処理100本ノック2020)" />
-    <meta property="twitter:title" content="第3章終了(言語処理100本ノック2020)" />
+    <meta name="title" content="第4章終了(言語処理100本ノック2020)" />
+    <meta property="og:title" content="第4章終了(言語処理100本ノック2020)" />
+    <meta property="twitter:title" content="第4章終了(言語処理100本ノック2020)" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>第3章終了(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>第4章終了(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2020/09/04/reboot-nlp100-ch03/">
+    <link rel="canonical" href="/blog/2020/09/07/reboot-nlp100-ch04/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -166,7 +166,7 @@
                         </a>
                         
                     </div>
-                    <h1>第3章終了(言語処理100本ノック2020)</h1>
+                    <h1>第4章終了(言語処理100本ノック2020)</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +174,7 @@
                             johtani
                          
                         on 
-                        Friday, September 4, 2020
+                        Monday, September 7, 2020
                         
                         
                         
@@ -204,147 +204,185 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#第3章の概要">第3章の概要</a>
+    <li><a href="#第4章の概要">第4章の概要</a>
       <ul>
+        <li><a href="#形態素解析">形態素解析</a></li>
+        <li><a href="#結果の保存">結果の保存</a></li>
         <li><a href="#jsonの読み込み処理">JSONの読み込み処理</a></li>
-        <li><a href="#正規表現">正規表現</a></li>
-        <li><a href="#mediawiki-apiリクエスト処理">MediaWiki APIリクエスト処理</a></li>
+        <li><a href="#34-名詞の連接">34. 名詞の連接</a></li>
+        <li><a href="#36-頻度上位10語">36. 頻度上位10語</a></li>
       </ul>
     </li>
     <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>Rustで言語処理100本ノックの第3章です。</p>
-<p>前回は<a href="/blog/2020/05/12/reboot-nlp100-ch02-12to19">こちら</a>。</p>
-<p>少し間が空きましたが、再開しました。
-間が空いた理由は。。。「正規表現」ですかね。。。
-苦手なんです、正規表現。
-なので、28はちょっとギブアップしてしまいました。</p>
-<h2 id="第3章の概要">第3章の概要</h2>
-<p>個別に説明はせずに大きな流れのところだけ。
-それぞれの問題の解については<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter03/answer.rs">リポジトリ</a>を御覧ください(興味ある人いるのかなぁ?)</p>
-<p>第3章はNDJSON(new line delimited JSON)という、
-1行に1JSONという形式のデータを格納したファイルがgzipで圧縮された状態で提供されます。
-まずは、このJSONファイルからJSONを読み込むのが主な処理になります。</p>
-<p>読み込んだデータに「イギリス」のWikipediaの記事が入っているので、そこから正規表現で必要なデータを抽出します。</p>
-<p>最後の問題が少し特殊で、抜き出した情報の「国旗」のファイル名を元に、MediaWikiのREST APIを叩いて、結果を取得し、その一部の情報を抜き出すというものです。</p>
-<h3 id="jsonの読み込み処理">JSONの読み込み処理</h3>
-<p>gzipファイルを読み込んでから、1行ずつ抜き出してVecに入れる処理が次のようになります。
-今回のgzipファイルは大した量が入っていないので、全部先に抜き出す処理としてまとめました。
-もっと巨大なファイルの場合は個別のJSONに対する処理を
-<code>buf.lines().map()</code>のmapのなかで実行する形にすると思います。
-gzipのファイルを開くのに<code>flate2</code>というクレート(ライブラリ)を利用しました。便利なのは、<code>BufReader</code>に<code>lines()</code>というメソッドがあるところですかね。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_ndjson_from_gzip</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found?&#34;</span>);
-    <span style="color:#66d9ef">let</span> gz <span style="color:#f92672">=</span> GzDecoder::new(f);
-    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(gz);
-    <span style="color:#66d9ef">let</span> lines: Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> buf.lines().map(<span style="color:#f92672">|</span>l<span style="color:#f92672">|</span> l.unwrap()).collect();
-    <span style="color:#66d9ef">return</span> lines;
+                <p>Rustで言語処理100本ノックの第4章です。</p>
+<p>前回は<a href="/blog/2020/09/04/reboot-nlp100-ch03">こちら</a>。</p>
+<p>今回は早めに続きをやりました。
+「形態素解析」ですしね。</p>
+<h2 id="第4章の概要">第4章の概要</h2>
+<p>吾輩は猫であるの文章が用意されていて、MaCabで形態素解析した結果をファイルに保存したところからが開始となります。</p>
+<p>が、せっかくRustでやっているのでKuromojiのRust版である<a href="https://github.com/lindera-morphology/lindera">Lindera</a>を利用して形態素解析した結果を保存する部分から作成しました。
+3章に引き続き、大きな流れのところの説明だけにしておきます。</p>
+<h3 id="形態素解析">形態素解析</h3>
+<p>もとの<code>neko.txt</code>が文章が1行ごとになっているので、そのまま1行ずつ読みならが、形態素解析していきます。読み込みの部分は3章とあまり変わらないので割愛します。
+以下は、形態素解析の処理と形態素解析結果用の構造体です。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Clone, Debug, Serialize, Deserialize)]</span>
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Token</span> {
+    surface: String,
+    base: String,
+    pos: String,
+    pos1: String,
 }
-</code></pre></div><p>こちらは、上記のメソッドで抜き出したVecを元に、記事の情報を抜き出す処理をしています。
-JSONをパースして構造体<code>Article</code>にデシリアライズするために、<code>serde</code>というライブラリを使用しています。
-<code>serde</code>自体は様々なデータ形式(JSON、YAMLなど)をパースするためのフレームワークです。今回はJSONなので、<code>serde_json</code>の実装を利用しています。
-また、JSON文字列から構造体にデシリアライズするのを簡単にできるように構造体に<code>#[derive(Deserialize)]</code>をつけています。
-あとは、<code>let article: Article = serde_json::from_str(json.as_str())</code>という処理を実行すればserde_jsonがJSONをパースして構造体に変換してくれます。形式がわかっているJSONの扱いはこれが楽ですね。変数に型を明記してあるので、型の推論もしてくれてるようです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Deserialize)]</span>
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Article</span> {
-    title: String,
-    text: String,
-}
-
-<span style="color:#75715e">// ch03-20. JSONデータの読み込み
-</span><span style="color:#75715e">// https://serde.rs/
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, target_title: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Article<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> results <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
-    <span style="color:#66d9ef">let</span> ndjson <span style="color:#f92672">=</span> extract_ndjson_from_gzip(input_file_name);
-    <span style="color:#66d9ef">for</span> json <span style="color:#66d9ef">in</span> ndjson {
-        <span style="color:#66d9ef">let</span> article: <span style="color:#a6e22e">Article</span> <span style="color:#f92672">=</span> serde_json::from_str(json.as_str()).expect(<span style="color:#e6db74">&#34;json parse error&#34;</span>);
-        <span style="color:#66d9ef">if</span> article.title <span style="color:#f92672">==</span> target_title {
-            results.push(article);
-        }
-    }
-    <span style="color:#66d9ef">return</span> results;
-}
-</code></pre></div><p>後続の処理ではパースした<code>Article</code>から記事情報を取得して色々と処理をしています。</p>
-<h3 id="正規表現">正規表現</h3>
-<p>正規表現用のクレート<code>regex</code>がRustに用意されています。<code>Regex::new(正規表現)</code>で、正規表現をコンパイルし、あとは、この構造体のメソッドを利用して文字列を処理していきます。
-問題では、マッチするかどうか、マッチした一部の文字列を抜き出す、不要なタグを削除するといった処理を正規表現で行いました(Rust書くよりも正規表現の書き方とかを調べるのに大半の時間をもっていかれてます。。。)。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_category_lines</span>(article: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Article</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> re <span style="color:#f92672">=</span> Regex::new(<span style="color:#e6db74">r&#34;\[\[Category:(.*)\]\]&#34;).expect(&#34;syntax error in regex&#34;</span>);
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
-    article.lines_from_text().iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        <span style="color:#66d9ef">if</span> re.is_match(line) {
-            lines.push(line.to_string());
-        }
-    });
-    <span style="color:#66d9ef">return</span> lines;
-}
-</code></pre></div><h3 id="mediawiki-apiリクエスト処理">MediaWiki APIリクエスト処理</h3>
-<p>最後の問題で国旗のファイル名を元に<a href="https://www.mediawiki.org/wiki/API:Imageinfo">MediaWiki API</a>を叩いて、URLの文字列を取得しましょうという問題がありました。
-ファイル名をREST APIの引数に渡してHTTP経由でリクエストを送信し、返ってくるJSONレスポンスからURLを抜き出すという処理です。</p>
-<p>HTTPのリクエストの送受信に<code>reqwest</code>というクレートを利用しました。
-ちょっと長いけど、APIコールしている箇所はこんな形です。</p>
-<p>この関数には<code>async</code>とついています。非同期処理の関数です。内部で2回ほど(リクエスト送信の結果待ちとレスポンスのパース待ち)<code>.await</code>があります。</p>
-<p><code>client</code>に<code>.get(URL)</code>や<code>query(&amp;[])</code>といったメソッドが用意されているので、URLやクエリパラメータを用意して<code>send()</code>でリクエスト送信します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
-async <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">call_api</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Result<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> client <span style="color:#f92672">=</span> reqwest::Client::new();
-    <span style="color:#66d9ef">let</span> file_name2 <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;File:{}&#34;</span>, file_name);
-    <span style="color:#75715e">//let mut file_name2 = file_name.to_string().replace(&#34; &#34;, &#34;_&#34;);
-</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> query <span style="color:#f92672">=</span> [
-        (<span style="color:#e6db74">&#34;action&#34;</span>, <span style="color:#e6db74">&#34;query&#34;</span>),
-        (<span style="color:#e6db74">&#34;format&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>),
-        (<span style="color:#e6db74">&#34;prop&#34;</span>, <span style="color:#e6db74">&#34;imageinfo&#34;</span>),
-        (<span style="color:#e6db74">&#34;iiprop&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>),
-        (<span style="color:#e6db74">&#34;titles&#34;</span>, file_name2.as_str()),
-    ];
-    <span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> client
-        .get(<span style="color:#e6db74">&#34;https://en.wikipedia.org/w/api.php&#34;</span>)
-        .query(<span style="color:#f92672">&amp;</span>query)
-        .send()
-        .await;
-
-    <span style="color:#66d9ef">match</span> result {
-        Ok(response) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> response.status() {
-            StatusCode::OK <span style="color:#f92672">=&gt;</span> {
-                <span style="color:#66d9ef">let</span> body <span style="color:#f92672">=</span> response.json::<span style="color:#f92672">&lt;</span>MediaWikiResponse<span style="color:#f92672">&gt;</span>().await;
-                <span style="color:#66d9ef">match</span> body {
-                    Ok(obj) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> obj.get_url() {
-                        Some(url) <span style="color:#f92672">=&gt;</span> Ok(url),
-                        None <span style="color:#f92672">=&gt;</span> Err(String::from(<span style="color:#e6db74">&#34;Cannot get url...&#34;</span>)),
-                    },
-                    Err(error) <span style="color:#f92672">=&gt;</span> Err(error.to_string()),
-                }
+</code></pre></div><p>まずは構造体です。今回の問題では、必要な情報は4種類だったのでそれを構造体にしました。</p>
+<ul>
+<li>表層形（surface）</li>
+<li>基本形（base）</li>
+<li>品詞（pos）</li>
+<li>品詞細分類1（pos1）</li>
+</ul>
+<p><code>derive</code>でSerialize、Deserializeを付与しているのは、形態素解析の結果をJSON文字列として保存し、あとのそれぞれの課題で読み出すためにserde_jsonを利用するためです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tokenize</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tokenizer <span style="color:#f92672">=</span> lindera::tokenizer::Tokenizer::new(<span style="color:#e6db74">&#34;normal&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>);
+    <span style="color:#66d9ef">let</span> lindera_tokens <span style="color:#f92672">=</span> tokenizer.tokenize(line);
+    <span style="color:#66d9ef">let</span> tokens <span style="color:#f92672">=</span> lindera_tokens
+        .iter()
+        .map(<span style="color:#f92672">|</span>lindera_token<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">let</span> surface <span style="color:#f92672">=</span> lindera_token.text.to_string();
+            <span style="color:#66d9ef">let</span> pos <span style="color:#f92672">=</span> lindera_token.detail[<span style="color:#ae81ff">0</span>].to_string();
+            <span style="color:#66d9ef">let</span> pos1 <span style="color:#f92672">=</span> <span style="color:#66d9ef">if</span> pos <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;UNK&#34;</span> {
+                lindera_token.detail[<span style="color:#ae81ff">1</span>].to_string()
+            } <span style="color:#66d9ef">else</span> {
+                String::new()
+            };
+            <span style="color:#66d9ef">let</span> base <span style="color:#f92672">=</span> <span style="color:#66d9ef">if</span> pos <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;UNK&#34;</span> {
+                lindera_token.detail[<span style="color:#ae81ff">6</span>].to_string()
+            } <span style="color:#66d9ef">else</span> {
+                String::new()
+            };
+            Token {
+                surface,
+                base,
+                pos,
+                pos1,
             }
-            _ <span style="color:#f92672">=&gt;</span> Err(String::from(format<span style="color:#f92672">!</span>(
-                <span style="color:#e6db74">&#34;Status code is {}.&#34;</span>,
-                response.status()
-            ))),
-        },
-        Err(error) <span style="color:#f92672">=&gt;</span> {
-            <span style="color:#66d9ef">let</span> error_msg <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;Error occurred... {:?}&#34;</span>, error);
-            println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, error_msg.as_str());
-            Err(error_msg)
-        }
+        })
+        .collect();
+    <span style="color:#66d9ef">return</span> tokens;
+}
+</code></pre></div><p>次が形態素解析の処理です。
+入力に1行分の文章を受け取り、出力として、さきほどの構造体をベクタに入れたもの<code>Vec&lt;Token&gt;</code>を返します。
+内部ではLinderaの<code>Tokenizer</code>を<code>normal</code>モードでインスタンス化してその<code>tokenizer()</code>メソッドを叩いているだけです。
+インスタンス化のときの第2引数は辞書のディレクトリですが、今回はデフォルト辞書(IPADIC)を利用しています。
+戻り値はLinderaが用意したToken構造体なので、これを今回作成した<code>Token</code>構造体に詰め替えているだけです。</p>
+<p>注意点としてLinderaはMeCabとは異なり、未知語(辞書に出てこない単語)の処理が実装されていないので、品詞が<code>&quot;UNK&quot;</code>の場合にはその他の情報が取得できないので、空文字を構造体に設定するようにしました。</p>
+<h3 id="結果の保存">結果の保存</h3>
+<p>形態素解析の結果はJSONで保存しました。
+もとのファイルが1文が1行になっていたので、
+1行を読み込み、形態素解析し、それをVecで取り出して、1行1配列JSONの形で保存するようにしてあります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">output_tokens</span>(tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>, buf: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> File) {
+    writeln<span style="color:#f92672">!</span>(buf, <span style="color:#e6db74">&#34;{}&#34;</span>, serde_json::to_string(tokens).unwrap()).expect(<span style="color:#e6db74">&#34;Error during output json&#34;</span>);
+}
+</code></pre></div><p><code>serde_json::to_string</code>に<code>Vec&lt;Token&gt;</code>を渡しているだけですが、構造体に<code>derive</code>をつけているのでよしなにやってくれます(便利ー)。</p>
+<h3 id="jsonの読み込み処理">JSONの読み込み処理</h3>
+<p>1行1JSONの読み込み処理です。
+今回も3章のように読み込みながら、各文章ごとの形態素解析結果に対して処理を実施するために、処理を実行するための<code>trait</code>を<code>Command</code>として用意し、それぞれの問題で形態素解析結果に対して処理を書くような実装にしました。また、設問37で「猫」と共起している単語を処理するという課題があるので、文章に「猫」が入っているものだけを処理できるようにするための<code>Filter</code>も用意し、これをJSONの読み込み処理のイテレータの<code>filter</code>にわたすようにしています。
+特にフィルタリングが必要ない場合ように、<code>NonFilter</code>を予め実装済みです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">trait</span> Command {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>);
+}
+
+<span style="color:#66d9ef">trait</span> Filter {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">is_target</span>(<span style="color:#f92672">&amp;</span>self, line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; <span style="color:#66d9ef">bool</span>;
+}
+
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">NonFilter</span> {}
+
+<span style="color:#66d9ef">impl</span> Filter <span style="color:#66d9ef">for</span> NonFilter {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">is_target</span>(<span style="color:#f92672">&amp;</span>self, line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; <span style="color:#66d9ef">bool</span> {
+        <span style="color:#66d9ef">true</span>
     }
 }
-</code></pre></div><p>あとは、呼び出し元で非同期の処理を実行するために、<code>tokio</code>というクレートを利用しています。
-<code>block_on()</code>で<code>call_api()</code>の実行をして、結果が返ってくるのを待ち受けています。結果が返ってきて、問題なければ、<code>call_api</code>の戻り値<code>Result&lt;String, String&gt;</code>の左側のStringの値が取り出され、<code>get_image_url</code>の戻り値となります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
-<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_image_url</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> _rt <span style="color:#f92672">=</span> tokio::runtime::Runtime::new().expect(<span style="color:#e6db74">&#34;Fail initializing runtime&#34;</span>);
-    <span style="color:#66d9ef">let</span> task <span style="color:#f92672">=</span> call_api(file_name);
-    _rt.block_on(task).expect(<span style="color:#e6db74">&#34;Something wrong...&#34;</span>)
+
+<span style="color:#75715e">// ch04-30. 形態素解析結果の読み込み
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Command</span><span style="color:#f92672">&gt;</span>(cmd: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> T) {
+    load_json_with_filter(cmd, <span style="color:#f92672">&amp;</span>NonFilter {});
 }
-</code></pre></div><p>一応、非同期に関して説明してみましたが、合っているのかどうか。。。
-クレートの関係などはまだちょっと自身がないです。。。
-あとは、エラーの処理の仕方とかももうちょっと勉強したいかな。</p>
-<h2 id="まとめ">まとめ</h2>
-<p>一応、3章を終わらせました。だいぶ強引かつ1つスキップしましたが。。。
-次は<a href="https://nlp100.github.io/ja/ch04.html">第4章の形態素解析</a>です。</p>
+
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json_with_filter</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Command</span>, U: <span style="color:#a6e22e">Filter</span><span style="color:#f92672">&gt;</span>(cmd: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> T, filter: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">U</span>) {
+    <span style="color:#66d9ef">let</span> file <span style="color:#f92672">=</span> File::open(<span style="color:#e6db74">&#34;./data/chap04/neko.txt.lindera.json&#34;</span>).unwrap();
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(file);
+    buf.lines()
+        .filter_map(<span style="color:#f92672">|</span>item<span style="color:#f92672">|</span> item.ok())
+        .filter(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> filter.is_target(line))
+        .for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">let</span> tokens <span style="color:#f92672">=</span> parse_line_json(line.as_str());
+            cmd.execute(<span style="color:#f92672">&amp;</span>tokens);
+        });
+}
+</code></pre></div><p><code>output_tokens</code>では<code>serde_json::to_string</code>を呼び出してましたが、読み込みでは、<code>serde_json::from_str</code>を使うと構造体にしてくれます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">parse_line_json</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">return</span> serde_json::from_str(line).unwrap();
+}
+</code></pre></div><p>あとは、設問ごとに<code>Command</code>トレイトを実装していく形です。
+たとえば、32.の動詞の原形を出力する場合は次のようになります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ExtractVerbBase</span> {
+    out: <span style="color:#a6e22e">File</span>,
+}
+<span style="color:#66d9ef">impl</span> Command <span style="color:#66d9ef">for</span> ExtractVerbBase {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>) {
+        tokens
+            .iter()
+            .filter(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> token.pos <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;動詞&#34;</span>)
+            .for_each(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> {
+                writeln<span style="color:#f92672">!</span>(self.out, <span style="color:#e6db74">&#34;{}&#34;</span>, token.base).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
+                println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, token.base);
+            })
+    }
+}
+</code></pre></div><p>標準出力とは別にファイルにも出力できるように<code>ExtractVerbBase</code>に<code>out</code>でファイルを保持しています。</p>
+<h3 id="34-名詞の連接">34. 名詞の連接</h3>
+<p>「名詞の連接（連続して出現する名詞）を最長一致で抽出せよ．」という課題だったのですが、最初は読み間違えて、名詞の連接の最も長いものだけを出力するようにしてました。。。
+やっぱり、出力結果とかのサンプルは用意しといてほしいなぁ。。。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">impl</span> Command <span style="color:#66d9ef">for</span> ExtractMaxConjunctionNoun {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>) {
+        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> nouns <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
+        <span style="color:#75715e">// TODO 参照保持でどうにかしたいけどなぁ。
+</span><span style="color:#75715e"></span>        tokens.iter().map(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> token.clone()).for_each(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">if</span> token.pos <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;名詞&#34;</span> {
+                nouns.push(token);
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#66d9ef">if</span> nouns.len() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span> {
+                    self.buffer.push(nouns.clone());
+                }
+                nouns <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[]
+            }
+        });
+    }
+}
+</code></pre></div><p>名詞の場合に、nounsにバッファリングしつつ、違う品詞が来たら出力するという処理になっています。
+<code>clone</code>を呼び出していますが、これを参照を引き回す感じにできるといいのかもなぁ(結構めんどくさい)。</p>
+<h3 id="36-頻度上位10語">36. 頻度上位10語</h3>
+<p>頻度を数えるのにはBTreeMapを利用しています。
+数えながら、Top10を保持する方法がいい気がしたのですが、いい入れ物を見つけられなかったので、数え上げたあとにBTreeMapのIteratorを回しながら、キーバリューのVecをまず生成します。
+その生成したVecに値でソートし、その後Iteratorから最初の10件を取得して表示する方法にしました。</p>
+<p>ソートして取り出すという処理がついでにかかっています。。。
+<a href="https://doc.rust-lang.org/std/collections/struct.BinaryHeap.html">BinaryHeap</a>がなにか使えそうな気もしたのですが、いい方法が思いつきませんでした。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">print_top10</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self) {
+        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> key_values: Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span>
+            self.terms_count.iter().collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;&gt;</span>();
+        key_values.sort_by(<span style="color:#f92672">|</span>x, y<span style="color:#f92672">|</span> y.<span style="color:#ae81ff">1.</span>cmp(<span style="color:#f92672">&amp;</span>x.<span style="color:#ae81ff">1</span>));
+        key_values.iter().take(<span style="color:#ae81ff">10</span>).for_each(<span style="color:#f92672">|</span>(key, value)<span style="color:#f92672">|</span> {
+            writeln<span style="color:#f92672">!</span>(<span style="color:#f92672">&amp;</span>self.out, <span style="color:#e6db74">&#34;{}, {}&#34;</span>, key, value).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
+            println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}, {}&#34;</span>, key, value);
+        });
+    }
+</code></pre></div><h2 id="まとめ">まとめ</h2>
+<p>形態素解析結果をちゃんと眺めてはいないですが、処理としてはこんなところかなと。
+グラフはめんどくさいのでスキップしてしまいました。。。
+Kibana/Esに食わせて見てみるのもありかなぁ?</p>
+<p>次は係り受け解析です。Rustで使えるライブラリとかあるかなぁ?</p>
 
 
                 
@@ -353,15 +391,10 @@ async <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">call_api
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/08/18/azure-search-with-terraform/" data-toggle="tooltip" data-placement="top" title="TerraformでAzure Cognitive Searchのクラスターを起動">&larr;
+                        <a href="/blog/2020/09/04/reboot-nlp100-ch03/" data-toggle="tooltip" data-placement="top" title="第3章終了(言語処理100本ノック2020)">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2020/09/07/reboot-nlp100-ch04/" data-toggle="tooltip" data-placement="top" title="第4章終了(言語処理100本ノック2020)">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
