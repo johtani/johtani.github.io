@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="検索対象のデータとドメイン知識(検索システムに関する妄想その3)" />
+    <meta property="og:title" content="検索対象のデータとドメイン知識(検索システムに関する妄想その3)" />
+    <meta property="twitter:title" content="検索対象のデータとドメイン知識(検索システムに関する妄想その3)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>検索対象のデータとドメイン知識(検索システムに関する妄想その3)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2020/09/15/improve-search-no3/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                    </div>
+                    <h1>検索対象のデータとドメイン知識(検索システムに関する妄想その3)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Tuesday, September 15, 2020
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#言葉の定義">言葉の定義</a>
+      <ul>
+        <li><a href="#コンテンツ">コンテンツ</a></li>
+        <li><a href="#データソース">データソース</a></li>
+        <li><a href="#クローラー">クローラー</a></li>
+      </ul>
+    </li>
+    <li><a href="#データの収集と登録">データの収集と登録</a>
+      <ul>
+        <li><a href="#収集">収集</a></li>
+        <li><a href="#データ変換">データ変換</a></li>
+        <li><a href="#登録">登録</a></li>
+      </ul>
+    </li>
+    <li><a href="#検索の改善">検索の改善</a>
+      <ul>
+        <li><a href="#コンテンツの理解">コンテンツの理解</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>先日は「<a href="/blog/2020/07/28/improve-search-no2/">検索システムを構成するパーツ</a>」ということで検索システムを構成しているパーツについて書いてみました。</p>
+<p>大体、検索がうまくヒットしないといった場合に、問題になるのがコンテンツ自体のデータもしくは、転置インデックスのキーワードだったりします。
+そこで今回は、前回のパーツの「データソース・コンテンツ」周りについて少し書いてみようと思います。言葉の定義、それぞれがどんなことをやるのか、とりあえず導入したあとにコンテンツ周りでどんな改善ができるかなどを書いてみます。</p>
+<h2 id="言葉の定義">言葉の定義</h2>
+<h3 id="コンテンツ">コンテンツ</h3>
+<p>実際に検索させたいデータになります。
+コンテンツにはWebページ、データベースのレコード(CMSで登録されたデータなど)、ファイルサーバーにある文書(PDF、Word、Excelなど)などになります。</p>
+<h3 id="データソース">データソース</h3>
+<p>コンテンツのマスタデータが保存されている先です。
+よくあるデータソースとしては以下のものが考えられます。</p>
+<ul>
+<li>Webサイト - 自社もしくはインターネットに存在しているWebサイトです。</li>
+<li>ファイルサーバー - ローカルネットワーク上のファイルサーバーもありますが、最近ではGoogle DriveやDropboxといった外部のWebサービスもあります。</li>
+<li>RDB - CMSや自社システムでのデータの保存先です。</li>
+</ul>
+<h3 id="クローラー">クローラー</h3>
+<p>コンテンツをデータソースから収集してくるプログラムのことです。
+Webサイトやファイルサーバーからコンテンツを収集して検索エンジンに登録するところまでを担当します。
+RDBにあるデータを検索エンジンに登録する場合はクローラーがデータを登録するというよりは、RDBにデータを登録するシステムが検索エンジンに登録する機能を持っていることが多いです。</p>
+<h2 id="データの収集と登録">データの収集と登録</h2>
+<h3 id="収集">収集</h3>
+<p>クローラーを使用した収集の場合は、サービスの特性とデータソースによって、どの程度の頻度でクロールするのか、クロール対象はどこまでか?といったものを決める必要が出てきます。
+これらが決まれば収集ができるかと(他に権限とかもありますが。)。
+収集コンテンツは、そのままでは利用しにくかったり、利用できないことがあるので、次はデータの変換を行います。</p>
+<h3 id="データ変換">データ変換</h3>
+<p>コンテンツはそのままの形では検索エンジンには扱いにくいデータ形式である場合があります。</p>
+<h4 id="webページの場合">Webページの場合</h4>
+<p>Webページの場合、コンテンツにはHTMLタグが入っていたり、JavaScriptなど検索対象にはしたくないデータなどが入っています。これらを除去して、検索させたいものを取り出す必要があります。
+また、Titleタグなど、いくつかメタデータとして扱えるものがHTMLで規定されているので、これらを別の項目として取り出して個別に検索できるようにすると便利です。
+HTMLをパースしてデータを抜き出す処理ができるライブラリなどがあるので活用します。</p>
+<h4 id="ファイル">ファイル</h4>
+<p>PDFファイルなど、ファイルの場合もメタデータと呼ばれるファイル自体が持っている情報が存在します。作成者、更新日時、ファイル名、パスなどです。
+これらも検索時に有効な情報になります。
+また、ファイルから文字列を抜き出す処理も必要になります。
+それぞれデータフォーマットが異なりますので、そのフォーマットに合わせて文章データを抜き出す処理が必要です。OSSや製品がありますので、それらを利用して、ファイルから文章を抜き出します。</p>
+<h4 id="rdb">RDB</h4>
+<p>RDBのデータの場合、データが正規化されています。
+検索エンジンでは、非正規化のデータを登録して検索することが基本となるため、まずは非正規化して取り出す必要が出てきます。</p>
+<p>例えば、ジャンルやカテゴリ、各種IDなどが実際のコンテンツのレコードに入っていると思いますが、これらをユーザーが入力したキーワードで検索したい場合などは、IDではなく表示名を取り出して、検索エンジンに登録する必要が出てきます。</p>
+<h4 id="その他">その他</h4>
+<p>データごとの変換処理について説明しました。
+その他に、データのクリーニング処理などと言ったことも必要になってきます。例えば、HTMLのタイトルに必ずサイト名が入っているが、除去したいといった場合や、検索エンジン固有のデータの前処理などもあります。</p>
+<h3 id="登録">登録</h3>
+<p>最後は検索エンジンへの登録です。
+最近の検索エンジンはJSON形式でデータを受け取る場合が多いので、JSONに変換することが多いです。
+基本的には各種プログラミング言語のライブラリが用意されているのでこれらを利用するのが基本となります。</p>
+<p>検索したい項目、検索させたい方法などを洗い出し、必要なデータを作成して検索エンジンに登録します。
+登録と書いていますが、更新、削除などもここでの対象となります。</p>
+<p>ここまでの流れで、データソースからコンテンツを取得し、変換して、検索エンジンへの登録が終わりました。</p>
+<h2 id="検索の改善">検索の改善</h2>
+<p>検索のログから分析して改善していくのが良いですが、ユーザーからの質問や意見などからも改善すべき点が見えてくると思います。
+検索ログでは、次のようなものを元に、検索がうまく行かないものを見つけ出します。</p>
+<ul>
+<li>0件ヒット</li>
+<li>0件クリック</li>
+</ul>
+<p>ヒットしていない検索ワードがある場合、コンテンツに問題がある場合があります。まずはこのあたりをとってみるのが良いかと。
+そもそも、入力されたキーワードにマッチするコンテンツを扱っていないこともわかりますし、入力されたキーワードに似た単語を持ったコンテンツなども存在するはずです。
+類義語の辞書を用意して、検索にヒットできるようにするといった分析と改善にも利用できます。</p>
+<p>あとは、検索エンジン側の話ですが、形態素解析器などを利用している場合に、意図した区切りになっていないために、うまくキーワードがヒットしないと言ったこともあります。</p>
+<h3 id="コンテンツの理解">コンテンツの理解</h3>
+<p>実はこれが一番だったりします。
+どんなコンテンツを自分たちが扱っているのか?どんなデータがどういった項目でコンテンツに入っているのか?といったところから、
+コンテンツのデータを元に検索にヒットさせる方法が改善できます。</p>
+<p>CMSなど人が入力したデータをコンテンツとして扱う場合、入力画面を改良することで、望んでいるデータを入れてもらえたり、不要なデータが入らなくなる可能性があります。
+例えば、ECサイトなどで商品の説明文やタイトルにいろいろなキーワードが入っている場合などがあります。むりやりどんなキーワードでもヒットさせたいという入力者の意図もあるのですが、検索しているユーザーにはノイズになることも多いです。適切にカテゴリやジャンル、属性といった項目に分けることでおかしな入力データを減らすことも可能です。</p>
+<p>Webサイトなどをクローリングしたものの場合は、サイトごとに文章の特徴があったり、重複している部分などが合ったりする場合があります。
+これらもコンテンツをよく調べることで、不要な情報を除去したりといったことが可能になります。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>簡単ですが、検索のデータソースやコンテンツにまつわる話を紹介しました。
+もちろんここでは紹介しきれていない項目がいっぱいあります。
+また、具体例ではなく概略をざっくりと書いているのでわかりにくい場合もあるかもしれません。
+すこしユースケースを絞り込んで書いたほうがわかりやすくなるのかも?</p>
+<p>次はUIとか書くかも?</p>
+<p>不明点とか疑問点、指摘事項などあればコメントしていただければと。
+要望などもお待ちしております。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2020/09/08/update-working-facility/" data-toggle="tooltip" data-placement="top" title="自宅の作業環境(2020/09)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>
