@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="LinderaのFSTをDoubleArrayTrieに変更した話(まだPR)" />
+    <meta property="og:title" content="LinderaのFSTをDoubleArrayTrieに変更した話(まだPR)" />
+    <meta property="twitter:title" content="LinderaのFSTをDoubleArrayTrieに変更した話(まだPR)" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>LinderaのFSTをDoubleArrayTrieに変更した話(まだPR)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2020/10/05/switch-fst-2-da/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/rust" title="Rust">
+                            Rust
+                        </a>
+                        
+                        <a class="tag" href="/tags/lindera" title="Lindera">
+                            Lindera
+                        </a>
+                        
+                    </div>
+                    <h1>LinderaのFSTをDoubleArrayTrieに変更した話(まだPR)</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Monday, October 5, 2020
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#ベンチマークの追加">ベンチマークの追加</a></li>
+    <li><a href="#yadaの組み込み">yadaの組み込み</a>
+      <ul>
+        <li><a href="#中身の理解">中身の理解</a></li>
+        <li><a href="#変更点">変更点</a></li>
+      </ul>
+    </li>
+    <li><a href="#ベンチマーク結果">ベンチマーク結果</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p><a href="https://twitter.com/minoru_osuka">@minoru_osuka</a> さんが開発を引き継いだ<a href="https://qiita.com/mosuka/items/0fdaaf91f5530d427dc7">LinderaというKuromojiのRustクローン</a>があります(<a href="https://github.com/lindera-morphology/lindera">リポジトリ</a>)
+。
+最近趣味でRustを勉強しているので、こちらを少し手伝っています。</p>
+<p>Rustの勉強仲間である<a href="https://twitter.com/takuya_b">@takuya_b</a>さんや<a href="https://twitter.com/ikawaha">@ikawaha</a>さんと話をしているときに、FST部分をDouble Array Trieに置き換えると速度が向上するのでは?という話が出まして、@takuya_bさんがDouble Array Trieを作るらしいという話になったので、下準備などをしつつ、作ってもらったライブラリ<a href="https://github.com/takuyaa/yada">yada</a>を組み込んでみたという話です。</p>
+<h2 id="ベンチマークの追加">ベンチマークの追加</h2>
+<p>下準備として、今のLindera(FST実装)がどのくらいの性能なのか?というのを計っておく必要があります。
+幸いにも、Linderaのオリジナルの開発者の方が、<a href="https://github.com/bheisler/criterion.rs">criterion.rs</a>というライブラリを使った<a href="https://github.com/lindera-morphology/lindera/blob/581728bf790a331402ef7a200fd443c4f9244abd/lindera/benches/bench.rs">ベンチマークプログラム</a>を作成してくれていました。</p>
+<p>ただ、1種類だけだと少し心もとないなというのと、長い文章やパターンを増やしたほうが良さそうだなということで、
+ベンチマーク自体をいくつか追加しました(<a href="https://github.com/lindera-morphology/lindera/pull/74">追加したときのPR</a>)。</p>
+<p>種類としては、5種類のベンチマークです。</p>
+<ol>
+<li>システム辞書のみのTokenizerのコンストラクタ呼び出し</li>
+<li>カスタム辞書ありのTokenizerのコンストラクタ呼び出し</li>
+<li>システム辞書のみのTokenizerの<code>tokenize</code>処理の呼び出し</li>
+<li>カスタム辞書ありのTokenizerの<code>tokenize</code>処理の呼び出し</li>
+<li>青空文庫の坊っちゃんのテキストをシステム辞書のみのTokenizerで<code>tokenize</code></li>
+</ol>
+<p>1,2はコンストラクタ部分だけの処理をベンチマークテストする目的で作成しました。
+LinderaはTokenizerがtokenize処理するのに利用するデータをいくつか内部で保持しています。
+これらはファイルにシリアライズされており、Tokenizerのオブジェクト生成時に読み込みやデシリアライズ処理が発生します。
+この部分だけも速度を計測したい目的でコンストラクタだけを切り出しました。</p>
+<p>3,4はTokenizerのメインの処理です。コンストラクタはベンチマークの対象外にしました。
+純粋にtokenizeの処理だけを切り出して計測するためです。
+カスタム辞書がある場合、ない場合は念の為切り出した形になっています。</p>
+<p>5は長い文章(文章が多いのでバリエーションも増える)を扱いたいために別にしました。</p>
+<p>これで、一応下準備が完了です。
+ちなみに、Criterionは賢くて、前のベンチマークの結果と最新の結果を比較してくれる機能があります。
+どんな感じで出てくるかはベンチマーク結果をご覧ください。</p>
+<h2 id="yadaの組み込み">yadaの組み込み</h2>
+<p>ベンチマークの準備をしていたところyadaがリリースされたので、Linderaへの組み込みを検討し始めました。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">というわけで、またダブル配列を書いてしまったので crate として公開しました。フィードバックお待ちしております！ <a href="https://t.co/As7h0tfmjf">https://t.co/As7h0tfmjf</a></p>&mdash; takuya-a (@takuya_b) <a href="https://twitter.com/takuya_b/status/1307671030731694081?ref_src=twsrc%5Etfw">September 20, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<h3 id="中身の理解">中身の理解</h3>
+<p>lindera-fstを利用して、prefix searchしている処理があるので、そこで利用しているFSTをyadaに置き換えれば良さそうだと判断して、
+処理を読んでいきます。</p>
+<ul>
+<li>Tokenizerは、<a href="https://github.com/lindera-morphology/lindera/blob/027ab8c7d5fdd6d1bc2dc7e8779adb1ddcf7f770/lindera-core/src/core/prefix_dict.rs">PrefixDict</a>という構造体でlindera-fstを利用している
+<ul>
+<li><a href="https://github.com/lindera-morphology/lindera/blob/027ab8c7d5fdd6d1bc2dc7e8779adb1ddcf7f770/lindera-core/src/core/prefix_dict.rs#L27-L64">prefixメソッド</a>が入力文字列を元に、FSTを前方一致検索して、ヒットした単語の情報をIteratorとして取り出せる(単語の情報は「入力文字列の先頭からの文字数」と「ヒットした単語のWordEntry構造体」)</li>
+<li>PrefixDictのfstは辞書(例：ipadic)ごとに<code>lindera-&lt;辞書名&gt;-builder</code>で生成される</li>
+</ul>
+</li>
+<li>システム辞書としては、デフォルトでは<code>lindera-ipadic-builder</code>でfstを構築している
+<ul>
+<li><a href="https://github.com/lindera-morphology/lindera/blob/027ab8c7d5fdd6d1bc2dc7e8779adb1ddcf7f770/lindera-ipadic-builder/src/lib.rs#L237-L249">構築処理はこの辺</a></li>
+</ul>
+</li>
+</ul>
+<p>という感じです。
+また、辞書周りのファイルがそれぞれどんな役割なのか、どんなデータの持ち方をしているのか?といった点を、変更点の調査のついでに書き出してみました。<a href="https://github.com/lindera-morphology/lindera/blob/master/lindera-dictionary/FILES.md">lindera-dictionary/FILES.md</a>。TODOになっている部分も追記が終わっています(<a href="https://github.com/lindera-morphology/lindera/pull/77">PR</a>)</p>
+<h3 id="変更点">変更点</h3>
+<p>実際に変更したプログラムの詳細についてはの<a href="https://github.com/lindera-morphology/lindera/pull/76">PR</a>を見ていただくとして、簡単には以下の点になります。</p>
+<ol>
+<li>Rustのバージョンを1.46.0に(おもにREADME.md)
+<ul>
+<li>yadaが利用している機能に1.46.0で導入された機能があるため</li>
+</ul>
+</li>
+<li>lindera-fstをyadaに変更(lindera-core/Cargo.toml, lindera-ipadic-builder/Cargo.toml)
+<ul>
+<li>合わせて、<code>dict.fst</code>というファイル名を<code>dict.da</code>に変更</li>
+</ul>
+</li>
+<li><code>dict.da</code>に関して構築部分と検索部分を変更
+<ul>
+<li>FSTではFSTから返ってくる値(入力文字列に出てきた単語に関連する値)は<code>u64</code>だったが、yadaのDoubleArrayが<code>u32</code>しか扱えないため、<code>u32</code>に変更。テストの記述はしていないが、扱うデータ的に<code>u32</code>で問題なさそうだったので。</li>
+<li>検索部分：PrefixDict構造体の<code>prefix</code>メソッドで<code>DoubleArray</code>の<code>prefix_common_search</code>を使用
+<ul>
+<li>DoubleArray自体が<code>prefix_common_search</code>のメソッドを持っていたので、処理が簡単に置き換え可能だった。FSTは<code>prefix</code>メソッド内で独自で前方一致検索を実装していた。</li>
+</ul>
+</li>
+<li>構築部分：<code>lindera-ipadic-builder/src/lib.rs</code>の<code>build_dict</code>と<code>build_user_dict</code>の<code>dict.da</code>構築処理
+<ul>
+<li>ipadicのCSVファイルを読み込んで、見出し語をキーに、辞書にある単語情報のベクタを値とするBTreeMapを生成し、このBTreeMapに基づいてFSTを構築していた部分をDoubleArray構築処理に置き換えた。</li>
+<li>シフト演算などで、実際の値(<code>dict.vals</code>)へのポインタを作っていたのだが、ここの処理を読み解くために<code>FILES.md</code>を書き出した。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p>という感じです。そもそもデータ構造がどうなっているのか?から読み解いて、変更部分を洗い出して変更していった形になります。
+取り込み作業中にいくつか<code>yada</code>に要望(<a href="https://github.com/takuyaa/yada/issues?q=is%3Aissue+is%3Aclosed">このへん</a>)を上げて、変更を取り込んでもらい、最終的にyadaのバージョン<code>0.3.2</code>で問題なく動きそうだという形になりました。<a href="https://twitter.com/takuya_b">@takuya_b</a>さん、対応ありがとうございました。</p>
+<h4 id="エッジケースバグの発見">エッジケースバグの発見</h4>
+<p>作っててよかった、テストケースでした(実際にはベンチマークテストですが)。
+取り込み作業中に、Lindera本体の<code>cargo test</code>はすべてOKになるが、ベンチマークを取ろうとしたときに、坊っちゃんの文字列を入力にしたベンチマークが失敗するという事象が発生しました(<a href="https://github.com/lindera-morphology/lindera/pull/76#issuecomment-699735905">PRのコメント参照</a>)。
+切り分けのために、入力の文章のどこでおかしくなるのか?DoubleArrayの<code>build</code>メソッドに渡している値がおかしくないか?などをすこしずつ調べていくと次のバグが判明したという感じです。</p>
+<p>特定のデータ(ipadicの見出し語一覧)をDoubleArrayに入れて、特定の文字列(<code>「は相」</code>)を<code>common_prefix_search</code>にいれたら、
+返ってくる情報(0から何バイト目の文字が一覧に存在した)が、不正な値が返ってくるというバグでした。
+@takuya_bさんに見てもらいつつ(DoubleArrayの中身わからん。。。)、修正してもらいました。素早い対応ありがとうございます。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">yada 0.3.1 をリリースしています。特定の条件で不正な遷移を許すダブル配列が構築されてしまうバグを修正しています。このエッジケースは <a href="https://twitter.com/johtani?ref_src=twsrc%5Etfw">@johtani</a> さんが見つけてくださいました。ありがとうございました！ <a href="https://t.co/CiftZi5GDn">https://t.co/CiftZi5GDn</a></p>&mdash; takuya-a (@takuya_b) <a href="https://twitter.com/takuya_b/status/1311153143971864576?ref_src=twsrc%5Etfw">September 30, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>やはり、いろんな文字列入れてテストしてみるの重要ですね。
+ということで、ベンチマークだけでなく、テストケースとしても坊っちゃんのファイルを読み込んでトークナイズするようにPRでテストケースを追加しています。</p>
+<h2 id="ベンチマーク結果">ベンチマーク結果</h2>
+<p>yadaを利用した変更が終わったので、再度<code>cargo bench</code>を実行して計測です。
+計測としては、<code>master</code>ブランチでまず<code>cargo bench</code>を実行し、yadaの実装をしたブランチに切り替えてから<code>cargo bench</code>を実行します。
+すると、Criterion? <code>cargo bench</code>が、最終的な結果に前回との差分でどのくらい性能が改善、改悪したかも合わせて出力してくれます。
+実行環境と結果は以下のとおりです。</p>
+<ul>
+<li>MacBook Pro 16インチ
+<ul>
+<li>CPU：Core i7 6コア 2.6GHz</li>
+<li>メモリ：32GB</li>
+</ul>
+</li>
+</ul>
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20201005/bench.png" />
+    </div>
+    <a href="/images/entries/20201005/bench.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>コンストラクタのベンチマークについては10%ほど性能が悪くなっています。
+これは、FSTよりもDoubleArrayTrieのほうがデータが大きくなってしまうためだと思われます。
+実際にファイルのサイズは次のようになりました。yada(DoubleArrayTrie)のほうが2倍以上大きいことがわかります。
+また、このファイル以外にもLinderaが利用しているデータはありますが、それらは今回変更の対象にはなっていません。
+なので、単純にこのファイルの読み込みの処理に時間がかかっているのだと想像できます。</p>
+<ul>
+<li><em><strong>2147765</strong></em> / FST / dict.fst</li>
+<li><em><strong>5425152</strong></em> / yada / dict.fst</li>
+</ul>
+<p><code>tokenize</code>のベンチマークについては、11%〜28%の改善が見られました。
+文章から、内部に保持している辞書に存在する単語を見つけ出す処理に利用されるのがFST、DoubleArrayTrieです。
+今回の変更では、この処理に利用しているデータ構造だけを変更しました。
+実際には</p>
+<ul>
+<li>DoubleArrayTrieを用いた単語の検索処理</li>
+<li>見つかった単語の持つ値(<code>data.vals</code>のオフセット情報)を元にシフト演算</li>
+</ul>
+<p>といった処理が実行されます。シフト演算は<code>u64</code>だったものが<code>u32</code>に変更されたくらいなので、大した処理量ではないかと。
+大部分はDoubleArrayTrieを利用したルックアップ処理が速度向上に寄与していると思います。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>最近Linderaに加えた変更、作ったPRについて少しブログにまとめてみました。
+ちなみに、まだPRの段階でレビュー&amp;リリース待ちという感じです。</p>
+<p>実際には作ってもらったライブラリを組み込んでみたというだけなのですが、速度が向上した結果が見れたのは面白いです。
+また、基本的なデータ構造とかアルゴリズムの勉強にもなりました(2次元配列を1次元配列に押し込むとか)。このへんも今後も勉強していきたいです。</p>
+<p>組み込む際に色々と協力していただいた@takuya_bさん、@ikawahaさん、巻き込んでくれた@minoru_osukaさんに改めて感謝いたします。</p>
+<p>Rustや形態素解析のプログラムの勉強を兼ねて、今後もなにか改善できる部分がないかなどを見ていこうと思っています。
+Rustで形態素解析をしたいという人がどのくらいいるかはわかりませんが、おかしなところや疑問点などあればコメントください。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2020/09/15/improve-search-no3/" data-toggle="tooltip" data-placement="top" title="検索対象のデータとデータソース(検索システムに関する妄想その3)">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2020
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>
