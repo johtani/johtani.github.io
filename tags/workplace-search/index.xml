@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
   <channel>
     <title>workplace search on @johtaniの日記 3rd</title>
     <link>https://blog.johtani.info/tags/workplace-search/</link>
@@ -14,117 +15,117 @@
       
       <guid>https://blog.johtani.info/blog/2020/05/07/install-workplace-search/</guid>
       <description>前回はWorkplace Searchの概要について書きましたが、今回はインストールと構成要素について説明します。なお、2020/5/7時点で</description>
-      <content:encoded><p>前回はWorkplace Searchの概要について書きましたが、今回はインストールと構成要素について説明します。なお、2020/5/7時点での情報を元に本記事は書いていますのでご注意ください。基本的にはインストールと起動方法についての手順を元に書いています。所々に考察を挟んだ形の記事になっていますので、気になるところだけ呼んでいただければと。</p>
-<h2 id="記事一覧">記事一覧</h2>
-<ul>
-<li><a href="/blog/2020/05/01/intro-workplace-search/">ElasticのWorkplace Searchを触ってみる - その1</a></li>
-</ul>
-<h2 id="インストール">インストール</h2>
-<p>インストール方法は<a href="https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html">公式リファレンス</a>もしくは<a href="https://www.elastic.co/jp/downloads/enterprise-search">ダウンロードページ</a>に記載があります。
-現時点ではMacもしくはLinuxが対象でWindowsはまだサポート対象外となっています。</p>
-<h3 id="必要なもの">必要なもの</h3>
-<p>インストールに必要なものは以下になります。</p>
-<ul>
-<li>Elasticsearch 7.6.x + Platinum license
-<ul>
-<li><a href="https://www.elastic.co/jp/elasticsearch/service">Elastic CloudのElasticsearch Service</a> もしくは</li>
-<li><a href="https://www.elastic.co/downloads/elasticsearch">ダウンロード</a>してローカルで起動</li>
-</ul>
-</li>
-<li>enterprise-search-7.6.0.tar.gz
-<ul>
-<li><a href="https://www.elastic.co/jp/downloads/enterprise-search">ダウンロードページはこちら</a></li>
-</ul>
-</li>
-<li>Java 8もしくは11
-<ul>
-<li>Long Term Supportの対象であるJavaです。2020/5/7時点では8か11</li>
-</ul>
-</li>
-</ul>
-<p>今回はローカルにElasticsearchの7.6.2をインストールしてから試してみます。30日間のトライアルライセンスが有効になっているので、Platinumの機能を試すことができます。</p>
-<p>Javaの8か11が必要になります。Elasticsearchには7.xからJDKが同梱されるようになりましたが、Workplace SearchがJettyを元に動作しているからです(enterprise-search-7.6.0.tar.gzにjettyというフォルダあり)。</p>
-<h3 id="インストール手順">インストール手順</h3>
-<p>大まかには以下の3つです。</p>
-<ol>
-<li>Java 8もしくは11のインストール
-<ul>
-<li>14でも大丈夫でした(ローカルにはSDKMANでインストールした14.0.1が利用された)。</li>
-</ul>
-</li>
-<li>Elasticsearchのインストール(Elastic Cloudの場合はクラスタの起動)
-<ul>
-<li>今回はローカルにインストール</li>
-</ul>
-</li>
-<li>Workplace Searchのインストール</li>
-</ol>
-<p>Javaはもともとインストールされていたので、今回は2と3をインストールしました。どちらもローカルで起動するので、2つをダウンロードして<code>tar.gz</code>ファイルを展開するだけになります。</p>
-<h3 id="起動方法と設定">起動方法と設定</h3>
-<p><a href="https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html#running-enterprise-search">起動方法に起動前の設定の手順</a>も記載があります。
-設定しながら起動していきます。</p>
-<h4 id="elasticsearchの起動">Elasticsearchの起動</h4>
-<p>既存のElasticsearchのクラスターがあり、Platinumのライセンスが有効になっている場合はこの手順は必要ありません。</p>
-<ol>
-<li>Elasticsearchの設定ファイルでSecurity機能をオンに
-<ul>
-<li>7.1から基本的な<a href="https://www.elastic.co/jp/subscriptions">セキュリティ機能はベーシックの機能</a>に含まれています。</li>
-</ul>
-</li>
-<li>Elasticsearchを起動
-<ul>
-<li>まずは起動(パスワードなどを設定するために必要)</li>
-</ul>
-</li>
-<li>Elasticsearchのパスワードの設定
-<ul>
-<li>Elasticsearchでデフォルトで用意されているユーザーのパスワードを設定してします。手順では自動で生成させる方法ですが、独自に設定することも可能です。</li>
-</ul>
-</li>
-</ol>
-<h4 id="workplace-searchの起動">Workplace Searchの起動</h4>
-<p>Elasticsearchが起動したらWorkplace Searchの設定をして起動します。</p>
-<ol>
-<li>Esへの接続設定を<code>config/enterprise-search.yml</code>に指定
-<ul>
-<li>Esのパスワード設定時に生成された<code>elastic</code>というユーザーのパスワードをここで指定。</li>
-<li>yamlファイルに記載があるが、<code>${ELASTICSEARCH_PASSWORD:changeme}</code>という記述をした場合に環境変数を読み込める</li>
-</ul>
-</li>
-<li><code>allow_es_settings_modification: true</code>を<code>config/enterprise-search.yml</code>
-<ul>
-<li><a href="https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html#elasticsearch-cluster-settings">ここに記載があるような変更</a>をWorkplace SearchがEsのクラスターに対して実行する模様。Workplace Search以外でも使用しているElasticsearchクラスターの場合は<code>allow_es_settings_modification</code>を有効にする代わりに、リンク先にあるような設定を自分で追加する。</li>
-</ul>
-</li>
-<li><code>secret_management.encryption_keys</code>を複数設定
-<ul>
-<li><a href="https://www.elastic.co/guide/en/workplace-search/current/encryption-keys.html">Encryption Keysのガイド</a>に少し詳しい説明がある。</li>
-<li>opensslコマンドとかで作ればいいかな??</li>
-<li>1.と同じような設定をしようとしたがうまくいかなかったので、ファイルにキーを設定する方式にしました(バグ?)</li>
-</ul>
-</li>
-<li>起動するときにデフォルトユーザーパスワードを指定
-<ul>
-<li>指定しなければ勝手に生成してコンソールに出力してくれるので、そちらの方がいいかと。</li>
-<li>今回は手順通りに指定した。</li>
-</ul>
-</li>
-<li>起動確認のため<code>http://localhost:3002</code>にアクセス</li>
-</ol>
-<p>起動するとログが流れ、問題がなければ次のようにデフォルトユーザーの情報が出力されます。</p>
-<pre><code>#########################################################
+      <content:encoded>&lt;p&gt;前回はWorkplace Searchの概要について書きましたが、今回はインストールと構成要素について説明します。なお、2020/5/7時点での情報を元に本記事は書いていますのでご注意ください。基本的にはインストールと起動方法についての手順を元に書いています。所々に考察を挟んだ形の記事になっていますので、気になるところだけ呼んでいただければと。&lt;/p&gt;
+&lt;h2 id=&#34;記事一覧&#34;&gt;記事一覧&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/01/intro-workplace-search/&#34;&gt;ElasticのWorkplace Searchを触ってみる - その1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;インストール&#34;&gt;インストール&lt;/h2&gt;
+&lt;p&gt;インストール方法は&lt;a href=&#34;https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html&#34;&gt;公式リファレンス&lt;/a&gt;もしくは&lt;a href=&#34;https://www.elastic.co/jp/downloads/enterprise-search&#34;&gt;ダウンロードページ&lt;/a&gt;に記載があります。
+現時点ではMacもしくはLinuxが対象でWindowsはまだサポート対象外となっています。&lt;/p&gt;
+&lt;h3 id=&#34;必要なもの&#34;&gt;必要なもの&lt;/h3&gt;
+&lt;p&gt;インストールに必要なものは以下になります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Elasticsearch 7.6.x + Platinum license
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/jp/elasticsearch/service&#34;&gt;Elastic CloudのElasticsearch Service&lt;/a&gt; もしくは&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/downloads/elasticsearch&#34;&gt;ダウンロード&lt;/a&gt;してローカルで起動&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;enterprise-search-7.6.0.tar.gz
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/jp/downloads/enterprise-search&#34;&gt;ダウンロードページはこちら&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Java 8もしくは11
+&lt;ul&gt;
+&lt;li&gt;Long Term Supportの対象であるJavaです。2020/5/7時点では8か11&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;今回はローカルにElasticsearchの7.6.2をインストールしてから試してみます。30日間のトライアルライセンスが有効になっているので、Platinumの機能を試すことができます。&lt;/p&gt;
+&lt;p&gt;Javaの8か11が必要になります。Elasticsearchには7.xからJDKが同梱されるようになりましたが、Workplace SearchがJettyを元に動作しているからです(enterprise-search-7.6.0.tar.gzにjettyというフォルダあり)。&lt;/p&gt;
+&lt;h3 id=&#34;インストール手順&#34;&gt;インストール手順&lt;/h3&gt;
+&lt;p&gt;大まかには以下の3つです。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Java 8もしくは11のインストール
+&lt;ul&gt;
+&lt;li&gt;14でも大丈夫でした(ローカルにはSDKMANでインストールした14.0.1が利用された)。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Elasticsearchのインストール(Elastic Cloudの場合はクラスタの起動)
+&lt;ul&gt;
+&lt;li&gt;今回はローカルにインストール&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Workplace Searchのインストール&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Javaはもともとインストールされていたので、今回は2と3をインストールしました。どちらもローカルで起動するので、2つをダウンロードして&lt;code&gt;tar.gz&lt;/code&gt;ファイルを展開するだけになります。&lt;/p&gt;
+&lt;h3 id=&#34;起動方法と設定&#34;&gt;起動方法と設定&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html#running-enterprise-search&#34;&gt;起動方法に起動前の設定の手順&lt;/a&gt;も記載があります。
+設定しながら起動していきます。&lt;/p&gt;
+&lt;h4 id=&#34;elasticsearchの起動&#34;&gt;Elasticsearchの起動&lt;/h4&gt;
+&lt;p&gt;既存のElasticsearchのクラスターがあり、Platinumのライセンスが有効になっている場合はこの手順は必要ありません。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Elasticsearchの設定ファイルでSecurity機能をオンに
+&lt;ul&gt;
+&lt;li&gt;7.1から基本的な&lt;a href=&#34;https://www.elastic.co/jp/subscriptions&#34;&gt;セキュリティ機能はベーシックの機能&lt;/a&gt;に含まれています。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Elasticsearchを起動
+&lt;ul&gt;
+&lt;li&gt;まずは起動(パスワードなどを設定するために必要)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Elasticsearchのパスワードの設定
+&lt;ul&gt;
+&lt;li&gt;Elasticsearchでデフォルトで用意されているユーザーのパスワードを設定してします。手順では自動で生成させる方法ですが、独自に設定することも可能です。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;workplace-searchの起動&#34;&gt;Workplace Searchの起動&lt;/h4&gt;
+&lt;p&gt;Elasticsearchが起動したらWorkplace Searchの設定をして起動します。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Esへの接続設定を&lt;code&gt;config/enterprise-search.yml&lt;/code&gt;に指定
+&lt;ul&gt;
+&lt;li&gt;Esのパスワード設定時に生成された&lt;code&gt;elastic&lt;/code&gt;というユーザーのパスワードをここで指定。&lt;/li&gt;
+&lt;li&gt;yamlファイルに記載があるが、&lt;code&gt;${ELASTICSEARCH_PASSWORD:changeme}&lt;/code&gt;という記述をした場合に環境変数を読み込める&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;allow_es_settings_modification: true&lt;/code&gt;を&lt;code&gt;config/enterprise-search.yml&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html#elasticsearch-cluster-settings&#34;&gt;ここに記載があるような変更&lt;/a&gt;をWorkplace SearchがEsのクラスターに対して実行する模様。Workplace Search以外でも使用しているElasticsearchクラスターの場合は&lt;code&gt;allow_es_settings_modification&lt;/code&gt;を有効にする代わりに、リンク先にあるような設定を自分で追加する。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;secret_management.encryption_keys&lt;/code&gt;を複数設定
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/guide/en/workplace-search/current/encryption-keys.html&#34;&gt;Encryption Keysのガイド&lt;/a&gt;に少し詳しい説明がある。&lt;/li&gt;
+&lt;li&gt;opensslコマンドとかで作ればいいかな??&lt;/li&gt;
+&lt;li&gt;1.と同じような設定をしようとしたがうまくいかなかったので、ファイルにキーを設定する方式にしました(バグ?)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;起動するときにデフォルトユーザーパスワードを指定
+&lt;ul&gt;
+&lt;li&gt;指定しなければ勝手に生成してコンソールに出力してくれるので、そちらの方がいいかと。&lt;/li&gt;
+&lt;li&gt;今回は手順通りに指定した。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;起動確認のため&lt;code&gt;http://localhost:3002&lt;/code&gt;にアクセス&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;起動するとログが流れ、問題がなければ次のようにデフォルトユーザーの情報が出力されます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#########################################################
 
 *** Default user credentials have been setup. These are only printed once, so please ensure they are recorded. ***
       username: enterprise_search
       password: pas...ple
 
 #########################################################
-</code></pre><p>そして無事起動に成功したことも出力されます。</p>
-<pre><code>#########################################################
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;そして無事起動に成功したことも出力されます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#########################################################
 
 Success! Elastic Workplace Search is starting successfully.
 
-In a few moments, you'll be able to login at the following address:
+In a few moments, you&#39;ll be able to login at the following address:
 
 * URL: http://localhost:3002
   * If this is your first time starting Workplace Search, check the console output above for your user authentication credentials.
@@ -138,25 +139,25 @@ secret_session_key: c23...3
 
 
 #########################################################
-</code></pre><p>ブラウザで画面にアクセスすると、次のような画面が表示されました。</p>
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ブラウザで画面にアクセスすると、次のような画面が表示されました。&lt;/p&gt;
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20200507/first_page.png" />
-    </div>
-    <a href="/images/entries/20200507/first_page.png" itemprop="contentUrl"></a>
-  </figure>
-</div>
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200507/first_page.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200507/first_page.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
 
-<h4 id="起動時のエラー">起動時のエラー</h4>
-<p>いくつかのパターンも試してどんなエラーが出るのかを見てみました。
-おまけですね。</p>
-<h5 id="elasticsearchが見つからないエラー">Elasticsearchが見つからないエラー</h5>
-<p>Esを起動しないでWorkplace Searchを起動してみました。</p>
-<p>200秒間アクセスしようと試みて駄目だったらエラーで終了みたいです。</p>
-<pre><code>
+&lt;h4 id=&#34;起動時のエラー&#34;&gt;起動時のエラー&lt;/h4&gt;
+&lt;p&gt;いくつかのパターンも試してどんなエラーが出るのかを見てみました。
+おまけですね。&lt;/p&gt;
+&lt;h5 id=&#34;elasticsearchが見つからないエラー&#34;&gt;Elasticsearchが見つからないエラー&lt;/h5&gt;
+&lt;p&gt;Esを起動しないでWorkplace Searchを起動してみました。&lt;/p&gt;
+&lt;p&gt;200秒間アクセスしようと試みて駄目だったらエラーで終了みたいです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
 [2020-05-07T03:48:33.645+00:00][13709][2002][app-server][INFO]: Failed to connect to Elasticsearch backend. Make sure it is running.
 ...
 [2020-05-07T03:51:54.038+00:00][13709][2002][app-server][INFO]: Could not connect to Elasticsearch backend after 200s. Terminating...
@@ -167,9 +168,9 @@ Error: Workplace Search is unable to connect to Elasticsearch. Ensure a healthy 
 
 --------------------------------------------------------------------------------
 
-</code></pre><h5 id="elasticsearchのsecurityがオフのときのエラー">ElasticsearchのSecurityがオフのときのエラー</h5>
-<p>ちなみにSecurityをオフにしたままWorkplace Searchを起動した場合は以下のようなエラーが出ました。</p>
-<pre><code>[2020-05-07T03:46:53.474+00:00][13567][2002][app-server][ERROR]: 
+&lt;/code&gt;&lt;/pre&gt;&lt;h5 id=&#34;elasticsearchのsecurityがオフのときのエラー&#34;&gt;ElasticsearchのSecurityがオフのときのエラー&lt;/h5&gt;
+&lt;p&gt;ちなみにSecurityをオフにしたままWorkplace Searchを起動した場合は以下のようなエラーが出ました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[2020-05-07T03:46:53.474+00:00][13567][2002][app-server][ERROR]: 
 --------------------------------------------------------------------------------
 
 Elastic Workplace Search requires Elasticsearch security features to be enabled.
@@ -177,48 +178,48 @@ Please enable Elasticsearch security features as outlined here:
   https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html
 
 --------------------------------------------------------------------------------
-</code></pre><h2 id="構成要素">構成要素</h2>
-<p>ここまでインストールして起動してきました。
-では、Workplace Searchがどういったコンポーネントから構成されているかを予測してみましょう(あくまで外から見た予想となります。そのうちElastic社のウェビナーとかイベントで内部の発表とかあるかも?)。</p>
-<h3 id="インストールページの記載から">インストールページの記載から</h3>
-<p>インストールページに<a href="https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html#_minimum_hardware">最小ハードウェア</a>という記載があり、そこで何が動く可能性があるかというのがわかります。</p>
-<p>起動するものはこんな感じみたいです。</p>
-<ul>
-<li>Elasticsearch - 外部でもOK</li>
-<li>App Server - Workplace SearchのWeb機能</li>
-<li>Worker - クローラーとかかな?</li>
-<li>Filebeat - Workplace Searchのログ収集用</li>
-<li>その他プロセス - なんだろ?</li>
-</ul>
-<p>という具合です。</p>
-<h3 id="設定などからの予想">設定などからの予想</h3>
-<p>次は設定項目や起動時のログなどからの予想です。</p>
-<ul>
-<li>Worklpace Search配下のセキュアなデータストア - アクセストークンなどの管理のため</li>
-<li>JRubyアプリケーション - App ServerはJRuby上で動いているRailsアプリ</li>
-<li>Filebeatも起動している - Workplace Searchのログ収集のため?
-<ul>
-<li>Filebeatの接続設定はWorkplace Searchの設定値を利用</li>
-</ul>
-</li>
-</ul>
-<h3 id="では構成要素は">では構成要素は?</h3>
-<p>ということで、現時点でわかった構成要素は以下のとおりです。</p>
-<ol>
-<li>Elasticsearch</li>
-<li>Workplace Search App Server - Railsアプリ on JRuby
-<ul>
-<li>Webアプリとは別に(内部?で)、いくつかのワーカーが存在する</li>
-<li>管理画面と検索画面の2種類が存在</li>
-</ul>
-</li>
-<li>Filebeat - ログ収集</li>
-</ol>
-<p>といった感じです。
-まだ起動したばかりなのでこのくらいでしょうか。ログを見るともう少しわかりそうな気がします。</p>
-<p>基本的には、EsをバックエンドにしたRailsのミドルウェアになります。コネクターや検索画面はすべてWorkplace Searchのミドルウェア経由でアクセスする形になりますので、普通に検索で利用するユーザーにはElasticsearchの存在は見えない作りになっています。</p>
-<h2 id="次は">次は?</h2>
-<p><a href="https://www.elastic.co/guide/en/workplace-search/current/workplace-search-getting-started.html">Getting Started</a>を元に、どんなアクターがいて、どんな機能が提供されているのか、どんな利用方法なのか?というのを見ていこうと思います。</p>
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;構成要素&#34;&gt;構成要素&lt;/h2&gt;
+&lt;p&gt;ここまでインストールして起動してきました。
+では、Workplace Searchがどういったコンポーネントから構成されているかを予測してみましょう(あくまで外から見た予想となります。そのうちElastic社のウェビナーとかイベントで内部の発表とかあるかも?)。&lt;/p&gt;
+&lt;h3 id=&#34;インストールページの記載から&#34;&gt;インストールページの記載から&lt;/h3&gt;
+&lt;p&gt;インストールページに&lt;a href=&#34;https://www.elastic.co/guide/en/workplace-search/current/workplace-search-install.html#_minimum_hardware&#34;&gt;最小ハードウェア&lt;/a&gt;という記載があり、そこで何が動く可能性があるかというのがわかります。&lt;/p&gt;
+&lt;p&gt;起動するものはこんな感じみたいです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Elasticsearch - 外部でもOK&lt;/li&gt;
+&lt;li&gt;App Server - Workplace SearchのWeb機能&lt;/li&gt;
+&lt;li&gt;Worker - クローラーとかかな?&lt;/li&gt;
+&lt;li&gt;Filebeat - Workplace Searchのログ収集用&lt;/li&gt;
+&lt;li&gt;その他プロセス - なんだろ?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;という具合です。&lt;/p&gt;
+&lt;h3 id=&#34;設定などからの予想&#34;&gt;設定などからの予想&lt;/h3&gt;
+&lt;p&gt;次は設定項目や起動時のログなどからの予想です。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Worklpace Search配下のセキュアなデータストア - アクセストークンなどの管理のため&lt;/li&gt;
+&lt;li&gt;JRubyアプリケーション - App ServerはJRuby上で動いているRailsアプリ&lt;/li&gt;
+&lt;li&gt;Filebeatも起動している - Workplace Searchのログ収集のため?
+&lt;ul&gt;
+&lt;li&gt;Filebeatの接続設定はWorkplace Searchの設定値を利用&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;では構成要素は&#34;&gt;では構成要素は?&lt;/h3&gt;
+&lt;p&gt;ということで、現時点でわかった構成要素は以下のとおりです。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Elasticsearch&lt;/li&gt;
+&lt;li&gt;Workplace Search App Server - Railsアプリ on JRuby
+&lt;ul&gt;
+&lt;li&gt;Webアプリとは別に(内部?で)、いくつかのワーカーが存在する&lt;/li&gt;
+&lt;li&gt;管理画面と検索画面の2種類が存在&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Filebeat - ログ収集&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;といった感じです。
+まだ起動したばかりなのでこのくらいでしょうか。ログを見るともう少しわかりそうな気がします。&lt;/p&gt;
+&lt;p&gt;基本的には、EsをバックエンドにしたRailsのミドルウェアになります。コネクターや検索画面はすべてWorkplace Searchのミドルウェア経由でアクセスする形になりますので、普通に検索で利用するユーザーにはElasticsearchの存在は見えない作りになっています。&lt;/p&gt;
+&lt;h2 id=&#34;次は&#34;&gt;次は?&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.elastic.co/guide/en/workplace-search/current/workplace-search-getting-started.html&#34;&gt;Getting Started&lt;/a&gt;を元に、どんなアクターがいて、どんな機能が提供されているのか、どんな利用方法なのか?というのを見ていこうと思います。&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -229,31 +230,31 @@ Please enable Elasticsearch security features as outlined here:
       
       <guid>https://blog.johtani.info/blog/2020/05/01/intro-workplace-search/</guid>
       <description>2月のElastic社のブログですが、Enterprise Searchとこれまで呼んでいた製品をWorkplace Searchという製品名に</description>
-      <content:encoded><p>2月のElastic社のブログですが、Enterprise Searchとこれまで呼んでいた製品を<a href="https://www.elastic.co/jp/workplace-search">Workplace Search</a>という製品名に変更し、App Searchなどを含む製品群を<a href="https://www.elastic.co/jp/enterprise-search">Enterprise Search</a>という名前に変更しました(ちょっとややこしい)。
-Workplace Search自体はまだβ版という位置づけですが、ダウンロードして試すことが可能です。</p>
-<p>きちんと触ったことがないので、ちょっと触って見ようかなと思い、何回かに分けてブログを書いてみます。まずは概要とかから。</p>
-<h2 id="workplace-searchとは">Workplace Searchとは?</h2>
-<p>Elasticsearchをバックエンドに利用するElastic社が提供するアプリケーション(ミドルウェア?)の1つです。</p>
-<p>もともとはSwiftypeという会社が作っていた、Site Search、App Searchと同じような系列で開発されている統合検索の検索エンジンミドルウェアという感じです。
+      <content:encoded>&lt;p&gt;2月のElastic社のブログですが、Enterprise Searchとこれまで呼んでいた製品を&lt;a href=&#34;https://www.elastic.co/jp/workplace-search&#34;&gt;Workplace Search&lt;/a&gt;という製品名に変更し、App Searchなどを含む製品群を&lt;a href=&#34;https://www.elastic.co/jp/enterprise-search&#34;&gt;Enterprise Search&lt;/a&gt;という名前に変更しました(ちょっとややこしい)。
+Workplace Search自体はまだβ版という位置づけですが、ダウンロードして試すことが可能です。&lt;/p&gt;
+&lt;p&gt;きちんと触ったことがないので、ちょっと触って見ようかなと思い、何回かに分けてブログを書いてみます。まずは概要とかから。&lt;/p&gt;
+&lt;h2 id=&#34;workplace-searchとは&#34;&gt;Workplace Searchとは?&lt;/h2&gt;
+&lt;p&gt;Elasticsearchをバックエンドに利用するElastic社が提供するアプリケーション(ミドルウェア?)の1つです。&lt;/p&gt;
+&lt;p&gt;もともとはSwiftypeという会社が作っていた、Site Search、App Searchと同じような系列で開発されている統合検索の検索エンジンミドルウェアという感じです。
 製品ページを見るとわかりますが、様々なデータソースから、データをクロールしてElasticsearchに保存することで、統合された検索を提供することができるようになる製品です。
 最近は会社のドキュメントがさまざまな場所(Google Drive、Saleseforce、GitHub、Dropboxなど)に保存されています。
-それぞれで検索窓などはありますが、1箇所で検索することで横断的に検索でき、仕事の効率があがりますよね?ということで作られている製品です。</p>
-<h3 id="提供利用方法は">提供(利用)方法は?</h3>
-<p>今後の提供方法としては、Elastic Cloudで利用できるSaaS形式のものと、独自に(クラウドのコンピューティングエンジンやオンプレのサーバーなどで)Workplace Searchのアプリを起動する方法(オンプレ版)があります。後者の場合は、Elasticsearchのクラスターを用意する必要があります。なお、後者の場合、Elasticsearchの<a href="https://www.elastic.co/jp/subscriptions">サブスクリプションのプラチナライセンス</a>が必要になるようです(<a href="https://www.elastic.co/jp/downloads/enterprise-search">ダウンロードページ</a>に記載あり)</p>
-<p>まだ、β版という位置づけなので、今後どのように変更されるかはわかりませんが、今回は2020年5月1日時点でのベータ版(7.6.0)を元にどんなものかを紹介します。現時点で利用できるのはβ版のオンプレ版で、MacやLinuxで利用可能です。</p>
-<h3 id="ダウンロードとインストール">ダウンロードとインストール</h3>
-<p><a href="https://www.elastic.co/jp/downloads/enterprise-search">ダウンロードページ</a>にインストール方法などの記載があります。</p>
-<p>インストールして触って見るところはまた後日。</p>
-<h2 id="ライセンス価格は">ライセンス、価格は?</h2>
-<p>まだ不明です。SaaS版の提供はまだです。
-オンプレ版については少なくとも、<a href="https://www.elastic.co/jp/subscriptions">Elasticのサブスクリプション</a>のプラチナが必要になります。こちらは、価格は公開されていません。Elastich社もしくはパートナー企業での問い合わせが必要になります。
-(たぶん、ドキュメントレベルのセキュリティとかSSOとかの仕組みがプラチナで提供されているのでそのあたりを使っているのでは?と想像してます。)</p>
-<h2 id="想定できそうな用途は">想定できそうな用途は?</h2>
-<p>社内の文書検索でしょうか。ただ、いわゆる昔ながらのエンタープライズサーチと呼ばれている、社内のファイルサーバーなどの文書検索ではなく、クラウドサービスを複数利用している会社が利用する想定になっています。</p>
-<p>例えば、開発者は社内Wiki(Confluence)で社内文書を書き、Issue管理にはJIRAやGitHubを活用しており、ただ、社内での説明にはGoogle Driveを利用しているといった場合です。こういう場合、あの機能についての説明や資料ってどこだっけ?というので、あちこち探し回ったりしないといけないです。また、営業部門やサポート、マーケティングなどが絡んでくると更に、SalesforceやZendeskといったデータソースも出てきます。
-情報が散らばっていて、それらを探し出したりまとめるだけで時間を取られている場合などに便利かもしれません。</p>
-<h2 id="次は">次は?</h2>
-<p>実際にインストールしてから起動して、どんな感じで使えるのかといったところを見て、どんな機能が提供されているのかを見ていこうと思います。</p>
+それぞれで検索窓などはありますが、1箇所で検索することで横断的に検索でき、仕事の効率があがりますよね?ということで作られている製品です。&lt;/p&gt;
+&lt;h3 id=&#34;提供利用方法は&#34;&gt;提供(利用)方法は?&lt;/h3&gt;
+&lt;p&gt;今後の提供方法としては、Elastic Cloudで利用できるSaaS形式のものと、独自に(クラウドのコンピューティングエンジンやオンプレのサーバーなどで)Workplace Searchのアプリを起動する方法(オンプレ版)があります。後者の場合は、Elasticsearchのクラスターを用意する必要があります。なお、後者の場合、Elasticsearchの&lt;a href=&#34;https://www.elastic.co/jp/subscriptions&#34;&gt;サブスクリプションのプラチナライセンス&lt;/a&gt;が必要になるようです(&lt;a href=&#34;https://www.elastic.co/jp/downloads/enterprise-search&#34;&gt;ダウンロードページ&lt;/a&gt;に記載あり)&lt;/p&gt;
+&lt;p&gt;まだ、β版という位置づけなので、今後どのように変更されるかはわかりませんが、今回は2020年5月1日時点でのベータ版(7.6.0)を元にどんなものかを紹介します。現時点で利用できるのはβ版のオンプレ版で、MacやLinuxで利用可能です。&lt;/p&gt;
+&lt;h3 id=&#34;ダウンロードとインストール&#34;&gt;ダウンロードとインストール&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.elastic.co/jp/downloads/enterprise-search&#34;&gt;ダウンロードページ&lt;/a&gt;にインストール方法などの記載があります。&lt;/p&gt;
+&lt;p&gt;インストールして触って見るところはまた後日。&lt;/p&gt;
+&lt;h2 id=&#34;ライセンス価格は&#34;&gt;ライセンス、価格は?&lt;/h2&gt;
+&lt;p&gt;まだ不明です。SaaS版の提供はまだです。
+オンプレ版については少なくとも、&lt;a href=&#34;https://www.elastic.co/jp/subscriptions&#34;&gt;Elasticのサブスクリプション&lt;/a&gt;のプラチナが必要になります。こちらは、価格は公開されていません。Elastich社もしくはパートナー企業での問い合わせが必要になります。
+(たぶん、ドキュメントレベルのセキュリティとかSSOとかの仕組みがプラチナで提供されているのでそのあたりを使っているのでは?と想像してます。)&lt;/p&gt;
+&lt;h2 id=&#34;想定できそうな用途は&#34;&gt;想定できそうな用途は?&lt;/h2&gt;
+&lt;p&gt;社内の文書検索でしょうか。ただ、いわゆる昔ながらのエンタープライズサーチと呼ばれている、社内のファイルサーバーなどの文書検索ではなく、クラウドサービスを複数利用している会社が利用する想定になっています。&lt;/p&gt;
+&lt;p&gt;例えば、開発者は社内Wiki(Confluence)で社内文書を書き、Issue管理にはJIRAやGitHubを活用しており、ただ、社内での説明にはGoogle Driveを利用しているといった場合です。こういう場合、あの機能についての説明や資料ってどこだっけ?というので、あちこち探し回ったりしないといけないです。また、営業部門やサポート、マーケティングなどが絡んでくると更に、SalesforceやZendeskといったデータソースも出てきます。
+情報が散らばっていて、それらを探し出したりまとめるだけで時間を取られている場合などに便利かもしれません。&lt;/p&gt;
+&lt;h2 id=&#34;次は&#34;&gt;次は?&lt;/h2&gt;
+&lt;p&gt;実際にインストールしてから起動して、どんな感じで使えるのかといったところを見て、どんな機能が提供されているのかを見ていこうと思います。&lt;/p&gt;
 </content:encoded>
     </item>
     

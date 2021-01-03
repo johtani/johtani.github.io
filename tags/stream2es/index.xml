@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
   <channel>
     <title>stream2es on @johtaniの日記 3rd</title>
     <link>https://blog.johtani.info/tags/stream2es/</link>
@@ -14,159 +15,159 @@
       
       <guid>https://blog.johtani.info/blog/2014/04/24/usage-stream2es/</guid>
       <description>kopfの記事の続きも書く必要があるんだけど、こんなツイートを見つけてしまったので。。。 ElasticsearchのBulk APIの仕様、J</description>
-      <content:encoded><p>kopfの記事の続きも書く必要があるんだけど、こんなツイートを見つけてしまったので。。。</p>
-<blockquote class="twitter-tweet" lang="ja"><p>ElasticsearchのBulk APIの仕様、JSONファイルをいい感じに加工して置かなければならないしハマりどころ多い。 <a href="http://t.co/hmfycqZlqk">http://t.co/hmfycqZlqk</a></p>&mdash; Kenta Suzuki (@suzu_v) <a href="https://twitter.com/suzu_v/statuses/459216999592124416">2014, 4月 24</a></blockquote>
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-<p>前に思いついたけど、放ったらかしにしてた疑問が再浮上してきたので、せっかくだから調べてみようかなと。</p>
-<!-- more -->
-<p>複数JSONデータがある場合にもっと楽にデータを入れる方法ないかなぁと思って、これかな？というのがあったのですが、
-そのまま手を動かさずに放置してたので、一念発起してブログ書いてます。</p>
-<h2 id="bulk-apiって">Bulk APIって？</h2>
-<p>ElasticsearchはURLにアクセスしてデータを登録できます。
-基本的には次のように1件毎の登録になります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">$</span> <span style="color:#960050;background-color:#1e0010">curl</span> <span style="color:#960050;background-color:#1e0010">-XPUT</span> <span style="color:#960050;background-color:#1e0010">http://localhost:</span><span style="color:#ae81ff">9200</span><span style="color:#960050;background-color:#1e0010">/bookshop/books/</span><span style="color:#ae81ff">1</span> <span style="color:#960050;background-color:#1e0010">-d</span>
-<span style="color:#960050;background-color:#1e0010">&#39;</span>
+      <content:encoded>&lt;p&gt;kopfの記事の続きも書く必要があるんだけど、こんなツイートを見つけてしまったので。。。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34; lang=&#34;ja&#34;&gt;&lt;p&gt;ElasticsearchのBulk APIの仕様、JSONファイルをいい感じに加工して置かなければならないしハマりどころ多い。 &lt;a href=&#34;http://t.co/hmfycqZlqk&#34;&gt;http://t.co/hmfycqZlqk&lt;/a&gt;&lt;/p&gt;&amp;mdash; Kenta Suzuki (@suzu_v) &lt;a href=&#34;https://twitter.com/suzu_v/statuses/459216999592124416&#34;&gt;2014, 4月 24&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;//platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;p&gt;前に思いついたけど、放ったらかしにしてた疑問が再浮上してきたので、せっかくだから調べてみようかなと。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;複数JSONデータがある場合にもっと楽にデータを入れる方法ないかなぁと思って、これかな？というのがあったのですが、
+そのまま手を動かさずに放置してたので、一念発起してブログ書いてます。&lt;/p&gt;
+&lt;h2 id=&#34;bulk-apiって&#34;&gt;Bulk APIって？&lt;/h2&gt;
+&lt;p&gt;ElasticsearchはURLにアクセスしてデータを登録できます。
+基本的には次のように1件毎の登録になります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;$&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;curl&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;-XPUT&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;http://localhost:&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;9200&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;/bookshop/books/&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;-d&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&amp;#39;&lt;/span&gt;
 {
-  <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">1</span>,
-  <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>,
-  <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3024</span>,
-  <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>
-}<span style="color:#960050;background-color:#1e0010">&#39;</span>
-</code></pre></div><p>これでもいいのですが、大量のデータを登録するときは、Elasticsearch側での効率が悪いです。
-そこで、Elasticsearchは大量データを登録するために<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk">Bulk API</a>というものを用意しています。</p>
-<p>これは、次のような形式のJSONを作ってデータを登録します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{ <span style="color:#f92672">&#34;index&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;bookshop&#34;</span>, <span style="color:#f92672">&#34;_type&#34;</span> : <span style="color:#e6db74">&#34;books&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span> } }
-{ <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">1</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3024</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>}
-{ <span style="color:#f92672">&#34;index&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;bookshop&#34;</span>, <span style="color:#f92672">&#34;_type&#34;</span> : <span style="color:#e6db74">&#34;books&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;2&#34;</span> } }
-{ <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">2</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;Introduction of Apache Solr&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3888</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;gihyo&#34;</span>}
-</code></pre></div><p>これは、次のような構成になっています。</p>
-<pre><code>コマンド
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ElasticSearch Server Japanese Edition&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3024&lt;/span&gt;,
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;KADOKAWA&amp;#34;&lt;/span&gt;
+}&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;これでもいいのですが、大量のデータを登録するときは、Elasticsearch側での効率が悪いです。
+そこで、Elasticsearchは大量データを登録するために&lt;a href=&#34;http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk&#34;&gt;Bulk API&lt;/a&gt;というものを用意しています。&lt;/p&gt;
+&lt;p&gt;これは、次のような形式のJSONを作ってデータを登録します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{ &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;index&amp;#34;&lt;/span&gt; : { &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bookshop&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;books&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&amp;#34;&lt;/span&gt; } }
+{ &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ElasticSearch Server Japanese Edition&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3024&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;KADOKAWA&amp;#34;&lt;/span&gt;}
+{ &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;index&amp;#34;&lt;/span&gt; : { &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bookshop&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;books&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2&amp;#34;&lt;/span&gt; } }
+{ &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Introduction of Apache Solr&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3888&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;gihyo&amp;#34;&lt;/span&gt;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;これは、次のような構成になっています。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;コマンド
 データ
 コマンド
 データ
 ...
-</code></pre><p>これで効率よくデータが登録できるのですが、このようなJSONデータを別途作って上げる必要が出てきます。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これで効率よくデータが登録できるのですが、このようなJSONデータを別途作って上げる必要が出てきます。
 結局、複数のJSONがあるのに、特殊なJSONを生成しないといけないということでプログラム書いて実行することになります。
-これだと、Elasticsearchへのアクセスをプログラムで書くのとあまり大差がないかもしれません。</p>
-<h2 id="stream2es">stream2es</h2>
-<p>もっとお手軽に複数のJSONを登録できないかな？と目をつけていたのが、<a href="https://github.com/elasticsearch/stream2es">stream2es</a>です。</p>
-<h3 id="どんなもの">どんなもの？</h3>
-<p>Clojureで作られた、Elasticsearchにデータを流し込むためのツールです。
-Java 7がインストールされていれば、ダウンロードしてくれば動作せることができます。</p>
-<h3 id="インストール">インストール</h3>
-<p>公式ページに載っている方法そのままです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -O download.elasticsearch.org/stream2es/stream2es; chmod +x stream2es
-</code></pre></div><p>実行したディレクトリにコマンドがコピーされます。
-あとは、コマンドを実行すればOKです。</p>
-<h3 id="実行">実行</h3>
-<p>データは次のような形式で<code>sample.json</code>に保存してあるとします。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{ <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">1</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3024</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>}
-{ <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">2</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;Introduction of Apache Solr&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3888</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;gihyo&#34;</span>}
-</code></pre></div><p>先ほどの<code>Bulk API</code>で利用したJSONよりも、スッキリしていますね。
-1行1ドキュメント1JSONです。</p>
-<p>あとは、次のコマンドを実行するだけです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ./stream2es stdin --target http://localhost:9200/bookshop/books &lt; sample.json
-</code></pre></div><p>ファイルをstream2esに流し込んで、stream2esが1行ずつパースして、Elasticsearchに投げ込んでくれます。</p>
-<p>登録されたデータは次のようになります。
-IDは自動で付与されています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-   <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;bookstore&#34;</span>,
-   <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;books&#34;</span>,
-   <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;0Hvy4IJCRkKrvGb4Dgam_w&#34;</span>,
-   <span style="color:#f92672">&#34;_version&#34;</span>: <span style="color:#ae81ff">1</span>,
-   <span style="color:#f92672">&#34;found&#34;</span>: <span style="color:#66d9ef">true</span>,
-   <span style="color:#f92672">&#34;_source&#34;</span>: {
-      <span style="color:#f92672">&#34;book_id&#34;</span>: <span style="color:#ae81ff">1</span>,
-      <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>,
-      <span style="color:#f92672">&#34;price&#34;</span>: <span style="color:#ae81ff">3024</span>,
-      <span style="color:#f92672">&#34;publisher&#34;</span>: <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>
+これだと、Elasticsearchへのアクセスをプログラムで書くのとあまり大差がないかもしれません。&lt;/p&gt;
+&lt;h2 id=&#34;stream2es&#34;&gt;stream2es&lt;/h2&gt;
+&lt;p&gt;もっとお手軽に複数のJSONを登録できないかな？と目をつけていたのが、&lt;a href=&#34;https://github.com/elasticsearch/stream2es&#34;&gt;stream2es&lt;/a&gt;です。&lt;/p&gt;
+&lt;h3 id=&#34;どんなもの&#34;&gt;どんなもの？&lt;/h3&gt;
+&lt;p&gt;Clojureで作られた、Elasticsearchにデータを流し込むためのツールです。
+Java 7がインストールされていれば、ダウンロードしてくれば動作せることができます。&lt;/p&gt;
+&lt;h3 id=&#34;インストール&#34;&gt;インストール&lt;/h3&gt;
+&lt;p&gt;公式ページに載っている方法そのままです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ curl -O download.elasticsearch.org/stream2es/stream2es; chmod +x stream2es
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;実行したディレクトリにコマンドがコピーされます。
+あとは、コマンドを実行すればOKです。&lt;/p&gt;
+&lt;h3 id=&#34;実行&#34;&gt;実行&lt;/h3&gt;
+&lt;p&gt;データは次のような形式で&lt;code&gt;sample.json&lt;/code&gt;に保存してあるとします。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{ &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ElasticSearch Server Japanese Edition&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3024&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;KADOKAWA&amp;#34;&lt;/span&gt;}
+{ &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Introduction of Apache Solr&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3888&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;gihyo&amp;#34;&lt;/span&gt;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;先ほどの&lt;code&gt;Bulk API&lt;/code&gt;で利用したJSONよりも、スッキリしていますね。
+1行1ドキュメント1JSONです。&lt;/p&gt;
+&lt;p&gt;あとは、次のコマンドを実行するだけです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ ./stream2es stdin --target http://localhost:9200/bookshop/books &amp;lt; sample.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ファイルをstream2esに流し込んで、stream2esが1行ずつパースして、Elasticsearchに投げ込んでくれます。&lt;/p&gt;
+&lt;p&gt;登録されたデータは次のようになります。
+IDは自動で付与されています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bookstore&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;books&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;0Hvy4IJCRkKrvGb4Dgam_w&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_version&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;found&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ElasticSearch Server Japanese Edition&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3024&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;KADOKAWA&amp;#34;&lt;/span&gt;
    }
-}<span style="color:#960050;background-color:#1e0010">,</span>
+}&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;,&lt;/span&gt;
 {
-   <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;bookstore&#34;</span>,
-   <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;books&#34;</span>,
-   <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;b9M6TooFQzGYyJeix_t_WA&#34;</span>,
-   <span style="color:#f92672">&#34;_version&#34;</span>: <span style="color:#ae81ff">1</span>,
-   <span style="color:#f92672">&#34;found&#34;</span>: <span style="color:#66d9ef">true</span>,
-   <span style="color:#f92672">&#34;_source&#34;</span>: {
-      <span style="color:#f92672">&#34;book_id&#34;</span>: <span style="color:#ae81ff">2</span>,
-      <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;Introduction of Apache Solr&#34;</span>,
-      <span style="color:#f92672">&#34;price&#34;</span>: <span style="color:#ae81ff">3888</span>,
-      <span style="color:#f92672">&#34;publisher&#34;</span>: <span style="color:#e6db74">&#34;gihyo&#34;</span>
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bookstore&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;books&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;b9M6TooFQzGYyJeix_t_WA&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_version&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;found&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Introduction of Apache Solr&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3888&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;gihyo&amp;#34;&lt;/span&gt;
    }
 }
-</code></pre></div><p>せっかく、<code>book_id</code>があるんだし、<code>_id</code>をインデックスの設定に指定します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -XDELETE http://localhost:9200/bookshop
-$ curl -XPUT http://localhost:9200/bookshop -d <span style="color:#e6db74">&#39;
-</span><span style="color:#e6db74">{
-</span><span style="color:#e6db74">  &#34;mappings&#34;: {
-</span><span style="color:#e6db74">    &#34;books&#34; : {
-</span><span style="color:#e6db74">      &#34;_id&#34; : {
-</span><span style="color:#e6db74">        &#34;path&#34;: &#34;book_id&#34;
-</span><span style="color:#e6db74">      }
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">  }
-</span><span style="color:#e6db74">}&#39;</span>
-</code></pre></div><p>あとは、登録すれば<code>book_id</code>が<code>_id</code>に採用されます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-   <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;bookshop&#34;</span>,
-   <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;books&#34;</span>,
-   <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
-   <span style="color:#f92672">&#34;_version&#34;</span>: <span style="color:#ae81ff">1</span>,
-   <span style="color:#f92672">&#34;found&#34;</span>: <span style="color:#66d9ef">true</span>,
-   <span style="color:#f92672">&#34;_source&#34;</span>: {
-      <span style="color:#f92672">&#34;book_id&#34;</span>: <span style="color:#ae81ff">1</span>,
-      <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>,
-      <span style="color:#f92672">&#34;price&#34;</span>: <span style="color:#ae81ff">3024</span>,
-      <span style="color:#f92672">&#34;publisher&#34;</span>: <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;せっかく、&lt;code&gt;book_id&lt;/code&gt;があるんだし、&lt;code&gt;_id&lt;/code&gt;をインデックスの設定に指定します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ curl -XDELETE http://localhost:9200/bookshop
+$ curl -XPUT http://localhost:9200/bookshop -d &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;  &amp;#34;mappings&amp;#34;: {
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    &amp;#34;books&amp;#34; : {
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      &amp;#34;_id&amp;#34; : {
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;        &amp;#34;path&amp;#34;: &amp;#34;book_id&amp;#34;
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;      }
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    }
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;  }
+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;}&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、登録すれば&lt;code&gt;book_id&lt;/code&gt;が&lt;code&gt;_id&lt;/code&gt;に採用されます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bookshop&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;books&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_version&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;found&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ElasticSearch Server Japanese Edition&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3024&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;KADOKAWA&amp;#34;&lt;/span&gt;
    }
-}<span style="color:#960050;background-color:#1e0010">,</span>
+}&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;,&lt;/span&gt;
 {
-   <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;bookshop&#34;</span>,
-   <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;books&#34;</span>,
-   <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;2&#34;</span>,
-   <span style="color:#f92672">&#34;_version&#34;</span>: <span style="color:#ae81ff">1</span>,
-   <span style="color:#f92672">&#34;found&#34;</span>: <span style="color:#66d9ef">true</span>,
-   <span style="color:#f92672">&#34;_source&#34;</span>: {
-      <span style="color:#f92672">&#34;book_id&#34;</span>: <span style="color:#ae81ff">2</span>,
-      <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;Introduction of Apache Solr&#34;</span>,
-      <span style="color:#f92672">&#34;price&#34;</span>: <span style="color:#ae81ff">3888</span>,
-      <span style="color:#f92672">&#34;publisher&#34;</span>: <span style="color:#e6db74">&#34;gihyo&#34;</span>
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bookshop&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;books&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_version&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;found&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;book_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Introduction of Apache Solr&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;price&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3888&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;publisher&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;gihyo&amp;#34;&lt;/span&gt;
    }
 }
-</code></pre></div><h3 id="複数ファイル">複数ファイル</h3>
-<p>ディレクトリに複数のJSONファイルが有った場合は、次のようなコマンドでOK</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat sample_data/*.json |./stream2es stdin --target http://localhost:9200/bookshop/books
-</code></pre></div><p>まぁ、<code>cat</code>して流してるだけですが。。。</p>
-<h3 id="ダメだったケース">ダメだったケース</h3>
-<ul>
-<li>
-<p>JSONが複数行になっているようなデータだとエラーが出てしまいました。<br>
-（<code>jq</code>コマンドで1行に整形したりできるかなぁ？）</p>
-</li>
-<li>
-<p>また、1行に2つのJSONが書いてある場合は、1つ目のJSONをパースしたら、そこでおしまいみたいで、その後に記述されたデータは登録されませんでした。</p>
-</li>
-</ul>
-<h3 id="インデックスがない場合">インデックスがない場合</h3>
-<p>stream2esで登録するインデックスがElasticsearchに存在しない場合、stream2esがインデックスを作成してくれるのですが、
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;複数ファイル&#34;&gt;複数ファイル&lt;/h3&gt;
+&lt;p&gt;ディレクトリに複数のJSONファイルが有った場合は、次のようなコマンドでOK&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;$ cat sample_data/*.json |./stream2es stdin --target http://localhost:9200/bookshop/books
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;まぁ、&lt;code&gt;cat&lt;/code&gt;して流してるだけですが。。。&lt;/p&gt;
+&lt;h3 id=&#34;ダメだったケース&#34;&gt;ダメだったケース&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;JSONが複数行になっているようなデータだとエラーが出てしまいました。&lt;br&gt;
+（&lt;code&gt;jq&lt;/code&gt;コマンドで1行に整形したりできるかなぁ？）&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;また、1行に2つのJSONが書いてある場合は、1つ目のJSONをパースしたら、そこでおしまいみたいで、その後に記述されたデータは登録されませんでした。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;インデックスがない場合&#34;&gt;インデックスがない場合&lt;/h3&gt;
+&lt;p&gt;stream2esで登録するインデックスがElasticsearchに存在しない場合、stream2esがインデックスを作成してくれるのですが、
 この時、シャード数などはstream2es内部に記述があるので注意が必要です。
-以下がその設定です。</p>
-<ul>
-<li>index.number_of_shards : 2</li>
-<li>index.number_of_replicas : 0</li>
-<li>index.refresh_interval : 5s</li>
-</ul>
-<h2 id="課題">課題？</h2>
-<p>内部的にはおそらく、<code>Bulk</code>でデータを登録していると思うのですが、まだよくわかっていません。
+以下がその設定です。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;index.number_of_shards : 2&lt;/li&gt;
+&lt;li&gt;index.number_of_replicas : 0&lt;/li&gt;
+&lt;li&gt;index.refresh_interval : 5s&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;課題&#34;&gt;課題？&lt;/h2&gt;
+&lt;p&gt;内部的にはおそらく、&lt;code&gt;Bulk&lt;/code&gt;でデータを登録していると思うのですが、まだよくわかっていません。
 Clojureが読めないので、せっかくだから、Clojureの勉強も兼ねてちょっとソースを読んでみようかなと思います。
-それほど量があるわけでもないので。</p>
-<p>あとは、その他にWikipediaのデータやTwitterのデータ登録、
+それほど量があるわけでもないので。&lt;/p&gt;
+&lt;p&gt;あとは、その他にWikipediaのデータやTwitterのデータ登録、
 ElasticsearchからデータをScrollで読み出しつつ、別のElasticsearchに流しこむといったこともできそうなので、そちらも試してみようかと。
-他にもオプションがいくつかありそうです。</p>
-<p>今回は2件ほどでしたが、大量データを流し込んだ時にどうなるか（stream2esが悲鳴を上げるのか、Elasticsearchで詰まることがあったらどうなるか）なども
+他にもオプションがいくつかありそうです。&lt;/p&gt;
+&lt;p&gt;今回は2件ほどでしたが、大量データを流し込んだ時にどうなるか（stream2esが悲鳴を上げるのか、Elasticsearchで詰まることがあったらどうなるか）なども
 気になるので、なんか適当なデータで試してみるのもいいかなぁと。
-（ということで、だれか、いろいろ試してみてもらえると楽できるなぁ。）</p>
+（ということで、だれか、いろいろ試してみてもらえると楽できるなぁ。）&lt;/p&gt;
 </content:encoded>
     </item>
     

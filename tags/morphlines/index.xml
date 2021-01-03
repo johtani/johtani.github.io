@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
   <channel>
     <title>Morphlines on @johtaniの日記 3rd</title>
     <link>https://blog.johtani.info/tags/morphlines/</link>
@@ -14,39 +15,39 @@
       
       <guid>https://blog.johtani.info/blog/2013/08/02/morphlines-loadsolr/</guid>
       <description>宿題その2？かな。Solr勉強会でCloudera Searchのスキーマ周りってどうなってるの？という質問が出てて、 なんか調べることになって</description>
-      <content:encoded><p>宿題その2？かな。Solr勉強会でCloudera Searchのスキーマ周りってどうなってるの？という質問が出てて、
-なんか調べることになってたので、関係しそうなMorphlinesの<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/LoadSolrBuilder.java">LoadSolr</a>コマンドを調べてみました。
-こいつが、Solrへの書き込みを実行するコマンドみたいだったので。<br>
-（※Cloudera Searchのスキーマの設定方法とかは調べてないです。）<br>
-（※めんどくさかったので、パッケージ名すっ飛ばしてクラス名書いてます。githubへのリンクを代わりに貼ってます。）</p>
-<!-- more -->
-<h2 id="recordsolrのドキュメント">Record＝Solrのドキュメント</h2>
-<p>convert()メソッドにて、MorphlinesのRecord（コマンドの処理するデータの１単位）に格納されているKey-ValueデータをSolrInputDocumentクラスのフィールドとして格納しています。
-Recordにもフィールドという概念があり、Recordのフィールド＝Solrのフィールドという事みたいです。</p>
-<p>ということで、Solrのフィールドは事前に定義しておき、Morphlinesの処理内部でSolrのフィールド名に値を詰めていく感じでしょうか。
-別途、<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SanitizeUnknownSolrFieldsBuilder.java">sanitizeUnknownSolrFilds</a>というコマンドが用意されていて、Solrのスキーマにないものはこのコマンドを使って、無視するフィールド名に変えたり、雑多なデータを入れるためのフィールド名にするといった処理ができるようです。このコマンド内部で、Solrのスキーマ設定を元に、Solrのフィールドに合致する物があるかをチェックして処理しています。</p>
-<h2 id="solrへの登録処理は">Solrへの登録処理は？</h2>
-<p>Solrへの登録処理自体はLoadSolrクラス内部でDocumentLoaderというクラスのload()メソッドを呼び出しているだけでした。ということで、<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/DocumentLoader.java">DocumentBuilder</a>クラスを少し調査。</p>
-<h3 id="documentloader">DocumentLoader</h3>
-<p>IFでした。。。実クラスは次の条件</p>
-<ol>
-<li>SolrMorphlineContextにDocumentLoaderがあればそちらを採用（他の種類はなにがあるんだろ？）</li>
-<li>なければ、<a href="https://github.com/cloudera/cdk/blob/b6f98cff4a027af04f97fdec9abf729785d74cf5/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SolrServerDocumentLoader.java">SolrServerDocumentLoader</a>をnewしたものを利用</li>
-</ol>
-<p>2.の場合がおそらくMapReduceではないパターンのloadSolrだと思われます。SolrServerDocumentBuilderはSolrJのAPIを利用して、Solrへデータ登録していく普通のアプリです。（対象とするSolrは外部に起動しているもののはず＝FlumeのSolrSinkではこちらを採用かな？）<br>
-Solrへの接続情報とか設定ファイルとかSolrCloud用のZooKeeperとかは<a href="https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SolrLocator.java">SolrLocatorクラス</a>に設定される内容が利用されます。</p>
-<p>1.のパターンは、どうやら、<a href="https://github.com/cloudera/search/blob/master/search-mr/src/main/java/org/apache/solr/hadoop/morphline/MorphlineMapper.java">Cloudera SearchのMapReduceIndexerToolのクラス</a>にあるMyDocumentLoaderかなぁと。
+      <content:encoded>&lt;p&gt;宿題その2？かな。Solr勉強会でCloudera Searchのスキーマ周りってどうなってるの？という質問が出てて、
+なんか調べることになってたので、関係しそうなMorphlinesの&lt;a href=&#34;https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/LoadSolrBuilder.java&#34;&gt;LoadSolr&lt;/a&gt;コマンドを調べてみました。
+こいつが、Solrへの書き込みを実行するコマンドみたいだったので。&lt;br&gt;
+（※Cloudera Searchのスキーマの設定方法とかは調べてないです。）&lt;br&gt;
+（※めんどくさかったので、パッケージ名すっ飛ばしてクラス名書いてます。githubへのリンクを代わりに貼ってます。）&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;recordsolrのドキュメント&#34;&gt;Record＝Solrのドキュメント&lt;/h2&gt;
+&lt;p&gt;convert()メソッドにて、MorphlinesのRecord（コマンドの処理するデータの１単位）に格納されているKey-ValueデータをSolrInputDocumentクラスのフィールドとして格納しています。
+Recordにもフィールドという概念があり、Recordのフィールド＝Solrのフィールドという事みたいです。&lt;/p&gt;
+&lt;p&gt;ということで、Solrのフィールドは事前に定義しておき、Morphlinesの処理内部でSolrのフィールド名に値を詰めていく感じでしょうか。
+別途、&lt;a href=&#34;https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SanitizeUnknownSolrFieldsBuilder.java&#34;&gt;sanitizeUnknownSolrFilds&lt;/a&gt;というコマンドが用意されていて、Solrのスキーマにないものはこのコマンドを使って、無視するフィールド名に変えたり、雑多なデータを入れるためのフィールド名にするといった処理ができるようです。このコマンド内部で、Solrのスキーマ設定を元に、Solrのフィールドに合致する物があるかをチェックして処理しています。&lt;/p&gt;
+&lt;h2 id=&#34;solrへの登録処理は&#34;&gt;Solrへの登録処理は？&lt;/h2&gt;
+&lt;p&gt;Solrへの登録処理自体はLoadSolrクラス内部でDocumentLoaderというクラスのload()メソッドを呼び出しているだけでした。ということで、&lt;a href=&#34;https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/DocumentLoader.java&#34;&gt;DocumentBuilder&lt;/a&gt;クラスを少し調査。&lt;/p&gt;
+&lt;h3 id=&#34;documentloader&#34;&gt;DocumentLoader&lt;/h3&gt;
+&lt;p&gt;IFでした。。。実クラスは次の条件&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;SolrMorphlineContextにDocumentLoaderがあればそちらを採用（他の種類はなにがあるんだろ？）&lt;/li&gt;
+&lt;li&gt;なければ、&lt;a href=&#34;https://github.com/cloudera/cdk/blob/b6f98cff4a027af04f97fdec9abf729785d74cf5/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SolrServerDocumentLoader.java&#34;&gt;SolrServerDocumentLoader&lt;/a&gt;をnewしたものを利用&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;2.の場合がおそらくMapReduceではないパターンのloadSolrだと思われます。SolrServerDocumentBuilderはSolrJのAPIを利用して、Solrへデータ登録していく普通のアプリです。（対象とするSolrは外部に起動しているもののはず＝FlumeのSolrSinkではこちらを採用かな？）&lt;br&gt;
+Solrへの接続情報とか設定ファイルとかSolrCloud用のZooKeeperとかは&lt;a href=&#34;https://github.com/cloudera/cdk/blob/master/cdk-morphlines/cdk-morphlines-solr-core/src/main/java/com/cloudera/cdk/morphline/solr/SolrLocator.java&#34;&gt;SolrLocatorクラス&lt;/a&gt;に設定される内容が利用されます。&lt;/p&gt;
+&lt;p&gt;1.のパターンは、どうやら、&lt;a href=&#34;https://github.com/cloudera/search/blob/master/search-mr/src/main/java/org/apache/solr/hadoop/morphline/MorphlineMapper.java&#34;&gt;Cloudera SearchのMapReduceIndexerToolのクラス&lt;/a&gt;にあるMyDocumentLoaderかなぁと。
 こちらは、MapReduceを利用する場合に、利用されてるっぽいです（ちゃんと見てないけど）
-内部処理は、HadoopのContext.writeメソッドにでSolrInputDocument（＝MorphlinesのRecord）を書きだして、ReducerでSolrOutputFormatでインデックス作成の流れかなと。たぶん、<a href="https://github.com/cloudera/search/blob/master/search-mr/src/main/java/org/apache/solr/hadoop/morphline/MorphlineMapRunner.java">MorphlineMapRunner</a>あたりを読みこめば解読できるかと。
-ちなみに、こちらは、2.とは異なり、SolrLocatorの設定は無視されそう。</p>
-<h2 id="感想妄想">感想＋妄想？</h2>
-<p>ということで、Morphlinesのデータ流れを考える上で、現時点ではSolrのスキーマを頭の片隅に置きつつ、
+内部処理は、HadoopのContext.writeメソッドにでSolrInputDocument（＝MorphlinesのRecord）を書きだして、ReducerでSolrOutputFormatでインデックス作成の流れかなと。たぶん、&lt;a href=&#34;https://github.com/cloudera/search/blob/master/search-mr/src/main/java/org/apache/solr/hadoop/morphline/MorphlineMapRunner.java&#34;&gt;MorphlineMapRunner&lt;/a&gt;あたりを読みこめば解読できるかと。
+ちなみに、こちらは、2.とは異なり、SolrLocatorの設定は無視されそう。&lt;/p&gt;
+&lt;h2 id=&#34;感想妄想&#34;&gt;感想＋妄想？&lt;/h2&gt;
+&lt;p&gt;ということで、Morphlinesのデータ流れを考える上で、現時点ではSolrのスキーマを頭の片隅に置きつつ、
 Recordの中にあるデータをゴニョゴニョしてデータを形成していくって感じになりそうです。
-うまく処理できなかったものとかのカウントとかもとれたりするのかなぁ？とか、また色々と気になるところが出てきますが、一旦ここまでで。。。（だれか、続きを調べて書いてみてくれてもいいんですよ！コマンドもいっぱいあるし！）</p>
-<p>とまぁ、こんなかんじでMorphlinesをちょっとだけ読みました。
+うまく処理できなかったものとかのカウントとかもとれたりするのかなぁ？とか、また色々と気になるところが出てきますが、一旦ここまでで。。。（だれか、続きを調べて書いてみてくれてもいいんですよ！コマンドもいっぱいあるし！）&lt;/p&gt;
+&lt;p&gt;とまぁ、こんなかんじでMorphlinesをちょっとだけ読みました。
 よくよく考えたら、こんなの作ったことあるなぁと（こんなに汎用的じゃないけど）。
 みんな同じ事考えるんですねぇ。
-コマンドパターン？みたいな感じで、I/F決めてSolrとか別のシステムとかにデータ入れる処理を順番に記述できる的なバッチ処理良くかいてます（書いてましたのほうが正解かなぁ）。</p>
+コマンドパターン？みたいな感じで、I/F決めてSolrとか別のシステムとかにデータ入れる処理を順番に記述できる的なバッチ処理良くかいてます（書いてましたのほうが正解かなぁ）。&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -57,101 +58,101 @@ Recordの中にあるデータをゴニョゴニョしてデータを形成し�
       
       <guid>https://blog.johtani.info/blog/2013/07/31/introduction-morphlines/</guid>
       <description>Morphlinesについてちょっとだけ、さらに調べました。 誤解 Solr勉強会でなんとなく私の認識を話しましたが、ちょっと誤解してたみたいで</description>
-      <content:encoded><p>Morphlinesについてちょっとだけ、さらに調べました。</p>
-<h2 id="誤解">誤解</h2>
-<p>Solr勉強会でなんとなく私の認識を話しましたが、ちょっと誤解してたみたいです。スミマセン。</p>
-<!-- more -->
-<h3 id="誤解morphlineというプラットフォームミドルウェアがありそうなイメージ">誤解：Morphlineというプラットフォーム/ミドルウェアがありそうなイメージ</h3>
-<p>まぁ、書いてあるのでちゃんと読めって話ですが、Morphlineはあくまでライブラリだということでした。
+      <content:encoded>&lt;p&gt;Morphlinesについてちょっとだけ、さらに調べました。&lt;/p&gt;
+&lt;h2 id=&#34;誤解&#34;&gt;誤解&lt;/h2&gt;
+&lt;p&gt;Solr勉強会でなんとなく私の認識を話しましたが、ちょっと誤解してたみたいです。スミマセン。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h3 id=&#34;誤解morphlineというプラットフォームミドルウェアがありそうなイメージ&#34;&gt;誤解：Morphlineというプラットフォーム/ミドルウェアがありそうなイメージ&lt;/h3&gt;
+&lt;p&gt;まぁ、書いてあるのでちゃんと読めって話ですが、Morphlineはあくまでライブラリだということでした。
 私はなんとなくManifoldCFのようなミドルウェアorプラットフォームが存在して、
-そこにFlumeのSinkとかMapReduceによるIndexerが動作するのかと思ってました。</p>
+そこにFlumeのSinkとかMapReduceによるIndexerが動作するのかと思ってました。&lt;/p&gt;
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:300">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20130731/wrong_image.jpg" />
-    </div>
-    <a href="/images/entries/20130731/wrong_image.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:300&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20130731/wrong_image.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20130731/wrong_image.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
 
-<p>まぁ、これが間違いでした。正解のイメージはこっちですね。</p>
+&lt;p&gt;まぁ、これが間違いでした。正解のイメージはこっちですね。&lt;/p&gt;
 
 
-<div class="box" style="max-width:300">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20130731/correct_image.jpg" />
-    </div>
-    <a href="/images/entries/20130731/correct_image.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
+&lt;div class=&#34;box&#34; style=&#34;max-width:300&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20130731/correct_image.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20130731/correct_image.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
 
-<p>各プラットフォーム（FlumeとかHadoopとか）に組み込んむライブラリで、
-それぞれ組み込んだ先でMorphlineの設定を記述することで、パイプライン処理ができるっぽいです。</p>
-<p>Flumeについては、MorphlineSolrSinkというクラスでMorphlineの設定ファイルを読み込み、いろいろ処理出来ます。</p>
-<p>Map/ReduceだとCloudera Searchに含まれてる<a href="https://github.com/cloudera/search">MapReduceIndexerTool</a>がMorphlineの設定を読み込んでコマンド実行してくれるみたいです。
+&lt;p&gt;各プラットフォーム（FlumeとかHadoopとか）に組み込んむライブラリで、
+それぞれ組み込んだ先でMorphlineの設定を記述することで、パイプライン処理ができるっぽいです。&lt;/p&gt;
+&lt;p&gt;Flumeについては、MorphlineSolrSinkというクラスでMorphlineの設定ファイルを読み込み、いろいろ処理出来ます。&lt;/p&gt;
+&lt;p&gt;Map/ReduceだとCloudera Searchに含まれてる&lt;a href=&#34;https://github.com/cloudera/search&#34;&gt;MapReduceIndexerTool&lt;/a&gt;がMorphlineの設定を読み込んでコマンド実行してくれるみたいです。
 MapReduceIndexerToolはまだちゃんと読んでないのですが、MapperとしてMorphlineのコマンドが実行されるのかなぁ？という感じです。
-（結構入り組んでるので、ちゃんと読まないとわからない。。。）</p>
-<p>ということで、Morphlineというプラットフォームがあって、一元的にFlumeやMap/Reduceに対するコマンドをパイプライン化するという話でありませんでした。</p>
-<p>※ちなみに、上の画像ですが、愛用しているNUBoardを使って書いてます。
-考えをまとめるのにすごく役立つ一品です。持ち運び可能なノート型ホワイトボードです。</p>
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS1=1&nou=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=johtani-22&o=9&p=8&l=as1&m=amazon&f=ifr&ref=qf_sp_asin_til&asins=B00A08IVT4" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-<h3 id="疑問点">疑問点</h3>
-<p>ただ、読んでてまだ不明な点があります。まぁ、ぼちぼち調べるかなぁと。。。</p>
-<ul>
-<li>Solrのschemaはどーなってんの？</li>
-<li>MorphlineにSolrへロードするコマンド（loadSolr）があるけど、FlumeのMorphlineSolrSinkってのもSolrに書き込みそうだけど？</li>
-<li>Map/ReduceでSolrに書き込むもMorphlineのコマンドとの違いは？（前にソースを見たときはSOLR-1301がベースになっていて、SolrOutputFormatってクラスがEmbeddedSolrServer起動してインデクシングしてた）</li>
-<li>GoLiveってなんだろ？（MapReduceIndexerToolに入ってて、M/Rでインデックス作ったあとにSolrのクラスタに配布＋マージするやつっぽい）</li>
-<li>どんなコマンドがあるの？（<a href="http://cloudera.github.io/cdk/docs/0.4.1/cdk-morphlines/morphlinesReferenceGuide.html">Cloudera Morphlines Ref Guide</a>）</li>
-</ul>
-<p>以下は、参考資料と参考資料にあるSlideshareの資料を一部訳したものになります。</p>
-<h3 id="参考資料">参考資料</h3>
-<ul>
-<li><a href="http://www.slideshare.net/cloudera/using-morphlines-for-onthefly-etl">Using Morphlines for On-the-Fly ETL(slideshare)</a></li>
-<li><a href="https://github.com/cloudera/cdk/tree/master/cdk-morphlines">cloudera/cdk/cdk-morphlines(github)</a></li>
-</ul>
-<h2 id="メモ">メモ</h2>
-<h3 id="現在のコマンドライブラリスライド-18-19ページ">現在のコマンドライブラリ（スライド 18-19ページ）</h3>
-<ul>
-<li>Solrへのインテグレートとロード</li>
-<li>フレキシブルなログファイル解析</li>
-<li>1行、複数行、CSVファイル</li>
-<li>正規表現ベースのパターンマッチと展開</li>
-<li>Avro、JSON、XML、HTMLのインテグレーション</li>
-<li>Hadoop シーケンスファイルのインテグレーション</li>
-<li>SolrCellとApache Tikaパーサすべてのインテグレーション</li>
-<li>Tikaを利用したバイナリデータからMIMEタイプの自動判別</li>
-<li>動的Javaコードのスクリプティングサポート</li>
-<li>フィールドの割り当て処理、比較処理</li>
-<li>リストやセット書式のフィールド処理</li>
-<li>if-then-else条件分岐</li>
-<li>簡易ルールエンジン（tryRules）</li>
-<li>文字列とタイムスタンプの変換</li>
-<li>slf4jロギング</li>
-<li>Yammerメトリックとカウンター</li>
-<li>ネストされたファイルフォーマットコンテナの解凍</li>
-<li>などなど</li>
-</ul>
-<h3 id="プラグインコマンドスライド20ページ">プラグインコマンド（スライド　20ページ）</h3>
-<ul>
-<li>簡単に新しいI/Oや変換コマンドが追加可能</li>
-<li>サードパーティや既存機能のインテグレード</li>
-<li>CommandインタフェースかAbstractCommandのサブクラスを実装</li>
-<li>Javaクラスパスに新規作成したものを追加</li>
-<li>登録処理などは必要ない</li>
-</ul>
-<h3 id="新しいプラグインコマンドとして考えられるもの22ページ">新しいプラグインコマンドとして考えられるもの（22ページ）</h3>
-<ul>
-<li>RDBやKVSやローカルファイルなどの外部データソースをレコードにjoin</li>
-<li>DNS名前解決とか短縮URLの展開とか</li>
-<li>ソーシャル・ネットワークからリンクされたメタデータのフェッチ（？？）</li>
-<li>レコードの感情分析とアノテーション？</li>
-</ul>
-<p>31ページの図がわかりやすいかも</p>
-<p>以上。</p>
+（結構入り組んでるので、ちゃんと読まないとわからない。。。）&lt;/p&gt;
+&lt;p&gt;ということで、Morphlineというプラットフォームがあって、一元的にFlumeやMap/Reduceに対するコマンドをパイプライン化するという話でありませんでした。&lt;/p&gt;
+&lt;p&gt;※ちなみに、上の画像ですが、愛用しているNUBoardを使って書いてます。
+考えをまとめるのにすごく役立つ一品です。持ち運び可能なノート型ホワイトボードです。&lt;/p&gt;
+&lt;iframe src=&#34;http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&amp;bc1=000000&amp;IS1=1&amp;nou=1&amp;bg1=FFFFFF&amp;fc1=000000&amp;lc1=0000FF&amp;t=johtani-22&amp;o=9&amp;p=8&amp;l=as1&amp;m=amazon&amp;f=ifr&amp;ref=qf_sp_asin_til&amp;asins=B00A08IVT4&#34; style=&#34;width:120px;height:240px;&#34; scrolling=&#34;no&#34; marginwidth=&#34;0&#34; marginheight=&#34;0&#34; frameborder=&#34;0&#34;&gt;&lt;/iframe&gt;
+&lt;h3 id=&#34;疑問点&#34;&gt;疑問点&lt;/h3&gt;
+&lt;p&gt;ただ、読んでてまだ不明な点があります。まぁ、ぼちぼち調べるかなぁと。。。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Solrのschemaはどーなってんの？&lt;/li&gt;
+&lt;li&gt;MorphlineにSolrへロードするコマンド（loadSolr）があるけど、FlumeのMorphlineSolrSinkってのもSolrに書き込みそうだけど？&lt;/li&gt;
+&lt;li&gt;Map/ReduceでSolrに書き込むもMorphlineのコマンドとの違いは？（前にソースを見たときはSOLR-1301がベースになっていて、SolrOutputFormatってクラスがEmbeddedSolrServer起動してインデクシングしてた）&lt;/li&gt;
+&lt;li&gt;GoLiveってなんだろ？（MapReduceIndexerToolに入ってて、M/Rでインデックス作ったあとにSolrのクラスタに配布＋マージするやつっぽい）&lt;/li&gt;
+&lt;li&gt;どんなコマンドがあるの？（&lt;a href=&#34;http://cloudera.github.io/cdk/docs/0.4.1/cdk-morphlines/morphlinesReferenceGuide.html&#34;&gt;Cloudera Morphlines Ref Guide&lt;/a&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;以下は、参考資料と参考資料にあるSlideshareの資料を一部訳したものになります。&lt;/p&gt;
+&lt;h3 id=&#34;参考資料&#34;&gt;参考資料&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.slideshare.net/cloudera/using-morphlines-for-onthefly-etl&#34;&gt;Using Morphlines for On-the-Fly ETL(slideshare)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/cloudera/cdk/tree/master/cdk-morphlines&#34;&gt;cloudera/cdk/cdk-morphlines(github)&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;メモ&#34;&gt;メモ&lt;/h2&gt;
+&lt;h3 id=&#34;現在のコマンドライブラリスライド-18-19ページ&#34;&gt;現在のコマンドライブラリ（スライド 18-19ページ）&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Solrへのインテグレートとロード&lt;/li&gt;
+&lt;li&gt;フレキシブルなログファイル解析&lt;/li&gt;
+&lt;li&gt;1行、複数行、CSVファイル&lt;/li&gt;
+&lt;li&gt;正規表現ベースのパターンマッチと展開&lt;/li&gt;
+&lt;li&gt;Avro、JSON、XML、HTMLのインテグレーション&lt;/li&gt;
+&lt;li&gt;Hadoop シーケンスファイルのインテグレーション&lt;/li&gt;
+&lt;li&gt;SolrCellとApache Tikaパーサすべてのインテグレーション&lt;/li&gt;
+&lt;li&gt;Tikaを利用したバイナリデータからMIMEタイプの自動判別&lt;/li&gt;
+&lt;li&gt;動的Javaコードのスクリプティングサポート&lt;/li&gt;
+&lt;li&gt;フィールドの割り当て処理、比較処理&lt;/li&gt;
+&lt;li&gt;リストやセット書式のフィールド処理&lt;/li&gt;
+&lt;li&gt;if-then-else条件分岐&lt;/li&gt;
+&lt;li&gt;簡易ルールエンジン（tryRules）&lt;/li&gt;
+&lt;li&gt;文字列とタイムスタンプの変換&lt;/li&gt;
+&lt;li&gt;slf4jロギング&lt;/li&gt;
+&lt;li&gt;Yammerメトリックとカウンター&lt;/li&gt;
+&lt;li&gt;ネストされたファイルフォーマットコンテナの解凍&lt;/li&gt;
+&lt;li&gt;などなど&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;プラグインコマンドスライド20ページ&#34;&gt;プラグインコマンド（スライド　20ページ）&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;簡単に新しいI/Oや変換コマンドが追加可能&lt;/li&gt;
+&lt;li&gt;サードパーティや既存機能のインテグレード&lt;/li&gt;
+&lt;li&gt;CommandインタフェースかAbstractCommandのサブクラスを実装&lt;/li&gt;
+&lt;li&gt;Javaクラスパスに新規作成したものを追加&lt;/li&gt;
+&lt;li&gt;登録処理などは必要ない&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;新しいプラグインコマンドとして考えられるもの22ページ&#34;&gt;新しいプラグインコマンドとして考えられるもの（22ページ）&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;RDBやKVSやローカルファイルなどの外部データソースをレコードにjoin&lt;/li&gt;
+&lt;li&gt;DNS名前解決とか短縮URLの展開とか&lt;/li&gt;
+&lt;li&gt;ソーシャル・ネットワークからリンクされたメタデータのフェッチ（？？）&lt;/li&gt;
+&lt;li&gt;レコードの感情分析とアノテーション？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;31ページの図がわかりやすいかも&lt;/p&gt;
+&lt;p&gt;以上。&lt;/p&gt;
 </content:encoded>
     </item>
     

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
   <channel>
     <title>Lucene on @johtaniの日記 3rd</title>
     <link>https://blog.johtani.info/tags/lucene/</link>
@@ -14,112 +15,112 @@
       
       <guid>https://blog.johtani.info/blog/2020/06/25/analyzer-perf-test-with-luceneutil/</guid>
       <description>luceneutil - マニアックなツールのセットアップの続きです。 今回も誰得?なブログなので興味ない場合は飛ばしましょう。 一応、luceneutilのREAD</description>
-      <content:encoded><p><a href="/blog/2020/06/23/how-to-use-luceneutil/">luceneutil - マニアックなツールのセットアップ</a>の続きです。
-今回も誰得?なブログなので興味ない場合は飛ばしましょう。</p>
-<p>一応、<code>luceneutil</code>のREADMEにある<code>localrun.py</code>を動かせるところまでいったんですが、そこで一旦本題を思い返してみました。</p>
-<blockquote>
-<p>Kuromojiの性能が落ちてるらしいし、Analyzer系のベンチマーク測ってるグラフに載せたほうがいいよね。</p>
-</blockquote>
-<p>これが、そもそも動かしてみようと思った本題です。
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/06/23/how-to-use-luceneutil/&#34;&gt;luceneutil - マニアックなツールのセットアップ&lt;/a&gt;の続きです。
+今回も誰得?なブログなので興味ない場合は飛ばしましょう。&lt;/p&gt;
+&lt;p&gt;一応、&lt;code&gt;luceneutil&lt;/code&gt;のREADMEにある&lt;code&gt;localrun.py&lt;/code&gt;を動かせるところまでいったんですが、そこで一旦本題を思い返してみました。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Kuromojiの性能が落ちてるらしいし、Analyzer系のベンチマーク測ってるグラフに載せたほうがいいよね。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;これが、そもそも動かしてみようと思った本題です。
 READMEに書いてある手順で動いたんですが、よくよく調べてみると、Analyzer系の性能テストをやってるのは、別物っぽいぞと。
-なんとなく、「<a href="http://satob.hatenablog.com/entry/2019/07/17/003751">ソフトウェア考古学</a>」っぽくなってきましたね。</p>
-<h2 id="analyzerの性能テストやってるのは">Analyzerの性能テストやってるのは?</h2>
-<p>Analyzerのパフォーマンステストのグラフに出てきたTokenizerの名前を元にluceneutilのリポジトリを検索してみました。
-<code>EgdeNGrams</code>当たりで検索するとヒットしたのが以下のファイルです。</p>
-<ul>
-<li><a href="https://github.com/mikemccand/luceneutil/blob/master/src/main/perf/TestAnalyzerPerf.java"><code>src/main/perf/TestAnalyzerPerf.java</code></a></li>
-<li><code>src/main/perf/TestAnalyzerPerf4x.java</code></li>
-<li><a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/sumAnalyzerPerf.py"><code>src/python/sumAnalyzerPerf.py</code></a></li>
-</ul>
-<p>本命は<code>src/main/perf/TestAnalyzerPerf.java</code>っぽいですね。
-これを動かしている人はどれかな?ということで、今度はこのファイル名で検索します。</p>
-<ul>
-<li><a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/runAnalyzerPerf.py"><code>src/python/runAnalyzerPerf.py</code></a></li>
-</ul>
-<p>どうやら、このPythonのファイルが先程のJavaファイルを実行して、性能を計測しているみたいです。
-最初に出てきた、<code>sumAnalyzerPerf.py</code>は<code>runAnalyzerPerf.py</code>の実行結果をAnalyzerの計測結果のグラフに追加する処理をしているようだということまでがわかりました。</p>
-<h2 id="kuromojiをtestanalyzerperfに追加してみる">KuromojiをTestAnalyzerPerfに追加してみる</h2>
-<p>動かす対象がわかったので、あとは、やることを追加しましょうと。</p>
-<ol>
-<li>Kuromojiの実行を<code>TestAnalyzerPerf</code>に追加
-<ul>
-<li>引数を追加して日本語版のWikipediaのファイルも読み込むようにする</li>
-</ul>
-</li>
-<li><code>runAnalyzerPerf.py</code>に引数の追加とクラスパスの追加
-<ul>
-<li>JapaneseAnalyzerは<code>lucene/analysis/kuromoji</code>にビルドされるのでクラスパスを追加</li>
-<li>引数に日本語版のWikipediaのファイルを追加</li>
-</ul>
-</li>
-<li>日本語版のWikipediaのデータの用意</li>
-</ol>
-<p>こんなものかな?と。</p>
-<p>1と2はそれほど大変ではないので、3をまずはというところから始めてみました。</p>
-<h2 id="wikipediaのxmlから1行1データのtsvファイルに">WikipediaのXMLから1行1データのTSVファイルに</h2>
-<p>まずは、どんなファイルを想定して動いているのかな?ということで、英語版のファイルがどんなものかを探してみることに。</p>
-<p><a href="%5B77%E8%A1%8C%E7%9B%AE%5D(https://github.com/mikemccand/luceneutil/blob/master/src/main/perf/TestAnalyzerPerf.java#L77)"><code>TestAnalyzerPerf.java</code></a>では入力ファイルから1行ずつ文字列を読み込んでAnalyzerに処理させているだけというのがわかっています。なので、とりあえず、1行ずつ読めるような形式だと。
-次に、<a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/runAnalyzerPerf.py#L55"><code>runAnalyzerPerf.py</code>の55行目で</a><code>enwiki-20130102-lines.txt</code>というものを読み込んでいます。
-が、これがよくわからないw</p>
-<p>前回とりあえず動いたときに、<a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/constants.py"><code>src/python/constants.py</code></a>にいろんなファイルへのパスとかが記載されていたのを覚えていたので、その当たりから調べてみます。
-<a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/constants.py#L52">52行目に</a>約665万件のドキュメントだというような記載があります。
-前回の<code>localrun.py</code>のファイルと似たような構造(1行に1記事が埋め込まれたTSVファイル)だろうと判断して、それを作りそうなプログラムを探してみました。
-Wikiとかで検索して見つけたのがこのソースたちでした。</p>
-<ul>
-<li><a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/wikiXMLToText.py#L160"><code>src/python/wikiXMLToText.py</code></a> - それっぽい名前ですよね?
-<ul>
-<li>中身を見ると、第1引数のファイル(XML)から<code>page</code>タグごとにデータを抜き出し、処理をしてからタブ区切りで第2引数のファイルに書き出してます。</li>
-</ul>
-</li>
-<li><a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/WikipediaExtractor.py"><code>src/python/WikipediaExtractor.py</code></a> - これもそれっぽいですね。
-<ul>
-<li><code>WikipediaExtractory.py</code>は界隈では有名な<code>https://github.com/attardi/wikiextractor</code>みたいです。こっちはなんとなく使い方はわかっています。</li>
-</ul>
-</li>
-<li><a href="https://github.com/mikemccand/luceneutil/blob/master/src/python/combineWikiFiles.py"><code>src/python/combineWikiFiles.py</code></a> - これまたそれっぽい。
-<ul>
-<li>中身を見ると、1番目のコードで出力したデータに、2番めのコードで出力されたデータを元になにかしら処理をして、引数で与えられたファイルに出力する感じになってます。</li>
-</ul>
-</li>
-</ul>
-<p>ということで、完全に憶測ですが、日本語のWikipediaのXMLファイルを元に次のような流れでファイル作ってみればいいのかな?と。</p>
-<ol>
-<li><code>jawiki-20200620-pages-articles.xml.bz2</code>をwikimediaからダウンロードして、<code>unbzip2</code>で展開</li>
-<li><code>python src/python/wikiXMLToText.py jawiki-20200620-pages-articles.xml jawiki-lines.txt</code>で、1行ごとのデータを作る
-<ul>
-<li>ちなみに、このプログラムは2箇所ほど修正しました。<code>username</code>タグが存在しない<code>page</code>が出力されなさそうなので、デフォルトで<code>username: &quot;&quot;</code>みたいなデータを<code>attr</code>ってディクショナリに設定しました。</li>
-</ul>
-</li>
-<li><code>cat jawiki-20200620-pages-articles.xml | python -u src/python/WikipediaExtractor.py -b102400m -o extracted</code>で別途XMLからデータを抽出</li>
-<li><code>python src/python/combineWikiFiles.py jawiki-lines.txt extracted/AA/wiki_00 jawiki-20200620-lines.txt</code>で2と3の出力をかけ合わせる</li>
-</ol>
-<p>で、まぁ、一応ファイルはできたんですが。。。
-前回のブログ記事でセットアップしたときにダウンロードされたファイルは<code>title</code>、<code>日付</code>、<code>本文</code>の3つのカラムしかないんですが、上記の手順で作り出したファイルにはいろんなカラムが存在するんですよね(2が出力する項目が結構ある)。。。</p>
-<h2 id="性能テスト用プログラムの書き換え">性能テスト用プログラムの書き換え</h2>
-<p>入力ファイルは出来上がったので、あとは、性能テストを走らせる部分の修正です。
-<a href="https://github.com/mikemccand/luceneutil/pull/69">修正部分はプルリク</a>見たほうが明確なので省略で。</p>
-<h2 id="実行してみた">実行してみた</h2>
-<p>で、実行してみました。
-せっかくなので、ブランチを<code>branch_8_5</code>と<code>master</code>を対象にしてやってみました。
-実際には<code>src/python/runAnalyzerPerf.py</code>にディレクトリ名やブランチ名が直書きされてたので書き換えつつ実施した結果はこちら。</p>
+なんとなく、「&lt;a href=&#34;http://satob.hatenablog.com/entry/2019/07/17/003751&#34;&gt;ソフトウェア考古学&lt;/a&gt;」っぽくなってきましたね。&lt;/p&gt;
+&lt;h2 id=&#34;analyzerの性能テストやってるのは&#34;&gt;Analyzerの性能テストやってるのは?&lt;/h2&gt;
+&lt;p&gt;Analyzerのパフォーマンステストのグラフに出てきたTokenizerの名前を元にluceneutilのリポジトリを検索してみました。
+&lt;code&gt;EgdeNGrams&lt;/code&gt;当たりで検索するとヒットしたのが以下のファイルです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/main/perf/TestAnalyzerPerf.java&#34;&gt;&lt;code&gt;src/main/perf/TestAnalyzerPerf.java&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;src/main/perf/TestAnalyzerPerf4x.java&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/sumAnalyzerPerf.py&#34;&gt;&lt;code&gt;src/python/sumAnalyzerPerf.py&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;本命は&lt;code&gt;src/main/perf/TestAnalyzerPerf.java&lt;/code&gt;っぽいですね。
+これを動かしている人はどれかな?ということで、今度はこのファイル名で検索します。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/runAnalyzerPerf.py&#34;&gt;&lt;code&gt;src/python/runAnalyzerPerf.py&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;どうやら、このPythonのファイルが先程のJavaファイルを実行して、性能を計測しているみたいです。
+最初に出てきた、&lt;code&gt;sumAnalyzerPerf.py&lt;/code&gt;は&lt;code&gt;runAnalyzerPerf.py&lt;/code&gt;の実行結果をAnalyzerの計測結果のグラフに追加する処理をしているようだということまでがわかりました。&lt;/p&gt;
+&lt;h2 id=&#34;kuromojiをtestanalyzerperfに追加してみる&#34;&gt;KuromojiをTestAnalyzerPerfに追加してみる&lt;/h2&gt;
+&lt;p&gt;動かす対象がわかったので、あとは、やることを追加しましょうと。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Kuromojiの実行を&lt;code&gt;TestAnalyzerPerf&lt;/code&gt;に追加
+&lt;ul&gt;
+&lt;li&gt;引数を追加して日本語版のWikipediaのファイルも読み込むようにする&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;runAnalyzerPerf.py&lt;/code&gt;に引数の追加とクラスパスの追加
+&lt;ul&gt;
+&lt;li&gt;JapaneseAnalyzerは&lt;code&gt;lucene/analysis/kuromoji&lt;/code&gt;にビルドされるのでクラスパスを追加&lt;/li&gt;
+&lt;li&gt;引数に日本語版のWikipediaのファイルを追加&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;日本語版のWikipediaのデータの用意&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;こんなものかな?と。&lt;/p&gt;
+&lt;p&gt;1と2はそれほど大変ではないので、3をまずはというところから始めてみました。&lt;/p&gt;
+&lt;h2 id=&#34;wikipediaのxmlから1行1データのtsvファイルに&#34;&gt;WikipediaのXMLから1行1データのTSVファイルに&lt;/h2&gt;
+&lt;p&gt;まずは、どんなファイルを想定して動いているのかな?ということで、英語版のファイルがどんなものかを探してみることに。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;%5B77%E8%A1%8C%E7%9B%AE%5D(https://github.com/mikemccand/luceneutil/blob/master/src/main/perf/TestAnalyzerPerf.java#L77)&#34;&gt;&lt;code&gt;TestAnalyzerPerf.java&lt;/code&gt;&lt;/a&gt;では入力ファイルから1行ずつ文字列を読み込んでAnalyzerに処理させているだけというのがわかっています。なので、とりあえず、1行ずつ読めるような形式だと。
+次に、&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/runAnalyzerPerf.py#L55&#34;&gt;&lt;code&gt;runAnalyzerPerf.py&lt;/code&gt;の55行目で&lt;/a&gt;&lt;code&gt;enwiki-20130102-lines.txt&lt;/code&gt;というものを読み込んでいます。
+が、これがよくわからないw&lt;/p&gt;
+&lt;p&gt;前回とりあえず動いたときに、&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/constants.py&#34;&gt;&lt;code&gt;src/python/constants.py&lt;/code&gt;&lt;/a&gt;にいろんなファイルへのパスとかが記載されていたのを覚えていたので、その当たりから調べてみます。
+&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/constants.py#L52&#34;&gt;52行目に&lt;/a&gt;約665万件のドキュメントだというような記載があります。
+前回の&lt;code&gt;localrun.py&lt;/code&gt;のファイルと似たような構造(1行に1記事が埋め込まれたTSVファイル)だろうと判断して、それを作りそうなプログラムを探してみました。
+Wikiとかで検索して見つけたのがこのソースたちでした。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/wikiXMLToText.py#L160&#34;&gt;&lt;code&gt;src/python/wikiXMLToText.py&lt;/code&gt;&lt;/a&gt; - それっぽい名前ですよね?
+&lt;ul&gt;
+&lt;li&gt;中身を見ると、第1引数のファイル(XML)から&lt;code&gt;page&lt;/code&gt;タグごとにデータを抜き出し、処理をしてからタブ区切りで第2引数のファイルに書き出してます。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/WikipediaExtractor.py&#34;&gt;&lt;code&gt;src/python/WikipediaExtractor.py&lt;/code&gt;&lt;/a&gt; - これもそれっぽいですね。
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WikipediaExtractory.py&lt;/code&gt;は界隈では有名な&lt;code&gt;https://github.com/attardi/wikiextractor&lt;/code&gt;みたいです。こっちはなんとなく使い方はわかっています。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/mikemccand/luceneutil/blob/master/src/python/combineWikiFiles.py&#34;&gt;&lt;code&gt;src/python/combineWikiFiles.py&lt;/code&gt;&lt;/a&gt; - これまたそれっぽい。
+&lt;ul&gt;
+&lt;li&gt;中身を見ると、1番目のコードで出力したデータに、2番めのコードで出力されたデータを元になにかしら処理をして、引数で与えられたファイルに出力する感じになってます。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ということで、完全に憶測ですが、日本語のWikipediaのXMLファイルを元に次のような流れでファイル作ってみればいいのかな?と。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;jawiki-20200620-pages-articles.xml.bz2&lt;/code&gt;をwikimediaからダウンロードして、&lt;code&gt;unbzip2&lt;/code&gt;で展開&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;python src/python/wikiXMLToText.py jawiki-20200620-pages-articles.xml jawiki-lines.txt&lt;/code&gt;で、1行ごとのデータを作る
+&lt;ul&gt;
+&lt;li&gt;ちなみに、このプログラムは2箇所ほど修正しました。&lt;code&gt;username&lt;/code&gt;タグが存在しない&lt;code&gt;page&lt;/code&gt;が出力されなさそうなので、デフォルトで&lt;code&gt;username: &amp;quot;&amp;quot;&lt;/code&gt;みたいなデータを&lt;code&gt;attr&lt;/code&gt;ってディクショナリに設定しました。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cat jawiki-20200620-pages-articles.xml | python -u src/python/WikipediaExtractor.py -b102400m -o extracted&lt;/code&gt;で別途XMLからデータを抽出&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;python src/python/combineWikiFiles.py jawiki-lines.txt extracted/AA/wiki_00 jawiki-20200620-lines.txt&lt;/code&gt;で2と3の出力をかけ合わせる&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;で、まぁ、一応ファイルはできたんですが。。。
+前回のブログ記事でセットアップしたときにダウンロードされたファイルは&lt;code&gt;title&lt;/code&gt;、&lt;code&gt;日付&lt;/code&gt;、&lt;code&gt;本文&lt;/code&gt;の3つのカラムしかないんですが、上記の手順で作り出したファイルにはいろんなカラムが存在するんですよね(2が出力する項目が結構ある)。。。&lt;/p&gt;
+&lt;h2 id=&#34;性能テスト用プログラムの書き換え&#34;&gt;性能テスト用プログラムの書き換え&lt;/h2&gt;
+&lt;p&gt;入力ファイルは出来上がったので、あとは、性能テストを走らせる部分の修正です。
+&lt;a href=&#34;https://github.com/mikemccand/luceneutil/pull/69&#34;&gt;修正部分はプルリク&lt;/a&gt;見たほうが明確なので省略で。&lt;/p&gt;
+&lt;h2 id=&#34;実行してみた&#34;&gt;実行してみた&lt;/h2&gt;
+&lt;p&gt;で、実行してみました。
+せっかくなので、ブランチを&lt;code&gt;branch_8_5&lt;/code&gt;と&lt;code&gt;master&lt;/code&gt;を対象にしてやってみました。
+実際には&lt;code&gt;src/python/runAnalyzerPerf.py&lt;/code&gt;にディレクトリ名やブランチ名が直書きされてたので書き換えつつ実施した結果はこちら。&lt;/p&gt;
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20200625/analyzer_perf_test.png" />
-    </div>
-    <a href="/images/entries/20200625/analyzer_perf_test.png" itemprop="contentUrl"></a>
-  </figure>
-</div>
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200625/analyzer_perf_test.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200625/analyzer_perf_test.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
 
-<p>他の英語系のAnalyzerと同じグラフに載せてみたのですが、遅いので、下の方に表示されてます。
-で、下に凹んだ部分(<code>23 June</code>のところ)が<code>branch_8_5</code>で実行したときの性能値でした。
-実際に遅くなってますね。ただ、他のAnalyzerの振れ幅も大きいので、別のグラフにしたほうがわかりやすくなるのかもなぁと思った次第です。</p>
-<p>ということで、一応動いたんでプルリク出してみました。
-採用されるかなぁ?</p>
-<p>一応誰得ブログはこれでおしまい。
-Noriとかもこの感じで対応できるんじゃないかな?</p>
+&lt;p&gt;他の英語系のAnalyzerと同じグラフに載せてみたのですが、遅いので、下の方に表示されてます。
+で、下に凹んだ部分(&lt;code&gt;23 June&lt;/code&gt;のところ)が&lt;code&gt;branch_8_5&lt;/code&gt;で実行したときの性能値でした。
+実際に遅くなってますね。ただ、他のAnalyzerの振れ幅も大きいので、別のグラフにしたほうがわかりやすくなるのかもなぁと思った次第です。&lt;/p&gt;
+&lt;p&gt;ということで、一応動いたんでプルリク出してみました。
+採用されるかなぁ?&lt;/p&gt;
+&lt;p&gt;一応誰得ブログはこれでおしまい。
+Noriとかもこの感じで対応できるんじゃないかな?&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -130,90 +131,90 @@ Noriとかもこの感じで対応できるんじゃないかな?</p>
       
       <guid>https://blog.johtani.info/blog/2020/06/23/how-to-use-luceneutil/</guid>
       <description>LuceneのFSTの修正に関連して、Kuromojiのパフォーマンス問題が出ているようです。 この問題自体はLucene 8.6.0以降で直る</description>
-      <content:encoded><p><a href="https://issues.apache.org/jira/browse/LUCENE-9286">LuceneのFSTの修正に関連して、Kuromojiのパフォーマンス問題が出ているようです</a>。
-この問題自体はLucene 8.6.0以降で直る予定のようなのです(<a href="https://github.com/elastic/elasticsearch/issues/57142">Elasticsearchへの影響範囲についてはこれが参考になるかな?</a>)。
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://issues.apache.org/jira/browse/LUCENE-9286&#34;&gt;LuceneのFSTの修正に関連して、Kuromojiのパフォーマンス問題が出ているようです&lt;/a&gt;。
+この問題自体はLucene 8.6.0以降で直る予定のようなのです(&lt;a href=&#34;https://github.com/elastic/elasticsearch/issues/57142&#34;&gt;Elasticsearchへの影響範囲についてはこれが参考になるかな?&lt;/a&gt;)。
 で、これに関連して、ベンチマーク計らないとねという話が出ていて、
-昔から、LuceneのMikeさんがやっている<a href="http://people.apache.org/~mikemccand/lucenebench/analyzers.html">ベンチマークのグラフ</a>に<a href="https://github.com/mikemccand/luceneutil/issues/64">載せるのがいいよね</a>という話になっていました。
-どうも、これについては、Luceneの中にあるbenchmarkというプロジェクトではなく、MikeさんのGitHubリポジトリにあるプログラムで計測しているようです。</p>
-<p>じゃあ、手元でこれどうやって動かすんだろう?ということでやってみたブログになります。
-おそらく、99.99%の人は興味ないと思うのでスルーしていただくのがいいと思います。備忘録のために書いてます。</p>
-<h2 id="とりあえずgit-clone">とりあえずgit clone</h2>
-<p>公開されているリポジトリは<a href="https://github.com/mikemccand/luceneutil/">こちら</a>です。</p>
-<h2 id="手順通りに">手順通りに?</h2>
-<p>とりあえず、READMEにセットアップなどのやり方があったんで追っていくことに。
-とりあえず動くまでの手順は以下のとおりです。</p>
-<ol>
-<li>ディレクトリを決める
-<ul>
-<li><code>$LUCENE_BENCH_HOME</code>が起点になります。名前は何でもいいみたいです。</li>
-<li><code>cd $LUCENE_BENCH_HOME</code></li>
-</ul>
-</li>
-<li>リポジトリをクローン - <code>git clone https://github.com/mikemccand/luceneutil.git util</code>です。
-<ul>
-<li>コレ自体は問題なし。</li>
-<li><code>cd util</code></li>
-</ul>
-</li>
-<li>セットアップスクリプトを実行 - <code>python src/python/setup.py -download</code>
-<ul>
-<li>ここがすごく時間かかります。6GBのファイルをゆっくりダウンロードしてきますので、一晩置いておきましょう(起きたら終わってた)</li>
-<li><code>$LUCENE_BENCH_HOME/data</code>に<code>enwiki-20120502-lines-1k.txt.lzma</code>と<code>wikimedium500.tasks</code>いうファイルがダウンロードされている。</li>
-</ul>
-</li>
-<li>ダウンロードした圧縮ファイルを展開 - <code>unlzma enwiki-20120502-lines-1k.txt.lzma</code>
-<ul>
-<li>macOSに<code>lzma</code>のコマンド入ってるんですね。知らなかった。</li>
-<li>終わったら<code>cd ../</code>で<code>$LUCENE_BENCH_HOME</code>に戻っておく</li>
-</ul>
-</li>
-<li>ベンチマーク対象となるLuceneを用意 - <code>git clone https://github.com/apache/lucene-solr.git</code>
-<ul>
-<li>READMEには<code>lucene_candidate</code>と<code>lucene_baseline</code>って名前でって書いてあったのですが、これだと、この後の実行フェーズでエラーになりました。</li>
-<li><code>trunk</code>と<code>patch</code>というディレクトリにそれぞれ変更しました。<code>localrun.py</code>を実行したらこのディレクトリ名だったので(相変わらず、自分、行きあたりばったりな対応してるなぁ。。。)</li>
-<li>とりあえず動くかどうかを確認したかったので、<code>trunk</code>と<code>patch</code>はどちらもリポジトリを<code>clone</code>したものになってます。動いたのを確認したら、タグを指定して比較したいブランチをチェックアウトする予定。</li>
-</ul>
-</li>
-<li><code>trunk</code>と<code>patch</code>をビルド - <code>ant jar</code>
-*</li>
-<li><code>localrun.py</code>を実行 - <code>cd util</code>そして。。。
-<ul>
-<li>5.で記述したディレクトリ以外に1箇所Pythonのコードを書き換えた。</li>
-<li><code>src/python/benchUtil.py</code>内部に<code>hppc-0.8.1.jar</code>のファイルの存在チェックをしているのだが、2020/06/23時点でのLuceneのリポジトリの依存関係だと<code>hppc-0.8.2.jar</code>になっており、ファイルが見つからないエラーが出たため、<code>0.8.2</code>に書き換えた。970行目付近。</li>
-<li>改めて実行したら成功した。</li>
-</ul>
-</li>
-</ol>
-<h2 id="まだ途中">まだ途中</h2>
-<p>とりあえず、実行するところまではできましたが、結果の見方とかちゃんと調べないとなぁ。
-いくつかローカルで対応したものについてはあとでGitHubにIssue立てとくべきだな。</p>
-<p>と、動くのを確認したので、日本語周りの準備をしてみてるところです。</p>
-<ul>
-<li>
-<p>終わったこと</p>
-<ul>
-<li>日本語のWikipediaのデータ<code>jawiki-20200620-pages-articles.xml.bz2</code>をダウンロードして展開</li>
-</ul>
-</li>
-<li>
-<p>試している途中</p>
-<ul>
-<li>WikipediaExtractorでXMLからデータを抽出 - <code>cat ~/tmp/wiki/jawiki-20200620-pages-articles.xml | python -u src/python/WikipediaExtractor.py -b102400m -o extracted</code>
-<ul>
-<li>これは手順が違うかも????</li>
-</ul>
-</li>
-<li><code>python src/python/wikiXMLToText.py ~/tmp/wiki/20200620-pages-articles.xml ./hoge.txt</code>
-<ul>
-<li>これで、<code>title</code>、<code>日付</code>、<code>本文</code>が抜き出せそう?</li>
-<li>この後に<code>combineWikiFiles.py</code>の実行かな?</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<p>って感じです。
-誰得だろうこれ???</p>
+昔から、LuceneのMikeさんがやっている&lt;a href=&#34;http://people.apache.org/~mikemccand/lucenebench/analyzers.html&#34;&gt;ベンチマークのグラフ&lt;/a&gt;に&lt;a href=&#34;https://github.com/mikemccand/luceneutil/issues/64&#34;&gt;載せるのがいいよね&lt;/a&gt;という話になっていました。
+どうも、これについては、Luceneの中にあるbenchmarkというプロジェクトではなく、MikeさんのGitHubリポジトリにあるプログラムで計測しているようです。&lt;/p&gt;
+&lt;p&gt;じゃあ、手元でこれどうやって動かすんだろう?ということでやってみたブログになります。
+おそらく、99.99%の人は興味ないと思うのでスルーしていただくのがいいと思います。備忘録のために書いてます。&lt;/p&gt;
+&lt;h2 id=&#34;とりあえずgit-clone&#34;&gt;とりあえずgit clone&lt;/h2&gt;
+&lt;p&gt;公開されているリポジトリは&lt;a href=&#34;https://github.com/mikemccand/luceneutil/&#34;&gt;こちら&lt;/a&gt;です。&lt;/p&gt;
+&lt;h2 id=&#34;手順通りに&#34;&gt;手順通りに?&lt;/h2&gt;
+&lt;p&gt;とりあえず、READMEにセットアップなどのやり方があったんで追っていくことに。
+とりあえず動くまでの手順は以下のとおりです。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;ディレクトリを決める
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;$LUCENE_BENCH_HOME&lt;/code&gt;が起点になります。名前は何でもいいみたいです。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cd $LUCENE_BENCH_HOME&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;リポジトリをクローン - &lt;code&gt;git clone https://github.com/mikemccand/luceneutil.git util&lt;/code&gt;です。
+&lt;ul&gt;
+&lt;li&gt;コレ自体は問題なし。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cd util&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;セットアップスクリプトを実行 - &lt;code&gt;python src/python/setup.py -download&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;ここがすごく時間かかります。6GBのファイルをゆっくりダウンロードしてきますので、一晩置いておきましょう(起きたら終わってた)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;$LUCENE_BENCH_HOME/data&lt;/code&gt;に&lt;code&gt;enwiki-20120502-lines-1k.txt.lzma&lt;/code&gt;と&lt;code&gt;wikimedium500.tasks&lt;/code&gt;いうファイルがダウンロードされている。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;ダウンロードした圧縮ファイルを展開 - &lt;code&gt;unlzma enwiki-20120502-lines-1k.txt.lzma&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;macOSに&lt;code&gt;lzma&lt;/code&gt;のコマンド入ってるんですね。知らなかった。&lt;/li&gt;
+&lt;li&gt;終わったら&lt;code&gt;cd ../&lt;/code&gt;で&lt;code&gt;$LUCENE_BENCH_HOME&lt;/code&gt;に戻っておく&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;ベンチマーク対象となるLuceneを用意 - &lt;code&gt;git clone https://github.com/apache/lucene-solr.git&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;READMEには&lt;code&gt;lucene_candidate&lt;/code&gt;と&lt;code&gt;lucene_baseline&lt;/code&gt;って名前でって書いてあったのですが、これだと、この後の実行フェーズでエラーになりました。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;trunk&lt;/code&gt;と&lt;code&gt;patch&lt;/code&gt;というディレクトリにそれぞれ変更しました。&lt;code&gt;localrun.py&lt;/code&gt;を実行したらこのディレクトリ名だったので(相変わらず、自分、行きあたりばったりな対応してるなぁ。。。)&lt;/li&gt;
+&lt;li&gt;とりあえず動くかどうかを確認したかったので、&lt;code&gt;trunk&lt;/code&gt;と&lt;code&gt;patch&lt;/code&gt;はどちらもリポジトリを&lt;code&gt;clone&lt;/code&gt;したものになってます。動いたのを確認したら、タグを指定して比較したいブランチをチェックアウトする予定。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;trunk&lt;/code&gt;と&lt;code&gt;patch&lt;/code&gt;をビルド - &lt;code&gt;ant jar&lt;/code&gt;
+*&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;localrun.py&lt;/code&gt;を実行 - &lt;code&gt;cd util&lt;/code&gt;そして。。。
+&lt;ul&gt;
+&lt;li&gt;5.で記述したディレクトリ以外に1箇所Pythonのコードを書き換えた。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;src/python/benchUtil.py&lt;/code&gt;内部に&lt;code&gt;hppc-0.8.1.jar&lt;/code&gt;のファイルの存在チェックをしているのだが、2020/06/23時点でのLuceneのリポジトリの依存関係だと&lt;code&gt;hppc-0.8.2.jar&lt;/code&gt;になっており、ファイルが見つからないエラーが出たため、&lt;code&gt;0.8.2&lt;/code&gt;に書き換えた。970行目付近。&lt;/li&gt;
+&lt;li&gt;改めて実行したら成功した。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;まだ途中&#34;&gt;まだ途中&lt;/h2&gt;
+&lt;p&gt;とりあえず、実行するところまではできましたが、結果の見方とかちゃんと調べないとなぁ。
+いくつかローカルで対応したものについてはあとでGitHubにIssue立てとくべきだな。&lt;/p&gt;
+&lt;p&gt;と、動くのを確認したので、日本語周りの準備をしてみてるところです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;終わったこと&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;日本語のWikipediaのデータ&lt;code&gt;jawiki-20200620-pages-articles.xml.bz2&lt;/code&gt;をダウンロードして展開&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;試している途中&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;WikipediaExtractorでXMLからデータを抽出 - &lt;code&gt;cat ~/tmp/wiki/jawiki-20200620-pages-articles.xml | python -u src/python/WikipediaExtractor.py -b102400m -o extracted&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;これは手順が違うかも????&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;python src/python/wikiXMLToText.py ~/tmp/wiki/20200620-pages-articles.xml ./hoge.txt&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;これで、&lt;code&gt;title&lt;/code&gt;、&lt;code&gt;日付&lt;/code&gt;、&lt;code&gt;本文&lt;/code&gt;が抜き出せそう?&lt;/li&gt;
+&lt;li&gt;この後に&lt;code&gt;combineWikiFiles.py&lt;/code&gt;の実行かな?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;って感じです。
+誰得だろうこれ???&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -224,38 +225,38 @@ Noriとかもこの感じで対応できるんじゃないかな?</p>
       
       <guid>https://blog.johtani.info/blog/2019/12/04/about-lucene-4056/</guid>
       <description>これは、情報検索・検索エンジン Advent Calendar 2019 の 4 日目の記事です。 1日目から、質の高いエントリーが続いていましたが、一旦休憩して頂く感じの記事になって</description>
-      <content:encoded><p>これは、<a href="https://qiita.com/advent-calendar/2019/search">情報検索・検索エンジン Advent Calendar 2019</a> の 4 日目の記事です。</p>
-<!-- more -->
-<p>1日目から、質の高いエントリーが続いていましたが、一旦休憩して頂く感じの記事になってます。気軽に読んでくださいw。Advent Calendarつくらないの？と煽ったのもあり、穴を埋めようかなと。　</p>
-<h2 id="発端">発端</h2>
-<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ちょっと先ですがこういうのやります。実装寄りの話やOSS開発に興味がある方，きてください～ / Lucene 版 <a href="https://twitter.com/hashtag/Kuromoji?src=hash&amp;ref_src=twsrc%5Etfw">#Kuromoji</a> のコードを読む会（辞書ビルダー編） <a href="https://t.co/NgEmUohoPo">https://t.co/NgEmUohoPo</a> <a href="https://twitter.com/hashtag/kuromoji?src=hash&amp;ref_src=twsrc%5Etfw">#kuromoji</a></p>&mdash; Tomoko Uchida (@moco_beta) <a href="https://twitter.com/moco_beta/status/1169795202376073217?ref_src=twsrc%5Etfw">September 6, 2019</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-<p><a href="https://search-tech.connpass.com/event/146365/">「Lucene 版 #Kuromoji のコードを読む会（辞書ビルダー編）」</a>という勉強会があり、参加したところ、UniDicの辞書のビルドがコケるという話を聞いたんで、ちょっとやってみるかと。</p>
-<p>ちなみに、Kuromojiとは、Apache Luceneに入っている、日本語向けの形態素解析ライブラリです。IPAdicの辞書を内包しており、SolrやElasticsearchといった、Apache Luceneを利用している検索エンジンで手軽に使える形態素解析ライブラリになっています。が、対応している辞書がデフォルトだとIPAdicなのです。</p>
-<h2 id="問題点">問題点</h2>
-<p><a href="https://issues.apache.org/jira/browse/LUCENE-4056">LUCENE-4056</a>というIssueが上がっています。</p>
-<p><code>build.xml</code>には記載はないけど、<a href="https://github.com/apache/lucene-solr/blob/master/lucene/analysis/kuromoji/src/java/org/apache/lucene/analysis/ja/util/DictionaryBuilder.java#L44">辞書のビルダーは対応していそうな雰囲気</a>を醸し出しているので、試してみたというのが発端？かと。で、実際に動かしてみると動かない点がありましたと。</p>
-<p>また、Issueの会話で出ていたUniDicの辞書のライセンスの話もありました。
-ただ、<a href="https://unidic.ninjal.ac.jp">UniDic</a>がライセンスを変更したので、このあたりはクリアできそうかなと。</p>
-<h2 id="パッチ">パッチ</h2>
-<p>ということで、動かしてみていくつか修正してパッチを作りました。</p>
-<p><a href="https://github.com/apache/lucene-solr/pull/935">https://github.com/apache/lucene-solr/pull/935</a></p>
-<p>最近のLuceneはGitHubでプルリク遅れるのが便利ですね。
-そんなに大したことはやってないです。以下の点が問題だったので直しています。</p>
-<ul>
-<li>IPAdicとUniDicで語彙定義ファイルのCSVの形式（カラムの数）が異なる</li>
-<li>unk.defのカラム数も異なる</li>
-</ul>
-<p>あとは、辞書のダウンロードの部分や<code>build.xml</code>での処理を追加した形です。
-このプルリクを適用したlucene-solrのソースディレクトリを持ってきて、手元でjarをビルドすれば普通はIPAdicの辞書を内包したkuromojiのjarファイルが出来上がります。</p>
-<p><code>lucene/analysis/kuromoji/build.xml</code>ファイルを、<a href="https://gist.github.com/johtani/91cfd2753aba2e001c1d39f47666ada7">このGist</a>にあるように変更して、<code>ant build-dict</code>とやれば辞書のビルドが可能です。
-また、<code>cd lucene/;ant jar</code>とすれば、UniDicの辞書を内包したjarファイルもビルドできます(<code>lucene/build/analysis/kuromoji</code>の下にjarファイルができあがります)。</p>
-<h2 id="確認">確認？</h2>
-<p>一応、パッチは動くのですが、パッチ自体はUniDicの辞書をビルドする仕組みはオフのままです。なので、テストをどうやろう？というところでやなんで止まっています。。。</p>
-<p>ただ、実際に作ったパッチできちんとIPAdicとUniDicがそれぞれビルドできているかの確認はしないとなと。</p>
-<p>ということで、2つのjarファイルを読み込んで、それぞれトークナイズして、その出力を表示する<a href="https://github.com/johtani/check-dictionary">ツールを作ってみました</a>。</p>
-<p>上記パッチを適用したlucene-solrのソースを持ってきて、IPAdicの辞書を内包したkuromojiのjarファイルと、UniDicの辞書を内包したjarファイルを用意し、ツールの支持に従って、ファイルをディレクトリに配置して、実行すれば以下のような出力がされるようになっています（とりあえず作ったものなので、Javaファイルにトークナイズしたいテキストを書かないといけないのですが）。</p>
-<p>たとえば、「自転車と自動車の違いはなんでしょう？」という文字列を入力すると、以下のような出力になりました。</p>
-<pre><code>+++ ipadic ++++++++++++++
+      <content:encoded>&lt;p&gt;これは、&lt;a href=&#34;https://qiita.com/advent-calendar/2019/search&#34;&gt;情報検索・検索エンジン Advent Calendar 2019&lt;/a&gt; の 4 日目の記事です。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;1日目から、質の高いエントリーが続いていましたが、一旦休憩して頂く感じの記事になってます。気軽に読んでくださいw。Advent Calendarつくらないの？と煽ったのもあり、穴を埋めようかなと。　&lt;/p&gt;
+&lt;h2 id=&#34;発端&#34;&gt;発端&lt;/h2&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ちょっと先ですがこういうのやります。実装寄りの話やOSS開発に興味がある方，きてください～ / Lucene 版 &lt;a href=&#34;https://twitter.com/hashtag/Kuromoji?src=hash&amp;amp;ref_src=twsrc%5Etfw&#34;&gt;#Kuromoji&lt;/a&gt; のコードを読む会（辞書ビルダー編） &lt;a href=&#34;https://t.co/NgEmUohoPo&#34;&gt;https://t.co/NgEmUohoPo&lt;/a&gt; &lt;a href=&#34;https://twitter.com/hashtag/kuromoji?src=hash&amp;amp;ref_src=twsrc%5Etfw&#34;&gt;#kuromoji&lt;/a&gt;&lt;/p&gt;&amp;mdash; Tomoko Uchida (@moco_beta) &lt;a href=&#34;https://twitter.com/moco_beta/status/1169795202376073217?ref_src=twsrc%5Etfw&#34;&gt;September 6, 2019&lt;/a&gt;&lt;/blockquote&gt; &lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;p&gt;&lt;a href=&#34;https://search-tech.connpass.com/event/146365/&#34;&gt;「Lucene 版 #Kuromoji のコードを読む会（辞書ビルダー編）」&lt;/a&gt;という勉強会があり、参加したところ、UniDicの辞書のビルドがコケるという話を聞いたんで、ちょっとやってみるかと。&lt;/p&gt;
+&lt;p&gt;ちなみに、Kuromojiとは、Apache Luceneに入っている、日本語向けの形態素解析ライブラリです。IPAdicの辞書を内包しており、SolrやElasticsearchといった、Apache Luceneを利用している検索エンジンで手軽に使える形態素解析ライブラリになっています。が、対応している辞書がデフォルトだとIPAdicなのです。&lt;/p&gt;
+&lt;h2 id=&#34;問題点&#34;&gt;問題点&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://issues.apache.org/jira/browse/LUCENE-4056&#34;&gt;LUCENE-4056&lt;/a&gt;というIssueが上がっています。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;build.xml&lt;/code&gt;には記載はないけど、&lt;a href=&#34;https://github.com/apache/lucene-solr/blob/master/lucene/analysis/kuromoji/src/java/org/apache/lucene/analysis/ja/util/DictionaryBuilder.java#L44&#34;&gt;辞書のビルダーは対応していそうな雰囲気&lt;/a&gt;を醸し出しているので、試してみたというのが発端？かと。で、実際に動かしてみると動かない点がありましたと。&lt;/p&gt;
+&lt;p&gt;また、Issueの会話で出ていたUniDicの辞書のライセンスの話もありました。
+ただ、&lt;a href=&#34;https://unidic.ninjal.ac.jp&#34;&gt;UniDic&lt;/a&gt;がライセンスを変更したので、このあたりはクリアできそうかなと。&lt;/p&gt;
+&lt;h2 id=&#34;パッチ&#34;&gt;パッチ&lt;/h2&gt;
+&lt;p&gt;ということで、動かしてみていくつか修正してパッチを作りました。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/apache/lucene-solr/pull/935&#34;&gt;https://github.com/apache/lucene-solr/pull/935&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;最近のLuceneはGitHubでプルリク遅れるのが便利ですね。
+そんなに大したことはやってないです。以下の点が問題だったので直しています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;IPAdicとUniDicで語彙定義ファイルのCSVの形式（カラムの数）が異なる&lt;/li&gt;
+&lt;li&gt;unk.defのカラム数も異なる&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;あとは、辞書のダウンロードの部分や&lt;code&gt;build.xml&lt;/code&gt;での処理を追加した形です。
+このプルリクを適用したlucene-solrのソースディレクトリを持ってきて、手元でjarをビルドすれば普通はIPAdicの辞書を内包したkuromojiのjarファイルが出来上がります。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;lucene/analysis/kuromoji/build.xml&lt;/code&gt;ファイルを、&lt;a href=&#34;https://gist.github.com/johtani/91cfd2753aba2e001c1d39f47666ada7&#34;&gt;このGist&lt;/a&gt;にあるように変更して、&lt;code&gt;ant build-dict&lt;/code&gt;とやれば辞書のビルドが可能です。
+また、&lt;code&gt;cd lucene/;ant jar&lt;/code&gt;とすれば、UniDicの辞書を内包したjarファイルもビルドできます(&lt;code&gt;lucene/build/analysis/kuromoji&lt;/code&gt;の下にjarファイルができあがります)。&lt;/p&gt;
+&lt;h2 id=&#34;確認&#34;&gt;確認？&lt;/h2&gt;
+&lt;p&gt;一応、パッチは動くのですが、パッチ自体はUniDicの辞書をビルドする仕組みはオフのままです。なので、テストをどうやろう？というところでやなんで止まっています。。。&lt;/p&gt;
+&lt;p&gt;ただ、実際に作ったパッチできちんとIPAdicとUniDicがそれぞれビルドできているかの確認はしないとなと。&lt;/p&gt;
+&lt;p&gt;ということで、2つのjarファイルを読み込んで、それぞれトークナイズして、その出力を表示する&lt;a href=&#34;https://github.com/johtani/check-dictionary&#34;&gt;ツールを作ってみました&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;上記パッチを適用したlucene-solrのソースを持ってきて、IPAdicの辞書を内包したkuromojiのjarファイルと、UniDicの辞書を内包したjarファイルを用意し、ツールの支持に従って、ファイルをディレクトリに配置して、実行すれば以下のような出力がされるようになっています（とりあえず作ったものなので、Javaファイルにトークナイズしたいテキストを書かないといけないのですが）。&lt;/p&gt;
+&lt;p&gt;たとえば、「自転車と自動車の違いはなんでしょう？」という文字列を入力すると、以下のような出力になりました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;+++ ipadic ++++++++++++++
 token[0] is [自転車]
 token[1] is [と]
 token[2] is [自動車]
@@ -276,12 +277,12 @@ token[6] is [違い]
 token[7] is [は]
 token[8] is [なん]
 token[9] is [でしょう]
-</code></pre><p>UniDicは[短単位]で語彙が扱われるため、「自転車」や「自動車」がそれぞれ「自転」「車」、「自動」「車」という形でトークナイズされていることがわかります。</p>
-<p>どちらがより便利なのか？というのは用途によっても変わってくるかと思いますが、検索の転置インデックスとしては、より短い単語で区切られている方が、より多くの文書にヒットする可能性が高くなるので、便利な可能性が高いです。</p>
-<h3 id="まとめ">まとめ</h3>
-<p>ということで、パッチを作ってみたものの、まだ取り込まれていない状況です。
-着地点をどうするかって話かなと思っています。興味があれば遊んでみていただければと。</p>
-<p>将来的には、<a href="https://issues.apache.org/jira/browse/LUCENE-8816">辞書をjarから切り離して別のディレクトリやjarとして使えるようにしよう</a>というIssueも作られています。こちらがすすめば、UniDicだけでなく、その他の辞書を切り替えながら使えるようになる日が来るのではないでしょうか？</p>
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;UniDicは[短単位]で語彙が扱われるため、「自転車」や「自動車」がそれぞれ「自転」「車」、「自動」「車」という形でトークナイズされていることがわかります。&lt;/p&gt;
+&lt;p&gt;どちらがより便利なのか？というのは用途によっても変わってくるかと思いますが、検索の転置インデックスとしては、より短い単語で区切られている方が、より多くの文書にヒットする可能性が高くなるので、便利な可能性が高いです。&lt;/p&gt;
+&lt;h3 id=&#34;まとめ&#34;&gt;まとめ&lt;/h3&gt;
+&lt;p&gt;ということで、パッチを作ってみたものの、まだ取り込まれていない状況です。
+着地点をどうするかって話かなと思っています。興味があれば遊んでみていただければと。&lt;/p&gt;
+&lt;p&gt;将来的には、&lt;a href=&#34;https://issues.apache.org/jira/browse/LUCENE-8816&#34;&gt;辞書をjarから切り離して別のディレクトリやjarとして使えるようにしよう&lt;/a&gt;というIssueも作られています。こちらがすすめば、UniDicだけでなく、その他の辞書を切り替えながら使えるようになる日が来るのではないでしょうか？&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -292,37 +293,37 @@ token[9] is [でしょう]
       
       <guid>https://blog.johtani.info/blog/2014/01/28/release-lucene-gosen-4-dot-6-1/</guid>
       <description>Lucene/Solr 4.6.1がリリースされそう(バイナリ配布待ち)lucene-gosenの4.6.1対応版をリリースしました。 ライブラリのインタフェースな</description>
-      <content:encoded><p>Lucene/Solr 4.6.1がリリースされそう(バイナリ配布待ち)<a href="https://code.google.com/p/lucene-gosen/">lucene-gosen</a>の4.6.1対応版をリリースしました。</p>
-<p>ライブラリのインタフェースなどは特に変更はないのですが、ライブラリのダウンロード先が変更になっているため、注意喚起です。</p>
-<!-- more -->
-<p>Google Project Hostingの仕様変更により、Downloadsに新規ファイルがアップロードできなくなっています。（2014年から）</p>
-<p>このため、プロジェクトの選択肢としては以下の3点となっています。</p>
-<ol>
-<li>Google Driveにファイルをアップロードしてダウンロードしてもらう</li>
-<li>他のソースコード管理サイトなどを利用する。</li>
-<li>他のダウンロードサイトを利用する</li>
-</ol>
-<p>1.と3.は場所が違うだけで、方法は一緒です。
-今回は、暫定的に1.を利用してダウンロードするように対応しました。</p>
-<p>ダウンロード先はプロジェクトのページにリンクが有りますが、わかりにくいのでキャプチャを撮ってみました。</p>
+      <content:encoded>&lt;p&gt;Lucene/Solr 4.6.1がリリースされそう(バイナリ配布待ち)&lt;a href=&#34;https://code.google.com/p/lucene-gosen/&#34;&gt;lucene-gosen&lt;/a&gt;の4.6.1対応版をリリースしました。&lt;/p&gt;
+&lt;p&gt;ライブラリのインタフェースなどは特に変更はないのですが、ライブラリのダウンロード先が変更になっているため、注意喚起です。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;Google Project Hostingの仕様変更により、Downloadsに新規ファイルがアップロードできなくなっています。（2014年から）&lt;/p&gt;
+&lt;p&gt;このため、プロジェクトの選択肢としては以下の3点となっています。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Google Driveにファイルをアップロードしてダウンロードしてもらう&lt;/li&gt;
+&lt;li&gt;他のソースコード管理サイトなどを利用する。&lt;/li&gt;
+&lt;li&gt;他のダウンロードサイトを利用する&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;1.と3.は場所が違うだけで、方法は一緒です。
+今回は、暫定的に1.を利用してダウンロードするように対応しました。&lt;/p&gt;
+&lt;p&gt;ダウンロード先はプロジェクトのページにリンクが有りますが、わかりにくいのでキャプチャを撮ってみました。&lt;/p&gt;
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20140128/project_home.jpg" />
-    </div>
-    <a href="/images/entries/20140128/project_home.jpg" itemprop="contentUrl"></a>
-      <figcaption align="center"><h4>ダウンロード先</h4>
-      </figcaption>
-  </figure>
-</div>
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20140128/project_home.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20140128/project_home.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+      &lt;figcaption align=&#34;center&#34;&gt;&lt;h4&gt;ダウンロード先&lt;/h4&gt;
+      &lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
 
-<p>これまでの<code>Featured - Downloads</code>とは異なり、<code>Links - External links</code>の下に
-<a href="https://drive.google.com/folderview?id=0B0xz3tf1TTPnYTlSNExkTzBhWnc&amp;usp=sharing">Downloads lucene-gosen 4.6.1</a>というリンクを用意してあります。</p>
-<p>フォルダとなっており、各種jarファイルがリストされていますので、こちらからダウンロードをお願いします。
-今後は、この下にダウンロードリンクを追加していく予定です。</p>
-<p>ただし、2.で述べたように「別のソースコード管理サイト」も検討中です。</p>
+&lt;p&gt;これまでの&lt;code&gt;Featured - Downloads&lt;/code&gt;とは異なり、&lt;code&gt;Links - External links&lt;/code&gt;の下に
+&lt;a href=&#34;https://drive.google.com/folderview?id=0B0xz3tf1TTPnYTlSNExkTzBhWnc&amp;amp;usp=sharing&#34;&gt;Downloads lucene-gosen 4.6.1&lt;/a&gt;というリンクを用意してあります。&lt;/p&gt;
+&lt;p&gt;フォルダとなっており、各種jarファイルがリストされていますので、こちらからダウンロードをお願いします。
+今後は、この下にダウンロードリンクを追加していく予定です。&lt;/p&gt;
+&lt;p&gt;ただし、2.で述べたように「別のソースコード管理サイト」も検討中です。&lt;/p&gt;
 </content:encoded>
     </item>
     

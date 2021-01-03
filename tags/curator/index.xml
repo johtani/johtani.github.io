@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
   <channel>
     <title>curator on @johtaniの日記 3rd</title>
     <link>https://blog.johtani.info/tags/curator/</link>
@@ -14,208 +15,208 @@
       
       <guid>https://blog.johtani.info/blog/2014/07/28/curator-2-0-and-1-1/</guid>
       <description>Curatorの1.2.0がリリースされました。 前回のCuratorの記事が古くなってしまった（1.1.0からコマンドのI/Fが変更された）</description>
-      <content:encoded><p><a href="http://www.elasticsearch.org/blog/curator-1-2-0-released/">Curatorの1.2.0がリリース</a>されました。</p>
-<p><a href="http://blog.johtani.info/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/">前回のCuratorの記事</a>が古くなってしまった（1.1.0からコマンドのI/Fが変更された）ので
-1.1.0および1.2.0に関する記事を翻訳しておきます。</p>
-<p>ちなみに、<a href="https://github.com/elasticsearch/curator/">Curator</a>とは、Elasticsearchに時系列のインデックス（例：LogstashやFluentdでログを保存）を保存している場合にそれらのインデックスを管理（削除したり、クローズしたり）するための便利なツールです。
-Curatorの概要については、<a href="https://github.com/elasticsearch/curator/">GitHubリポジトリ</a>か<a href="http://blog.johtani.info/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/">前回の記事</a>をご覧ください。</p>
-<!-- more -->
-<h1 id="curator-110リリース-20140613公開a-namecurator_v110">Curator 1.1.0リリース (2014/06/13公開)<a name="curator_v110"/></h1>
-<p>元記事：<a href="http://www.elasticsearch.org/blog/elasticsearch-curator-version-1-1-0-released/">elasticsearch curator - version 1.1.0 released</a></p>
-<p>Elasticsearch 1.0.0がリリースされ、新しい機能、Snapshot &amp; Restoreが利用できるようになりました。
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;http://www.elasticsearch.org/blog/curator-1-2-0-released/&#34;&gt;Curatorの1.2.0がリリース&lt;/a&gt;されました。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://blog.johtani.info/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/&#34;&gt;前回のCuratorの記事&lt;/a&gt;が古くなってしまった（1.1.0からコマンドのI/Fが変更された）ので
+1.1.0および1.2.0に関する記事を翻訳しておきます。&lt;/p&gt;
+&lt;p&gt;ちなみに、&lt;a href=&#34;https://github.com/elasticsearch/curator/&#34;&gt;Curator&lt;/a&gt;とは、Elasticsearchに時系列のインデックス（例：LogstashやFluentdでログを保存）を保存している場合にそれらのインデックスを管理（削除したり、クローズしたり）するための便利なツールです。
+Curatorの概要については、&lt;a href=&#34;https://github.com/elasticsearch/curator/&#34;&gt;GitHubリポジトリ&lt;/a&gt;か&lt;a href=&#34;http://blog.johtani.info/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/&#34;&gt;前回の記事&lt;/a&gt;をご覧ください。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h1 id=&#34;curator-110リリース-20140613公開a-namecurator_v110&#34;&gt;Curator 1.1.0リリース (2014/06/13公開)&lt;a name=&#34;curator_v110&#34;/&gt;&lt;/h1&gt;
+&lt;p&gt;元記事：&lt;a href=&#34;http://www.elasticsearch.org/blog/elasticsearch-curator-version-1-1-0-released/&#34;&gt;elasticsearch curator - version 1.1.0 released&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Elasticsearch 1.0.0がリリースされ、新しい機能、Snapshot &amp;amp; Restoreが利用できるようになりました。
 Snapshotはある時点でのインデックスの写真を撮るように、バックアップを作成することができます。
 1.0.0が発表されてすぐに、この機能に関するリクエストが寄せられるようになりました。
 「Curatorにスナップショットを追加して！」もしくは「いつCuratorでスナップショットが使えるようになる？」といった感じです。
-これがあなたの要望なら、それはついに叶えられました。しかも他の追加機能も一緒にです。</p>
-<h2 id="新機能">新機能</h2>
-<p>Curatorの新機能は以下のとおりです。</p>
-<ul>
-<li>新CLI構造</li>
-<li>スナップショット(Snapshot)</li>
-<li>エイリアス(Aliases)</li>
-<li>パターンによる除外インデックス指定</li>
-<li>配置ルーティング(Allocation Routing)</li>
-<li>インデックスとスナップショットの表示</li>
-<li>リポジトリ管理(個別のスクリプトによる)</li>
-<li><a href="https://github.com/elasticsearch/curator/wiki">ドキュメントWiki</a></li>
-</ul>
-<h3 id="新コマンドライン構造">新コマンドライン構造</h3>
-<p><strong>注意</strong>：コマンドライン構造の変更とは、Curator 1.1.0以前のcron記述が動作しないことを意味します。Curator 1.1.0にアップグレードする場合はコマンドも修正が必要となるので注意してください。</p>
-<p>シンプルにするために、<em>commands</em>という概念を追加しました。
+これがあなたの要望なら、それはついに叶えられました。しかも他の追加機能も一緒にです。&lt;/p&gt;
+&lt;h2 id=&#34;新機能&#34;&gt;新機能&lt;/h2&gt;
+&lt;p&gt;Curatorの新機能は以下のとおりです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;新CLI構造&lt;/li&gt;
+&lt;li&gt;スナップショット(Snapshot)&lt;/li&gt;
+&lt;li&gt;エイリアス(Aliases)&lt;/li&gt;
+&lt;li&gt;パターンによる除外インデックス指定&lt;/li&gt;
+&lt;li&gt;配置ルーティング(Allocation Routing)&lt;/li&gt;
+&lt;li&gt;インデックスとスナップショットの表示&lt;/li&gt;
+&lt;li&gt;リポジトリ管理(個別のスクリプトによる)&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/elasticsearch/curator/wiki&#34;&gt;ドキュメントWiki&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;新コマンドライン構造&#34;&gt;新コマンドライン構造&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;/strong&gt;：コマンドライン構造の変更とは、Curator 1.1.0以前のcron記述が動作しないことを意味します。Curator 1.1.0にアップグレードする場合はコマンドも修正が必要となるので注意してください。&lt;/p&gt;
+&lt;p&gt;シンプルにするために、&lt;em&gt;commands&lt;/em&gt;という概念を追加しました。
 また、ヘルプの出力もわかりやすくなっています。
-前のバージョンと同じタスクをCuratorは実行できますが、異なるフォーマットを用いるようになりました。</p>
-<p>旧コマンド：</p>
-<pre><code>curator -d 30
-</code></pre><p>新コマンド：</p>
-<pre><code>curator delete --older-than 30
-</code></pre><p>コマンドは、フラグとは異なりハイフンを前に付けないことに注意してください。
+前のバージョンと同じタスクをCuratorは実行できますが、異なるフォーマットを用いるようになりました。&lt;/p&gt;
+&lt;p&gt;旧コマンド：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator -d 30
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;新コマンド：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator delete --older-than 30
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;コマンドは、フラグとは異なりハイフンを前に付けないことに注意してください。
 また、似たような名前のフラグがあることに気をつけてください。
-例えば、<code>--older-than</code>フラグは多くのコマンドに利用できます。
-指定される値は各ケースにおいて同一です。「指定された数よりも古いインデックス」となります。</p>
-<p>新しいコマンドのリストは次のとおりです。</p>
-<ul>
-<li>alias</li>
-<li>allocation</li>
-<li>bloom</li>
-<li>close</li>
-<li>delete</li>
-<li>optimize</li>
-<li>show</li>
-<li>snapshot</li>
-</ul>
-<p>コマンドのヘルプは次のコマンドで表示されます。</p>
-<pre><code>curator [COMMAND] --help
-</code></pre><p>コマンドに関係あるフラグがすべて表示されます。</p>
-<h3 id="スナップショットsnapshots">スナップショット(snapshots)</h3>
-<p><code>snapshot</code>コマンドで、存在しているリポジトリにインデックスのスナップショットを保存することができます。</p>
-<p>Curatorはインデックス毎に1つのスナップショットを作成し、インデックスから名前をつけます。
-例えば、インデックスの名前が<code>logstash-2014.06.10</code>の場合、スナップショットの名前は<code>logstash-2014.06.10</code>となります。
-指定した条件を元に、シーケンシャルに、1つずつインデックスのスナップショットを作成していきます。</p>
-<pre><code>curator snapshot --older-than 20 --repository REPOSITORY_NAME
-</code></pre><p>このコマンドは、20日以上古いインデックスすべてのスナップショットを作成し、<code>REPOSITORY_NAME</code>で指定されたリポジトリに保存します。</p>
-<p><code>es_repo_mgr</code>と呼ばれるリポジトリ作成を支援するスクリプトがCuratorには含まれています。
-ファイルシステムおよびS3タイプのリポジトリ両方の作成を支援します。</p>
-<p>さらに、古いインデックスのスナップショットを取ることができることに加えて、Curatorは最新のインデックスをアップロードする方法も提供します。
-これは、<a href="http://www.elasticsearch.org/overview/marvel/">Elasticsearch Marvel</a>のインデックスをアップロードするときに便利です。
-トラブルシューティングを目的として、パフォーマンスデータを他の人に見せる場合などです。</p>
-<pre><code>curator snapshot --most-recent 3 --prefix .marvel- --repository REPOSITORY_NAME
-</code></pre><p>このコマンドでは、最新の3つのMarvelインデックスのスナップショットを指定されたリポジトリに保存できます。</p>
-<h3 id="エイリアスaliases">エイリアス(aliases)</h3>
-<p>Curatorはすでに存在するエイリアスにインデックスを追加することも、削除することもできるようになりました。
-ただし、エイリアスがすでに存在している必要があります。エイリアスの作成はできません。</p>
-<p><code>last_week</code>という前の一週間のインデックスのエイリアスを保持していること想像してください。
-この場合、次の2つのコマンドを利用することで、エイリアスを管理できます。</p>
-<pre><code>curator alias --alias-older-than 7 --alias last_week
+例えば、&lt;code&gt;--older-than&lt;/code&gt;フラグは多くのコマンドに利用できます。
+指定される値は各ケースにおいて同一です。「指定された数よりも古いインデックス」となります。&lt;/p&gt;
+&lt;p&gt;新しいコマンドのリストは次のとおりです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;alias&lt;/li&gt;
+&lt;li&gt;allocation&lt;/li&gt;
+&lt;li&gt;bloom&lt;/li&gt;
+&lt;li&gt;close&lt;/li&gt;
+&lt;li&gt;delete&lt;/li&gt;
+&lt;li&gt;optimize&lt;/li&gt;
+&lt;li&gt;show&lt;/li&gt;
+&lt;li&gt;snapshot&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;コマンドのヘルプは次のコマンドで表示されます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator [COMMAND] --help
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;コマンドに関係あるフラグがすべて表示されます。&lt;/p&gt;
+&lt;h3 id=&#34;スナップショットsnapshots&#34;&gt;スナップショット(snapshots)&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;snapshot&lt;/code&gt;コマンドで、存在しているリポジトリにインデックスのスナップショットを保存することができます。&lt;/p&gt;
+&lt;p&gt;Curatorはインデックス毎に1つのスナップショットを作成し、インデックスから名前をつけます。
+例えば、インデックスの名前が&lt;code&gt;logstash-2014.06.10&lt;/code&gt;の場合、スナップショットの名前は&lt;code&gt;logstash-2014.06.10&lt;/code&gt;となります。
+指定した条件を元に、シーケンシャルに、1つずつインデックスのスナップショットを作成していきます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator snapshot --older-than 20 --repository REPOSITORY_NAME
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;このコマンドは、20日以上古いインデックスすべてのスナップショットを作成し、&lt;code&gt;REPOSITORY_NAME&lt;/code&gt;で指定されたリポジトリに保存します。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;es_repo_mgr&lt;/code&gt;と呼ばれるリポジトリ作成を支援するスクリプトがCuratorには含まれています。
+ファイルシステムおよびS3タイプのリポジトリ両方の作成を支援します。&lt;/p&gt;
+&lt;p&gt;さらに、古いインデックスのスナップショットを取ることができることに加えて、Curatorは最新のインデックスをアップロードする方法も提供します。
+これは、&lt;a href=&#34;http://www.elasticsearch.org/overview/marvel/&#34;&gt;Elasticsearch Marvel&lt;/a&gt;のインデックスをアップロードするときに便利です。
+トラブルシューティングを目的として、パフォーマンスデータを他の人に見せる場合などです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator snapshot --most-recent 3 --prefix .marvel- --repository REPOSITORY_NAME
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;このコマンドでは、最新の3つのMarvelインデックスのスナップショットを指定されたリポジトリに保存できます。&lt;/p&gt;
+&lt;h3 id=&#34;エイリアスaliases&#34;&gt;エイリアス(aliases)&lt;/h3&gt;
+&lt;p&gt;Curatorはすでに存在するエイリアスにインデックスを追加することも、削除することもできるようになりました。
+ただし、エイリアスがすでに存在している必要があります。エイリアスの作成はできません。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;last_week&lt;/code&gt;という前の一週間のインデックスのエイリアスを保持していること想像してください。
+この場合、次の2つのコマンドを利用することで、エイリアスを管理できます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator alias --alias-older-than 7 --alias last_week
 curator alias --unalias-older-than 14 --alias last_week
-</code></pre><p>新しく作られたインデックスが<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html#indices-templates">インデックステンプレート</a>によって
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;新しく作られたインデックスが&lt;a href=&#34;http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-templates.html#indices-templates&#34;&gt;インデックステンプレート&lt;/a&gt;によって
 自動的にエイリアスの一部となるようにElasticsearchに設定しておくと、さらに便利です。
-この場合、新しいインデックスが自動的に<code>this_week</code>というエイリアスの一部になるようにしてあれば、以下のコマンドのみとなります。</p>
-<pre><code>curator alias --unalias-older-than 7 --alias this_week
-</code></pre><p><code>this_week</code>と<code>last_week</code>のエイリアスのアップデートを保持できます。</p>
-<h3 id="パターンによる除外exclude-pattern">パターンによる除外(exclude pattern)</h3>
-<p>時には、指定したインデックスを操作から除外したくなる場合もあるでしょう。
+この場合、新しいインデックスが自動的に&lt;code&gt;this_week&lt;/code&gt;というエイリアスの一部になるようにしてあれば、以下のコマンドのみとなります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator alias --unalias-older-than 7 --alias this_week
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;this_week&lt;/code&gt;と&lt;code&gt;last_week&lt;/code&gt;のエイリアスのアップデートを保持できます。&lt;/p&gt;
+&lt;h3 id=&#34;パターンによる除外exclude-pattern&#34;&gt;パターンによる除外(exclude pattern)&lt;/h3&gt;
+&lt;p&gt;時には、指定したインデックスを操作から除外したくなる場合もあるでしょう。
 ここまでは、プレフィックスや日付によって選択されたインデックスのみを対象にしてきました。
-そこで、<code>--exclude-pattern</code>オプションです。これは、指定したインデックスを除いて処理を行うことができます。</p>
-<p><code>logstash-2014.06.11</code>というインデックスを決して削除したくないとします。
-この場合、次のコマンドのようになります。</p>
-<pre><code>curator delete --older-than 15 --exclude-pattern 2014.06.11
-</code></pre><p>Curatorはデフォルトで<code>logstash-</code>というプレフィックスにマッチしますが、<code>2014.06.11</code>というインデックスは対象外となります。</p>
-<h3 id="配置ルーティングallocation-routing">配置ルーティング(allocation routing)</h3>
-<p>Elasticsearchはノードにタグを付けることができます。
+そこで、&lt;code&gt;--exclude-pattern&lt;/code&gt;オプションです。これは、指定したインデックスを除いて処理を行うことができます。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;logstash-2014.06.11&lt;/code&gt;というインデックスを決して削除したくないとします。
+この場合、次のコマンドのようになります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator delete --older-than 15 --exclude-pattern 2014.06.11
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Curatorはデフォルトで&lt;code&gt;logstash-&lt;/code&gt;というプレフィックスにマッチしますが、&lt;code&gt;2014.06.11&lt;/code&gt;というインデックスは対象外となります。&lt;/p&gt;
+&lt;h3 id=&#34;配置ルーティングallocation-routing&#34;&gt;配置ルーティング(allocation routing)&lt;/h3&gt;
+&lt;p&gt;Elasticsearchはノードにタグを付けることができます。
 これらのタグはインデックスやシャードをクラスタのどこに配置するかをコントロールするために役立ちます。
 一般的なユースケースだと、高性能なSSDドライブを持ったノードをインデキシングのために、ハードディスクを持った性能の低いマシンは検索頻度が低い古いインデックスを配置するといった場合です。
-この場合、HDDノードには、<code>elasticsearch.yml</code>に<code>node.tag: hdd</code>、SSDノードには<code>node.tag: ssd</code>と設定されているべきです。
-Curatorはこの時、インデックスをタグに基づいてオフピークの時間帯に再配置させることができます。</p>
-<p>コマンド：</p>
-<pre><code>curator allocation --older-than 2 --rule tag=hdd
-</code></pre><p><code>index.routing.allocation.require.tag=hdd</code>という設定が２日よりも古いインデックスに適用されます。
-これは、インデックスのシャードが<code>node.tag: hdd</code>というノードに再配置される必要があると、Elasticsearchに伝えます。</p>
-<h3 id="インデックスとスナップショットの表示show-indices-and-snapshots">インデックスとスナップショットの表示(show indices and snapshots)</h3>
-<p>これは、単にあなたの持っているインデックスやスナップショットがどんなものかを表示します。</p>
-<pre><code>curator show --show-indices
-</code></pre><p>これは、デフォルトプレフィックスの<code>logstash-</code>にマッチするすべてのインデックスを表示します。</p>
-<pre><code>curator show --show-snapshots --repository REPOSITORY_NAME
-</code></pre><p>これは、指定されたリポジトリにある、デフォルトプレフィックスの<code>logstash-</code>にマッチするすべてのスナップショットを表示します。</p>
-<h3 id="リポジトリ管理repository-management">リポジトリ管理(repository management)</h3>
-<p>前に説明したとおり、<code>es_repo_mgr</code>と呼ばれるヘルパースクリプトをCuratorは含んでいます。
-現時点では、<code>fs</code>と<code>s3</code>タイプをサポートしています。
+この場合、HDDノードには、&lt;code&gt;elasticsearch.yml&lt;/code&gt;に&lt;code&gt;node.tag: hdd&lt;/code&gt;、SSDノードには&lt;code&gt;node.tag: ssd&lt;/code&gt;と設定されているべきです。
+Curatorはこの時、インデックスをタグに基づいてオフピークの時間帯に再配置させることができます。&lt;/p&gt;
+&lt;p&gt;コマンド：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator allocation --older-than 2 --rule tag=hdd
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;index.routing.allocation.require.tag=hdd&lt;/code&gt;という設定が２日よりも古いインデックスに適用されます。
+これは、インデックスのシャードが&lt;code&gt;node.tag: hdd&lt;/code&gt;というノードに再配置される必要があると、Elasticsearchに伝えます。&lt;/p&gt;
+&lt;h3 id=&#34;インデックスとスナップショットの表示show-indices-and-snapshots&#34;&gt;インデックスとスナップショットの表示(show indices and snapshots)&lt;/h3&gt;
+&lt;p&gt;これは、単にあなたの持っているインデックスやスナップショットがどんなものかを表示します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator show --show-indices
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これは、デフォルトプレフィックスの&lt;code&gt;logstash-&lt;/code&gt;にマッチするすべてのインデックスを表示します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator show --show-snapshots --repository REPOSITORY_NAME
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これは、指定されたリポジトリにある、デフォルトプレフィックスの&lt;code&gt;logstash-&lt;/code&gt;にマッチするすべてのスナップショットを表示します。&lt;/p&gt;
+&lt;h3 id=&#34;リポジトリ管理repository-management&#34;&gt;リポジトリ管理(repository management)&lt;/h3&gt;
+&lt;p&gt;前に説明したとおり、&lt;code&gt;es_repo_mgr&lt;/code&gt;と呼ばれるヘルパースクリプトをCuratorは含んでいます。
+現時点では、&lt;code&gt;fs&lt;/code&gt;と&lt;code&gt;s3&lt;/code&gt;タイプをサポートしています。
 リポジトリを作る前に利用したいタイプのドキュメントを読むようにしてください。
-例えば、<code>fs</code>タイプのリポジトリを各ノードで使う場合は、同じ共有ファイルシステムに、同じパスでアクセスできなければなりません。
-パスの指定は<code>--location</code>です。</p>
-<p><code>fs</code>タイプリポジトリの作成</p>
-<pre><code>es_repo_mgr create_fs --location '/tmp/REPOSITORY_LOCATION' --repository REPOSITORY_NAME
-</code></pre><p>削除</p>
-<pre><code>es_repo_mgr delete --repository REPOSITORY_NAME
-</code></pre><h3 id="ドキュメントwiki">ドキュメントWiki</h3>
-<p><a href="https://github.com/elasticsearch/curator/wiki">Curatorのドキュメント</a>が更新され、オンラインにWiki形式でだれでも更新できるようになっています。
-コマンドやフラグのより詳細の情報はこちらで見つけることができます。また、もし、興味があれば、ドキュメントを追加することもできます。</p>
-<h2 id="インストールと更新">インストールと更新</h2>
-<p>Curator 1.1.0は<a href="https://pypi.python.org/pypi?%3Aaction=pkg_edit&amp;name=elasticsearch-curator">PyPi</a>リポジトリにあります。
-インストールは以下のとおりです。</p>
-<pre><code>pip install elasticsearch-curator
-</code></pre><p>バージョン1.0.0からアップグレードする場合は以下のとおりです。</p>
-<pre><code>pip uninstall elasticsearch-curator
+例えば、&lt;code&gt;fs&lt;/code&gt;タイプのリポジトリを各ノードで使う場合は、同じ共有ファイルシステムに、同じパスでアクセスできなければなりません。
+パスの指定は&lt;code&gt;--location&lt;/code&gt;です。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;fs&lt;/code&gt;タイプリポジトリの作成&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;es_repo_mgr create_fs --location &#39;/tmp/REPOSITORY_LOCATION&#39; --repository REPOSITORY_NAME
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;削除&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;es_repo_mgr delete --repository REPOSITORY_NAME
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;ドキュメントwiki&#34;&gt;ドキュメントWiki&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/elasticsearch/curator/wiki&#34;&gt;Curatorのドキュメント&lt;/a&gt;が更新され、オンラインにWiki形式でだれでも更新できるようになっています。
+コマンドやフラグのより詳細の情報はこちらで見つけることができます。また、もし、興味があれば、ドキュメントを追加することもできます。&lt;/p&gt;
+&lt;h2 id=&#34;インストールと更新&#34;&gt;インストールと更新&lt;/h2&gt;
+&lt;p&gt;Curator 1.1.0は&lt;a href=&#34;https://pypi.python.org/pypi?%3Aaction=pkg_edit&amp;amp;name=elasticsearch-curator&#34;&gt;PyPi&lt;/a&gt;リポジトリにあります。
+インストールは以下のとおりです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pip install elasticsearch-curator
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;バージョン1.0.0からアップグレードする場合は以下のとおりです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pip uninstall elasticsearch-curator
 pip install elasticsearch-curator
-</code></pre><p>バージョン1.0.0よりも古いバージョンからのアップグレードは以下のとおりです。</p>
-<pre><code>pip uninstall elasticsearch-curator
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;バージョン1.0.0よりも古いバージョンからのアップグレードは以下のとおりです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pip uninstall elasticsearch-curator
 pip uninstall elasticsearch
 pip install elasticsearch-curator
-</code></pre><p><code>pip uninstall elasticsearch</code>で、古いパイションモジュールをを削除します。
-適切なバージョンが依存関係により再インストールされます。</p>
-<h2 id="まとめ">まとめ</h2>
-<p>Curatorの新機能は素晴らしいです！このリリースは大きな改善です。
-もし、トラブルや足りないものを見つけた場合は<a href="http://github.com/elasticsearch/curator/issues">GitHub Issue</a>に報告してください。
-また、Curatorが便利だと思ったら、私たちに伝えてください。<code>#elasticsearch</code>タグを付けてツイートしてください！</p>
-<p>Curatorはまだ、始まったばかりです。Curator 2.0のロードマップを作業中です。ここまで読んでいただきありがとうございます。
-Happy Curating!</p>
-<hr>
-<h1 id="curator-120リリース20140724">Curator 1.2.0リリース(2014/07/24)</h1>
-<p>元記事：<a href="http://www.elasticsearch.org/blog/curator-1-2-0-released/">curator 1.2.0 released</a></p>
-<p><a href="#curator_v110">Curator v1.1.0</a>のリリースから、数週間が経ちました。
-私たちは、Curator 1.2.0をリリースしました。</p>
-<h2 id="新機能new-features">新機能(new features)</h2>
-<ul>
-<li>ユーザ指定の日付パターン：長い間リクエストされていた機能</li>
-<li>ウィークリーインデックスのサポート：これも長い間リクエストされていた機能</li>
-<li>複数の<a href="https://github.com/elasticsearch/curator/wiki/Logformat">ログフォーマット</a>オプション：Logstashフォーマットが利用可能</li>
-</ul>
-<p>これらの変更は<a href="https://github.com/elasticsearch/curator/wiki">Curatorドキュメント</a>にも記載されています。</p>
-<h2 id="更新updates">更新(updates)</h2>
-<ul>
-<li>ログ出力の整理：デフォルトのログ出力を整理しました。デバッグログはすべて表示されます。</li>
-<li>ドライランのログ出力の詳細化：テスト実行時に何が起きたかをわかりやすくしました。</li>
-</ul>
-<h2 id="日付パターンと--timestringdate-patterns-and---timestring">日付パターンと<code>--timestring</code>(date patterns and &ndash;timestring)</h2>
-<p>前のリリースで、セパレータ文字を利用して、インデックス名のエレメントを分離することで、日付を計算しました。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;pip uninstall elasticsearch&lt;/code&gt;で、古いパイションモジュールをを削除します。
+適切なバージョンが依存関係により再インストールされます。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;Curatorの新機能は素晴らしいです！このリリースは大きな改善です。
+もし、トラブルや足りないものを見つけた場合は&lt;a href=&#34;http://github.com/elasticsearch/curator/issues&#34;&gt;GitHub Issue&lt;/a&gt;に報告してください。
+また、Curatorが便利だと思ったら、私たちに伝えてください。&lt;code&gt;#elasticsearch&lt;/code&gt;タグを付けてツイートしてください！&lt;/p&gt;
+&lt;p&gt;Curatorはまだ、始まったばかりです。Curator 2.0のロードマップを作業中です。ここまで読んでいただきありがとうございます。
+Happy Curating!&lt;/p&gt;
+&lt;hr&gt;
+&lt;h1 id=&#34;curator-120リリース20140724&#34;&gt;Curator 1.2.0リリース(2014/07/24)&lt;/h1&gt;
+&lt;p&gt;元記事：&lt;a href=&#34;http://www.elasticsearch.org/blog/curator-1-2-0-released/&#34;&gt;curator 1.2.0 released&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;#curator_v110&#34;&gt;Curator v1.1.0&lt;/a&gt;のリリースから、数週間が経ちました。
+私たちは、Curator 1.2.0をリリースしました。&lt;/p&gt;
+&lt;h2 id=&#34;新機能new-features&#34;&gt;新機能(new features)&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;ユーザ指定の日付パターン：長い間リクエストされていた機能&lt;/li&gt;
+&lt;li&gt;ウィークリーインデックスのサポート：これも長い間リクエストされていた機能&lt;/li&gt;
+&lt;li&gt;複数の&lt;a href=&#34;https://github.com/elasticsearch/curator/wiki/Logformat&#34;&gt;ログフォーマット&lt;/a&gt;オプション：Logstashフォーマットが利用可能&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;これらの変更は&lt;a href=&#34;https://github.com/elasticsearch/curator/wiki&#34;&gt;Curatorドキュメント&lt;/a&gt;にも記載されています。&lt;/p&gt;
+&lt;h2 id=&#34;更新updates&#34;&gt;更新(updates)&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;ログ出力の整理：デフォルトのログ出力を整理しました。デバッグログはすべて表示されます。&lt;/li&gt;
+&lt;li&gt;ドライランのログ出力の詳細化：テスト実行時に何が起きたかをわかりやすくしました。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;日付パターンと--timestringdate-patterns-and---timestring&#34;&gt;日付パターンと&lt;code&gt;--timestring&lt;/code&gt;(date patterns and &amp;ndash;timestring)&lt;/h2&gt;
+&lt;p&gt;前のリリースで、セパレータ文字を利用して、インデックス名のエレメントを分離することで、日付を計算しました。
 この設計の決定は、プログラムが管理するために設計されたLogstashのインデックスを使うのには簡単でした。
-しかし、Curatorは時系列インデックス管理に成長しています。これは、異なる命名規則のインデックスを意味しています。</p>
-<p>また、インターバルによって、日付の計算が必要になる場合もあります。
-<code>--time-unit</code>オプションが残っており、<code>weeks</code>という単位を指定することもできます。
-デフォルトの<code>--timestring</code>オプションは、以前のコマンドと同様の動作をしなければなりません。次のようになります。</p>
-<table>
-<thead>
-<tr>
-<th>Time Unit</th>
-<th>Timestring</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>days</td>
-<td><code>%Y.%m.%d</code></td>
-</tr>
-<tr>
-<td>hours</td>
-<td><code>%Y.%m.%d.%H</code></td>
-</tr>
-<tr>
-<td>weeks</td>
-<td><code>%Y.%W</code></td>
-</tr>
-</tbody>
-</table>
-<p>これが意味するものは、もし、単位に<code>hours</code>をした場合、<code>--timestring</code>を指定しなかった場合は<code>%Y.%m.%d.%H</code>となります。
-これは、<a href="https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior">Pythonのstrftimeフォーマット</a>で&quot;年.月.日.時&quot;を意味します。
-同様に、<code>weeks</code>を単位に指定した場合、Curatorはデフォルトの<code>--timestring</code>は<code>%Y.%W</code>となります。</p>
-<p>この機能は、日付の間にセパレーター文字のないインデックスでも機能します。
-例えば、<code>production-20140724</code>のような日時インデックスがある場合、2日よりも古いインデックスに対する<a href="https://github.com/elasticsearch/curator/wiki/Disable-Bloom-Filter-Cache">ブルームフィルタっキャッシュのオフ</a>のコマンドは次のようになります。</p>
-<pre><code>curator bloom --prefix production- --older-than 2 --timestring %Y%m%d
-</code></pre><p>この例で、デフォルトの単位は<code>days</code>であることに注意してください。<code>hourly-2014072414</code>のような時間インデックスの場合は次のようになります。</p>
-<pre><code>curator bloom --prefix hourly- --older-than 2 --time-unit hours --timestring %Y%m%d%H
-</code></pre><h2 id="--separatorの置き換え"><code>--separator</code>の置き換え</h2>
-<p>もし、Curatorの前のバージョンでカスタムセパレータ文字を利用していた場合、次のように変更すべきです。
-前のコマンドで<code>cerberus-2014-07-24</code>のようなインデックスがある場合、コマンドを<code>--separator -</code>の用に置き換える必要があります。
-新しいコマンドは次のとおりです。</p>
-<pre><code>curator delete --prefix cerberus- --older-than 30 --timestring %Y-%m-%d
-</code></pre><p>年(<code>％Y</code>)と月(<code>%m</code>)と日('%d&rsquo;)の間にセパレータ文字を置くだけです。</p>
-<p>これは、また、Curatorで以前は不可能であったことをできるようにもします。
+しかし、Curatorは時系列インデックス管理に成長しています。これは、異なる命名規則のインデックスを意味しています。&lt;/p&gt;
+&lt;p&gt;また、インターバルによって、日付の計算が必要になる場合もあります。
+&lt;code&gt;--time-unit&lt;/code&gt;オプションが残っており、&lt;code&gt;weeks&lt;/code&gt;という単位を指定することもできます。
+デフォルトの&lt;code&gt;--timestring&lt;/code&gt;オプションは、以前のコマンドと同様の動作をしなければなりません。次のようになります。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Time Unit&lt;/th&gt;
+&lt;th&gt;Timestring&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;days&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;%Y.%m.%d&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;hours&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;%Y.%m.%d.%H&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;weeks&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;%Y.%W&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;これが意味するものは、もし、単位に&lt;code&gt;hours&lt;/code&gt;をした場合、&lt;code&gt;--timestring&lt;/code&gt;を指定しなかった場合は&lt;code&gt;%Y.%m.%d.%H&lt;/code&gt;となります。
+これは、&lt;a href=&#34;https://docs.python.org/2/library/datetime.html#strftime-and-strptime-behavior&#34;&gt;Pythonのstrftimeフォーマット&lt;/a&gt;で&amp;quot;年.月.日.時&amp;quot;を意味します。
+同様に、&lt;code&gt;weeks&lt;/code&gt;を単位に指定した場合、Curatorはデフォルトの&lt;code&gt;--timestring&lt;/code&gt;は&lt;code&gt;%Y.%W&lt;/code&gt;となります。&lt;/p&gt;
+&lt;p&gt;この機能は、日付の間にセパレーター文字のないインデックスでも機能します。
+例えば、&lt;code&gt;production-20140724&lt;/code&gt;のような日時インデックスがある場合、2日よりも古いインデックスに対する&lt;a href=&#34;https://github.com/elasticsearch/curator/wiki/Disable-Bloom-Filter-Cache&#34;&gt;ブルームフィルタっキャッシュのオフ&lt;/a&gt;のコマンドは次のようになります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator bloom --prefix production- --older-than 2 --timestring %Y%m%d
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;この例で、デフォルトの単位は&lt;code&gt;days&lt;/code&gt;であることに注意してください。&lt;code&gt;hourly-2014072414&lt;/code&gt;のような時間インデックスの場合は次のようになります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator bloom --prefix hourly- --older-than 2 --time-unit hours --timestring %Y%m%d%H
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;--separatorの置き換え&#34;&gt;&lt;code&gt;--separator&lt;/code&gt;の置き換え&lt;/h2&gt;
+&lt;p&gt;もし、Curatorの前のバージョンでカスタムセパレータ文字を利用していた場合、次のように変更すべきです。
+前のコマンドで&lt;code&gt;cerberus-2014-07-24&lt;/code&gt;のようなインデックスがある場合、コマンドを&lt;code&gt;--separator -&lt;/code&gt;の用に置き換える必要があります。
+新しいコマンドは次のとおりです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curator delete --prefix cerberus- --older-than 30 --timestring %Y-%m-%d
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;年(&lt;code&gt;％Y&lt;/code&gt;)と月(&lt;code&gt;%m&lt;/code&gt;)と日(&#39;%d&amp;rsquo;)の間にセパレータ文字を置くだけです。&lt;/p&gt;
+&lt;p&gt;これは、また、Curatorで以前は不可能であったことをできるようにもします。
 異なるセパレータ文字の混在です。
-<code>logs-2014.07.24-14</code>というようなインデックスを処理するときに<code>--timestring</code>は<code>%Y.%m.%d-%H</code>のようになります.</p>
-<p><code>--timestring</code>の詳細は<a href="https://github.com/elasticsearch/curator/wiki/Timestring">Curatorのドキュメント</a>をご覧ください。</p>
-<h2 id="フィードバック">フィードバック</h2>
-<p>これらの新しい機能はユーザのコメントやリクエストから来ています。もし、機能のリクエストやバグを発見したら、<a href="https://github.com/elasticsearch/curator/issues">こちら</a>まで連絡してください。</p>
-<p>また、Twitterでもお待ちしています。私たちのTwitter IDは<code>@elasticsearch</code>です。</p>
-<p>Happy Curating!</p>
+&lt;code&gt;logs-2014.07.24-14&lt;/code&gt;というようなインデックスを処理するときに&lt;code&gt;--timestring&lt;/code&gt;は&lt;code&gt;%Y.%m.%d-%H&lt;/code&gt;のようになります.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;--timestring&lt;/code&gt;の詳細は&lt;a href=&#34;https://github.com/elasticsearch/curator/wiki/Timestring&#34;&gt;Curatorのドキュメント&lt;/a&gt;をご覧ください。&lt;/p&gt;
+&lt;h2 id=&#34;フィードバック&#34;&gt;フィードバック&lt;/h2&gt;
+&lt;p&gt;これらの新しい機能はユーザのコメントやリクエストから来ています。もし、機能のリクエストやバグを発見したら、&lt;a href=&#34;https://github.com/elasticsearch/curator/issues&#34;&gt;こちら&lt;/a&gt;まで連絡してください。&lt;/p&gt;
+&lt;p&gt;また、Twitterでもお待ちしています。私たちのTwitter IDは&lt;code&gt;@elasticsearch&lt;/code&gt;です。&lt;/p&gt;
+&lt;p&gt;Happy Curating!&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -226,96 +227,96 @@ Happy Curating!</p>
       
       <guid>https://blog.johtani.info/blog/2014/01/24/curator-tending-your-time-series-indices-in-japanese/</guid>
       <description>Elasticsearchのcuratorのブログ記事を読んで、日本語でツイートしたところ、Aaron Mildensteinさんから日本語（</description>
-      <content:encoded><p>Elasticsearchのcuratorの<a href="http://www.elasticsearch.org/blog/curator-tending-your-time-series-indices/">ブログ記事</a>を読んで、日本語でツイートしたところ、Aaron Mildensteinさんから日本語（ローマ字）で返信を頂きました。
-せっかくなので、ブログ記事を翻訳してもいいかを尋ねたところ、快くOKを頂いたので、翻訳してみました。参考になればと。（誤訳など見つけたらコメントください。）</p>
-<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/johtani">@johtani</a> Kore no hou ga ii. Nihongo de no Curator RT, arigatou gozaimasu! <a href="https://twitter.com/search?q=%23elasticsearch&amp;src=hash">#elasticsearch</a> <a href="https://twitter.com/search?q=%23curator&amp;src=hash">#curator</a> <a href="https://twitter.com/search?q=%23logstash&amp;src=hash">#logstash</a></p>&mdash; Aaron Mildenstein (@theuntergeek) <a href="https://twitter.com/theuntergeek/statuses/426009968513277952">2014, 1月 22</a></blockquote>
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-<!-- more -->
-<h2 id="curator-時系列インデックスの管理">curator: 時系列インデックスの管理</h2>
-<p>原文：<a href="http://www.elasticsearch.org/blog/curator-tending-your-time-series-indices/">curator: tending your time-series indices</a></p>
-<h2 id="背景">背景</h2>
-<p>数年前、Elasticsearch、Logstash、Kibana(ELK)を管理し、ここ30日よりも古いインデックスを自動的に削除する方法を必要としていました。
-APIドキュメントを読み、#logstashや#elasticsearchのIRCチャネルのコミュニティの助けを借りて、簡単なスクリプトとcronを用意するのが簡単であることを知りました。</p>
-<pre><code>curl -XDELETE 'localhost:9200/logstash-2014.01.01?pretty'
-</code></pre><p>もちろん、これも動作しますが、日付を生成するのがめんどくさいのでもっとエレガントな方法が欲しかったです。</p>
-<h2 id="最初に">最初に</h2>
-<p>pythonでスクリプトを書き始めました。特定の日数のインデックスを管理するだけのコマンドラインクリーナーを書いてコミュニティにシェアしました。他の人が、新しい機能を追加してくれました。私は、古いインデックスをoptimizeすることができる他のスクリプトも書きました。これは、シャードごとにnセグメント以上存在しないように各シャードのセグメントをマージすることです。これらのスクリプトで1つになるようにマージしたりエンハンスし、古いインデックスを管理する助けになるツールです。</p>
-<h2 id="curatorの紹介">curatorの紹介</h2>
-<p>Curatorで可能なインデックスオペレーション</p>
-<ul>
-<li>削除（日付もしくは、トータル容量による制限）</li>
-<li>インデックスのクローズ(Close)</li>
-<li>bloom filter cacheの無効化</li>
-<li>Optimize(LuceneのforceMerge)</li>
-</ul>
-<h2 id="curatorのインストール">curatorのインストール</h2>
-<p>この記事を書いている時点で、Curator は0.5.1がリリースされ、0.90.10に対応しています。Curatorはまた、Elasticsearchの1.0(現在はRC1)へも対応しています。各リリースへの互換性の保証のためのテストも行っています。</p>
-<p>現時点では、gitリポジトリで配布しています。近い将来、pipによるインストール可能なパッケージにする予定です。利用することを恐れないでください。もし、pythonとpipがあなたのマシンにインストールされていれば、次のようにインストールは簡単です。</p>
-<pre><code>git clone https://github.com/elasticsearch/curator.git
+      <content:encoded>&lt;p&gt;Elasticsearchのcuratorの&lt;a href=&#34;http://www.elasticsearch.org/blog/curator-tending-your-time-series-indices/&#34;&gt;ブログ記事&lt;/a&gt;を読んで、日本語でツイートしたところ、Aaron Mildensteinさんから日本語（ローマ字）で返信を頂きました。
+せっかくなので、ブログ記事を翻訳してもいいかを尋ねたところ、快くOKを頂いたので、翻訳してみました。参考になればと。（誤訳など見つけたらコメントください。）&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34; lang=&#34;ja&#34;&gt;&lt;p&gt;&lt;a href=&#34;https://twitter.com/johtani&#34;&gt;@johtani&lt;/a&gt; Kore no hou ga ii. Nihongo de no Curator RT, arigatou gozaimasu! &lt;a href=&#34;https://twitter.com/search?q=%23elasticsearch&amp;amp;src=hash&#34;&gt;#elasticsearch&lt;/a&gt; &lt;a href=&#34;https://twitter.com/search?q=%23curator&amp;amp;src=hash&#34;&gt;#curator&lt;/a&gt; &lt;a href=&#34;https://twitter.com/search?q=%23logstash&amp;amp;src=hash&#34;&gt;#logstash&lt;/a&gt;&lt;/p&gt;&amp;mdash; Aaron Mildenstein (@theuntergeek) &lt;a href=&#34;https://twitter.com/theuntergeek/statuses/426009968513277952&#34;&gt;2014, 1月 22&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;//platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;curator-時系列インデックスの管理&#34;&gt;curator: 時系列インデックスの管理&lt;/h2&gt;
+&lt;p&gt;原文：&lt;a href=&#34;http://www.elasticsearch.org/blog/curator-tending-your-time-series-indices/&#34;&gt;curator: tending your time-series indices&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;背景&#34;&gt;背景&lt;/h2&gt;
+&lt;p&gt;数年前、Elasticsearch、Logstash、Kibana(ELK)を管理し、ここ30日よりも古いインデックスを自動的に削除する方法を必要としていました。
+APIドキュメントを読み、#logstashや#elasticsearchのIRCチャネルのコミュニティの助けを借りて、簡単なスクリプトとcronを用意するのが簡単であることを知りました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XDELETE &#39;localhost:9200/logstash-2014.01.01?pretty&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;もちろん、これも動作しますが、日付を生成するのがめんどくさいのでもっとエレガントな方法が欲しかったです。&lt;/p&gt;
+&lt;h2 id=&#34;最初に&#34;&gt;最初に&lt;/h2&gt;
+&lt;p&gt;pythonでスクリプトを書き始めました。特定の日数のインデックスを管理するだけのコマンドラインクリーナーを書いてコミュニティにシェアしました。他の人が、新しい機能を追加してくれました。私は、古いインデックスをoptimizeすることができる他のスクリプトも書きました。これは、シャードごとにnセグメント以上存在しないように各シャードのセグメントをマージすることです。これらのスクリプトで1つになるようにマージしたりエンハンスし、古いインデックスを管理する助けになるツールです。&lt;/p&gt;
+&lt;h2 id=&#34;curatorの紹介&#34;&gt;curatorの紹介&lt;/h2&gt;
+&lt;p&gt;Curatorで可能なインデックスオペレーション&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;削除（日付もしくは、トータル容量による制限）&lt;/li&gt;
+&lt;li&gt;インデックスのクローズ(Close)&lt;/li&gt;
+&lt;li&gt;bloom filter cacheの無効化&lt;/li&gt;
+&lt;li&gt;Optimize(LuceneのforceMerge)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;curatorのインストール&#34;&gt;curatorのインストール&lt;/h2&gt;
+&lt;p&gt;この記事を書いている時点で、Curator は0.5.1がリリースされ、0.90.10に対応しています。Curatorはまた、Elasticsearchの1.0(現在はRC1)へも対応しています。各リリースへの互換性の保証のためのテストも行っています。&lt;/p&gt;
+&lt;p&gt;現時点では、gitリポジトリで配布しています。近い将来、pipによるインストール可能なパッケージにする予定です。利用することを恐れないでください。もし、pythonとpipがあなたのマシンにインストールされていれば、次のようにインストールは簡単です。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/elasticsearch/curator.git
 pip install -r requirements.txt
-</code></pre><p>インストール後の確認は次のコマンドです。</p>
-<pre><code>$ ./curator.py -v
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;インストール後の確認は次のコマンドです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ ./curator.py -v
 curator.py 0.5.1
-</code></pre><h3 id="利用方法とサンプル">利用方法とサンプル</h3>
-<p>サンプルを示す前に、<a href="#arguments">オプションを見ておくとよいでしょう</a>。このリストは長いですが（この記事の最後に含まれています）、どのようなことがコントロールできるかを説明しています。デフォルトがどうなっているかに注意してください。もし、デフォルト値で良い場合は、フラグを指定する必要はありません。</p>
-<p>では、簡単なサンプルを見ながら、CuratorがELKスタックをどうやって管理するかを見て行きましょう。</p>
-<h3 id="削除delete">削除(delete)</h3>
-<p>90日以上のインデックスを保存したくないとしましょう。コマンドは次のようになります。</p>
-<pre><code>$ curator.py --host my-elasticsearch -d 90
-</code></pre><p><code>-d</code>で日数を指定しているだけです。簡単でしょ？</p>
-<h4 id="容量による削除delete-by-space">容量による削除(delete by space)</h4>
-<p>これは、指定したギガバイト数を超えたインデックスを場合に(最も古いものから)削除を行う特殊なケースです。</p>
-<pre><code>$ curator.py --host my-elasticsearch -C space -g 10024
-</code></pre><p><code>-C</code>でspaceによるcurationであること、<code>-g</code>でギガバイト数(10024、10TB)であることを指定しているのがわかります。<code>-g</code>は1.5や0.5という数値を指定できます。</p>
-<p><em>その他のCuratorオプションは<code>space</code>による削除と組み合わせて使用できないことに注意してください。</em></p>
-<h3 id="クローズclose">クローズ(close)</h3>
-<p><a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-open-close.html">Open/Close Index API</a>により、インデックスをクローズすることができます。</p>
-<blockquote>
-<p>open/close index APIを利用すると、インデックスをクローズしたり、あとでオープンしたりすることができます。クローズされたインデックスはクラスタのオーバヘッドにほとんどならず(メタデータの管理を除く)、読み書き操作の妨げにもなりません。クローズされたインデックスは、リカバリプロセス時に、オープンされます。</p>
-</blockquote>
-<p>インデックスをクローズすることは、存在はするが検索できないという意味です。何が便利なのでしょう？</p>
-<p>90日のインデックスを保存する義務があるが、検索は過去30日のインデックスを対象にする以外は稀であるような場合を想像してください。このような状況で、価値のあるリソース(ヒープスペースなど)を節約するためにインデックスをクローズすることができます。これは、クラスタに検索やインデキシングのためのメモリを与えることができることを意味します。そして、もし、クローズしたインデックスのデータが必要になったら、APIを呼び出してインデックスをオープンすれば検索できます。</p>
-<p><em>このような場合、今オープンしているインデックスが再び、クローズされないように、一時的にCuratorのスケジュール実行をオフにしておくのが懸命です。</em></p>
-<pre><code>$ curator.py --host my-elasticsearch -c 30 -d 90
-</code></pre><p>先ほど説明した例の実行方法です。これは、30日よりも古いインデックスはクローズし、90日より古いインデックスを削除します。本当に簡単でしょ？</p>
-<h3 id="bloom-filterの無効化">bloom filterの無効化</h3>
-<p><a href="https://github.com/elasticsearch/elasticsearch/issues/4525">これは、0.90.9以降のバージョンで利用可能な機能です。(リンク先はIssue #4525)</a></p>
-<p>心配しないでください。このスクリプトは操作を行う前に、elasticsearchが利用可能なバージョンであるかをチェックします。</p>
-<p>bloom filterとは何でしょう？なぜ、無効化したくなるのでしょう？</p>
-<p>bloom filterはインデキシング操作を高速化するためにリソースを割り当てられます。時系列データで、インデキシングしている間もこれは有用です。インデックスは2日後には、日付が変わると新しいデータはおそらくインデックスされません。そのインデックスにはもはや必要のないリソースをbloom filterはまだ持っています。Curatorはこれらのリソースを開放することができます！</p>
-<pre><code>$ curator.py --host my-elasticsearch -b 2 -c 30 -d 90
-</code></pre><p>これで、bloom filterのリソースは少なくとも2日(1にもできます)よりも古いインデックスについては利用せず、30日より古いインデックスはクローズし、90より古いインデックスは削除します。</p>
-<h3 id="optimizeというよりもforcemerge">optimizeというよりもforcemerge</h3>
-<p>コマンドの説明をする前に、<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-optimize.html">Elasticsearch APIのoptimize</a>を見ることは、生きているインデックスや&quot;cold&quot;インデックス(インデキシングがアクティブではないという意味)に実行する必要があるということを理解するために重要です。実際、<a href="http://blog.trifork.com/2011/11/21/simon-says-optimize-is-bad-for-you/">optimizeはLuceneではforceMergeと名前が変えられ</a>、インデックスを改善するためにoptimizeを呼び出す必要はなくなりました。Elasticsearchのセグメントをマージすることは利点がありますが、coldインデックス全てに対してoptimizeを開始する前に、コストを理解する必要があります。</p>
-<p>forceMerge操作はインデックスにある各シャードのセグメントの数を少なくします。各セグメントはオーバヘッドがあるため、セグメントが多いということは、より多くのリソースを使うという意味です。良さそうですね？リソースが少ない？</p>
-<p>それは、可能ですが、merge操作を実行するには多くのディスクやネットワークI/Oが必要で、ディスクやクラスタの通常の書き込み操作に悪影響を及ぼします。もし、これが必要なら私のアドバイスを良く考えてください。(数％ほど)検索を速くし、リソースの使用量も減らすことができます。また、管理しているセグメント数が小さくなるということは、クラスタのリカバリを速くすることにもなります。1つのインデックスをoptimizeするためにはおそらく1時間以上の時間がかかります。「使用する前に目立たない場所で試してください」というクリーニングボトル(訳注：洗剤とか漂白剤かな？)の注意書きと同様に、ディスクI/Oが低い時にテストし、もし操作とリソースがあなたのクラスタのユースケースにあっているかを見てください。デフォルトでは、シャードごとに2つのセグメントにマージしますが、<code>--max_num_segments</code>フラグで変更可能です。</p>
-<p>ここまでのサンプルは次のようなコマンドになります。</p>
-<pre><code>$ curator.py --host my-elasticsearch -b 2 -o 2 -c 30 -d 90
-</code></pre><p>これで、bloom filterは2日より古いインデックスでは向こうにし、2日より古いインデックスは&quot;optimize&quot;し、30日より古いインデックスはクローズし、90日より古いインデックスは削除されます。</p>
-<h3 id="操作の順序">操作の順序</h3>
-<p>スクリプトは操作が衝突するのを防ぐために次の順序で実行されます。なぜ、クローズされたインデックスはoptimizeしないのでしょう？なぜ、削除予定のインデックスはクローズされないのでしょう？</p>
-<ol>
-<li>Delete (by space or time)</li>
-<li>Close</li>
-<li>Disable bloom filters</li>
-<li>Optimize</li>
-</ol>
-<h3 id="使用の検討">使用の検討</h3>
-<p>最後の例で、3つの操作を1つのコマンドで実行していますが、それらが連続ですべて実行されるのを望んでいないかもしれません。</p>
-<pre><code>$ curator.py --host my-elasticsearch -b 2 -o 2 -c 30 -d 90
-</code></pre><p>これは、次の操作と同様です。</p>
-<pre><code>$ curator.py --host my-elasticsearch -d 90
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;利用方法とサンプル&#34;&gt;利用方法とサンプル&lt;/h3&gt;
+&lt;p&gt;サンプルを示す前に、&lt;a href=&#34;#arguments&#34;&gt;オプションを見ておくとよいでしょう&lt;/a&gt;。このリストは長いですが（この記事の最後に含まれています）、どのようなことがコントロールできるかを説明しています。デフォルトがどうなっているかに注意してください。もし、デフォルト値で良い場合は、フラグを指定する必要はありません。&lt;/p&gt;
+&lt;p&gt;では、簡単なサンプルを見ながら、CuratorがELKスタックをどうやって管理するかを見て行きましょう。&lt;/p&gt;
+&lt;h3 id=&#34;削除delete&#34;&gt;削除(delete)&lt;/h3&gt;
+&lt;p&gt;90日以上のインデックスを保存したくないとしましょう。コマンドは次のようになります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch -d 90
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;-d&lt;/code&gt;で日数を指定しているだけです。簡単でしょ？&lt;/p&gt;
+&lt;h4 id=&#34;容量による削除delete-by-space&#34;&gt;容量による削除(delete by space)&lt;/h4&gt;
+&lt;p&gt;これは、指定したギガバイト数を超えたインデックスを場合に(最も古いものから)削除を行う特殊なケースです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch -C space -g 10024
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;-C&lt;/code&gt;でspaceによるcurationであること、&lt;code&gt;-g&lt;/code&gt;でギガバイト数(10024、10TB)であることを指定しているのがわかります。&lt;code&gt;-g&lt;/code&gt;は1.5や0.5という数値を指定できます。&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;その他のCuratorオプションは&lt;code&gt;space&lt;/code&gt;による削除と組み合わせて使用できないことに注意してください。&lt;/em&gt;&lt;/p&gt;
+&lt;h3 id=&#34;クローズclose&#34;&gt;クローズ(close)&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-open-close.html&#34;&gt;Open/Close Index API&lt;/a&gt;により、インデックスをクローズすることができます。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;open/close index APIを利用すると、インデックスをクローズしたり、あとでオープンしたりすることができます。クローズされたインデックスはクラスタのオーバヘッドにほとんどならず(メタデータの管理を除く)、読み書き操作の妨げにもなりません。クローズされたインデックスは、リカバリプロセス時に、オープンされます。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;インデックスをクローズすることは、存在はするが検索できないという意味です。何が便利なのでしょう？&lt;/p&gt;
+&lt;p&gt;90日のインデックスを保存する義務があるが、検索は過去30日のインデックスを対象にする以外は稀であるような場合を想像してください。このような状況で、価値のあるリソース(ヒープスペースなど)を節約するためにインデックスをクローズすることができます。これは、クラスタに検索やインデキシングのためのメモリを与えることができることを意味します。そして、もし、クローズしたインデックスのデータが必要になったら、APIを呼び出してインデックスをオープンすれば検索できます。&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;このような場合、今オープンしているインデックスが再び、クローズされないように、一時的にCuratorのスケジュール実行をオフにしておくのが懸命です。&lt;/em&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch -c 30 -d 90
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;先ほど説明した例の実行方法です。これは、30日よりも古いインデックスはクローズし、90日より古いインデックスを削除します。本当に簡単でしょ？&lt;/p&gt;
+&lt;h3 id=&#34;bloom-filterの無効化&#34;&gt;bloom filterの無効化&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch/issues/4525&#34;&gt;これは、0.90.9以降のバージョンで利用可能な機能です。(リンク先はIssue #4525)&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;心配しないでください。このスクリプトは操作を行う前に、elasticsearchが利用可能なバージョンであるかをチェックします。&lt;/p&gt;
+&lt;p&gt;bloom filterとは何でしょう？なぜ、無効化したくなるのでしょう？&lt;/p&gt;
+&lt;p&gt;bloom filterはインデキシング操作を高速化するためにリソースを割り当てられます。時系列データで、インデキシングしている間もこれは有用です。インデックスは2日後には、日付が変わると新しいデータはおそらくインデックスされません。そのインデックスにはもはや必要のないリソースをbloom filterはまだ持っています。Curatorはこれらのリソースを開放することができます！&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch -b 2 -c 30 -d 90
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これで、bloom filterのリソースは少なくとも2日(1にもできます)よりも古いインデックスについては利用せず、30日より古いインデックスはクローズし、90より古いインデックスは削除します。&lt;/p&gt;
+&lt;h3 id=&#34;optimizeというよりもforcemerge&#34;&gt;optimizeというよりもforcemerge&lt;/h3&gt;
+&lt;p&gt;コマンドの説明をする前に、&lt;a href=&#34;http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-optimize.html&#34;&gt;Elasticsearch APIのoptimize&lt;/a&gt;を見ることは、生きているインデックスや&amp;quot;cold&amp;quot;インデックス(インデキシングがアクティブではないという意味)に実行する必要があるということを理解するために重要です。実際、&lt;a href=&#34;http://blog.trifork.com/2011/11/21/simon-says-optimize-is-bad-for-you/&#34;&gt;optimizeはLuceneではforceMergeと名前が変えられ&lt;/a&gt;、インデックスを改善するためにoptimizeを呼び出す必要はなくなりました。Elasticsearchのセグメントをマージすることは利点がありますが、coldインデックス全てに対してoptimizeを開始する前に、コストを理解する必要があります。&lt;/p&gt;
+&lt;p&gt;forceMerge操作はインデックスにある各シャードのセグメントの数を少なくします。各セグメントはオーバヘッドがあるため、セグメントが多いということは、より多くのリソースを使うという意味です。良さそうですね？リソースが少ない？&lt;/p&gt;
+&lt;p&gt;それは、可能ですが、merge操作を実行するには多くのディスクやネットワークI/Oが必要で、ディスクやクラスタの通常の書き込み操作に悪影響を及ぼします。もし、これが必要なら私のアドバイスを良く考えてください。(数％ほど)検索を速くし、リソースの使用量も減らすことができます。また、管理しているセグメント数が小さくなるということは、クラスタのリカバリを速くすることにもなります。1つのインデックスをoptimizeするためにはおそらく1時間以上の時間がかかります。「使用する前に目立たない場所で試してください」というクリーニングボトル(訳注：洗剤とか漂白剤かな？)の注意書きと同様に、ディスクI/Oが低い時にテストし、もし操作とリソースがあなたのクラスタのユースケースにあっているかを見てください。デフォルトでは、シャードごとに2つのセグメントにマージしますが、&lt;code&gt;--max_num_segments&lt;/code&gt;フラグで変更可能です。&lt;/p&gt;
+&lt;p&gt;ここまでのサンプルは次のようなコマンドになります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch -b 2 -o 2 -c 30 -d 90
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これで、bloom filterは2日より古いインデックスでは向こうにし、2日より古いインデックスは&amp;quot;optimize&amp;quot;し、30日より古いインデックスはクローズし、90日より古いインデックスは削除されます。&lt;/p&gt;
+&lt;h3 id=&#34;操作の順序&#34;&gt;操作の順序&lt;/h3&gt;
+&lt;p&gt;スクリプトは操作が衝突するのを防ぐために次の順序で実行されます。なぜ、クローズされたインデックスはoptimizeしないのでしょう？なぜ、削除予定のインデックスはクローズされないのでしょう？&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Delete (by space or time)&lt;/li&gt;
+&lt;li&gt;Close&lt;/li&gt;
+&lt;li&gt;Disable bloom filters&lt;/li&gt;
+&lt;li&gt;Optimize&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;使用の検討&#34;&gt;使用の検討&lt;/h3&gt;
+&lt;p&gt;最後の例で、3つの操作を1つのコマンドで実行していますが、それらが連続ですべて実行されるのを望んでいないかもしれません。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch -b 2 -o 2 -c 30 -d 90
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これは、次の操作と同様です。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch -d 90
 $ curator.py --host my-elasticsearch -c 30
 $ curator.py --host my-elasticsearch -b 2
 $ curator.py --host my-elasticsearch -o 2
-</code></pre><p>これらのコマンドを異なる時間に実行したり、異なるその他のオプション(特に、optimize実行で<code>--timeout 3600</code>を追加したり)を指定して実行するのは簡単です。</p>
-<p>また、デフォルトの<code>logstash-</code>とは異なるプレフィックスのインデックスを持っているかもしれません。</p>
-<pre><code>$ curator.py --host my-elasticsearch --prefix logstash- -d 30
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これらのコマンドを異なる時間に実行したり、異なるその他のオプション(特に、optimize実行で&lt;code&gt;--timeout 3600&lt;/code&gt;を追加したり)を指定して実行するのは簡単です。&lt;/p&gt;
+&lt;p&gt;また、デフォルトの&lt;code&gt;logstash-&lt;/code&gt;とは異なるプレフィックスのインデックスを持っているかもしれません。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py --host my-elasticsearch --prefix logstash- -d 30
 $ curator.py --host my-elasticsearch --prefix othername- -d 30
-</code></pre><h2 id="最後に">最後に</h2>
-<p>Curatorは時系列インデックスの保存ポリシーを管理するのに役立ちます。豊富な設定オプションがインデックスを管理することを簡単にします。クラスタに存在するノードの数に関係なく。<a href="https://github.com/elasticsearch/curator">https://github.com/elasticsearch/curator</a>へのフィードバックやコントリビューションをお待ちしています！</p>
-<h4 id="a-namearguments参考全引数とオプション"><a name="arguments">参考(全引数とオプション)</h4>
-<pre><code>$ curator.py -h
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;最後に&#34;&gt;最後に&lt;/h2&gt;
+&lt;p&gt;Curatorは時系列インデックスの保存ポリシーを管理するのに役立ちます。豊富な設定オプションがインデックスを管理することを簡単にします。クラスタに存在するノードの数に関係なく。&lt;a href=&#34;https://github.com/elasticsearch/curator&#34;&gt;https://github.com/elasticsearch/curator&lt;/a&gt;へのフィードバックやコントリビューションをお待ちしています！&lt;/p&gt;
+&lt;h4 id=&#34;a-namearguments参考全引数とオプション&#34;&gt;&lt;a name=&#34;arguments&#34;&gt;参考(全引数とオプション)&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;$ curator.py -h
 usage: curator.py [-h] [-v] [--host HOST] [--port PORT] [-t TIMEOUT]
                   [-p PREFIX] [-s SEPARATOR] [-C CURATION_STYLE]
                   [-T TIME_UNIT] [-d DELETE_OLDER] [-c CLOSE_OLDER]
@@ -363,7 +364,7 @@ optional arguments:
   -D, --debug           Debug mode
   -l LOG_FILE, --logfile LOG_FILE
                         log file
-</code></pre></content:encoded>
+&lt;/code&gt;&lt;/pre&gt;</content:encoded>
     </item>
     
   </channel>

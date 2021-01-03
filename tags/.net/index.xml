@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
   <channel>
     <title>.net on @johtaniの日記 3rd</title>
     <link>https://blog.johtani.info/tags/.net/</link>
@@ -14,156 +15,156 @@
       
       <guid>https://blog.johtani.info/blog/2020/05/26/logging-azure-search-request/</guid>
       <description>今回はAzure Cognitive SearchのSDKを利用したアプリケーションが、実際にAzure Cognitive Searchに対して送信しているリクエストのパラメータ</description>
-      <content:encoded><p>今回はAzure Cognitive SearchのSDKを利用したアプリケーションが、実際にAzure Cognitive Searchに対して送信しているリクエストのパラメータとボディをログに保存する方法について紹介します。</p>
-<h2 id="動機">動機</h2>
-<p>アプリケーションでリクエストを組み立てて、SDK経由で送信していると、最終的にAzure Cognitive Searchに対して送信されているリクエストのパラメータや検索条件などをひと目で見たいことがあります。
-アプリケーションでは、ソート条件や、クエリ文字列の組み立てなどの処理は異なる場所で行われたりしますので。</p>
-<p>また、公式リファレンスでは、機能の説明はRest APIの使い方と組み合わせで説明されることが多いです。</p>
-<p>ということで、SDKを利用しているアプリからAzure Searchへ送信されているリクエストをログに保存する方法を調べてみました。</p>
-<h2 id="方法">方法</h2>
-<p>調べてみるといくつかの手段を取ることができそうだとわかりました。実際に調べて実装する方法を4種類ほど試してみたのでブログに残しておきます。なお、2020年4月時点でのSDKとAzureの仕組みに基づいたブログになります。最新版ではお手軽な方法があるかもしれません。</p>
-<ol>
-<li>DelegatingHandlerを利用する</li>
-<li>ServiceClientTracingの機能を利用する</li>
-<li>Azure Application Insightsを活用する</li>
-<li>Azure Cognitive Searchのコンソールにある診断情報の機能を利用する</li>
-</ol>
-<p>1、2はAzure Cognitive SearchのSDKのリファレンスから当たりを付けて見つけた方法です。
+      <content:encoded>&lt;p&gt;今回はAzure Cognitive SearchのSDKを利用したアプリケーションが、実際にAzure Cognitive Searchに対して送信しているリクエストのパラメータとボディをログに保存する方法について紹介します。&lt;/p&gt;
+&lt;h2 id=&#34;動機&#34;&gt;動機&lt;/h2&gt;
+&lt;p&gt;アプリケーションでリクエストを組み立てて、SDK経由で送信していると、最終的にAzure Cognitive Searchに対して送信されているリクエストのパラメータや検索条件などをひと目で見たいことがあります。
+アプリケーションでは、ソート条件や、クエリ文字列の組み立てなどの処理は異なる場所で行われたりしますので。&lt;/p&gt;
+&lt;p&gt;また、公式リファレンスでは、機能の説明はRest APIの使い方と組み合わせで説明されることが多いです。&lt;/p&gt;
+&lt;p&gt;ということで、SDKを利用しているアプリからAzure Searchへ送信されているリクエストをログに保存する方法を調べてみました。&lt;/p&gt;
+&lt;h2 id=&#34;方法&#34;&gt;方法&lt;/h2&gt;
+&lt;p&gt;調べてみるといくつかの手段を取ることができそうだとわかりました。実際に調べて実装する方法を4種類ほど試してみたのでブログに残しておきます。なお、2020年4月時点でのSDKとAzureの仕組みに基づいたブログになります。最新版ではお手軽な方法があるかもしれません。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;DelegatingHandlerを利用する&lt;/li&gt;
+&lt;li&gt;ServiceClientTracingの機能を利用する&lt;/li&gt;
+&lt;li&gt;Azure Application Insightsを活用する&lt;/li&gt;
+&lt;li&gt;Azure Cognitive Searchのコンソールにある診断情報の機能を利用する&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;1、2はAzure Cognitive SearchのSDKのリファレンスから当たりを付けて見つけた方法です。
 3はApplication Insights、4はAzure Cognitive Searchの機能になります。
-これらの方法について個別に説明していきます。</p>
-<h3 id="1-delegatinghandleを利用する">1. DelegatingHandleを利用する</h3>
-<p>まずは、SDKでロギングの機能がないかを調べて見つけた機能がこちらです。
-SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.searchserviceclient.-ctor?view=azure-dotnet#Microsoft_Azure_Search_SearchServiceClient__ctor_System_String_Microsoft_Azure_Search_SearchCredentials_System_Net_Http_HttpClientHandler_System_Net_Http_DelegatingHandler___">SearchServiceClient</a>のコンストラクタの引数に<a href="https://docs.microsoft.com/en-us/dotnet/api/system.net.http.delegatinghandler?view=netframework-4.8">DelegatingHandler</a>というものが渡せることを発見しました。</p>
-<p>これは、.NET FrameworkのHttpのAPIに存在するクラスで、HTTPのクライアントがHTTPの送受信時に、処理を挟むことができる機能です。フレームワーク側で、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.logging.logginghttpmessagehandler?view=dotnet-plat-ext-3.1&amp;viewFallbackFrom=netframework-4.8">LoggingHttpMessaggeHandler</a>というクラスを用意してくれていましたが、残念ながらこちらは、リクエストとレスポンスのヘッダのみをロギングするクラスでした。
-ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには<code>Microsoft.Extensions.Logging</code>の<code>ILogger</code>を使用します。</p>
-<p>また、Azure Cognitive SearchのSDK側に違う問題点もありました。<a href="https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method">チュートリアルにあるように</a>、検索するときには、SDKは次のような使い方を想定しています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">        <span style="color:#75715e">// Create a service and index client.
-</span><span style="color:#75715e"></span>        _serviceClient = <span style="color:#66d9ef">new</span> SearchServiceClient(searchServiceName, <span style="color:#66d9ef">new</span> SearchCredentials(queryApiKey));
-        _indexClient = _serviceClient.Indexes.GetClient(<span style="color:#e6db74">&#34;hotels&#34;</span>);
-</code></pre></div><p>インデックス用のクライアントを取得するために、<code>GetClient(インデックス名)</code>というメソッドを使用します。この<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_"><code>GetClient</code>メソッドのバリエーション</a>として、DelegatingHandlerを受け取るメソッドがないのです。。。</p>
-<p>ということで、DelegationHandlerを活用する方法としては、以下の2つを実装する必要があります。</p>
-<ol>
-<li>CustomなLoggingHttpMessageHandlerクラスを実装</li>
-<li>GetClientと同等の処理をDelegatingHandlerを引数にしたものを実装する</li>
-</ol>
-<p>以上の2つを実装し、アプリケーション側から2で作成したGetClientを呼び出すことで、リクエストをボディも含めてログ出力することが可能になります。以下は実装例です。</p>
-<p>CustomHttpMessageHandlerクラス。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System;
-<span style="color:#66d9ef">using</span> System.Collections.Generic;
-<span style="color:#66d9ef">using</span> System.Diagnostics;
-<span style="color:#66d9ef">using</span> System.Net.Http;
-<span style="color:#66d9ef">using</span> System.Net.Http.Headers;
-<span style="color:#66d9ef">using</span> System.Text;
-<span style="color:#66d9ef">using</span> System.Threading;
-<span style="color:#66d9ef">using</span> System.Threading.Tasks;
-<span style="color:#66d9ef">using</span> Microsoft.Extensions.Logging;
+これらの方法について個別に説明していきます。&lt;/p&gt;
+&lt;h3 id=&#34;1-delegatinghandleを利用する&#34;&gt;1. DelegatingHandleを利用する&lt;/h3&gt;
+&lt;p&gt;まずは、SDKでロギングの機能がないかを調べて見つけた機能がこちらです。
+SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.searchserviceclient.-ctor?view=azure-dotnet#Microsoft_Azure_Search_SearchServiceClient__ctor_System_String_Microsoft_Azure_Search_SearchCredentials_System_Net_Http_HttpClientHandler_System_Net_Http_DelegatingHandler___&#34;&gt;SearchServiceClient&lt;/a&gt;のコンストラクタの引数に&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/system.net.http.delegatinghandler?view=netframework-4.8&#34;&gt;DelegatingHandler&lt;/a&gt;というものが渡せることを発見しました。&lt;/p&gt;
+&lt;p&gt;これは、.NET FrameworkのHttpのAPIに存在するクラスで、HTTPのクライアントがHTTPの送受信時に、処理を挟むことができる機能です。フレームワーク側で、&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.logging.logginghttpmessagehandler?view=dotnet-plat-ext-3.1&amp;amp;viewFallbackFrom=netframework-4.8&#34;&gt;LoggingHttpMessaggeHandler&lt;/a&gt;というクラスを用意してくれていましたが、残念ながらこちらは、リクエストとレスポンスのヘッダのみをロギングするクラスでした。
+ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには&lt;code&gt;Microsoft.Extensions.Logging&lt;/code&gt;の&lt;code&gt;ILogger&lt;/code&gt;を使用します。&lt;/p&gt;
+&lt;p&gt;また、Azure Cognitive SearchのSDK側に違う問題点もありました。&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method&#34;&gt;チュートリアルにあるように&lt;/a&gt;、検索するときには、SDKは次のような使い方を想定しています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;// Create a service and index client.
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        _serviceClient = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchServiceClient(searchServiceName, &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchCredentials(queryApiKey));
+        _indexClient = _serviceClient.Indexes.GetClient(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hotels&amp;#34;&lt;/span&gt;);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;インデックス用のクライアントを取得するために、&lt;code&gt;GetClient(インデックス名)&lt;/code&gt;というメソッドを使用します。この&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_&#34;&gt;&lt;code&gt;GetClient&lt;/code&gt;メソッドのバリエーション&lt;/a&gt;として、DelegatingHandlerを受け取るメソッドがないのです。。。&lt;/p&gt;
+&lt;p&gt;ということで、DelegationHandlerを活用する方法としては、以下の2つを実装する必要があります。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;CustomなLoggingHttpMessageHandlerクラスを実装&lt;/li&gt;
+&lt;li&gt;GetClientと同等の処理をDelegatingHandlerを引数にしたものを実装する&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;以上の2つを実装し、アプリケーション側から2で作成したGetClientを呼び出すことで、リクエストをボディも含めてログ出力することが可能になります。以下は実装例です。&lt;/p&gt;
+&lt;p&gt;CustomHttpMessageHandlerクラス。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Collections.Generic;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Diagnostics;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http.Headers;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Text;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Threading;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Threading.Tasks;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.Extensions.Logging;
 
-<span style="color:#66d9ef">namespace</span> AzureSearchSample
+&lt;span style=&#34;color:#66d9ef&#34;&gt;namespace&lt;/span&gt; AzureSearchSample
 {
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CustomLoggingHttpMessageHandler</span> : DelegatingHandler
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;CustomLoggingHttpMessageHandler&lt;/span&gt; : DelegatingHandler
     {
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> ILogger _logger;
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">bool</span> _logContent = <span style="color:#66d9ef">false</span>;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; ILogger _logger;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; _logContent = &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;;
 
-        <span style="color:#66d9ef">public</span> CustomLoggingHttpMessageHandler(ILogger logger, <span style="color:#66d9ef">bool</span> logContent)
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; CustomLoggingHttpMessageHandler(ILogger logger, &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; logContent)
         {
-            <span style="color:#66d9ef">if</span> (logger == <span style="color:#66d9ef">null</span>)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logger == &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;)
             {
-                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(logger));
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(logger));
             }
 
-            <span style="color:#66d9ef">this</span>._logger = logger;
-            <span style="color:#66d9ef">this</span>._logContent = logContent;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger = logger;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logContent = logContent;
         }
 
 
-        <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">async</span> Task&lt;HttpResponseMessage&gt; SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;override&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task&amp;lt;HttpResponseMessage&amp;gt; SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            <span style="color:#66d9ef">if</span> (request == <span style="color:#66d9ef">null</span>)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (request == &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;)
             {
-                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(request));
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(request));
             } 
-            <span style="color:#66d9ef">await</span> Log.RequestStart(<span style="color:#66d9ef">this</span>._logger, request, <span style="color:#66d9ef">this</span>._logContent);
-            <span style="color:#66d9ef">var</span> stopwatch = <span style="color:#66d9ef">new</span> Stopwatch();
-            HttpResponseMessage response = <span style="color:#66d9ef">await</span> <span style="color:#66d9ef">base</span>.SendAsync(request, cancellationToken).ConfigureAwait(<span style="color:#66d9ef">false</span>);
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestStart(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger, request, &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logContent);
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; stopwatch = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Stopwatch();
+            HttpResponseMessage response = &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;base&lt;/span&gt;.SendAsync(request, cancellationToken).ConfigureAwait(&lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;);
             stopwatch.Stop();
-            <span style="color:#66d9ef">await</span> Log.RequestEnd(<span style="color:#66d9ef">this</span>._logger, response, stopwatch.Elapsed);
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestEnd(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger, response, stopwatch.Elapsed);
 
-            <span style="color:#66d9ef">return</span> response;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; response;
         }
 
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Log</span>
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Log&lt;/span&gt;
         {
-            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EventIds</span>
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;EventIds&lt;/span&gt;
             {
-                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestStart = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">100</span>, <span style="color:#e6db74">&#34;RequestStart&#34;</span>);
-                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestEnd = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">101</span>, <span style="color:#e6db74">&#34;RequestEnd&#34;</span>);
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; EventId RequestStart = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; EventId(&lt;span style=&#34;color:#ae81ff&#34;&gt;100&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;RequestStart&amp;#34;&lt;/span&gt;);
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; EventId RequestEnd = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; EventId(&lt;span style=&#34;color:#ae81ff&#34;&gt;101&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;RequestEnd&amp;#34;&lt;/span&gt;);
             }
 
-            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestStart(ILogger logger, HttpRequestMessage request, <span style="color:#66d9ef">bool</span> logContent)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task RequestStart(ILogger logger, HttpRequestMessage request, &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; logContent)
             {
-                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
-                message.AppendLine(<span style="color:#e6db74">$&#34;Sending HTTP request {request.Method} {request.RequestUri}&#34;</span>);
-                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
+                StringBuilder message = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; StringBuilder();
+                message.AppendLine(&lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;Sending HTTP request {request.Method} {request.RequestUri}&amp;#34;&lt;/span&gt;);
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logger.IsEnabled(LogLevel.Trace))
                 {
                     LogHttpHeaders(message, request.Headers);
-                    <span style="color:#66d9ef">await</span> LogHttpContent(message, request.Content, logContent);
+                    &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; LogHttpContent(message, request.Content, logContent);
                     logger.Log(
                         LogLevel.Trace,
                         EventIds.RequestStart,
                         message,
-                        <span style="color:#66d9ef">null</span>,
-                        (state, ex) =&gt; state.ToString());
+                        &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;,
+                        (state, ex) =&amp;gt; state.ToString());
                 }
             }
 
-            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestEnd(ILogger logger, HttpResponseMessage response, TimeSpan duration)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task RequestEnd(ILogger logger, HttpResponseMessage response, TimeSpan duration)
             {
-                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
+                StringBuilder message = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; StringBuilder();
                 message.AppendLine(
-                    <span style="color:#e6db74">$&#34;Recieving HTTP response after {duration.TotalMilliseconds}ms - {response.StatusCode}&#34;</span>);
-                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
+                    &lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;Recieving HTTP response after {duration.TotalMilliseconds}ms - {response.StatusCode}&amp;#34;&lt;/span&gt;);
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logger.IsEnabled(LogLevel.Trace))
                 {
                     LogHttpHeaders(message, response.Headers);
-                    <span style="color:#66d9ef">await</span> LogHttpContent(message, response.Content, <span style="color:#66d9ef">false</span>);
+                    &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; LogHttpContent(message, response.Content, &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;);
                     logger.Log(
                         LogLevel.Trace,
                         EventIds.RequestEnd,
                         message,
-                        <span style="color:#66d9ef">null</span>,
-                        (state, ex) =&gt; state.ToString()
+                        &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;,
+                        (state, ex) =&amp;gt; state.ToString()
                         );
                 }
             }
 
-            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> LogHttpHeaders(StringBuilder message, HttpHeaders headers)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; LogHttpHeaders(StringBuilder message, HttpHeaders headers)
             {
-                <span style="color:#66d9ef">if</span> (headers == <span style="color:#66d9ef">null</span>) <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(headers));
-                <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>, IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> headers)
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (headers == &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(headers));
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (KeyValuePair&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;, IEnumerable&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;&amp;gt;&amp;gt; header &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; headers)
                 {
-                    <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
+                    &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; header.Value)
                     {
-                        message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
+                        message.AppendLine(&lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;{header.Key}: {value}&amp;#34;&lt;/span&gt;);
                     }
                 }
             }
 
-            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task LogHttpContent(StringBuilder message, HttpContent content,
-                <span style="color:#66d9ef">bool</span> logContent)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task LogHttpContent(StringBuilder message, HttpContent content,
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; logContent)
             {
-                <span style="color:#66d9ef">if</span> (content != <span style="color:#66d9ef">null</span>)
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (content != &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;)
                 {
-                    <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> content.Headers)
+                    &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (KeyValuePair&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;,IEnumerable&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;&amp;gt;&amp;gt; header &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; content.Headers)
                     {
-                        <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
+                        &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; header.Value)
                         {
-                            message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
+                            message.AppendLine(&lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;{header.Key}: {value}&amp;#34;&lt;/span&gt;);
                         }
                     }
 
-                    <span style="color:#66d9ef">if</span> (logContent)
+                    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logContent)
                     {
-                        <span style="color:#66d9ef">string</span> contentBody = <span style="color:#66d9ef">await</span> content.ReadAsStringAsync();
+                        &lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; contentBody = &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; content.ReadAsStringAsync();
                         message.AppendLine(contentBody);
                     }
                 }
@@ -171,23 +172,23 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
         }
     }
 }
-</code></pre></div><p>GetClientの実装</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">
-        <span style="color:#66d9ef">private</span> ISearchIndexClient GetClient(<span style="color:#66d9ef">string</span> indexName, <span style="color:#66d9ef">params</span> DelegatingHandler[] handlers)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;GetClientの実装&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; ISearchIndexClient GetClient(&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; indexName, &lt;span style=&#34;color:#66d9ef&#34;&gt;params&lt;/span&gt; DelegatingHandler[] handlers)
         {
-            <span style="color:#66d9ef">var</span> rootHandler = _searchServiceClient.HttpMessageHandlers.OfType&lt;HttpClientHandler&gt;().SingleOrDefault();
-            <span style="color:#66d9ef">var</span> indexClient =
-                <span style="color:#66d9ef">new</span> SearchIndexClient(_searchServiceClient.SearchServiceName, indexName,
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; rootHandler = _searchServiceClient.HttpMessageHandlers.OfType&amp;lt;HttpClientHandler&amp;gt;().SingleOrDefault();
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; indexClient =
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchIndexClient(_searchServiceClient.SearchServiceName, indexName,
                     _searchServiceClient.SearchCredentials, rootHandler, handlers)
                 {
                     SearchDnsSuffix = _searchServiceClient.SearchDnsSuffix
                 };
 
             indexClient.HttpClient.Timeout = _searchServiceClient.HttpClient.Timeout;
-            <span style="color:#66d9ef">return</span> indexClient;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; indexClient;
         }
-</code></pre></div><p>出力されるログ例</p>
-<pre><code>2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力されるログ例&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06
 client-request-id: be02140f-3a07-48cc-b018-d8aa5e819bc3
 Accept-Language: en-US
 Accept: application/json; odata.metadata=none
@@ -198,35 +199,35 @@ User-Agent: OSVersion/Darwin.19.4.0.Darwin.Kernel.Version.19.4.0.Wed.Mar.4.22.28
 User-Agent: Microsoft.Azure.Search.SearchIndexClient/10.100.19.52907
 Content-Type: application/json; charset=utf-8
 {
-  &quot;count&quot;: false,
-  &quot;facets&quot;: [],
-  &quot;queryType&quot;: &quot;simple&quot;,
-  &quot;scoringParameters&quot;: [],
-  &quot;search&quot;: &quot;azure&quot;,
-  &quot;searchMode&quot;: &quot;any&quot;
+  &amp;quot;count&amp;quot;: false,
+  &amp;quot;facets&amp;quot;: [],
+  &amp;quot;queryType&amp;quot;: &amp;quot;simple&amp;quot;,
+  &amp;quot;scoringParameters&amp;quot;: [],
+  &amp;quot;search&amp;quot;: &amp;quot;azure&amp;quot;,
+  &amp;quot;searchMode&amp;quot;: &amp;quot;any&amp;quot;
 }
  |AzureSearchSample.SearchService|EventId_Id=100, EventId_Name=RequestStart, EventId=RequestStart
-</code></pre><h4 id="メリットデメリット">メリット、デメリット</h4>
-<p>Azure Cognitive Searchの検索の処理だけを対象にリクエストのログを出力することが可能です。また、影響範囲はアプリケーションだけに閉じていますので、デバッグ目的などでログ出力したい場合に、自分だけの手元でログの確認が可能になります。</p>
-<p>デメリットとしては、独自に実装しなければいけない範囲が広いことです。</p>
-<h3 id="2-serviceclienttracingの機能を利用する">2. ServiceClientTracingの機能を利用する</h3>
-<p><code>Microsoft.Rest.ClientRuntime</code>というライブラリをAzure Cognitive Searchは利用しています。
-このライブラリに<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.serviceclienttracing?view=azure-dotnet"><code>ServiceClientTracing</code></a>というクラスが存在します。
-なにやら、クライアントの処理のトレースができそうです。</p>
-<p>Azure Cognitive SearchのSDKの実装がGitHubに公開されており、検索リクエストの処理を投げる直前に、このトレースの仕組がONになっていると、<a href="https://github.com/Azure/azure-sdk-for-net/blob/a080ceda8df5e397aadd4b7c48c83431c5203b59/sdk/search/Microsoft.Azure.Search.Data/src/Generated/DocumentsOperations.cs#L798"><code>ServiceClientTracing.SendRequest</code>メソッドを呼び出していました</a>。</p>
-<p>実際に<code>SendRequest</code>メソッドに送られたものに対して何かしらの処理を行うのは、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.iserviceclienttracinginterceptor?view=azure-dotnet"><code>IServiceClientTracingIntercepter</code></a>インターフェースを実装したクラスになります。
-このインターフェースの実装が<a href="https://www.nuget.org/packages/Microsoft.Rest.ClientRuntime.Log4Net/">Log4Net</a>に存在します。Log4Netを利用している場合は、これを活用すれば楽ができます。</p>
-<p>実際に<code>ServiceClientTracing</code>を有効にするには、以下の2行を呼び出すだけです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">ServiceClientTracing.IsEnabled = <span style="color:#66d9ef">true</span>;
-ServiceClientTracing.AddTracingInterceptor(<span style="color:#66d9ef">new</span> Log4NetTracingInterceptor());
-</code></pre></div><p>あとは、Rest.ClientRuntimeがよしなにやってくれます。
-1とは異なり、トレースログなので、リクエストのボディについても出力してくれます。</p>
-<pre><code>2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;メリットデメリット&#34;&gt;メリット、デメリット&lt;/h4&gt;
+&lt;p&gt;Azure Cognitive Searchの検索の処理だけを対象にリクエストのログを出力することが可能です。また、影響範囲はアプリケーションだけに閉じていますので、デバッグ目的などでログ出力したい場合に、自分だけの手元でログの確認が可能になります。&lt;/p&gt;
+&lt;p&gt;デメリットとしては、独自に実装しなければいけない範囲が広いことです。&lt;/p&gt;
+&lt;h3 id=&#34;2-serviceclienttracingの機能を利用する&#34;&gt;2. ServiceClientTracingの機能を利用する&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;Microsoft.Rest.ClientRuntime&lt;/code&gt;というライブラリをAzure Cognitive Searchは利用しています。
+このライブラリに&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.serviceclienttracing?view=azure-dotnet&#34;&gt;&lt;code&gt;ServiceClientTracing&lt;/code&gt;&lt;/a&gt;というクラスが存在します。
+なにやら、クライアントの処理のトレースができそうです。&lt;/p&gt;
+&lt;p&gt;Azure Cognitive SearchのSDKの実装がGitHubに公開されており、検索リクエストの処理を投げる直前に、このトレースの仕組がONになっていると、&lt;a href=&#34;https://github.com/Azure/azure-sdk-for-net/blob/a080ceda8df5e397aadd4b7c48c83431c5203b59/sdk/search/Microsoft.Azure.Search.Data/src/Generated/DocumentsOperations.cs#L798&#34;&gt;&lt;code&gt;ServiceClientTracing.SendRequest&lt;/code&gt;メソッドを呼び出していました&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;実際に&lt;code&gt;SendRequest&lt;/code&gt;メソッドに送られたものに対して何かしらの処理を行うのは、&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.iserviceclienttracinginterceptor?view=azure-dotnet&#34;&gt;&lt;code&gt;IServiceClientTracingIntercepter&lt;/code&gt;&lt;/a&gt;インターフェースを実装したクラスになります。
+このインターフェースの実装が&lt;a href=&#34;https://www.nuget.org/packages/Microsoft.Rest.ClientRuntime.Log4Net/&#34;&gt;Log4Net&lt;/a&gt;に存在します。Log4Netを利用している場合は、これを活用すれば楽ができます。&lt;/p&gt;
+&lt;p&gt;実際に&lt;code&gt;ServiceClientTracing&lt;/code&gt;を有効にするには、以下の2行を呼び出すだけです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;ServiceClientTracing.IsEnabled = &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;;
+ServiceClientTracing.AddTracingInterceptor(&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Log4NetTracingInterceptor());
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、Rest.ClientRuntimeがよしなにやってくれます。
+1とは異なり、トレースログなので、リクエストのボディについても出力してくれます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
 instance: Microsoft.Azure.Search.DocumentsProxyOperations
 method: SearchPost
 parameters: {searchRequest=Microsoft.Azure.Search.Models.SearchRequest,clientRequestId=,cancellationToken=System.Threading.CancellationToken}
 2020-05-26 19:09:04,164 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
-request: Method: POST, RequestUri: 'https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06', Version: 2.0, Content: System.Net.Http.StringContent, Headers:
+request: Method: POST, RequestUri: &#39;https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06&#39;, Version: 2.0, Content: System.Net.Http.StringContent, Headers:
 {
   client-request-id: 591cb14f-e5c2-4a85-977d-01d1f6431ddc
   Accept-Language: en-US
@@ -238,122 +239,122 @@ request: Method: POST, RequestUri: 'https://サービス名.search.windows.net/i
 Body:
 {
 {
-  &quot;count&quot;: false,
-  &quot;facets&quot;: [],
-  &quot;queryType&quot;: &quot;simple&quot;,
-  &quot;scoringParameters&quot;: [],
-  &quot;search&quot;: &quot;azure&quot;,
-  &quot;searchMode&quot;: &quot;any&quot;
+  &amp;quot;count&amp;quot;: false,
+  &amp;quot;facets&amp;quot;: [],
+  &amp;quot;queryType&amp;quot;: &amp;quot;simple&amp;quot;,
+  &amp;quot;scoringParameters&amp;quot;: [],
+  &amp;quot;search&amp;quot;: &amp;quot;azure&amp;quot;,
+  &amp;quot;searchMode&amp;quot;: &amp;quot;any&amp;quot;
 }
 }
 
 2020-05-26 19:09:04,459 [Thread Pool Worker] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
-response: StatusCode: 200, ReasonPhrase: 'OK', Version: 1.1, Content: System.Net.Http.StreamContent, Headers:
+response: StatusCode: 200, ReasonPhrase: &#39;OK&#39;, Version: 1.1, Content: System.Net.Http.StreamContent, Headers:
 {
   Cache-Control: no-cache
   Pragma: no-cache
   request-id: 591cb14f-e5c2-4a85-977d-01d1f6431ddc
   elapsed-time: 72
   OData-Version: 4.0
-  Preference-Applied: odata.include-annotations=&quot;*&quot;
+  Preference-Applied: odata.include-annotations=&amp;quot;*&amp;quot;
   Strict-Transport-Security: max-age=15724800; includeSubDomains
   Date: Tue, 26 May 2020 10:09:04 GMT
   Content-Type: application/json; odata.metadata=none
   Expires: -1
   Content-Length: 376
 }
-</code></pre><h4 id="メリットデメリット-1">メリット、デメリット</h4>
-<p>Log4Netを利用しているアプリの場合、2行だけを追加することで実装が完了するのがお手軽な点です。</p>
-<p>難点としては、Rest Client全てにたいしてトレース処理が入ってしまうので、Azure Cognitive Search以外にもRestクライアントを利用しているものが存在した場合、ログの量が増えてしまいます。また、検索以外の処理でもトレースされてしまうのもデメリットになります。</p>
-<p>Log4Net以外のログ機構を使用している場合は、自分で<code>IServiceClientTracingInterceptor</code>を実装する必要も出てきます(<a href="https://stackoverflow.com/questions/46943669/microsoft-rest-serviceclienttracing-how-to-output-tracing-results-to-console-o">参考:StackOverflow</a>)。</p>
-<h3 id="3-azure-application-insightsを活用する">3. Azure Application Insightsを活用する</h3>
-<p>ここから紹介する3と4については、ログの出力先がAzure上になります。</p>
-<p><a href="https://docs.microsoft.com/ja-jp/azure/azure-monitor/app/app-insights-overview">AzureのApplication Insights</a>を利用する方法です。
-Azure?.NET?のアプリケーションパフォーマンスモニタリングのサービスです。</p>
-<p>Application Insightsを自分のアプリケーションに設定することで、アプリケーションのパフォーマンス監視に関する情報がAzure上のApplication Insightsリソースに送信されるようになります。</p>
-<p>ただ、Application Insightsのデフォルトの機能では、URL程度の情報だけが送信されます(<a href="https://blog.shibayan.jp/entry/20190405/1554459340">参考:しばやんさんのブログ</a>)</p>
-<p>こちらも拡張機能が用意されており、ITelemetryInitializerのインターフェースを実装したクラスを用意することで、独自の情報をApplication Insightsに出力することが可能となります。詳細については<a href="https://blog.shibayan.jp/entry/20190405/1554459340">しばやんさんのブログ</a>を参考にしてもらうのが良いかと。</p>
-<p>Httpリクエストを出力する実装例は次のとおりです。ただ、ちょっとうまく行かないパターンがあったので、コメントアウトとして残してあったりします(なんでだろう?)</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System.Collections.Generic;
-<span style="color:#66d9ef">using</span> System.Net.Http;
-<span style="color:#66d9ef">using</span> System.Net.Http.Headers;
-<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Channel;
-<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.DataContracts;
-<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Extensibility;
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;メリットデメリット-1&#34;&gt;メリット、デメリット&lt;/h4&gt;
+&lt;p&gt;Log4Netを利用しているアプリの場合、2行だけを追加することで実装が完了するのがお手軽な点です。&lt;/p&gt;
+&lt;p&gt;難点としては、Rest Client全てにたいしてトレース処理が入ってしまうので、Azure Cognitive Search以外にもRestクライアントを利用しているものが存在した場合、ログの量が増えてしまいます。また、検索以外の処理でもトレースされてしまうのもデメリットになります。&lt;/p&gt;
+&lt;p&gt;Log4Net以外のログ機構を使用している場合は、自分で&lt;code&gt;IServiceClientTracingInterceptor&lt;/code&gt;を実装する必要も出てきます(&lt;a href=&#34;https://stackoverflow.com/questions/46943669/microsoft-rest-serviceclienttracing-how-to-output-tracing-results-to-console-o&#34;&gt;参考:StackOverflow&lt;/a&gt;)。&lt;/p&gt;
+&lt;h3 id=&#34;3-azure-application-insightsを活用する&#34;&gt;3. Azure Application Insightsを活用する&lt;/h3&gt;
+&lt;p&gt;ここから紹介する3と4については、ログの出力先がAzure上になります。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/azure-monitor/app/app-insights-overview&#34;&gt;AzureのApplication Insights&lt;/a&gt;を利用する方法です。
+Azure?.NET?のアプリケーションパフォーマンスモニタリングのサービスです。&lt;/p&gt;
+&lt;p&gt;Application Insightsを自分のアプリケーションに設定することで、アプリケーションのパフォーマンス監視に関する情報がAzure上のApplication Insightsリソースに送信されるようになります。&lt;/p&gt;
+&lt;p&gt;ただ、Application Insightsのデフォルトの機能では、URL程度の情報だけが送信されます(&lt;a href=&#34;https://blog.shibayan.jp/entry/20190405/1554459340&#34;&gt;参考:しばやんさんのブログ&lt;/a&gt;)&lt;/p&gt;
+&lt;p&gt;こちらも拡張機能が用意されており、ITelemetryInitializerのインターフェースを実装したクラスを用意することで、独自の情報をApplication Insightsに出力することが可能となります。詳細については&lt;a href=&#34;https://blog.shibayan.jp/entry/20190405/1554459340&#34;&gt;しばやんさんのブログ&lt;/a&gt;を参考にしてもらうのが良いかと。&lt;/p&gt;
+&lt;p&gt;Httpリクエストを出力する実装例は次のとおりです。ただ、ちょっとうまく行かないパターンがあったので、コメントアウトとして残してあったりします(なんでだろう?)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Collections.Generic;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http.Headers;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.ApplicationInsights.Channel;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.ApplicationInsights.DataContracts;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.ApplicationInsights.Extensibility;
 
-<span style="color:#66d9ef">namespace</span> AzureSearchWebSample.ApplicationInsights
+&lt;span style=&#34;color:#66d9ef&#34;&gt;namespace&lt;/span&gt; AzureSearchWebSample.ApplicationInsights
 {
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">HttpRequestInitializer</span> : ITelemetryInitializer
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;HttpRequestInitializer&lt;/span&gt; : ITelemetryInitializer
     {
-        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Initialize(ITelemetry telemetry)
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; Initialize(ITelemetry telemetry)
         {
 
-            <span style="color:#66d9ef">if</span> (!(telemetry <span style="color:#66d9ef">is</span> DependencyTelemetry dependency))
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (!(telemetry &lt;span style=&#34;color:#66d9ef&#34;&gt;is&lt;/span&gt; DependencyTelemetry dependency))
             {
-                <span style="color:#66d9ef">return</span>;
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;;
             }
 
-            HttpRequestMessage requestMessage = <span style="color:#66d9ef">null</span>;
+            HttpRequestMessage requestMessage = &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;;
             HttpRequestHeaders requestHeaders;
-            <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequest&#34;</span>, <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">var</span> details) &amp;&amp;
-                details <span style="color:#66d9ef">is</span> HttpRequestMessage request)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (dependency.TryGetOperationDetail(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;HttpRequest&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;out&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; details) &amp;amp;&amp;amp;
+                details &lt;span style=&#34;color:#66d9ef&#34;&gt;is&lt;/span&gt; HttpRequestMessage request)
             {
                 requestMessage = request;
                 requestHeaders = request.Headers;            
-                <span style="color:#66d9ef">if</span> (requestMessage.Method == HttpMethod.Post)
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (requestMessage.Method == HttpMethod.Post)
                 {
-                    <span style="color:#66d9ef">string</span> contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    dependency.Properties.Add(<span style="color:#e6db74">&#34;RequestBody&#34;</span>,contentBody);
+                    &lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                    dependency.Properties.Add(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;RequestBody&amp;#34;&lt;/span&gt;,contentBody);
                 }
             }
-            <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequestHeaders&#34;</span>, <span style="color:#66d9ef">out</span> details) &amp;&amp;
-                     details <span style="color:#66d9ef">is</span> HttpRequestHeaders headers)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (dependency.TryGetOperationDetail(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;HttpRequestHeaders&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;out&lt;/span&gt; details) &amp;amp;&amp;amp;
+                     details &lt;span style=&#34;color:#66d9ef&#34;&gt;is&lt;/span&gt; HttpRequestHeaders headers)
             {
                 requestHeaders = headers;
             }
-            <span style="color:#66d9ef">else</span>
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt;
             {
-                <span style="color:#66d9ef">return</span>;
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;;
             }
 
-            <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> requestHeaders)
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (KeyValuePair&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;,IEnumerable&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;&amp;gt;&amp;gt; header &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; requestHeaders)
             {
-                <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; header.Value)
                 {
-                    dependency.Properties.Add(header.Key, <span style="color:#66d9ef">value</span>);
+                    dependency.Properties.Add(header.Key, &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt;);
                 }
             }
-            <span style="color:#75715e">//この実装の場合は出力されなかった。なぜ?
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// if (requestMessage != null &amp;&amp; requestMessage.Method == HttpMethod.Post)
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// {
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">//     string contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">//     dependency.Properties.Add(&#34;RequestBody&#34;,contentBody);
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// }
-</span><span style="color:#75715e"></span>        }
+            &lt;span style=&#34;color:#75715e&#34;&gt;//この実装の場合は出力されなかった。なぜ?
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;// if (requestMessage != null &amp;amp;&amp;amp; requestMessage.Method == HttpMethod.Post)
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;// {
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;//     string contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;//     dependency.Properties.Add(&amp;#34;RequestBody&amp;#34;,contentBody);
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;// }
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        }
     }
 }
-</code></pre></div><h4 id="メリットデメリット-2">メリット、デメリット</h4>
-<p>すでにApplication Insightsを利用している場合はついでに情報が出力されるので便利です。かつ、常にリクエストログを見れるようにしておく場合はとても便利だと思います。</p>
-<p>Application Insightsを利用していない場合は、そこから導入しなければならなくなるので、手間が増えるかもしれないです。</p>
-<h3 id="4-azure-cognitive-searchのコンソールにある診断情報の機能を利用する">4. Azure Cognitive Searchのコンソールにある診断情報の機能を利用する。</h3>
-<p>最後は<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs">Azure Cognitive Searchの診断ログ</a>を有効にする方法です。
-ここまで説明してきた方法の中で、一番お手軽な方法です。。。</p>
-<p>これまでは、リクエストボディを出力する方法を考えていましたが、Azure Cognitive Search側の診断ログを有効にすると、リクエストボディで送信したものが、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#properties-schema">Azure Cognitive Search側で、クエリパラーメータとして、診断ログに出力</a>されます(診断ログの<code>Query_s</code>)。</p>
-<p>あとは、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#query-log-information">Azureのコンソール</a>で当該時間のログを見ればよいだけです。以下は出力されたログの一部です。Description_sにはURLのパスが記載されています。</p>
-<p>診断ログ例(一部)</p>
-<pre><code>Description_s      POST /indexes('multi-field-test')/docs/search.post.search
-Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&amp;queryType=Simple&amp;$count=false
-</code></pre><h4 id="メリットデメリット-3">メリット、デメリット</h4>
-<p>アプリケーション側に手を入れる必要がなのでお手軽です。
-一度設定しておけばコンソール側でログをいつでも見れるので便利です。</p>
-<p>リクエスト量が多くなってしまうと、ログの量も多くなり、費用がかさむ恐れがあります。また、複数の人が触る環境の場合は自分で送信したリクエストがどれだったのか?といった状況に陥る可能性はあります。</p>
-<h2 id="その他は">その他は?</h2>
-<p>Azureに対してではないですが、昔似たようなことをやるときにやっていた方法として、ローカルにプロキシサーバーを起動し、そのプロキシサーバー経由でアプリケーションから、Azureに接続することで、リクエストを保存する方法もあります。
-ざんねんながら、未調査ですがアプリなどにはそれほど手を入れる必要はないかと思います。</p>
-<h2 id="まとめ">まとめ</h2>
-<p>ちょっと送信リクエストの内容が見てみたいという話でしたが、いろいろな手段が存在しました。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;メリットデメリット-2&#34;&gt;メリット、デメリット&lt;/h4&gt;
+&lt;p&gt;すでにApplication Insightsを利用している場合はついでに情報が出力されるので便利です。かつ、常にリクエストログを見れるようにしておく場合はとても便利だと思います。&lt;/p&gt;
+&lt;p&gt;Application Insightsを利用していない場合は、そこから導入しなければならなくなるので、手間が増えるかもしれないです。&lt;/p&gt;
+&lt;h3 id=&#34;4-azure-cognitive-searchのコンソールにある診断情報の機能を利用する&#34;&gt;4. Azure Cognitive Searchのコンソールにある診断情報の機能を利用する。&lt;/h3&gt;
+&lt;p&gt;最後は&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs&#34;&gt;Azure Cognitive Searchの診断ログ&lt;/a&gt;を有効にする方法です。
+ここまで説明してきた方法の中で、一番お手軽な方法です。。。&lt;/p&gt;
+&lt;p&gt;これまでは、リクエストボディを出力する方法を考えていましたが、Azure Cognitive Search側の診断ログを有効にすると、リクエストボディで送信したものが、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#properties-schema&#34;&gt;Azure Cognitive Search側で、クエリパラーメータとして、診断ログに出力&lt;/a&gt;されます(診断ログの&lt;code&gt;Query_s&lt;/code&gt;)。&lt;/p&gt;
+&lt;p&gt;あとは、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#query-log-information&#34;&gt;Azureのコンソール&lt;/a&gt;で当該時間のログを見ればよいだけです。以下は出力されたログの一部です。Description_sにはURLのパスが記載されています。&lt;/p&gt;
+&lt;p&gt;診断ログ例(一部)&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Description_s      POST /indexes(&#39;multi-field-test&#39;)/docs/search.post.search
+Query_s            ?api-version=2019-05-06&amp;amp;searchMode=Any&amp;amp;search=azure&amp;amp;queryType=Simple&amp;amp;$count=false
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;メリットデメリット-3&#34;&gt;メリット、デメリット&lt;/h4&gt;
+&lt;p&gt;アプリケーション側に手を入れる必要がなのでお手軽です。
+一度設定しておけばコンソール側でログをいつでも見れるので便利です。&lt;/p&gt;
+&lt;p&gt;リクエスト量が多くなってしまうと、ログの量も多くなり、費用がかさむ恐れがあります。また、複数の人が触る環境の場合は自分で送信したリクエストがどれだったのか?といった状況に陥る可能性はあります。&lt;/p&gt;
+&lt;h2 id=&#34;その他は&#34;&gt;その他は?&lt;/h2&gt;
+&lt;p&gt;Azureに対してではないですが、昔似たようなことをやるときにやっていた方法として、ローカルにプロキシサーバーを起動し、そのプロキシサーバー経由でアプリケーションから、Azureに接続することで、リクエストを保存する方法もあります。
+ざんねんながら、未調査ですがアプリなどにはそれほど手を入れる必要はないかと思います。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ちょっと送信リクエストの内容が見てみたいという話でしたが、いろいろな手段が存在しました。
 自分の状況、環境に合わせて手段を選択肢てみるのがいいかと思います。
-まずは、簡単な診断ログあたりからでしょうか?</p>
+まずは、簡単な診断ログあたりからでしょうか?&lt;/p&gt;
 </content:encoded>
     </item>
     

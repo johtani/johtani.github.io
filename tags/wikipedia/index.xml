@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
   <channel>
     <title>wikipedia on @johtaniの日記 3rd</title>
     <link>https://blog.johtani.info/tags/wikipedia/</link>
@@ -14,112 +15,112 @@
       
       <guid>https://blog.johtani.info/blog/2013/09/12/question-river-wikipedia/</guid>
       <description>river-wikipediaの前々回の記事で書きましたが、bulk_sizeに関連して登録件数がやけにきりが良いのが気になると書いていまし</description>
-      <content:encoded><p><a href="/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch/">river-wikipediaの前々回の記事</a>で書きましたが、bulk_sizeに関連して登録件数がやけにきりが良いのが気になると書いていました。</p>
-<p>で、Riverの仕組みを勉强がてら、<a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia">elasticsearch-river-wikipedia</a>のソース（1.2.0）を読んでみました。</p>
-<!-- more -->
-<h2 id="riverの作り">Riverの作り</h2>
-<p>Riverはorg.elasticsearch.river.Riverというinterfaceを実装することで作らています。
-ただ、Riverがinterfaceとなっていますが、o.e.river.AbstractRiverComponentというクラスを継承して作られています。</p>
-<p>AbstractRiverComponentにはRiverの名前や設定などが用意されています。
-ま、ここはそれほど重要じゃないので、軽く流してと。</p>
-<p>Riverの設定関連は実装したRiverクラス（ここでは、WikipediaRiverクラス）のコンストラクタで、設定値の読み取りなどの記述を記載します。
-このコンストラクタが、<code>_river/hogehoge/_meta</code>をPUTした時のJSONを元にElasticSearchから呼ばれて、Riverのインスタンスが作成されます。（たぶん、<a href="https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/river/RiversService.java">このへんがその処理</a>だと思う。。。このあたりはまた今度）</p>
-<p>実際のRiverの処理はWikipediaRiverクラスのstart()メソッド内部に記述されています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java">    <span style="color:#a6e22e">@Override</span>
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">start</span><span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
-        logger<span style="color:#f92672">.</span><span style="color:#a6e22e">info</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;starting wikipedia stream&#34;</span><span style="color:#f92672">);</span>
-        <span style="color:#66d9ef">try</span> <span style="color:#f92672">{</span>
-<span style="color:#960050;background-color:#1e0010">①</span>            client<span style="color:#f92672">.</span><span style="color:#a6e22e">admin</span><span style="color:#f92672">().</span><span style="color:#a6e22e">indices</span><span style="color:#f92672">().</span><span style="color:#a6e22e">prepareCreate</span><span style="color:#f92672">(</span>indexName<span style="color:#f92672">).</span><span style="color:#a6e22e">execute</span><span style="color:#f92672">().</span><span style="color:#a6e22e">actionGet</span><span style="color:#f92672">();</span>
-        <span style="color:#f92672">}</span> <span style="color:#66d9ef">catch</span> <span style="color:#f92672">(</span>Exception e<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
-            <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>ExceptionsHelper<span style="color:#f92672">.</span><span style="color:#a6e22e">unwrapCause</span><span style="color:#f92672">(</span>e<span style="color:#f92672">)</span> <span style="color:#66d9ef">instanceof</span> IndexAlreadyExistsException<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
-                <span style="color:#75715e">// that&#39;s fine
-</span><span style="color:#75715e"></span>            <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>ExceptionsHelper<span style="color:#f92672">.</span><span style="color:#a6e22e">unwrapCause</span><span style="color:#f92672">(</span>e<span style="color:#f92672">)</span> <span style="color:#66d9ef">instanceof</span> ClusterBlockException<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
-                <span style="color:#75715e">// ok, not recovered yet..., lets start indexing and hope we recover by the first bulk
-</span><span style="color:#75715e"></span>                <span style="color:#75715e">// TODO: a smarter logic can be to register for cluster event listener here, and only start sampling when the block is removed...
-</span><span style="color:#75715e"></span>            <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#f92672">{</span>
-                logger<span style="color:#f92672">.</span><span style="color:#a6e22e">warn</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;failed to create index [{}], disabling river...&#34;</span><span style="color:#f92672">,</span> e<span style="color:#f92672">,</span> indexName<span style="color:#f92672">);</span>
-                <span style="color:#66d9ef">return</span><span style="color:#f92672">;</span>
-            <span style="color:#f92672">}</span>
-        <span style="color:#f92672">}</span>
-<span style="color:#960050;background-color:#1e0010">②</span>        currentRequest <span style="color:#f92672">=</span> client<span style="color:#f92672">.</span><span style="color:#a6e22e">prepareBulk</span><span style="color:#f92672">();</span>
-<span style="color:#960050;background-color:#1e0010">③</span>        WikiXMLParser parser <span style="color:#f92672">=</span> WikiXMLParserFactory<span style="color:#f92672">.</span><span style="color:#a6e22e">getSAXParser</span><span style="color:#f92672">(</span>url<span style="color:#f92672">);</span>
-        <span style="color:#66d9ef">try</span> <span style="color:#f92672">{</span>
-<span style="color:#960050;background-color:#1e0010">④</span>            parser<span style="color:#f92672">.</span><span style="color:#a6e22e">setPageCallback</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> PageCallback<span style="color:#f92672">());</span>
-        <span style="color:#f92672">}</span> <span style="color:#66d9ef">catch</span> <span style="color:#f92672">(</span>Exception e<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
-            logger<span style="color:#f92672">.</span><span style="color:#a6e22e">error</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;failed to create parser&#34;</span><span style="color:#f92672">,</span> e<span style="color:#f92672">);</span>
-            <span style="color:#66d9ef">return</span><span style="color:#f92672">;</span>
-        <span style="color:#f92672">}</span>
-<span style="color:#960050;background-color:#1e0010">⑤</span>        thread <span style="color:#f92672">=</span> EsExecutors<span style="color:#f92672">.</span><span style="color:#a6e22e">daemonThreadFactory</span><span style="color:#f92672">(</span>settings<span style="color:#f92672">.</span><span style="color:#a6e22e">globalSettings</span><span style="color:#f92672">(),</span> <span style="color:#e6db74">&#34;wikipedia_slurper&#34;</span><span style="color:#f92672">).</span><span style="color:#a6e22e">newThread</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> Parser<span style="color:#f92672">(</span>parser<span style="color:#f92672">));</span>
-        thread<span style="color:#f92672">.</span><span style="color:#a6e22e">start</span><span style="color:#f92672">();</span>
-    <span style="color:#f92672">}</span>
-</code></pre></div><p>内部では</p>
-<ol>
-<li>インデックスの作成</li>
-<li>バルクアップデート用クライアントの設定</li>
-<li>WikiXMLのパーサの初期化</li>
-<li>ページごとにキックされるコールバック処理の登録</li>
-<li>デーモンスレッドの起動と起動</li>
-</ol>
-<p>といった処理の流れになっています。</p>
-<p>で、このスレッドの起動後は、4.で用意したparser.parse()処理がグルグル回ります。</p>
-<p>1ページがパースされるたびに、<code>WikipediaRiver.PageCallback</code>クラスの<a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L166"><code>proess()</code>メソッド</a>が呼ばれます。
-このメソッドの最後で、<a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L198"><code>processBulkIfNeeded()</code>メソッド</a>が呼ばれています。ここで、実際にパースしたページをインデックスに登録する処理が実行されます。</p>
-<p><a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L205">このメソッドの1行目</a>が鍵でした。
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch/&#34;&gt;river-wikipediaの前々回の記事&lt;/a&gt;で書きましたが、bulk_sizeに関連して登録件数がやけにきりが良いのが気になると書いていました。&lt;/p&gt;
+&lt;p&gt;で、Riverの仕組みを勉强がてら、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia&#34;&gt;elasticsearch-river-wikipedia&lt;/a&gt;のソース（1.2.0）を読んでみました。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;riverの作り&#34;&gt;Riverの作り&lt;/h2&gt;
+&lt;p&gt;Riverはorg.elasticsearch.river.Riverというinterfaceを実装することで作らています。
+ただ、Riverがinterfaceとなっていますが、o.e.river.AbstractRiverComponentというクラスを継承して作られています。&lt;/p&gt;
+&lt;p&gt;AbstractRiverComponentにはRiverの名前や設定などが用意されています。
+ま、ここはそれほど重要じゃないので、軽く流してと。&lt;/p&gt;
+&lt;p&gt;Riverの設定関連は実装したRiverクラス（ここでは、WikipediaRiverクラス）のコンストラクタで、設定値の読み取りなどの記述を記載します。
+このコンストラクタが、&lt;code&gt;_river/hogehoge/_meta&lt;/code&gt;をPUTした時のJSONを元にElasticSearchから呼ばれて、Riverのインスタンスが作成されます。（たぶん、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/river/RiversService.java&#34;&gt;このへんがその処理&lt;/a&gt;だと思う。。。このあたりはまた今度）&lt;/p&gt;
+&lt;p&gt;実際のRiverの処理はWikipediaRiverクラスのstart()メソッド内部に記述されています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;starting wikipedia stream&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;try&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;①&lt;/span&gt;            client&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;admin&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;indices&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;prepareCreate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;indexName&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;actionGet&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;catch&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Exception e&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;ExceptionsHelper&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;unwrapCause&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;e&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;instanceof&lt;/span&gt; IndexAlreadyExistsException&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+                &lt;span style=&#34;color:#75715e&#34;&gt;// that&amp;#39;s fine
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;ExceptionsHelper&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;unwrapCause&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;e&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;instanceof&lt;/span&gt; ClusterBlockException&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+                &lt;span style=&#34;color:#75715e&#34;&gt;// ok, not recovered yet..., lets start indexing and hope we recover by the first bulk
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;                &lt;span style=&#34;color:#75715e&#34;&gt;// TODO: a smarter logic can be to register for cluster event listener here, and only start sampling when the block is removed...
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+                logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;warn&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;failed to create index [{}], disabling river...&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; e&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; indexName&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+            &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;②&lt;/span&gt;        currentRequest &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; client&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;prepareBulk&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;③&lt;/span&gt;        WikiXMLParser parser &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; WikiXMLParserFactory&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;getSAXParser&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;url&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;try&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;④&lt;/span&gt;            parser&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;setPageCallback&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; PageCallback&lt;span style=&#34;color:#f92672&#34;&gt;());&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;catch&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Exception e&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+            logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;error&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;failed to create parser&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; e&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;⑤&lt;/span&gt;        thread &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; EsExecutors&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;daemonThreadFactory&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;settings&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;globalSettings&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;wikipedia_slurper&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;newThread&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Parser&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;parser&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
+        thread&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;内部では&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;インデックスの作成&lt;/li&gt;
+&lt;li&gt;バルクアップデート用クライアントの設定&lt;/li&gt;
+&lt;li&gt;WikiXMLのパーサの初期化&lt;/li&gt;
+&lt;li&gt;ページごとにキックされるコールバック処理の登録&lt;/li&gt;
+&lt;li&gt;デーモンスレッドの起動と起動&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;といった処理の流れになっています。&lt;/p&gt;
+&lt;p&gt;で、このスレッドの起動後は、4.で用意したparser.parse()処理がグルグル回ります。&lt;/p&gt;
+&lt;p&gt;1ページがパースされるたびに、&lt;code&gt;WikipediaRiver.PageCallback&lt;/code&gt;クラスの&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L166&#34;&gt;&lt;code&gt;proess()&lt;/code&gt;メソッド&lt;/a&gt;が呼ばれます。
+このメソッドの最後で、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L198&#34;&gt;&lt;code&gt;processBulkIfNeeded()&lt;/code&gt;メソッド&lt;/a&gt;が呼ばれています。ここで、実際にパースしたページをインデックスに登録する処理が実行されます。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L205&#34;&gt;このメソッドの1行目&lt;/a&gt;が鍵でした。
 bulkSize以上の件数がバルクのリクエストに貯まった時だけ、実際にインデックスに登録する処理が実行されます。
-このため、スレッドが回っている間は、bulkSize以上のデータが貯まらないと、インデックスへの登録は行われないわけです。</p>
-<p>次に、このスレッドを止めるには、前々回書いたように、_riverにPUTした、Riverの設定をDELETEするしかありません。（あとは、ElasticSearchを停止するとかでしょうか。）</p>
-<p>で、DELETEが実行される呼ばれるのが、<code>WikipediaRiver</code>クラスの<a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L135"><code>close()</code>メソッド</a>です。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java">
-    <span style="color:#a6e22e">@Override</span>
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">close</span><span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
-        logger<span style="color:#f92672">.</span><span style="color:#a6e22e">info</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;closing wikipedia river&#34;</span><span style="color:#f92672">);</span>
-        closed <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span><span style="color:#f92672">;</span>
-        <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>thread <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
-            thread<span style="color:#f92672">.</span><span style="color:#a6e22e">interrupt</span><span style="color:#f92672">();</span>
-        <span style="color:#f92672">}</span>
-    <span style="color:#f92672">}</span>
-</code></pre></div><p>見ていただくと分かりますが、スレッド止めて終了です。</p>
-<h3 id="問題点は">問題点は？</h3>
-<p>ということで、</p>
-<ul>
-<li>WikipediaのXMLを読み込んでもRiverは停止しない</li>
-<li>Riverの停止を行ってもスレッドが止められるだけ。</li>
-<li>bulkSize以下の件数が<code>currentRequest</code>に残っているけど、破棄される</li>
-</ul>
-<p>とまぁ、こんな流れになっているので、最後の端数のドキュメントがインデックスに登録されないようです。
-（まだ、ちゃんと確認してないんですが、備忘録のため先に書いちゃいました。。。）</p>
-<p>じゃあ、全部うまく登録するにはどうしたもんかなぁと。
+このため、スレッドが回っている間は、bulkSize以上のデータが貯まらないと、インデックスへの登録は行われないわけです。&lt;/p&gt;
+&lt;p&gt;次に、このスレッドを止めるには、前々回書いたように、_riverにPUTした、Riverの設定をDELETEするしかありません。（あとは、ElasticSearchを停止するとかでしょうか。）&lt;/p&gt;
+&lt;p&gt;で、DELETEが実行される呼ばれるのが、&lt;code&gt;WikipediaRiver&lt;/code&gt;クラスの&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L135&#34;&gt;&lt;code&gt;close()&lt;/code&gt;メソッド&lt;/a&gt;です。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;close&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;closing wikipedia river&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        closed &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;thread &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+            thread&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;interrupt&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;見ていただくと分かりますが、スレッド止めて終了です。&lt;/p&gt;
+&lt;h3 id=&#34;問題点は&#34;&gt;問題点は？&lt;/h3&gt;
+&lt;p&gt;ということで、&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;WikipediaのXMLを読み込んでもRiverは停止しない&lt;/li&gt;
+&lt;li&gt;Riverの停止を行ってもスレッドが止められるだけ。&lt;/li&gt;
+&lt;li&gt;bulkSize以下の件数が&lt;code&gt;currentRequest&lt;/code&gt;に残っているけど、破棄される&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;とまぁ、こんな流れになっているので、最後の端数のドキュメントがインデックスに登録されないようです。
+（まだ、ちゃんと確認してないんですが、備忘録のため先に書いちゃいました。。。）&lt;/p&gt;
+&lt;p&gt;じゃあ、全部うまく登録するにはどうしたもんかなぁと。
 いまのところ思いついたのはこんな感じです。
-他にいい案があったら教えて下さい。</p>
-<ul>
-<li>案１：close()処理の中で、スレッド停止後に、<code>currentRequest</code>に貯まっているデータをインデックスに登録しちゃう</li>
-<li>案２：bulkSize以外に、定期的（指定された時間）で登録処理を実行してしまう。</li>
-</ul>
-<p>簡単なのでとりあえず、案１を実装してみるかなぁと。
+他にいい案があったら教えて下さい。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;案１：close()処理の中で、スレッド停止後に、&lt;code&gt;currentRequest&lt;/code&gt;に貯まっているデータをインデックスに登録しちゃう&lt;/li&gt;
+&lt;li&gt;案２：bulkSize以外に、定期的（指定された時間）で登録処理を実行してしまう。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;簡単なのでとりあえず、案１を実装してみるかなぁと。
 （さっさとコード書けよって話ですね。。。スミマセン）
-その前にMLで質問ですかねぇ、英語で。</p>
-<p>WikipediaのRiverをざっと眺めてみた感じですが、わかりやすい作りだなぁと。
-他のRiverがどうなってるかをちゃんと見てませんが、他にもbulkSize指定をするRiverの場合は、このように件数がbulkSizeに満たない状態ではデータが登録されないといったことがあるかもしれません。</p>
-<p>ElasticSearchのソースを読み始める取っ掛かりとしては面白いかと思いますので、興味ある方は読んで作ってみるといいかもしれません。（私は読んだだけですがｗ）</p>
-<h2 id="追記20130913-2100">追記（2013/09/13 21:00）</h2>
-<p>MLで質問してみました。とりあえず、案1を。</p>
-<p><a href="https://groups.google.com/forum/#!topic/elasticsearch/hqU-LF5aTy4">river-wikipedia does not index all pages</a></p>
-<p>他のRiverでは対応してるしバグだね、Issue上げてとのことで、あげときました。
-ついでにプルリクも出せばいいんでしょうが、プルリクまだやったことないヘタレです。。。</p>
-<p>あと、案2についても同じトピックで質問してます。
+その前にMLで質問ですかねぇ、英語で。&lt;/p&gt;
+&lt;p&gt;WikipediaのRiverをざっと眺めてみた感じですが、わかりやすい作りだなぁと。
+他のRiverがどうなってるかをちゃんと見てませんが、他にもbulkSize指定をするRiverの場合は、このように件数がbulkSizeに満たない状態ではデータが登録されないといったことがあるかもしれません。&lt;/p&gt;
+&lt;p&gt;ElasticSearchのソースを読み始める取っ掛かりとしては面白いかと思いますので、興味ある方は読んで作ってみるといいかもしれません。（私は読んだだけですがｗ）&lt;/p&gt;
+&lt;h2 id=&#34;追記20130913-2100&#34;&gt;追記（2013/09/13 21:00）&lt;/h2&gt;
+&lt;p&gt;MLで質問してみました。とりあえず、案1を。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://groups.google.com/forum/#!topic/elasticsearch/hqU-LF5aTy4&#34;&gt;river-wikipedia does not index all pages&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;他のRiverでは対応してるしバグだね、Issue上げてとのことで、あげときました。
+ついでにプルリクも出せばいいんでしょうが、プルリクまだやったことないヘタレです。。。&lt;/p&gt;
+&lt;p&gt;あと、案2についても同じトピックで質問してます。
 どうやら、BulkProcessorにその機能があるよと。
-<code>flushinterval</code>というプロパティがありそうです。どうやって設定して、どうやって動くのかとか見てないので、
-調査してブログorLTかな。</p>
-<p><a href="http://www.elasticsearch.org/guide/reference/api/bulk-udp/">bulk udp</a>にはその値を設定できそうなのがあるんだよなぁ。</p>
-<h2 id="追記その２20130916-2350">追記その２（2013/09/16 23:50）</h2>
-<p>さっそく<a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia/commit/3719ac5cd3cd5f0e4e57edaa72f5d4ca0b45ca5d">修正版がコミット(コミットログ)</a>されてました。
-結構変わってます。BulkProcessorに<code>flush_interval</code>の設定をすれば、よしなにやってくれる仕組みがすでに実装されているようです。
-<code>bulkSize</code>についても同様に、BulkProcessorに設定すれば良いようです。
+&lt;code&gt;flushinterval&lt;/code&gt;というプロパティがありそうです。どうやって設定して、どうやって動くのかとか見てないので、
+調査してブログorLTかな。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://www.elasticsearch.org/guide/reference/api/bulk-udp/&#34;&gt;bulk udp&lt;/a&gt;にはその値を設定できそうなのがあるんだよなぁ。&lt;/p&gt;
+&lt;h2 id=&#34;追記その２20130916-2350&#34;&gt;追記その２（2013/09/16 23:50）&lt;/h2&gt;
+&lt;p&gt;さっそく&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia/commit/3719ac5cd3cd5f0e4e57edaa72f5d4ca0b45ca5d&#34;&gt;修正版がコミット(コミットログ)&lt;/a&gt;されてました。
+結構変わってます。BulkProcessorに&lt;code&gt;flush_interval&lt;/code&gt;の設定をすれば、よしなにやってくれる仕組みがすでに実装されているようです。
+&lt;code&gt;bulkSize&lt;/code&gt;についても同様に、BulkProcessorに設定すれば良いようです。
 Riverの仕組みが結構スッキリしています。
 もともと実装されていた、bulkSizeごとの処理も消されています。
-確かに、BulkProcessorの仕組みとして実装されている方がしっくりきますね。</p>
-<p>ということで、考える暇もなくコミットされてしまいました。
-こうやって質問しつつ、少しずつソースを読んでいこうかなと思ってるとこです。</p>
+確かに、BulkProcessorの仕組みとして実装されている方がしっくりきますね。&lt;/p&gt;
+&lt;p&gt;ということで、考える暇もなくコミットされてしまいました。
+こうやって質問しつつ、少しずつソースを読んでいこうかなと思ってるとこです。&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -130,60 +131,60 @@ Riverの仕組みが結構スッキリしています。
       
       <guid>https://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/</guid>
       <description>前々回紹介した、日本語Wikipediaのデータをインデックス登録する記事の続きです。 今回は、Kuromojiのアナライザを利用してインデッ</description>
-      <content:encoded><p><a href="/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch">前々回紹介した、日本語Wikipediaのデータをインデックス登録する記事</a>の続きです。</p>
-<!-- more -->
-<p>今回は、Kuromojiのアナライザを利用してインデックス登録してみます。</p>
-<h2 id="余談proxy環境でのプラグインインストール">余談（Proxy環境でのプラグインインストール）</h2>
-<p>ElasticSearchのpluginコマンドはJavaで実装されています。（<a href="https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/plugins/PluginManager.java#L315">org.elasticsearch.plugins.PluginManager</a>）
-プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。</p>
-<p>ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。</p>
-<pre><code>./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
-</code></pre><h2 id="elasticsearch-analysis-kuromojiのインストール">elasticsearch-analysis-kuromojiのインストール</h2>
-<p>WikipediaのデータをKuromojiを使って、形態素解析ベースの転置インデックスを作成していきます。
-まずは、Kuromojiを利用するために、<a href="https://github.com/elasticsearch/elasticsearch-analysis-kuromoji">Analysisプラグイン</a>のインストールです。
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch&#34;&gt;前々回紹介した、日本語Wikipediaのデータをインデックス登録する記事&lt;/a&gt;の続きです。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;今回は、Kuromojiのアナライザを利用してインデックス登録してみます。&lt;/p&gt;
+&lt;h2 id=&#34;余談proxy環境でのプラグインインストール&#34;&gt;余談（Proxy環境でのプラグインインストール）&lt;/h2&gt;
+&lt;p&gt;ElasticSearchのpluginコマンドはJavaで実装されています。（&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/plugins/PluginManager.java#L315&#34;&gt;org.elasticsearch.plugins.PluginManager&lt;/a&gt;）
+プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。&lt;/p&gt;
+&lt;p&gt;ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;elasticsearch-analysis-kuromojiのインストール&#34;&gt;elasticsearch-analysis-kuromojiのインストール&lt;/h2&gt;
+&lt;p&gt;WikipediaのデータをKuromojiを使って、形態素解析ベースの転置インデックスを作成していきます。
+まずは、Kuromojiを利用するために、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-analysis-kuromoji&#34;&gt;Analysisプラグイン&lt;/a&gt;のインストールです。
 ElasticSearchのバージョンに対応したプラグインのバージョンがあります。（プラグインのページに対応したバージョンの記載あり）
-今回はElasticSearchの0.90.3を利用しているため、1.5.0をインストールします。</p>
-<pre><code>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
-</code></pre><p>インストール後は再起動しておきます。
+今回はElasticSearchの0.90.3を利用しているため、1.5.0をインストールします。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;インストール後は再起動しておきます。
 なお、Kuromojiを利用して、Wikipediaのデータを登録するばあい、デフォルトの設定では、ヒープが足りなくなるおそれがあります。
-ElasticSearchの起動時に以下のオプションを指定して、最大ヒープサイズを2Gとしておきます。</p>
-<pre><code>export ES_HEAP_SIZE=2g;./bin/elasticsearch
-</code></pre><h2 id="indexの作成デフォルトでkuromojiのanalyzerを利用する">Indexの作成（デフォルトでKuromojiのAnalyzerを利用する）</h2>
-<p>Wikipediaのデータを登録する際に、Kuromojiのアナライザを利用したいのが今回の趣旨でした。
+ElasticSearchの起動時に以下のオプションを指定して、最大ヒープサイズを2Gとしておきます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;export ES_HEAP_SIZE=2g;./bin/elasticsearch
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;indexの作成デフォルトでkuromojiのanalyzerを利用する&#34;&gt;Indexの作成（デフォルトでKuromojiのAnalyzerを利用する）&lt;/h2&gt;
+&lt;p&gt;Wikipediaのデータを登録する際に、Kuromojiのアナライザを利用したいのが今回の趣旨でした。
 一番ラクな方法として、Wikipediaデータのインデックスの設定として、デフォルトのアナライザをKuromojiにしてしまいます。
-（きちんと設計する場合は、必要に応じてフィールドごとに指定しましょう）</p>
-<pre><code>curl -XPUT 'localhost:9200/ja-wikipedia-kuromoji' -d '{
-    &quot;settings&quot;: {
-        &quot;analysis&quot;: {
-            &quot;analyzer&quot;: {
-                &quot;default&quot; : {
-                    &quot;type&quot; : &quot;kuromoji&quot;
+（きちんと設計する場合は、必要に応じてフィールドごとに指定しましょう）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPUT &#39;localhost:9200/ja-wikipedia-kuromoji&#39; -d &#39;{
+    &amp;quot;settings&amp;quot;: {
+        &amp;quot;analysis&amp;quot;: {
+            &amp;quot;analyzer&amp;quot;: {
+                &amp;quot;default&amp;quot; : {
+                    &amp;quot;type&amp;quot; : &amp;quot;kuromoji&amp;quot;
                 }
             }
         }
     }
-}'
-</code></pre><p>これでkuromojiのアナライザがデフォルトで利用される形となります。
-あとは、Riverを起動して登録するだけです。</p>
-<h2 id="riverの実行">Riverの実行</h2>
-<p>前回と一緒です。
-インデックス名（<strong>_river/&lt;インデックス名&gt;/_meta</strong>）だけは、先ほど作成した「<code>ja-wikipedia-kuromoji</code>」に変更してください。</p>
-<pre><code>curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d '
+}&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これでkuromojiのアナライザがデフォルトで利用される形となります。
+あとは、Riverを起動して登録するだけです。&lt;/p&gt;
+&lt;h2 id=&#34;riverの実行&#34;&gt;Riverの実行&lt;/h2&gt;
+&lt;p&gt;前回と一緒です。
+インデックス名（&lt;strong&gt;_river/&amp;lt;インデックス名&amp;gt;/_meta&lt;/strong&gt;）だけは、先ほど作成した「&lt;code&gt;ja-wikipedia-kuromoji&lt;/code&gt;」に変更してください。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d &#39;
 {
-    &quot;type&quot; : &quot;wikipedia&quot;,
-    &quot;wikipedia&quot; : {
-        &quot;url&quot; : &quot;file:/home/johtani/src/jawiki-latest-pages-articles.xml&quot;
+    &amp;quot;type&amp;quot; : &amp;quot;wikipedia&amp;quot;,
+    &amp;quot;wikipedia&amp;quot; : {
+        &amp;quot;url&amp;quot; : &amp;quot;file:/home/johtani/src/jawiki-latest-pages-articles.xml&amp;quot;
     },
-    &quot;index&quot; : {
-        &quot;bulk_size&quot; : 10000
+    &amp;quot;index&amp;quot; : {
+        &amp;quot;bulk_size&amp;quot; : 10000
     }
-}'
-</code></pre><p>あとは、インデックスされるのを待つだけです。</p>
-<h2 id="データ量とか">データ量とか</h2>
-<p>5.8gbになりました。Kuromojiを利用したため、形態素解析により単語にきちんとトークないずされた結果でしょう。
+}&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あとは、インデックスされるのを待つだけです。&lt;/p&gt;
+&lt;h2 id=&#34;データ量とか&#34;&gt;データ量とか&lt;/h2&gt;
+&lt;p&gt;5.8gbになりました。Kuromojiを利用したため、形態素解析により単語にきちんとトークないずされた結果でしょう。
 Uni-gramだと、転置インデックスのボキャブラリも単語に対してヒットするドキュメント数も大きくなるため、
-インデックスサイズも大きくなっているのかと。</p>
-<p>検索クエリのサンプルなどはまた後日。（夜遅いので。。。）</p>
+インデックスサイズも大きくなっているのかと。&lt;/p&gt;
+&lt;p&gt;検索クエリのサンプルなどはまた後日。（夜遅いので。。。）&lt;/p&gt;
 </content:encoded>
     </item>
     
@@ -194,213 +195,213 @@ Uni-gramだと、転置インデックスのボキャブラリも単語に対し
       
       <guid>https://blog.johtani.info/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch/</guid>
       <description>久々のブログはElasticSearchネタです。勉強会開催する予定だったりすので、もう少し触っておきたいなと。 お手軽に検索するデータとして</description>
-      <content:encoded><p>久々のブログはElasticSearchネタです。勉強会開催する予定だったりすので、もう少し触っておきたいなと。
+      <content:encoded>&lt;p&gt;久々のブログはElasticSearchネタです。勉強会開催する予定だったりすので、もう少し触っておきたいなと。
 お手軽に検索するデータとして、よくWikipediaのデータを使っています。
-ElasticSearchには<a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia">elasticsearch-river-wikipedia</a>という便利なプラグインがあり、Wikipediaのデータを簡単に検索可能な状態にできます。このRiverを利用して日本語のWikipediaのデータを入れたので、メモを取っておきます。
+ElasticSearchには&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia&#34;&gt;elasticsearch-river-wikipedia&lt;/a&gt;という便利なプラグインがあり、Wikipediaのデータを簡単に検索可能な状態にできます。このRiverを利用して日本語のWikipediaのデータを入れたので、メモを取っておきます。
 まずは、river-wikipediaで日本語のデータをインデクシングしてみるまでの説明です。
-日本語特有の設定（Kuromojiを利用したインデクシング）などはまた後日。</p>
-<!-- more -->
-<h2 id="プラグインのインストール">プラグインのインストール</h2>
-<p>対象とするElasticSearchは現時点で最新版の0.90.3とします。
-最新版でRiver動かないなぁとつぶやいた影響かどうかはわかりませんが、2013/08/19に最新版のElasticSearchで動作するプラグインが公開されました。</p>
-<p>まずはインストールです。
-HPにも書いてありますが、以下のコマンドを実行すればインストールされます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">$ ./bin/plugin -install elasticsearch/elasticsearch-river-wikipedia/1.2.0
--&gt; Installing elasticsearch/elasticsearch-river-wikipedia/1.2.0...
+日本語特有の設定（Kuromojiを利用したインデクシング）などはまた後日。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;プラグインのインストール&#34;&gt;プラグインのインストール&lt;/h2&gt;
+&lt;p&gt;対象とするElasticSearchは現時点で最新版の0.90.3とします。
+最新版でRiver動かないなぁとつぶやいた影響かどうかはわかりませんが、2013/08/19に最新版のElasticSearchで動作するプラグインが公開されました。&lt;/p&gt;
+&lt;p&gt;まずはインストールです。
+HPにも書いてありますが、以下のコマンドを実行すればインストールされます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;$ ./bin/plugin -install elasticsearch/elasticsearch-river-wikipedia/1.2.0
+-&amp;gt; Installing elasticsearch/elasticsearch-river-wikipedia/1.2.0...
 Trying http://download.elasticsearch.org/elasticsearch/elasticsearch-river-wikipedia/elasticsearch-river-wikipedia-1.2.0.zip...
 Downloading ..........DONE
 Installed river-wikipedia into /opt/elasticsearch/plugins/river-wikipedia
-</code></pre></div><p>ElasticSearchが起動している場合はプラグインをインストール後、認識させるためにElasticSearchを再起動します。</p>
-<h2 id="日本語wikipediaのインデクシング">日本語Wikipediaのインデクシング</h2>
-<p>通常は英語のWikipediaがインデクシングされますが、対象となるファイルを変更することで日本語のWikipediaもインデクシング可能です。
-手元に日本語Wikipediaのダンプファイルがあるものとします。（<a href="http://ja.wikipedia.org/wiki/Wikipedia:%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89">ダウンロードはWikipediaデータベースダウンロード</a>のページにあるpages-articles.xml.bz2のファイルです）</p>
-<p>ファイルを指定してインデクシングするには、つぎのcurlコマンドを実行します。
-コマンドを実行するとすぐにインデクシングが始まりますので注意が必要です。</p>
-<pre><code>curl -XPUT localhost:9200/_river/ja-wikipedia/_meta -d '
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ElasticSearchが起動している場合はプラグインをインストール後、認識させるためにElasticSearchを再起動します。&lt;/p&gt;
+&lt;h2 id=&#34;日本語wikipediaのインデクシング&#34;&gt;日本語Wikipediaのインデクシング&lt;/h2&gt;
+&lt;p&gt;通常は英語のWikipediaがインデクシングされますが、対象となるファイルを変更することで日本語のWikipediaもインデクシング可能です。
+手元に日本語Wikipediaのダンプファイルがあるものとします。（&lt;a href=&#34;http://ja.wikipedia.org/wiki/Wikipedia:%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89&#34;&gt;ダウンロードはWikipediaデータベースダウンロード&lt;/a&gt;のページにあるpages-articles.xml.bz2のファイルです）&lt;/p&gt;
+&lt;p&gt;ファイルを指定してインデクシングするには、つぎのcurlコマンドを実行します。
+コマンドを実行するとすぐにインデクシングが始まりますので注意が必要です。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia/_meta -d &#39;
 {
-    &quot;type&quot; : &quot;wikipedia&quot;,
-    &quot;wikipedia&quot; : {
-        &quot;url&quot; : &quot;file:/home/johtani/src/jawiki-latest-pages-articles.xml&quot;
+    &amp;quot;type&amp;quot; : &amp;quot;wikipedia&amp;quot;,
+    &amp;quot;wikipedia&amp;quot; : {
+        &amp;quot;url&amp;quot; : &amp;quot;file:/home/johtani/src/jawiki-latest-pages-articles.xml&amp;quot;
     },
-    &quot;index&quot; : {
-        &quot;bulk_size&quot; : 1000
+    &amp;quot;index&amp;quot; : {
+        &amp;quot;bulk_size&amp;quot; : 1000
     }
-}'
-</code></pre><p>ここでURLに含まれる「ja-wikipedia」がインデックス名になります。
-また、JSONの&quot;url&quot;にはファイルの場所を指定するため、<code>file:</code>で開始するパスを指定します。
-例では、bz2を解凍したファイルを指定していますが、bz2のままのファイルでもOKです。</p>
-<p>上記コマンドを実行すると、<code>_river</code>というインデックスにつぎのようなエントリが増えています。
-(<code>curl -XGET 'localhost:9200/_river/ja-wikipedia/_search?pretty</code>)</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-   <span style="color:#f92672">&#34;took&#34;</span>: <span style="color:#ae81ff">5</span>,
-   <span style="color:#f92672">&#34;timed_out&#34;</span>: <span style="color:#66d9ef">false</span>,
-   <span style="color:#f92672">&#34;_shards&#34;</span>: {
-      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">1</span>,
-      <span style="color:#f92672">&#34;successful&#34;</span>: <span style="color:#ae81ff">1</span>,
-      <span style="color:#f92672">&#34;failed&#34;</span>: <span style="color:#ae81ff">0</span>
+}&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ここでURLに含まれる「ja-wikipedia」がインデックス名になります。
+また、JSONの&amp;quot;url&amp;quot;にはファイルの場所を指定するため、&lt;code&gt;file:&lt;/code&gt;で開始するパスを指定します。
+例では、bz2を解凍したファイルを指定していますが、bz2のままのファイルでもOKです。&lt;/p&gt;
+&lt;p&gt;上記コマンドを実行すると、&lt;code&gt;_river&lt;/code&gt;というインデックスにつぎのようなエントリが増えています。
+(&lt;code&gt;curl -XGET &#39;localhost:9200/_river/ja-wikipedia/_search?pretty&lt;/code&gt;)&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;took&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_shards&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;successful&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;failed&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
    },
-   <span style="color:#f92672">&#34;hits&#34;</span>: {
-      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">2</span>,
-      <span style="color:#f92672">&#34;max_score&#34;</span>: <span style="color:#ae81ff">1</span>,
-      <span style="color:#f92672">&#34;hits&#34;</span>: [
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;max_score&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;: [
          {
-            <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;_river&#34;</span>,
-            <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;ja-wikipedia&#34;</span>,
-            <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;_status&#34;</span>,
-            <span style="color:#f92672">&#34;_score&#34;</span>: <span style="color:#ae81ff">1</span>,
-            <span style="color:#f92672">&#34;_source&#34;</span>: {
-               <span style="color:#f92672">&#34;ok&#34;</span>: <span style="color:#66d9ef">true</span>,
-               <span style="color:#f92672">&#34;node&#34;</span>: {
-                  <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;gdyvwpiAR52lqUCcRhVwsg&#34;</span>,
-                  <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Blitzschlag, Baron Von&#34;</span>,
-                  <span style="color:#f92672">&#34;transport_address&#34;</span>: <span style="color:#e6db74">&#34;inet[/192.168.100.7:9300]&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_river&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ja-wikipedia&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_status&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;ok&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;node&amp;#34;&lt;/span&gt;: {
+                  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;gdyvwpiAR52lqUCcRhVwsg&amp;#34;&lt;/span&gt;,
+                  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Blitzschlag, Baron Von&amp;#34;&lt;/span&gt;,
+                  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;transport_address&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;inet[/192.168.100.7:9300]&amp;#34;&lt;/span&gt;
                }
             }
          },
          {
-            <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;_river&#34;</span>,
-            <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;ja-wikipedia&#34;</span>,
-            <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;_meta&#34;</span>,
-            <span style="color:#f92672">&#34;_score&#34;</span>: <span style="color:#ae81ff">1</span>,
-            <span style="color:#f92672">&#34;_source&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;wikipedia&#34;</span>,
-               <span style="color:#f92672">&#34;wikipedia&#34;</span>: {
-                  <span style="color:#f92672">&#34;url&#34;</span>: <span style="color:#e6db74">&#34;file:/home/johtani/src/jawiki-latest-pages-articles.xml&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_river&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ja-wikipedia&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_meta&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;wikipedia&amp;#34;&lt;/span&gt;,
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;wikipedia&amp;#34;&lt;/span&gt;: {
+                  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;url&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file:/home/johtani/src/jawiki-latest-pages-articles.xml&amp;#34;&lt;/span&gt;
                },
-               <span style="color:#f92672">&#34;index&#34;</span>: {
-                  <span style="color:#f92672">&#34;bulk_size&#34;</span>: <span style="color:#ae81ff">100</span>
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;index&amp;#34;&lt;/span&gt;: {
+                  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;bulk_size&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;100&lt;/span&gt;
                }
             }
          }
       ]
    }
 }
-</code></pre></div><p><code>&quot;_id&quot;: &quot;_meta&quot;</code>というエントリがさきほど登録したWikipediaのRiverに関する設定です。
-<code>&quot;_id&quot;: &quot;_status&quot;</code>というエントリが起動したRiverの状態になります。</p>
-<h2 id="riverの停止">Riverの停止</h2>
-<p>日本語Wikipediaは結構サイズが大きく、手元のAirでインデクシングするのに30分程度かかりました。（bz2圧縮されていないファイルで、何もしていない状態）</p>
-<p>途中でRiverを停止したくなった場合は、以下のcurlコマンドを実行します。</p>
-<pre><code>$ curl -XDELETE 'localhost:9200/_river/ja-wikipedia'
-</code></pre><p>先ほど設定した<code>_river/ja-wikipedia</code>の情報を削除すると、エントリが削除されたのを検知してRiverが停止します。ログにはつぎのようなメッセージが表示されます。</p>
-<pre><code>[2013-08-26 18:26:50,130][INFO ][cluster.metadata         ] [Blitzschlag, Baron Von] [[_river]] remove_mapping [ja-wikipedia]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;&amp;quot;_id&amp;quot;: &amp;quot;_meta&amp;quot;&lt;/code&gt;というエントリがさきほど登録したWikipediaのRiverに関する設定です。
+&lt;code&gt;&amp;quot;_id&amp;quot;: &amp;quot;_status&amp;quot;&lt;/code&gt;というエントリが起動したRiverの状態になります。&lt;/p&gt;
+&lt;h2 id=&#34;riverの停止&#34;&gt;Riverの停止&lt;/h2&gt;
+&lt;p&gt;日本語Wikipediaは結構サイズが大きく、手元のAirでインデクシングするのに30分程度かかりました。（bz2圧縮されていないファイルで、何もしていない状態）&lt;/p&gt;
+&lt;p&gt;途中でRiverを停止したくなった場合は、以下のcurlコマンドを実行します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ curl -XDELETE &#39;localhost:9200/_river/ja-wikipedia&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;先ほど設定した&lt;code&gt;_river/ja-wikipedia&lt;/code&gt;の情報を削除すると、エントリが削除されたのを検知してRiverが停止します。ログにはつぎのようなメッセージが表示されます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[2013-08-26 18:26:50,130][INFO ][cluster.metadata         ] [Blitzschlag, Baron Von] [[_river]] remove_mapping [ja-wikipedia]
 [2013-08-26 18:26:50,130][INFO ][river.wikipedia          ] [Blitzschlag, Baron Von] [wikipedia][ja-wikipedia] closing wikipedia river
-</code></pre><p>Riverを停止してもそれまでインデクシングされたデータは検索できます。
-データはちょっとだけで良いという場合は、先ほどの<code>_river</code>のデータを削除してください。
-（◯件だけ登録したいとかできるかは調べてないです。）</p>
-<h2 id="サイズとかマッピングとか">サイズとかマッピングとか</h2>
-<h3 id="サイズ">サイズ</h3>
-<p>インデックス前のXMLのサイズが5.7Gのとき、ElasticSearchのインデックスサイズ（Optimize後）は7.2Gとなりました。すこし古いファイルを利用しているため、最新版とはサイズが異なるかもしれません。</p>
-<p>あと、データ数が、1540000件とやけにきりがいいのがちょっと気になっています。。。
-bulkのサイズを10000で指定してインデックスしたので、切れてるのかなぁと。</p>
-<p>ということは、データが欠落しているような気がするのでRiverの作りの問題なのか、ElasticSearchの問題なのかはちょっと調べてみないとわからないなと。</p>
-<h3 id="マッピング">マッピング</h3>
-<p>出来上がったインデックスのマッピング（Solrでいうスキーマみたいなもの）は次のようになっています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-   <span style="color:#f92672">&#34;ja-wikipedia&#34;</span>: {
-      <span style="color:#f92672">&#34;page&#34;</span>: {
-         <span style="color:#f92672">&#34;properties&#34;</span>: {
-            <span style="color:#f92672">&#34;category&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Riverを停止してもそれまでインデクシングされたデータは検索できます。
+データはちょっとだけで良いという場合は、先ほどの&lt;code&gt;_river&lt;/code&gt;のデータを削除してください。
+（◯件だけ登録したいとかできるかは調べてないです。）&lt;/p&gt;
+&lt;h2 id=&#34;サイズとかマッピングとか&#34;&gt;サイズとかマッピングとか&lt;/h2&gt;
+&lt;h3 id=&#34;サイズ&#34;&gt;サイズ&lt;/h3&gt;
+&lt;p&gt;インデックス前のXMLのサイズが5.7Gのとき、ElasticSearchのインデックスサイズ（Optimize後）は7.2Gとなりました。すこし古いファイルを利用しているため、最新版とはサイズが異なるかもしれません。&lt;/p&gt;
+&lt;p&gt;あと、データ数が、1540000件とやけにきりがいいのがちょっと気になっています。。。
+bulkのサイズを10000で指定してインデックスしたので、切れてるのかなぁと。&lt;/p&gt;
+&lt;p&gt;ということは、データが欠落しているような気がするのでRiverの作りの問題なのか、ElasticSearchの問題なのかはちょっと調べてみないとわからないなと。&lt;/p&gt;
+&lt;h3 id=&#34;マッピング&#34;&gt;マッピング&lt;/h3&gt;
+&lt;p&gt;出来上がったインデックスのマッピング（Solrでいうスキーマみたいなもの）は次のようになっています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;ja-wikipedia&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;page&amp;#34;&lt;/span&gt;: {
+         &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;properties&amp;#34;&lt;/span&gt;: {
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;string&amp;#34;&lt;/span&gt;
             },
-            <span style="color:#f92672">&#34;disambiguation&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;boolean&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;disambiguation&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;boolean&amp;#34;&lt;/span&gt;
             },
-            <span style="color:#f92672">&#34;link&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;link&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;string&amp;#34;&lt;/span&gt;
             },
-            <span style="color:#f92672">&#34;redirect&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;boolean&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;redirect&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;boolean&amp;#34;&lt;/span&gt;
             },
-            <span style="color:#f92672">&#34;special&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;boolean&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;special&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;boolean&amp;#34;&lt;/span&gt;
             },
-            <span style="color:#f92672">&#34;stub&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;boolean&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;stub&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;boolean&amp;#34;&lt;/span&gt;
             },
-            <span style="color:#f92672">&#34;text&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;string&amp;#34;&lt;/span&gt;
             },
-            <span style="color:#f92672">&#34;title&#34;</span>: {
-               <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;string&amp;#34;&lt;/span&gt;
             }
          }
       }
    }
 }
-</code></pre></div><p>Wikipediaの各種データが上記のフィールドに入っています。
-また、マッピングタイプはデフォルトで「page」というタイプになっています。</p>
-<h2 id="検索">検索</h2>
-<p>先ほどのマッピングを元に検索すればOKです。例えばつぎのような感じです。</p>
-<pre><code>curl -XPOST 'localhost:9200/ja-wikipedia/_search?pretty' -d '
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Wikipediaの各種データが上記のフィールドに入っています。
+また、マッピングタイプはデフォルトで「page」というタイプになっています。&lt;/p&gt;
+&lt;h2 id=&#34;検索&#34;&gt;検索&lt;/h2&gt;
+&lt;p&gt;先ほどのマッピングを元に検索すればOKです。例えばつぎのような感じです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPOST &#39;localhost:9200/ja-wikipedia/_search?pretty&#39; -d &#39;
 {
-    &quot;size&quot; : 3,
-    &quot;script_fields&quot;: {
-       &quot;title_only&quot;: {
-          &quot;script&quot;: &quot;_source.title&quot;
+    &amp;quot;size&amp;quot; : 3,
+    &amp;quot;script_fields&amp;quot;: {
+       &amp;quot;title_only&amp;quot;: {
+          &amp;quot;script&amp;quot;: &amp;quot;_source.title&amp;quot;
        }
     }, 
-    &quot;query&quot; : {
-        &quot;query_string&quot;: {
-            &quot;default_field&quot;: &quot;title&quot;,
-            &quot;query&quot; : &quot;千葉&quot;
+    &amp;quot;query&amp;quot; : {
+        &amp;quot;query_string&amp;quot;: {
+            &amp;quot;default_field&amp;quot;: &amp;quot;title&amp;quot;,
+            &amp;quot;query&amp;quot; : &amp;quot;千葉&amp;quot;
         }
     }
-}'
-</code></pre><p>結果はこんな感じ。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
-   <span style="color:#f92672">&#34;took&#34;</span>: <span style="color:#ae81ff">51</span>,
-   <span style="color:#f92672">&#34;timed_out&#34;</span>: <span style="color:#66d9ef">false</span>,
-   <span style="color:#f92672">&#34;_shards&#34;</span>: {
-      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">5</span>,
-      <span style="color:#f92672">&#34;successful&#34;</span>: <span style="color:#ae81ff">5</span>,
-      <span style="color:#f92672">&#34;failed&#34;</span>: <span style="color:#ae81ff">0</span>
+}&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;結果はこんな感じ。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;took&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;51&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_shards&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;successful&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;failed&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
    },
-   <span style="color:#f92672">&#34;hits&#34;</span>: {
-      <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">8616</span>,
-      <span style="color:#f92672">&#34;max_score&#34;</span>: <span style="color:#ae81ff">5.8075247</span>,
-      <span style="color:#f92672">&#34;hits&#34;</span>: [
+   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;: {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;8616&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;max_score&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5.8075247&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;: [
          {
-            <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;ja-wikipedia&#34;</span>,
-            <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;page&#34;</span>,
-            <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;3582&#34;</span>,
-            <span style="color:#f92672">&#34;_score&#34;</span>: <span style="color:#ae81ff">5.8075247</span>,
-            <span style="color:#f92672">&#34;fields&#34;</span>: {
-               <span style="color:#f92672">&#34;title_only&#34;</span>: <span style="color:#e6db74">&#34;千葉&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ja-wikipedia&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;page&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;3582&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5.8075247&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;fields&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title_only&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;千葉&amp;#34;&lt;/span&gt;
             }
          },
          {
-            <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;ja-wikipedia&#34;</span>,
-            <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;page&#34;</span>,
-            <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;2352241&#34;</span>,
-            <span style="color:#f92672">&#34;_score&#34;</span>: <span style="color:#ae81ff">4.94406</span>,
-            <span style="color:#f92672">&#34;fields&#34;</span>: {
-               <span style="color:#f92672">&#34;title_only&#34;</span>: <span style="color:#e6db74">&#34;千葉千枝子&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ja-wikipedia&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;page&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2352241&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;4.94406&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;fields&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title_only&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;千葉千枝子&amp;#34;&lt;/span&gt;
             }
          },
          {
-            <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;ja-wikipedia&#34;</span>,
-            <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;page&#34;</span>,
-            <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;14020&#34;</span>,
-            <span style="color:#f92672">&#34;_score&#34;</span>: <span style="color:#ae81ff">4.8754807</span>,
-            <span style="color:#f92672">&#34;fields&#34;</span>: {
-               <span style="color:#f92672">&#34;title_only&#34;</span>: <span style="color:#e6db74">&#34;千葉千恵巳&#34;</span>
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ja-wikipedia&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;page&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;14020&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;4.8754807&lt;/span&gt;,
+            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;fields&amp;#34;&lt;/span&gt;: {
+               &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;title_only&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;千葉千恵巳&amp;#34;&lt;/span&gt;
             }
          }
       ]
    }
 }
-</code></pre></div><p>結果を見やすくするため、タイトルだけを「title_only」という表示にしています。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;結果を見やすくするため、タイトルだけを「title_only」という表示にしています。
 ただ、この検索だと、一見「千葉」できちんとヒットしているように見えますが、ElasticSearchのフィールドの定義はstring型になっています。なので、実は「千」や「葉」だけのデータもヒットしています。
-マルチバイト文字は1文字ずつインデックスされてしまい、query_stringというクエリでは、フレーズ検索などができていないためです。</p>
-<h2 id="まとめ">まとめ</h2>
-<p>プラグインいれて、XMLファイルがあれば、検索できるデータが出来上がるので、
-暇があったら、お試しで触ってみるデータを簡単に入れてみてはどうでしょうか。</p>
-<p>ただ、いくつか気になる点も。</p>
-<ul>
-<li>日本語が検索しにくい（string型のフィールドなのでuni-gramっぽくなっている）</li>
-<li>bulk_sizeの影響で端数が登録できてない（バグ？どうなの？）</li>
-</ul>
-<p>ということで、ちょっと使いにくいかもなぁということで、つぎはKuromojiを利用してインデックスしてみてみようかなと。次回のエントリで書く予定です。</p>
+マルチバイト文字は1文字ずつインデックスされてしまい、query_stringというクエリでは、フレーズ検索などができていないためです。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;プラグインいれて、XMLファイルがあれば、検索できるデータが出来上がるので、
+暇があったら、お試しで触ってみるデータを簡単に入れてみてはどうでしょうか。&lt;/p&gt;
+&lt;p&gt;ただ、いくつか気になる点も。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;日本語が検索しにくい（string型のフィールドなのでuni-gramっぽくなっている）&lt;/li&gt;
+&lt;li&gt;bulk_sizeの影響で端数が登録できてない（バグ？どうなの？）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ということで、ちょっと使いにくいかもなぁということで、つぎはKuromojiを利用してインデックスしてみてみようかなと。次回のエントリで書く予定です。&lt;/p&gt;
 </content:encoded>
     </item>
     
