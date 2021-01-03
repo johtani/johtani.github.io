@@ -14,6 +14,156 @@
       
       <guid>https://blog.johtani.info/blog/2020/10/05/switch-fst-2-da/</guid>
       <description>2020/10/06 11:00くらいにマージされました。 @minoru_osuka さんが開発を引き継いだLinderaというKuromojiのRustクローンがあります(リポジトリ)</description>
+      <content:encoded>&lt;blockquote&gt;
+&lt;p&gt;2020/10/06 11:00くらいにマージされました。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://twitter.com/minoru_osuka&#34;&gt;@minoru_osuka&lt;/a&gt; さんが開発を引き継いだ&lt;a href=&#34;https://qiita.com/mosuka/items/0fdaaf91f5530d427dc7&#34;&gt;LinderaというKuromojiのRustクローン&lt;/a&gt;があります(&lt;a href=&#34;https://github.com/lindera-morphology/lindera&#34;&gt;リポジトリ&lt;/a&gt;)
+。
+最近趣味でRustを勉強しているので、こちらを少し手伝っています。&lt;/p&gt;
+&lt;p&gt;Rustの勉強仲間である&lt;a href=&#34;https://twitter.com/takuya_b&#34;&gt;@takuya_b&lt;/a&gt;さんや&lt;a href=&#34;https://twitter.com/ikawaha&#34;&gt;@ikawaha&lt;/a&gt;さんと話をしているときに、FST部分をDouble Array Trieに置き換えると速度が向上するのでは?という話が出まして、@takuya_bさんがDouble Array Trieを作るらしいという話になったので、下準備などをしつつ、作ってもらったライブラリ&lt;a href=&#34;https://github.com/takuyaa/yada&#34;&gt;yada&lt;/a&gt;を組み込んでみたという話です。&lt;/p&gt;
+&lt;h2 id=&#34;ベンチマークの追加&#34;&gt;ベンチマークの追加&lt;/h2&gt;
+&lt;p&gt;下準備として、今のLindera(FST実装)がどのくらいの性能なのか?というのを計っておく必要があります。
+幸いにも、Linderaのオリジナルの開発者の方が、&lt;a href=&#34;https://github.com/bheisler/criterion.rs&#34;&gt;criterion.rs&lt;/a&gt;というライブラリを使った&lt;a href=&#34;https://github.com/lindera-morphology/lindera/blob/581728bf790a331402ef7a200fd443c4f9244abd/lindera/benches/bench.rs&#34;&gt;ベンチマークプログラム&lt;/a&gt;を作成してくれていました。&lt;/p&gt;
+&lt;p&gt;ただ、1種類だけだと少し心もとないなというのと、長い文章やパターンを増やしたほうが良さそうだなということで、
+ベンチマーク自体をいくつか追加しました(&lt;a href=&#34;https://github.com/lindera-morphology/lindera/pull/74&#34;&gt;追加したときのPR&lt;/a&gt;)。&lt;/p&gt;
+&lt;p&gt;種類としては、5種類のベンチマークです。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;システム辞書のみのTokenizerのコンストラクタ呼び出し&lt;/li&gt;
+&lt;li&gt;カスタム辞書ありのTokenizerのコンストラクタ呼び出し&lt;/li&gt;
+&lt;li&gt;システム辞書のみのTokenizerの&lt;code&gt;tokenize&lt;/code&gt;処理の呼び出し&lt;/li&gt;
+&lt;li&gt;カスタム辞書ありのTokenizerの&lt;code&gt;tokenize&lt;/code&gt;処理の呼び出し&lt;/li&gt;
+&lt;li&gt;青空文庫の坊っちゃんのテキストをシステム辞書のみのTokenizerで&lt;code&gt;tokenize&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;1,2はコンストラクタ部分だけの処理をベンチマークテストする目的で作成しました。
+LinderaはTokenizerがtokenize処理するのに利用するデータをいくつか内部で保持しています。
+これらはファイルにシリアライズされており、Tokenizerのオブジェクト生成時に読み込みやデシリアライズ処理が発生します。
+この部分だけも速度を計測したい目的でコンストラクタだけを切り出しました。&lt;/p&gt;
+&lt;p&gt;3,4はTokenizerのメインの処理です。コンストラクタはベンチマークの対象外にしました。
+純粋にtokenizeの処理だけを切り出して計測するためです。
+カスタム辞書がある場合、ない場合は念の為切り出した形になっています。&lt;/p&gt;
+&lt;p&gt;5は長い文章(文章が多いのでバリエーションも増える)を扱いたいために別にしました。&lt;/p&gt;
+&lt;p&gt;これで、一応下準備が完了です。
+ちなみに、Criterionは賢くて、前のベンチマークの結果と最新の結果を比較してくれる機能があります。
+どんな感じで出てくるかはベンチマーク結果をご覧ください。&lt;/p&gt;
+&lt;h2 id=&#34;yadaの組み込み&#34;&gt;yadaの組み込み&lt;/h2&gt;
+&lt;p&gt;ベンチマークの準備をしていたところyadaがリリースされたので、Linderaへの組み込みを検討し始めました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;というわけで、またダブル配列を書いてしまったので crate として公開しました。フィードバックお待ちしております！ &lt;a href=&#34;https://t.co/As7h0tfmjf&#34;&gt;https://t.co/As7h0tfmjf&lt;/a&gt;&lt;/p&gt;&amp;mdash; takuya-a (@takuya_b) &lt;a href=&#34;https://twitter.com/takuya_b/status/1307671030731694081?ref_src=twsrc%5Etfw&#34;&gt;September 20, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h3 id=&#34;中身の理解&#34;&gt;中身の理解&lt;/h3&gt;
+&lt;p&gt;lindera-fstを利用して、prefix searchしている処理があるので、そこで利用しているFSTをyadaに置き換えれば良さそうだと判断して、
+処理を読んでいきます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Tokenizerは、&lt;a href=&#34;https://github.com/lindera-morphology/lindera/blob/027ab8c7d5fdd6d1bc2dc7e8779adb1ddcf7f770/lindera-core/src/core/prefix_dict.rs&#34;&gt;PrefixDict&lt;/a&gt;という構造体でlindera-fstを利用している
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/lindera-morphology/lindera/blob/027ab8c7d5fdd6d1bc2dc7e8779adb1ddcf7f770/lindera-core/src/core/prefix_dict.rs#L27-L64&#34;&gt;prefixメソッド&lt;/a&gt;が入力文字列を元に、FSTを前方一致検索して、ヒットした単語の情報をIteratorとして取り出せる(単語の情報は「入力文字列の先頭からの文字数」と「ヒットした単語のWordEntry構造体」)&lt;/li&gt;
+&lt;li&gt;PrefixDictのfstは辞書(例：ipadic)ごとに&lt;code&gt;lindera-&amp;lt;辞書名&amp;gt;-builder&lt;/code&gt;で生成される&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;システム辞書としては、デフォルトでは&lt;code&gt;lindera-ipadic-builder&lt;/code&gt;でfstを構築している
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/lindera-morphology/lindera/blob/027ab8c7d5fdd6d1bc2dc7e8779adb1ddcf7f770/lindera-ipadic-builder/src/lib.rs#L237-L249&#34;&gt;構築処理はこの辺&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;という感じです。
+また、辞書周りのファイルがそれぞれどんな役割なのか、どんなデータの持ち方をしているのか?といった点を、変更点の調査のついでに書き出してみました。&lt;a href=&#34;https://github.com/lindera-morphology/lindera/blob/master/lindera-dictionary/FILES.md&#34;&gt;lindera-dictionary/FILES.md&lt;/a&gt;。TODOになっている部分も追記が終わっています(&lt;a href=&#34;https://github.com/lindera-morphology/lindera/pull/77&#34;&gt;PR&lt;/a&gt;)&lt;/p&gt;
+&lt;h3 id=&#34;変更点&#34;&gt;変更点&lt;/h3&gt;
+&lt;p&gt;実際に変更したプログラムの詳細についてはの&lt;a href=&#34;https://github.com/lindera-morphology/lindera/pull/76&#34;&gt;PR&lt;/a&gt;を見ていただくとして、簡単には以下の点になります。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Rustのバージョンを1.46.0に(おもにREADME.md)
+&lt;ul&gt;
+&lt;li&gt;yadaが利用している機能に1.46.0で導入された機能があるため&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;lindera-fstをyadaに変更(lindera-core/Cargo.toml, lindera-ipadic-builder/Cargo.toml)
+&lt;ul&gt;
+&lt;li&gt;合わせて、&lt;code&gt;dict.fst&lt;/code&gt;というファイル名を&lt;code&gt;dict.da&lt;/code&gt;に変更&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;dict.da&lt;/code&gt;に関して構築部分と検索部分を変更
+&lt;ul&gt;
+&lt;li&gt;FSTではFSTから返ってくる値(入力文字列に出てきた単語に関連する値)は&lt;code&gt;u64&lt;/code&gt;だったが、yadaのDoubleArrayが&lt;code&gt;u32&lt;/code&gt;しか扱えないため、&lt;code&gt;u32&lt;/code&gt;に変更。テストの記述はしていないが、扱うデータ的に&lt;code&gt;u32&lt;/code&gt;で問題なさそうだったので。&lt;/li&gt;
+&lt;li&gt;検索部分：PrefixDict構造体の&lt;code&gt;prefix&lt;/code&gt;メソッドで&lt;code&gt;DoubleArray&lt;/code&gt;の&lt;code&gt;prefix_common_search&lt;/code&gt;を使用
+&lt;ul&gt;
+&lt;li&gt;DoubleArray自体が&lt;code&gt;prefix_common_search&lt;/code&gt;のメソッドを持っていたので、処理が簡単に置き換え可能だった。FSTは&lt;code&gt;prefix&lt;/code&gt;メソッド内で独自で前方一致検索を実装していた。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;構築部分：&lt;code&gt;lindera-ipadic-builder/src/lib.rs&lt;/code&gt;の&lt;code&gt;build_dict&lt;/code&gt;と&lt;code&gt;build_user_dict&lt;/code&gt;の&lt;code&gt;dict.da&lt;/code&gt;構築処理
+&lt;ul&gt;
+&lt;li&gt;ipadicのCSVファイルを読み込んで、見出し語をキーに、辞書にある単語情報のベクタを値とするBTreeMapを生成し、このBTreeMapに基づいてFSTを構築していた部分をDoubleArray構築処理に置き換えた。&lt;/li&gt;
+&lt;li&gt;シフト演算などで、実際の値(&lt;code&gt;dict.vals&lt;/code&gt;)へのポインタを作っていたのだが、ここの処理を読み解くために&lt;code&gt;FILES.md&lt;/code&gt;を書き出した。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;という感じです。そもそもデータ構造がどうなっているのか?から読み解いて、変更部分を洗い出して変更していった形になります。
+取り込み作業中にいくつか&lt;code&gt;yada&lt;/code&gt;に要望(&lt;a href=&#34;https://github.com/takuyaa/yada/issues?q=is%3Aissue+is%3Aclosed&#34;&gt;このへん&lt;/a&gt;)を上げて、変更を取り込んでもらい、最終的にyadaのバージョン&lt;code&gt;0.3.2&lt;/code&gt;で問題なく動きそうだという形になりました。&lt;a href=&#34;https://twitter.com/takuya_b&#34;&gt;@takuya_b&lt;/a&gt;さん、対応ありがとうございました。&lt;/p&gt;
+&lt;h4 id=&#34;エッジケースバグの発見&#34;&gt;エッジケースバグの発見&lt;/h4&gt;
+&lt;p&gt;作っててよかった、テストケースでした(実際にはベンチマークテストですが)。
+取り込み作業中に、Lindera本体の&lt;code&gt;cargo test&lt;/code&gt;はすべてOKになるが、ベンチマークを取ろうとしたときに、坊っちゃんの文字列を入力にしたベンチマークが失敗するという事象が発生しました(&lt;a href=&#34;https://github.com/lindera-morphology/lindera/pull/76#issuecomment-699735905&#34;&gt;PRのコメント参照&lt;/a&gt;)。
+切り分けのために、入力の文章のどこでおかしくなるのか?DoubleArrayの&lt;code&gt;build&lt;/code&gt;メソッドに渡している値がおかしくないか?などをすこしずつ調べていくと次のバグが判明したという感じです。&lt;/p&gt;
+&lt;p&gt;特定のデータ(ipadicの見出し語一覧)をDoubleArrayに入れて、特定の文字列(&lt;code&gt;「は相」&lt;/code&gt;)を&lt;code&gt;common_prefix_search&lt;/code&gt;にいれたら、
+返ってくる情報(0から何バイト目の文字が一覧に存在した)が、不正な値が返ってくるというバグでした。
+@takuya_bさんに見てもらいつつ(DoubleArrayの中身わからん。。。)、修正してもらいました。素早い対応ありがとうございます。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;yada 0.3.1 をリリースしています。特定の条件で不正な遷移を許すダブル配列が構築されてしまうバグを修正しています。このエッジケースは &lt;a href=&#34;https://twitter.com/johtani?ref_src=twsrc%5Etfw&#34;&gt;@johtani&lt;/a&gt; さんが見つけてくださいました。ありがとうございました！ &lt;a href=&#34;https://t.co/CiftZi5GDn&#34;&gt;https://t.co/CiftZi5GDn&lt;/a&gt;&lt;/p&gt;&amp;mdash; takuya-a (@takuya_b) &lt;a href=&#34;https://twitter.com/takuya_b/status/1311153143971864576?ref_src=twsrc%5Etfw&#34;&gt;September 30, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;やはり、いろんな文字列入れてテストしてみるの重要ですね。
+ということで、ベンチマークだけでなく、テストケースとしても坊っちゃんのファイルを読み込んでトークナイズするようにPRでテストケースを追加しています。&lt;/p&gt;
+&lt;h2 id=&#34;ベンチマーク結果&#34;&gt;ベンチマーク結果&lt;/h2&gt;
+&lt;p&gt;yadaを利用した変更が終わったので、再度&lt;code&gt;cargo bench&lt;/code&gt;を実行して計測です。
+計測としては、&lt;code&gt;master&lt;/code&gt;ブランチでまず&lt;code&gt;cargo bench&lt;/code&gt;を実行し、yadaの実装をしたブランチに切り替えてから&lt;code&gt;cargo bench&lt;/code&gt;を実行します。
+すると、Criterion? &lt;code&gt;cargo bench&lt;/code&gt;が、最終的な結果に前回との差分でどのくらい性能が改善、改悪したかも合わせて出力してくれます。
+実行環境と結果は以下のとおりです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;MacBook Pro 16インチ
+&lt;ul&gt;
+&lt;li&gt;CPU：Core i7 6コア 2.6GHz&lt;/li&gt;
+&lt;li&gt;メモリ：32GB&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20201005/bench.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20201005/bench.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;コンストラクタのベンチマークについては10%ほど性能が悪くなっています。
+これは、FSTよりもDoubleArrayTrieのほうがデータが大きくなってしまうためだと思われます。
+実際にファイルのサイズは次のようになりました。yada(DoubleArrayTrie)のほうが2倍以上大きいことがわかります。
+また、このファイル以外にもLinderaが利用しているデータはありますが、それらは今回変更の対象にはなっていません。
+なので、単純にこのファイルの読み込みの処理に時間がかかっているのだと想像できます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;2147765&lt;/strong&gt;&lt;/em&gt; / FST / dict.fst&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;&lt;strong&gt;5425152&lt;/strong&gt;&lt;/em&gt; / yada / dict.da&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;tokenize&lt;/code&gt;のベンチマークについては、11%〜28%の改善が見られました。
+文章から、内部に保持している辞書に存在する単語を見つけ出す処理に利用されるのがFST、DoubleArrayTrieです。
+今回の変更では、この処理に利用しているデータ構造だけを変更しました。
+実際には&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;DoubleArrayTrieを用いた単語の検索処理&lt;/li&gt;
+&lt;li&gt;見つかった単語の持つ値(&lt;code&gt;data.vals&lt;/code&gt;のオフセット情報)を元にシフト演算&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;といった処理が実行されます。シフト演算は&lt;code&gt;u64&lt;/code&gt;だったものが&lt;code&gt;u32&lt;/code&gt;に変更されたくらいなので、大した処理量ではないかと。
+大部分はDoubleArrayTrieを利用したルックアップ処理が速度向上に寄与していると思います。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;最近Linderaに加えた変更、作ったPRについて少しブログにまとめてみました。
+ちなみに、まだPRの段階でレビュー&amp;amp;リリース待ちという感じです。&lt;/p&gt;
+&lt;p&gt;実際には作ってもらったライブラリを組み込んでみたというだけなのですが、速度が向上した結果が見れたのは面白いです。
+また、基本的なデータ構造とかアルゴリズムの勉強にもなりました(2次元配列を1次元配列に押し込むとか)。このへんも今後も勉強していきたいです。&lt;/p&gt;
+&lt;p&gt;組み込む際に色々と協力していただいた@takuya_bさん、@ikawahaさん、巻き込んでくれた@minoru_osukaさんに改めて感謝いたします。&lt;/p&gt;
+&lt;p&gt;Rustや形態素解析のプログラムの勉強を兼ねて、今後もなにか改善できる部分がないかなどを見ていこうと思っています。
+Rustで形態素解析をしたいという人がどのくらいいるかはわかりませんが、おかしなところや疑問点などあればコメントください。&lt;/p&gt;
+</content:encoded>
     </item>
     
   </channel>

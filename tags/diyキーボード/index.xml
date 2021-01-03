@@ -14,6 +14,258 @@
       
       <guid>https://blog.johtani.info/blog/2020/12/03/build_corne_choc/</guid>
       <description>はじめまして、pyspa。 ということで、pyspa Advent Calendar 2020の4日目(大谷コンビの2号)の投稿になります。 コンビそろってキーボード記事です</description>
+      <content:encoded>&lt;p&gt;はじめまして、pyspa。
+ということで、&lt;a href=&#34;https://adventar.org/calendars/5310&#34;&gt;pyspa Advent Calendar 2020&lt;/a&gt;の4日目(大谷コンビの2号)の投稿になります。
+コンビそろってキーボード記事ですね。&lt;/p&gt;
+&lt;p&gt;今年はDIYキーボードにはまった（はめられた？）年でした。
+もともと分割キーボードには興味があり、自宅で作業するのが基本となったのもあり手を出した次第です。
+まだまだ使いこなすところまでは来てないかもしれないですが、組み立てたり、問題点のキリ分けしたり、試行錯誤するのは楽しいなと。&lt;/p&gt;
+&lt;p&gt;今回はCorne Chocolateというキーボードを組み立てたのでそちらのビルドログ（かつ今後のための教訓）になります。
+LEDを使ったキーボードがどんなものなのか＋薄いキーボードも気になるなということで取り組んでみました。
+今回もいくつか失敗をしつつ、リカバリーして動くものができました。&lt;/p&gt;
+&lt;h2 id=&#34;パーツ材料&#34;&gt;パーツ（材料）&lt;/h2&gt;
+&lt;p&gt;基本のパーツは今回も&lt;a href=&#34;https://kochikeyboard.stores.jp/&#34;&gt;Kochi Keyboard&lt;/a&gt;さんから購入しました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;キット : &lt;a href=&#34;https://kochikeyboard.stores.jp/items/5f65ea9afbe5b52cac9ba2c0&#34;&gt;Corne Chocolate（ベースキット）&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;キースイッチ : &lt;a href=&#34;https://kochikeyboard.stores.jp/items/5f9e6aaef0b1085ce18b76ff&#34;&gt;Kailh Choc v1 Blue (25gf リニア) 5個&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;キーキャップ : &lt;a href=&#34;https://yushakobo.jp/shop/pg1350cap-doubleshot/&#34;&gt;Kailhロープロ刻印キーキャップ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ケーブル類は家に転がっていたケーブルを利用しました。
+キースイッチセットもあるのですが、軽いキータッチが好みなので、一番軽いKailh ChocのBlueを試してみたくキースイッチを個別に選択しました。
+キーキャップは&lt;a href=&#34;https://yushakobo.jp/shop/shiro/&#34;&gt;Shiro&lt;/a&gt;を作るときに調達していたものを利用した形です。&lt;/p&gt;
+&lt;p&gt;今回も&lt;a href=&#34;https://github.com/foostan/crkbd/blob/master/corne-chocolate/doc/buildguide_jp.md&#34;&gt;公式のビルドガイド&lt;/a&gt;にざっと目を通してから着手しました。&lt;/p&gt;
+&lt;h2 id=&#34;準備&#34;&gt;準備&lt;/h2&gt;
+&lt;p&gt;ビルドログにもあるようにPCBがリバーシルブなので、作業中に迷子にならないようにこんな感じで表にマスキングテープで目印をつけておきました。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20201204/marking.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20201204/marking.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;今回から耐熱ワーキングマットで作業をすることにしました。机の天板に傷つくの嫌だし。
+気兼ねなくはんだできるのでおすすめです。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;&lt;a href=&#34;https://t.co/0qntPD8qIa&#34;&gt;https://t.co/0qntPD8qIa&lt;/a&gt;&lt;br&gt;2ヶ月ぐらいにここで買いました！&lt;/p&gt;&amp;mdash; 🤓k.bigwheel🤓 SREエンジニア@Speee株式会社 (@k_bigwheel) &lt;a href=&#34;https://twitter.com/k_bigwheel/status/1326522825017057280?ref_src=twsrc%5Etfw&#34;&gt;November 11, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h2 id=&#34;ダイオードoledソケットコンスルーtrrsソケット&#34;&gt;ダイオード、OLEDソケット、コンスルー、TRRSソケット、&lt;/h2&gt;
+&lt;p&gt;こちらは前回のCorneとほぼ同様だったのでビルドガイド通りに進めます（写真撮り損ねました。。。）
+前回との違いはダイオードの形です。
+表面実装するタイプのダイオードなので向きに気を付けつつ、つけていきます。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/foostan/crkbd/blob/master/corne-chocolate/doc/buildguide_jp.md#%E3%83%80%E3%82%A4%E3%82%AA%E3%83%BC%E3%83%89&#34;&gt;ビルドガイドに向きやダイオードのつけ方&lt;/a&gt;が紹介されています。
+拡大鏡とピンセット必須ですね。
+前回同様に、ここまででいったんqmk_toolsでファームウェアをインストールして、ピンセットを使いながらキーの認識とOLEDの動作確認を行いました。
+今使っているファームウェアがあるのでそれを入れて問題ないかを確認しました。&lt;/p&gt;
+&lt;h2 id=&#34;led実装&#34;&gt;LED実装&lt;/h2&gt;
+&lt;p&gt;今回のメインイベントです（そして苦杯をなめたイベントでもあります）。
+&lt;a href=&#34;https://github.com/foostan/crkbd/blob/master/corne-chocolate/doc/buildguide_jp.md#led%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3&#34;&gt;ビルドガイドにも記載&lt;/a&gt;がありますが、信号が流れる順番があるようなので1番から取り付けていきます。
+また、ビルドガイドにLEDに関する注意事項もいくつか掲載されています。必ず読みましょう。&lt;/p&gt;
+&lt;p&gt;この1～6までのLEDがすごく大変でした。。。&lt;/p&gt;
+&lt;h3 id=&#34;表面実装のledunderglow-ledで四苦八苦&#34;&gt;表面実装のLED（Underglow LED）で四苦八苦&lt;/h3&gt;
+&lt;p&gt;いくつかのブログを参考にしながら作業を進めました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://marksard.github.io/2018/08/04/make-the-crkbd/&#34;&gt;コルネキーボードを作りました ～LED取り付けに四苦八苦記～ | キオクノロンダリング&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;SK6812miniの仕様などについて書いてあります。デバッグするのにすごく役に立ちました。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://nok0714.hatenablog.com/entry/2019/03/02/194138&#34;&gt;Corne Chocolateビルドログ - nokの雑記&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;手書きでどんな感じでやればいいのかを解説してくれています。最終的にはこの方法が一番だったのかも？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://salicylic-acid3.hatenablog.com/entry/2018/11/26/%E8%87%AA%E4%BD%9C%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E3%82%AD%E3%83%83%E3%83%88%E3%80%8CCorne_Cherry%E3%80%8D%E3%81%AE%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC#%E7%B5%84%E7%AB%8B%E9%9B%A3%E6%98%93%E5%BA%A6&#34;&gt;自作キーボードキット「Corne Cherry」のレビュー - 自作キーボード温泉街の歩き方&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;あとで出てきますが、リカバリ方法の参考になりました。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;皆さん苦労されてますね、そして私も苦労しました。。。&lt;/p&gt;
+&lt;p&gt;試してみた方法、考察は次の通りです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;LEDチェック用のファームウェアをインストールして1つつけては動作確認
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://qiita.com/yshr04hrk/items/c050a80ab5d2ff869db9#led%E3%83%86%E3%82%B9%E3%83%88%E7%94%A8%E3%83%95%E3%82%A1%E3%83%BC%E3%83%A0%E3%82%A6%E3%82%A7%E3%82%A2%E3%82%92%E7%84%BC%E3%81%84%E3%81%A6%E5%8B%95%E4%BD%9C%E7%A2%BA%E8%AA%8D&#34;&gt;HelixのLEDテスト用ファームウェアをインストールしました&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://amzn.to/39Cyc07&#34;&gt;白光 1C型こて先&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;失敗した後にリカバリするために購入しました。&lt;/li&gt;
+&lt;li&gt;LEDのランドなどが2Cよりも面積が小さいので、そのサイズに合わせたこて先のほうがよかったようです。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;はんだの温度（温調できるはんだごて必須）
+&lt;ul&gt;
+&lt;li&gt;最初は250℃でやっていましたが、なかなかはんだが溶けません。そのせいで焦りも出てきます。&lt;/li&gt;
+&lt;li&gt;最終的には270度で作業しましたが、温度のせいでLEDが壊れたのはなかった気がします。1Cのこて先だったので無事だったのかもしれません。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;フラックスなし
+&lt;ul&gt;
+&lt;li&gt;あると楽だったのかも？残念ながら試してないです。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;予備はんだ手法（だめっぽかった）
+&lt;ul&gt;
+&lt;li&gt;基盤のランド4か所に予備はんだをし、はんだを温めつつLEDを乗せる方法&lt;/li&gt;
+&lt;li&gt;LEDの裏にも予備はんだ&lt;/li&gt;
+&lt;li&gt;どちらも試してみましたが、温めている個所以外のはんだと高さの違いが出てしまい、LEDが浮いてしまいます。4か所を同時に温めることはできないので、すこしずつ調整しているうちにLEDを物理的に壊してしまうことがありました。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ちょっとコツが分かったかも？ &lt;a href=&#34;https://t.co/ruwrmEWCAe&#34;&gt;pic.twitter.com/ruwrmEWCAe&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1329446835505786880?ref_src=twsrc%5Etfw&#34;&gt;November 19, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;わかった気になっていますが結局失敗しました。。。&lt;/p&gt;
+&lt;p&gt;結局最後までこれというコツはわかってない気がします。結局3つか4つのLEDがお亡くなりになりました。
+うまくいかなかった原因は、予備はんだで傾きなどができ、それを修正していくうちに基盤やLEDにダメージを与えてしまったのだと思います。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20201204/broken_led_and_pcb.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20201204/broken_led_and_pcb.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;よく見ると基盤が一部剥がれかけてるのがわかるかなぁと。&lt;/p&gt;
+&lt;h3 id=&#34;リカバリー&#34;&gt;リカバリー&lt;/h3&gt;
+&lt;p&gt;右手側の表面実装の4番と5番が失敗しました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;4番目（以下のツイート右側画像の上）
+&lt;ul&gt;
+&lt;li&gt;こちらは、1度付けたLEDをはがすときにはんだを取り除くのが不十分な状態でLEDをはがしたために、基板のランドごとはがれてしまいました。&lt;/li&gt;
+&lt;li&gt;なのでここはLEDはつかないです。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;5番目(以下のツイート右側画像の真ん中あたりの黄色い線がつながっているLED)
+&lt;ul&gt;
+&lt;li&gt;LED自体はつけてありますが、青色しか発光しなくなっています。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;4番目が完全に死んでしまったので、無事な3番目のLEDのDINに流れている信号を
+5番目のLEDのDINにも流れるようにするために10芯コードでショートカットさせました。
+（リカバリ方法は先ほど紹介したブログが非常に参考になりました、先人の知恵ありがたし）。
+黒い線も売っていたのですが、自戒も込めて目立つ色にしてみました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;勉強させていただきました、、、 &lt;a href=&#34;https://t.co/Zp16fJKziM&#34;&gt;pic.twitter.com/Zp16fJKziM&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1330507767845711874?ref_src=twsrc%5Etfw&#34;&gt;November 22, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;ちなみに、左側のショートカットのコードはつけた後に1か所LEDの向きが違うことに気づき必要なくなっています
+（上記の基盤が傷ついている画像をよく見ると上下が逆になってるのがわかる人にはわかるかも）。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;片方は導線なくて良くなった。表から見たら向きが違うのに気がついたわ、、、 &lt;a href=&#34;https://t.co/7TSDMPPxlX&#34;&gt;pic.twitter.com/7TSDMPPxlX&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1330511865827319809?ref_src=twsrc%5Etfw&#34;&gt;November 22, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;最終的に2か所おかしいLEDにはなりましたが、幸いにもアンダーグローです。
+Kochi Keyboardさんで購入したキットのボトムプレートはFR4なのでほぼ見えません！（負け惜しみ）&lt;/p&gt;
+&lt;h2 id=&#34;ソケット&#34;&gt;ソケット&lt;/h2&gt;
+&lt;p&gt;さて、気を取り直してソケットをつけていきます。
+Dozen0にて経験済みなのでそれほど手間はかかりませんでした。
+LEDの失敗の時に1Cのこて先を購入していたため、ソケットの横の隙間からこて先が差し込めたのが便利でした（LEDでダメージを受けていたのもあり写真撮り忘れ）。&lt;/p&gt;
+&lt;h2 id=&#34;完成&#34;&gt;完成&lt;/h2&gt;
+&lt;p&gt;ということで完成です。デフォルトで赤く光ってます。キーキャップがLEDを透過してくれるタイプだったのがこれまたよかったですね。
+作る前は光らなくてもなんて思ってたのに。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20201204/red_light.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20201204/red_light.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&#34;キーマップv2&#34;&gt;キーマップ(v2)&lt;/h2&gt;
+&lt;p&gt;Corne Lightで作業を数週間ほどして、いくつか入力しにくい部分があったのでマッピングを少しだけ変えました。
+相変わらず日本語キーボードベースですが、数字のレイヤーにいくつかの記号を使えるように割り当てました。
+コーディングをするときに、ライブラリのバージョン（例：7.10.0とか）やIPアドレスを入力していてレイヤー切り替えのためのキーを押したり話したりするのは効率が悪すぎたためです。
+数字との組み合わせでよく使いそうな以下のキーを数字のレイヤーに移動しました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;セミコロン（JP_SCLN）&lt;/li&gt;
+&lt;li&gt;コロン（KC_QUOT）&lt;/li&gt;
+&lt;li&gt;アンダースコア（JP_UNDS）&lt;/li&gt;
+&lt;li&gt;コンマ（KC_COMM）&lt;/li&gt;
+&lt;li&gt;ピリオド（KC_DOT）&lt;/li&gt;
+&lt;li&gt;スラッシュ（KC_SLSH）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;#include &amp;quot;keymap_jp.h&amp;quot;
+
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+  [0] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+       KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                         KC_Y,    KC_U,    KC_I,    KC_O,   KC_P,  JP_MINS,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,                         KC_H,    KC_J,    KC_K,    KC_L, JP_SCLN, KC_QUOT,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_RSFT,
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI,   MO(1),  KC_SPC,     KC_ENT,   MO(2), KC_RALT
+                                      //`--------------------------&#39;  `--------------------------&#39;
+
+  ),
+
+  [1] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+       KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                         KC_6,    KC_7,    KC_8,    KC_9,    KC_0, KC_BSPC,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LCTL, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_LEFT, KC_DOWN,   KC_UP,KC_RIGHT, JP_SCLN, KC_QUOT,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LSFT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      JP_UNDS, XXXXXXX, KC_COMM,  KC_DOT, KC_SLSH, XXXXXXX,
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI, _______,  KC_SPC,     KC_ENT,   MO(3), KC_RALT\
+                                      //`--------------------------&#39;  `--------------------------&#39;
+  ),
+
+  [2] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+       KC_TAB, JP_EXLM, JP_DQUO, JP_HASH,  JP_DLR, JP_PERC,                      JP_AMPR, JP_QUOT, JP_LPRN, JP_RPRN, JP_CIRC, KC_BSPC,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LCTL, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      JP_MINS,  JP_EQL, JP_LBRC, JP_RBRC,  JP_YEN,   JP_AT,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LSFT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      JP_UNDS, JP_PLUS, JP_LCBR, JP_RCBR, JP_PIPE, JP_TILD,
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI,   MO(3),  KC_SPC,     KC_ENT, _______, KC_RALT
+                                      //`--------------------------&#39;  `--------------------------&#39;
+  ),
+
+  [3] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+        RESET, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,\
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      RGB_TOG, RGB_HUI, RGB_SAI, RGB_VAI, RGB_SPI, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,\
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      RGB_MOD, RGB_HUD, RGB_SAD, RGB_VAD, RGB_SPD, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,\
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI, _______,  KC_SPC,     KC_ENT, _______, KC_RALT\
+                                      //`--------------------------&#39;  `--------------------------&#39;
+  )
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;ledの色が変えられる気づくの遅い&#34;&gt;LEDの色が変えられる！（気づくの遅い）&lt;/h2&gt;
+&lt;p&gt;あと、キーマップを変更しているときに4つ目のレイヤーにRGBなどのボタンがあるのに気付いて押してみたら、LEDのパターンや色を変えることができるのに気付きました。
+（遅すぎでは。。。）&lt;/p&gt;
+&lt;p&gt;キーキャップが白いのもありこんな感じの色にしてみています。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ユニコーンガンダムっぽくなった &lt;a href=&#34;https://t.co/vHxZkMrYyP&#34;&gt;pic.twitter.com/vHxZkMrYyP&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1332490582288076800?ref_src=twsrc%5Etfw&#34;&gt;November 28, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、失敗も多々ありましたがキーボードとしてはちゃんと動くできたものができたので安心しました。
+今後、状況が落ち着いてきて自宅以外で仕事をするときにはCorne ChocolateをPCと一緒に持ち歩くと思います。
+薄くて邪魔にならなくてよさそうです。&lt;/p&gt;
+&lt;p&gt;今回もはんだっしゅ太郎大活躍でした。本当に買ってよかった。
+LEDがつかないときはちょっと落ち込みましたが、これのおかげで立ち直れたのもありますし。
+あとは、試行錯誤しつつLEDとかの理解ができたのも楽しかったです。
+キーマップの変更時にLEDの変更などができるのに気づいたのはちょっと遅すぎたので、qmkの仕組みや割り当てられるキーにどんなものがあるのかをもう少し研究したいなと思います。&lt;/p&gt;
+&lt;p&gt;さて、次はどんなことを試すかなぁ。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -23,6 +275,242 @@
       
       <guid>https://blog.johtani.info/blog/2020/11/05/build-corne-light-v2/</guid>
       <description>前回のブログのまとめに書いたように、セパレートタイプのキーボードであるCorne Light v2を作成したのでそのビルドログです。DIYキーボードとし</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/10/11/build-dozen0/#%E3%81%BE%E3%81%A8%E3%82%81&#34;&gt;前回のブログのまとめ&lt;/a&gt;に書いたように、セパレートタイプのキーボードであるCorne Light v2を作成したのでそのビルドログです。DIYキーボードとしては2つ目になります。&lt;/p&gt;
+&lt;p&gt;まとめで書いていたお店が開店したので、購入してみました。
+購入したのはこちらの&lt;a href=&#34;https://kochikeyboard.stores.jp/&#34;&gt;KOCHI KEYBOARDさん&lt;/a&gt;です。
+ついこの間オープンしたばっかりのお店です！&lt;/p&gt;
+&lt;h2 id=&#34;なんで作ったの&#34;&gt;なんで作ったの？&lt;/h2&gt;
+&lt;p&gt;スプリット型（セパレートタイプ？どっちが正しいんだろう？）のキーボードに興味があって、KOCHI KEYBOARDさんで買えたのがこれだったというのが大きな理由です。こういうのってタイミングだと思うので。
+あとは、組み立てていくのがプラモデルみたいで面白いというのもあります。
+基本的にここのところ自宅で仕事をしているので、ノートPCのキーボードにこだわる必要もないなというのも理由ですね。今後も当面は自宅で仕事になると思いますので。&lt;/p&gt;
+&lt;h2 id=&#34;corne-light-v2&#34;&gt;Corne Light v2&lt;/h2&gt;
+&lt;p&gt;foostanさんが設計された（って言い方であってるのかな？）、3x6のサイズに親指の3キーが配置された分離型のキーボードの一種です。
+シリーズ？の名前としては&lt;a href=&#34;https://github.com/foostan/crkbd&#34;&gt;Corne Keyboard&lt;/a&gt;と呼ばれています。
+（そういえば、由来は何だろう？自作キーボードがどうやって設計されていくのかという流れがまとめられた&lt;a href=&#34;https://fstn.hateblo.jp/entry/2018/12/20/070000&#34;&gt;作者の方のブログ&lt;/a&gt;がおもしろいです。）
+また、基板の設計などがGitHub上でMITライセンスで公開されています。
+オープンソースなハードウェアというのも面白いです。&lt;/p&gt;
+&lt;h2 id=&#34;ビルドログ&#34;&gt;ビルドログ&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;%22https://github.com/foostan/crkbd/blob/master/corne-light/doc/v2/buildguide_low_edition_jp.md%22&#34;&gt;作者の方がビルドガイド&lt;/a&gt;を公開してくれています。ですので、こちらに沿って作業をしていきます。
+ちなみに、私は今回Gateronのクリア軸を選択してみました。さらさらと入力できるのが好きなので。
+サイレント軸にも興味はあるのですが、今回は実際にスプリット型のキーボードを早く触ってみたいというのが勝ちました。キーキャップについては後述します。
+ツイートに都度、写真をアップしていたので組み立ては画像でお楽しみください（時々取り忘れてるけどｗ）。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;うむ &lt;a href=&#34;https://t.co/svW9WdzaZv&#34;&gt;pic.twitter.com/svW9WdzaZv&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1318807312342032384?ref_src=twsrc%5Etfw&#34;&gt;October 21, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;刺して曲げる &lt;a href=&#34;https://t.co/M0jfQJg2k8&#34;&gt;pic.twitter.com/M0jfQJg2k8&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1319288975740162049?ref_src=twsrc%5Etfw&#34;&gt;October 22, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;両方できたと。ハンダまでやって今日はおしまいにすっか &lt;a href=&#34;https://t.co/HgsSrxqpcg&#34;&gt;pic.twitter.com/HgsSrxqpcg&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1319291510261596162?ref_src=twsrc%5Etfw&#34;&gt;October 22, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;写真取り忘れたけど、ProMicroつけた &lt;a href=&#34;https://t.co/RS4z0lqsUZ&#34;&gt;pic.twitter.com/RS4z0lqsUZ&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1319310929826246656?ref_src=twsrc%5Etfw&#34;&gt;October 22, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;OLEDもついたと。今日はここまで &lt;a href=&#34;https://t.co/p6Z8MMP0Xz&#34;&gt;pic.twitter.com/p6Z8MMP0Xz&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1319311317006577664?ref_src=twsrc%5Etfw&#34;&gt;October 22, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;ここまでは順調です。&lt;/p&gt;
+&lt;h3 id=&#34;oledがつかない&#34;&gt;OLEDがつかない？&lt;/h3&gt;
+&lt;p&gt;ビルドガイドに従って、この後キースイッチをつけちゃうと問題の切り分けが難しくなるということで、
+ここまでの段階でQMK Toolboxを使ってProMicroにファームウェアを書き込んで、それぞれのキーのソケットの取り付け部をピンセットでショートさせつつ、キーが入力されるかどうかを見ていきます。
+&lt;a href=&#34;https://salicylic-acid3.hatenablog.com/entry/qmk-toolbox&#34;&gt;QMK Toolboxについてはサリチル酸さんのブログ&lt;/a&gt;がわかりやすいので参考にさせていただきました（わかりやすい記事をありがとうございます）。
+で、ビルドガイドにあるように動いてるかを確認しようとしたのですが。。。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;さて、ファームウェア書き込んだけど、OLEDがつかないな。どっかつながってないのか？&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1319981722914623489?ref_src=twsrc%5Etfw&#34;&gt;October 24, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;ビルドガイドのようにはいかず。。。
+USBでPCとつないだ状態で、&lt;a href=&#34;https://config.qmk.fm/#/test&#34;&gt;QMK Configurator&lt;/a&gt;をサイトで開いて、キーボード入力テストを開くと、ショートさせたキーがPC側で認識されているかのテストができます。
+これで、一通りキーは認識できていそうだというのはピンセットでショートさせながら確認しました。
+ただ、OLEDには何も表示されないんです。。。&lt;/p&gt;
+&lt;p&gt;前回Dozen0を組み立てた時に、ソケットのはんだ付けが甘かったというのもあったので、
+OLEDやソケットのはんだを温めなおしたりしてみて、何度か確認してみたものの特に進展がなしです。
+（ちなみにうまくいかないのもあって、&lt;a href=&#34;https://twitter.com/johtani/status/1319996547577229313&#34;&gt;ぼけたツイート&lt;/a&gt;したりもしてます。）&lt;/p&gt;
+&lt;p&gt;まぁ、OLEDはビルドガイドを見てもオプション扱いなので、それよりも触ってみたい衝動に駆られて、
+キースイッチをはんだ付けしていきます。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ちなみに昨晩、OLEDはとりあえず置いといてって感じでキースイッチつけてた。キーキャップはまだない &lt;a href=&#34;https://t.co/SzLmzNg60Y&#34;&gt;pic.twitter.com/SzLmzNg60Y&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1320558068212510720?ref_src=twsrc%5Etfw&#34;&gt;October 26, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;それも終わって、問題点の切り分けに何かできないかな？と思ってやったのがOLED単体でArduinoと接続してみて動くかどうかです。
+&lt;a href=&#34;https://qiita.com/takahiro_itazuri/items/d7bc7331b196921b5880&#34;&gt;Qiitaにちょうどいい感じの記事&lt;/a&gt;を見つけたのでこれまた参考にさせていただきました(4本のジャンパー線を一人で持ちながら確認するの大変だったｗ)。&lt;/p&gt;
+&lt;h4 id=&#34;はんだでの修正にしっぱい&#34;&gt;はんだでの修正にしっぱい&lt;/h4&gt;
+&lt;p&gt;で、自分の中での結論として、「OLEDソケットのはんだ付けが怪しい」となりました。
+そこで、まずは外してみようかと思ったのが間違いでした。
+はんだごてとはんだ吸い取り線で何とか外せるだろうと思っちゃったんですよ。
+OLEDピンソケットは足が4本あって、とりあえずとれるところまではんだ吸い取り線で吸い取ってみましたが、
+さすがに基盤の穴に流れ込んだはんだまでは吸い取れず、頑張って温めながらソケットを抜こうとがんばって、
+ラジオペンチでピンソケットを引っ張りながら引き抜きました。かろうじて引き抜きはできたのですが、ソケットは足が折れてしまいました。&lt;/p&gt;
+&lt;h4 id=&#34;作者登場oled問題の解決&#34;&gt;作者登場（OLED問題の解決）&lt;/h4&gt;
+&lt;p&gt;そんなところにCorneの作者の方がツイートを拾ってくれたみたいで以下のような返信を頂きました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;OLEDが点かないのはファームのせいかもしれません(最近以前のファームで動かない新しいタイプのOLEDモジュールが出回るようになりました)。お手数ですが、&lt;a href=&#34;https://t.co/vfSBfIeeJX&#34;&gt;https://t.co/vfSBfIeeJX&lt;/a&gt; のブランチのものを試して頂けますか？(ただいまPRレビュー中でまだマージされていない状態です)&lt;/p&gt;&amp;mdash; 🥖 (@foostan) &lt;a href=&#34;https://twitter.com/foostan/status/1320410393328513024?ref_src=twsrc%5Etfw&#34;&gt;October 25, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;暗闇に光明とはこのことです。
+教えていただいたブランチを手元でビルドしてファームウェアを書き込むと、&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;すごい、出ました！右側のディスプレイにロゴが。ありがとうございます（左側のOLEDはソケットのはんだ付け直し失敗したのでもうちょっと先になりますが）！&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1320549750156869632?ref_src=twsrc%5Etfw&#34;&gt;October 26, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;なんと、ファームウェア書き込んだ瞬間にOLEDが点くじゃないですか。
+感謝感激ってやつです。お礼を言うのに便乗して&lt;a href=&#34;https://twitter.com/foostan/status/1320555771009011712&#34;&gt;OLEDの問題の切り分けの方法についても聞いてしまいました&lt;/a&gt;。&lt;/p&gt;
+&lt;h4 id=&#34;oledリベンジ&#34;&gt;OLEDリベンジ&lt;/h4&gt;
+&lt;p&gt;片側は無事だったのですが、もう一方は修復が困難になったので救世主を発注します。
+自作キーボードの作成に便利なものリストとして、いくつかのブログに上がっていたのですが、必要ないだろうと見送っていたツールです。&lt;/p&gt;
+
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B01FEV2BPG/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B01FEV2BPG&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B01FEV2BPG/?tag=johtani-22&#34;&gt;
+      Amazon | サンハヤト はんだシュッ太郎NEO 45Wタイプ HSK-300 | ハンダゴテパーツ
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;p&gt;本当にすごく使いやすかったです。
+OLEDのピンソケットが修復不可能だったのですが、ProMicro用に付属して余っているピンヘッダがちょうどいい長さでした。
+なので、これを4本分切り取り、OLEDモジュールにつけてしまったOLEDヘッダピンを抜き取って、代わりに切り取ったピンヘッダをつかって、OLEDと基盤を直接はんだ付けすれば修復できそうだと判断しました。&lt;/p&gt;
+&lt;p&gt;はんだシュッ太郎君を使ってOLEDについてるヘッダピンをまずは除去。
+そのあとはこんな感じで繋げました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;見にくいかもだけど &lt;a href=&#34;https://t.co/YAHoxjgppN&#34;&gt;pic.twitter.com/YAHoxjgppN&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1324399704512192512?ref_src=twsrc%5Etfw&#34;&gt;November 5, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;取り外しにくくはなったけど、無事両方のOLEDが点くのも確認できました。やったー。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ヤッター、両方のOLEDがついたよー &lt;a href=&#34;https://t.co/6KLDWvnaEC&#34;&gt;pic.twitter.com/6KLDWvnaEC&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1321475997141659648?ref_src=twsrc%5Etfw&#34;&gt;October 28, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h3 id=&#34;キースイッチがご機嫌斜め&#34;&gt;キースイッチがご機嫌斜め&lt;/h3&gt;
+&lt;p&gt;キーキャップは別途、AliExpressで発注をかけたのですが、ここまで来たら待ちきれないですよね？
+ということで、手元にあった上海問屋のキーボードのキーキャップが同じMXキースイッチ用のものだったので移植しました。キーキャップ付けてみないとわかならいものですね、1つだけキースイッチがうまくはまっておらず、斜めについているのがこの時点で判明しました（ボトムプレート付けた後だったので、プレート外してから、はんだで修正）。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ちなみにキーキャップはめてる途中で、一箇所キースイッチが斜めにはんだ付けされちゃってるのを発見して慌てて直しました。 &lt;a href=&#34;https://t.co/qofHp3o4Pc&#34;&gt;pic.twitter.com/qofHp3o4Pc&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1322083647332085760?ref_src=twsrc%5Etfw&#34;&gt;October 30, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;無事使えるようになりました。&lt;/p&gt;
+&lt;h3 id=&#34;アンスコが打てないescどこ&#34;&gt;アンスコが打てない＆Escどこ？&lt;/h3&gt;
+&lt;p&gt;キーキャップ付けたので仮運用ということで、まずはデフォルトのキーマップをもとにどんな感じで入力できるのかを試してみました。
+ここにも罠がｗ
+ブラウザで&lt;a href=&#34;https://config.qmk.fm/#/crkbd/rev1/legacy/LAYOUT_split_3x6_3&#34;&gt;QMK Configurator&lt;/a&gt;を開いてデフォルトのキーマップを確認しながら試し打ちをしていたのですが、どうも思ったのと違う動きをしているキーが。&lt;/p&gt;
+&lt;p&gt;まずBASEレイヤー（レイヤー0）の右側のシフトと、LOWERレイヤーやRAISEレイヤーのEscです。
+入力しているとどうも、右のシフトがEscで、レイヤーを切り替えてもTabのままだなと。
+しょうがないので、OLEDが出なくてもいいのでQMK Toolboxでダウンロードしてきたものを利用したら想定通りなのにと。
+きちんとqmk_firmwareの構成を理解しないままやってたつけでしたね。
+結論としては、OLED用に教えてもらったブランチではキーマップが書き換わっていたようでした。
+&lt;code&gt;make crkbd:defaut&lt;/code&gt;でビルドした時に利用されるkeymap.cがキーマップの定義が書いてあるファイルです。
+qmk/qmk_firmwareのリポジトリにあるkeymap.cとfoostanさんにもらったブランチでは差分があったみたいでした。&lt;/p&gt;
+&lt;p&gt;おかげで、qmk_firmwareのkeymap.cの仕組みがわかったし結果オーライです。
+問題があって調べるとどんな作りになってるかとかちゃんと確認できますしね。
+手順通りにやってるだけで問題が起きないと、どんな仕組みになってるのかがわからないので人に聞きまくるしかできなくなっちゃいますしね。&lt;/p&gt;
+&lt;p&gt;これでEsc問題は解決したのですが、アンスコがどうしても入力できません。
+自作キーボード以外はすべて日本語配列のキーボードを使用しているのもあり、
+日本語配列のキーボードだとどうもキーのマッピングが異なるようだと。&lt;/p&gt;
+&lt;p&gt;ググって参考にしたのはこの辺でした。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://skyhigh-works.hatenablog.com/entry/2018/11/14/033242&#34;&gt;【QMK】JPキーコードでキーマップを定義する - 天高工房&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://salicylic-acid3.hatenablog.com/entry/2018/11/26/%E8%87%AA%E4%BD%9C%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E3%82%AD%E3%83%83%E3%83%88%E3%80%8CCorne_Cherry%E3%80%8D%E3%81%AE%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC#USB%E3%81%AE%E5%8F%B3%E5%87%BA%E3%81%97&#34;&gt;自作キーボードキット「Corne Cherry」のレビュー - 自作キーボード温泉街の歩き方&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;そのほかにもVIAのファームなども試したのですが、どれもうまくいかず。
+色々ググってみて最終的な解決策はkeymap.cでkeymap_jp.hというファイルが読み込まれていないので、日本語用の設定とかを読み込んでみたつもりがうまく反映されていないという感じでした。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;JISにする場合、keymap_jp.hっていうヘッダファイル読み込んだほうがいいです&lt;/p&gt;&amp;mdash; Yoshi Yamaguchi ⌨ Keyboard builder (@ymotongpoo) &lt;a href=&#34;https://twitter.com/ymotongpoo/status/1323456582152171522?ref_src=twsrc%5Etfw&#34;&gt;November 3, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;今の時点ではこんなキーマップにしてあります。
+今後も日本語配列のキーボードをベースに考えていくつもりです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+#include QMK_KEYBOARD_H
+#include &amp;quot;keymap_jp.h&amp;quot;
+
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+  [0] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+       KC_TAB,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                         KC_Y,    KC_U,    KC_I,    KC_O,   KC_P,  JP_MINS,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LCTL,    KC_A,    KC_S,    KC_D,    KC_F,    KC_G,                         KC_H,    KC_J,    KC_K,    KC_L, JP_SCLN, KC_QUOT,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_N,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_RSFT,
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI,   MO(1),  KC_SPC,     KC_ENT,   MO(2), KC_RALT
+                                      //`--------------------------&#39;  `--------------------------&#39;
+
+  ),
+
+  [1] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+       KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                         KC_6,    KC_7,    KC_8,    KC_9,    KC_0, KC_BSPC,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LCTL, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      KC_LEFT, KC_DOWN,   KC_UP,KC_RIGHT, XXXXXXX, XXXXXXX,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LSFT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI, _______,  KC_SPC,     KC_ENT,   MO(3), KC_RALT\
+                                      //`--------------------------&#39;  `--------------------------&#39;
+  ),
+
+  [2] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+       KC_TAB, JP_EXLM, JP_DQUO, JP_HASH,  JP_DLR, JP_PERC,                      JP_AMPR, JP_QUOT, JP_LPRN, JP_RPRN, JP_CIRC, KC_BSPC,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LCTL, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      JP_MINS,  JP_EQL, JP_LBRC, JP_RBRC,  JP_YEN,   JP_AT,
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      KC_LSFT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      JP_UNDS, JP_PLUS, JP_LCBR, JP_RCBR, JP_PIPE, JP_TILD,
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI,   MO(3),  KC_SPC,     KC_ENT, _______, KC_RALT
+                                      //`--------------------------&#39;  `--------------------------&#39;
+  ),
+
+  [3] = LAYOUT_split_3x6_3( \
+  //,-----------------------------------------------------.                    ,-----------------------------------------------------.
+        RESET, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,\
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      RGB_TOG, RGB_HUI, RGB_SAI, RGB_VAI, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,\
+  //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
+      RGB_MOD, RGB_HUD, RGB_SAD, RGB_VAD, XXXXXXX, XXXXXXX,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,\
+  //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
+                                          KC_LGUI, _______,  KC_SPC,     KC_ENT, _______, KC_RALT\
+                                      //`--------------------------&#39;  `--------------------------&#39;
+  )
+};
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;キーキャップが待ちきれなくて&#34;&gt;キーキャップが待ちきれなくて&lt;/h3&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;この右下のトンガリがちょっと気になる &lt;a href=&#34;https://t.co/W0A0z67cns&#34;&gt;pic.twitter.com/W0A0z67cns&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1322092102637948928?ref_src=twsrc%5Etfw&#34;&gt;October 30, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;キーキャップが待ちきれなくて上海問屋のキーキャップを付けてみて、いろいろ試行錯誤してみました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;あー。上下関係ないのか。だからみんなこんな感じにしてるのか？ &lt;a href=&#34;https://t.co/KTBlPLespr&#34;&gt;pic.twitter.com/KTBlPLespr&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1322180553529937921?ref_src=twsrc%5Etfw&#34;&gt;October 30, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;どのくらい離すのが良いか実験中 &lt;a href=&#34;https://t.co/ozK4WyBXY8&#34;&gt;pic.twitter.com/ozK4WyBXY8&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1323161306266963969?ref_src=twsrc%5Etfw&#34;&gt;November 2, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h3 id=&#34;キーキャップもいろいろあるのね&#34;&gt;キーキャップもいろいろあるのね&lt;/h3&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;届いた。 &lt;a href=&#34;https://t.co/jccNW1ZcEM&#34;&gt;pic.twitter.com/jccNW1ZcEM&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1323194081036546048?ref_src=twsrc%5Etfw&#34;&gt;November 2, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;もう一個 &lt;a href=&#34;https://t.co/9y6qat4JiN&#34;&gt;pic.twitter.com/9y6qat4JiN&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1323194549196390400?ref_src=twsrc%5Etfw&#34;&gt;November 2, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;とりあえずセミコロンの位置につけてみた。 &lt;a href=&#34;https://t.co/TDk5213IHi&#34;&gt;pic.twitter.com/TDk5213IHi&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1323473987213565953?ref_src=twsrc%5Etfw&#34;&gt;November 3, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;今はこのDSAプロファイルの青いグラデーションのキーキャップを使っています（Dukeはここにはいないですｗ）。
+キーキャップのプロファイルはこれまた、&lt;a href=&#34;https://salicylic-acid3.hatenablog.com/entry/2018/12/06/%E3%82%AD%E3%83%BC%E3%82%AD%E3%83%A3%E3%83%83%E3%83%97%E3%81%AE%E6%B9%AF%E3%81%AE%E3%81%8A%E8%AA%98%E3%81%84&#34;&gt;サリチル酸さんのブログ&lt;/a&gt;がわかりやすく書かれています（ほんとすごいなぁ。）。&lt;/p&gt;
+&lt;h3 id=&#34;高さ調節&#34;&gt;高さ調節&lt;/h3&gt;
+&lt;p&gt;そのまま使っていたのですが、やはりもうちょっと奥側に高さがほしいなと。
+ダイソーなどで打っているケーブルクリップがお試しには良さそうだったのでこんな感じで内側がちょっとだけ高くなるような感じにして使っています。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;こうなった。とりあえず仮運用 &lt;a href=&#34;https://t.co/VkhjawdhLM&#34;&gt;pic.twitter.com/VkhjawdhLM&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1323999827810684931?ref_src=twsrc%5Etfw&#34;&gt;November 4, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、駆け足ですがCorne Light v2のビルドログでした。
+いきなりフルキーボードから40％キーボードかつ異なる並びにしたので、
+混乱しっぱなしですが、いい頭の運動になっているし、なにより作って動かすまでの間に
+いろいろと調べたり試行錯誤できたのがすごく楽しかったです。&lt;/p&gt;
+&lt;p&gt;あとは、スプリット型＋Column Staggeredになったので「c」や「b」を間違えまくっていますが、
+いい気付きでした。まだまだ記号とかの入力に慣れていないですが、ちょっとずつ身に着けていけたらなと。&lt;/p&gt;
+&lt;p&gt;ただ、もう次のキーボードをDIYしたい気持ちも出てきているので困っているところです。&lt;/p&gt;
+&lt;p&gt;書ききれてないこともあるかと思うので、ここはどうしてるの？これはどうやったの？などあれば、Tweetなりコメントなりを頂けたらなと思います。いやぁ、DIYキーボード楽しいわ。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -32,6 +520,199 @@
       
       <guid>https://blog.johtani.info/blog/2020/10/11/build-dozen0/</guid>
       <description>今年の春くらいから、セパレートタイプのキーボードが気になっています。 また、なんか知らないですが、Twitterのタイムラインが自作キーボード</description>
+      <content:encoded>&lt;p&gt;今年の春くらいから、セパレートタイプのキーボードが気になっています。
+また、なんか知らないですが、Twitterのタイムラインが自作キーボード(DIYキーボード)で盛り上がってる気がします。
+(たぶん、気になってるから余計目についてる)。
+これとか。このスライドから、自分がやってるのは「まだ」DIYキーボードだなということで、タイトルに使ってみました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;&lt;a href=&#34;https://twitter.com/hashtag/toruby?src=hash&amp;amp;ref_src=twsrc%5Etfw&#34;&gt;#toruby&lt;/a&gt; &amp;quot;DIYキーボードは実質Ruby&amp;quot; 本日のスライドです! とちぎでこの話をできてよかった!!!q: &lt;a href=&#34;https://t.co/RJot71Ngu9&#34;&gt;https://t.co/RJot71Ngu9&lt;/a&gt;&lt;/p&gt;&amp;mdash; Kakutani Shintaro (@kakutani) &lt;a href=&#34;https://twitter.com/kakutani/status/1304655402378752001?ref_src=twsrc%5Etfw&#34;&gt;September 12, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h2 id=&#34;セパレートタイプのキーボード&#34;&gt;セパレートタイプのキーボード&lt;/h2&gt;
+&lt;p&gt;今年の夏まではMac Book Pro 16インチのキーボードを利用していました(&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/working-facility/&#34;&gt;参考:自宅の作業環境(2020)&lt;/a&gt;)。
+これまで、自宅で作業することよりも、外で仕事をすることが多く、また、外といっても様々な場所(サムライズムだったり、オフィスだったり、カフェだったり)で作業をすることが多かったので、ノートPCのキーボードにしていました。流石にキーボードを持って歩くほどは気にしていなかったので。&lt;/p&gt;
+&lt;p&gt;ただ、コロナウイルスの影響もあり、ほぼ自宅で作業することとなりました。
+となると、前から気になっていたセパレートタイプのキーボードが俄然気になり始めます。
+(といいつつ、&lt;a href=&#34;https://blog.johtani.info/blog/2020/09/08/update-working-facility/#%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E3%83%91%E3%83%BC%E3%83%A0%E3%83%AC%E3%82%B9%E3%83%88&#34;&gt;寄り道してたり&lt;/a&gt;しますが)&lt;/p&gt;
+&lt;p&gt;気になっていたのはこのあたりなのですが、&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://ergodox-ez.com/&#34;&gt;Ergodox EZ&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.zsa.io/moonlander/&#34;&gt;Moonlander Mark I&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;流石にいきなり行くにはちょっと気が引けるなぁと(なかなかいいお値段)。
+また、自分が日本語キーボードを利用しているというのもちょっとあります。&lt;/p&gt;
+&lt;h2 id=&#34;キースイッチの感触を知りたくて&#34;&gt;キースイッチの感触を知りたくて&lt;/h2&gt;
+&lt;p&gt;ただ、日々、楽しそうな自作キーボードの記事や画像が流れてきます。
+で、思い出したのが自分の趣味。プラモデルです。色を塗ったりはしないですが、組み立てるのは楽しいなと。
+じゃあ、趣味と実益を兼ねればいいのでは?(ほんとか?)となり、作る気になってきました。&lt;/p&gt;
+&lt;p&gt;ただ、全く知らない世界だし、どんなものなんだろう?と。
+市販のキーボードでも、キーの押し具合が色々合ったり、形もまちまちです。
+また、このご時世ですので、自宅からあまり出ていないので遊舎工房さんなどに遊びにも行けず。&lt;/p&gt;
+&lt;p&gt;そんなところに流れてきたのがキースイッチのテスターでした(世の中誘惑だらけ)。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://yushakobo.jp/shop/b0200st-f2-1/&#34;&gt;スイッチテスター人気スイッチ詰め合わせ 18個セット&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;「なるほど、これでどんな感触かわかるじゃないか!」と、気づけばポチッと押していました。。。
+届いて、「ふむふむ、これがこういう感触なのか。なるほど」ポチポチ押しながら、さらに自作キーボードについて調べていきます。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;いろんな感触なんだなぁ &lt;a href=&#34;https://t.co/PaGDMIRJiv&#34;&gt;pic.twitter.com/PaGDMIRJiv&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1308289480458084353?ref_src=twsrc%5Etfw&#34;&gt;September 22, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h2 id=&#34;キースイッチのストロークの深さを知りたくて&#34;&gt;キースイッチのストロークの深さを知りたくて&lt;/h2&gt;
+&lt;p&gt;まぁ、当たり前なのですが、先程のキースイッチテスターどこにもつながっていません。
+キーボード触ってるとわかりますが、ストロークが違いがあるんですよ。
+ただ、これだとわからない。けど知りたい。&lt;/p&gt;
+&lt;p&gt;で、ググっていると&lt;a href=&#34;https://qiita.com/kamaboko123/items/c32ad91434ffc7f4ff8d&#34;&gt;Arduinoを使ってLチカやってる人とか、キー入力させている人&lt;/a&gt;がいるじゃないですか。
+これでは?そういえば、Arduinoもどきうちにもあるぞ?と。
+で、準備をしていたときに見かけてしまったのがこのツイートでした。。。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;&lt;a href=&#34;https://t.co/ALl7OcRVRa&#34;&gt;https://t.co/ALl7OcRVRa&lt;/a&gt; 高機能テスターとしてもおすすめ&lt;/p&gt;&amp;mdash; Kakutani Shintaro (@kakutani) &lt;a href=&#34;https://twitter.com/kakutani/status/1312749674214744064?ref_src=twsrc%5Etfw&#34;&gt;October 4, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;&lt;strong&gt;やられてしまいました。。。&lt;/strong&gt;&lt;/p&gt;
+&lt;h2 id=&#34;dozen0作りました&#34;&gt;dozen0作りました&lt;/h2&gt;
+&lt;p&gt;ということで、前置き長かったですが、Dozen0というキーボード(マクロパッド?)を&lt;a href=&#34;https://yushakobo.jp/shop/dozen0/&#34;&gt;遊舎工房さんから購入して&lt;/a&gt;作ってみました。
+手順は&lt;a href=&#34;https://github.com/yynmt/Dozen0/blob/master/docs/buildguide_jp.md&#34;&gt;ビルドガイド&lt;/a&gt;という形でまとまっています。&lt;/p&gt;
+&lt;p&gt;基本的にはこれに沿って作成しました。&lt;/p&gt;
+&lt;h3 id=&#34;パーツと手順の確認&#34;&gt;パーツと手順の確認&lt;/h3&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;さてと。 &lt;a href=&#34;https://t.co/GTBJ7zDleN&#34;&gt;pic.twitter.com/GTBJ7zDleN&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1314798164919029765?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;まずは入っているパーツがきちんとあるか確認します。
+また、ビルドガイドでどんな作業があるのかをざっと眺めておきます。
+まぁ、プラモデルといっしょですよね。&lt;/p&gt;
+&lt;p&gt;キットにはキースイッチとキーキャップは含まれていません。これはご注意ください。
+私は、キースイッチテスターとして入手していたキースイッチとキーキャップがどんな押し具合なのかを確認したかったので特に問題ありません。&lt;/p&gt;
+&lt;h3 id=&#34;ハンダづけ&#34;&gt;ハンダづけ&lt;/h3&gt;
+&lt;p&gt;
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B006MQD7M4/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B006MQD7M4&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B006MQD7M4/?tag=johtani-22&#34;&gt;
+      Amazon | 白光 ダイヤル式温度制御はんだこて FX600 | ハンダゴテ
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B004OR7UBM/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B004OR7UBM&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B004OR7UBM/?tag=johtani-22&#34;&gt;
+      Amazon | 白光 こて先 2C型 T18-C2 | ハンダゴテパーツ
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B017SQ0TUO/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B017SQ0TUO&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B017SQ0TUO/?tag=johtani-22&#34;&gt;
+      Amazon | 白光(HAKKO) セラミックヒーターはんだこて専用こて台 クリーニングスポンジ付き FH300-81 | ハンダゴテパーツ
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B0029LGAJI/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B0029LGAJI&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B0029LGAJI/?tag=johtani-22&#34;&gt;
+      Amazon | goot(グット) 高密度集積基板用 鉛入りはんだ Φ0.6mm スズ60%/鉛40% ヤニ入り SD-60 | ハンダゴテ
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;&lt;/p&gt;
+&lt;p&gt;はんだ付け用に揃えた道具です。「自作キーボード ハンダゴテ」とかでググると出てきたものがこれだったので。
+デフォルトのコテ先ではなく、2Cのコテ先に付け替えてから作業を開始しました。&lt;/p&gt;
+&lt;p&gt;私の持っていたソケットはCherry MX系なのですが、気が向いたらKailh Chocも試したくなるかも?ということで、
+すべてはんだ付けしました。本格的にはんだ付けしたのは大学以来だからもう20年近く経ってますね。
+ソケットの足をプリント基板にはんだ付けするのですが、2Cのコテ先が大きくなかなか手こずりました(&lt;em&gt;これがこのあと問題を引き起こしました&lt;/em&gt;)。&lt;/p&gt;
+&lt;p&gt;ソケット、リセットスイッチ、ProMicroをはんだ付けすればはんだの作業は終了です。&lt;/p&gt;
+&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;und&#34; dir=&#34;ltr&#34;&gt;&lt;a href=&#34;https://t.co/jjUo162n54&#34;&gt;pic.twitter.com/jjUo162n54&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1314810257873399810?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;und&#34; dir=&#34;ltr&#34;&gt;&lt;a href=&#34;https://t.co/p5atvtHfFN&#34;&gt;pic.twitter.com/p5atvtHfFN&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1314810285002088448?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;スイッチの取付と組みたて&#34;&gt;スイッチの取付と組みたて&lt;/h3&gt;
+&lt;p&gt;試したいキースイッチを選んでトッププレートにつけていきます。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;キーテスターからスイッチとキーキャップ持ってきて完成。動作確認はまだなのでまた、最初に戻るかもだけど、、、 &lt;a href=&#34;https://t.co/ZmBd3bgOKI&#34;&gt;pic.twitter.com/ZmBd3bgOKI&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1314822558865264641?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;組み立ても終わり次は実際の動作確認です(ツイートしていますが、予想通りの展開でした)。&lt;/p&gt;
+&lt;h3 id=&#34;ファームウェアの書き込み&#34;&gt;ファームウェアの書き込み&lt;/h3&gt;
+&lt;p&gt;USBで接続して、ファームウェアの書き込みです。
+書き込み手順は&lt;a href=&#34;https://github.com/yynmt/Dozen0/blob/master/docs/buildguide_jp.md#6-%E3%83%95%E3%82%A1%E3%83%BC%E3%83%A0%E3%82%A6%E3%82%A7%E3%82%A2%E3%81%AE%E6%9B%B8%E3%81%8D%E8%BE%BC%E3%81%BF&#34;&gt;ビルドガイド&lt;/a&gt;にありますが、QMK Toolboxの使い方やQMK Configuratorの使い方は以下の&lt;a href=&#34;https://salicylic-acid3.hatenablog.com/&#34;&gt;サリチル酸さんのブログ&lt;/a&gt;がわかりやすかったです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://salicylic-acid3.hatenablog.com/entry/qmk-toolbox&#34;&gt;（初心者編）自作キーボードにファームウェアを書き込む&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://salicylic-acid3.hatenablog.com/entry/qmk-configurator&#34;&gt;（初心者編）QMK Configuratorを使ってキーマップを書き換えよう&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;実際に書き込んで動かしてみると。。。。&lt;/p&gt;
+&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;うーん、上半分が死んでる気がするなぁ。&lt;br&gt;デフォルトキーマップの書き込みはできたけど、カーソルの上とかバックスペースが入らないw&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1314844321674190848?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;とりあえず、もう一回確認してみた。デフォルトのキーマップで、「Cut」「Paste」が強く押さないと入力されない。UpとDeleteは動くようになってた。CopyとBkSpがうんともすんとも言わない。下段のキーは全部動く。&lt;a href=&#34;https://t.co/zEyINdAK6t&#34;&gt;https://t.co/zEyINdAK6t&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1314916612168794112?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/p&gt;
+&lt;p&gt;といった具合に上半分が動作があやしいです。&lt;/p&gt;
+&lt;h3 id=&#34;再度はんだ付け&#34;&gt;再度、はんだ付け&lt;/h3&gt;
+&lt;p&gt;ということで、ネジを外して上の段のソケットをはんだで温めてみると、片側だけ温めるとはずれるじゃないですか。
+どうやら、うまくソケットの足が基盤にはんだ付けできていなかったようです。
+この時、最初に作業したときに2C型のコテ先が大きくて、ソケットの足に入らなかったのを思い出したので、
+最初にはんだごてについていたコテ先に戻してから作業をしました。
+これだとソケットの足の隙間に入るんです。ということで、挙動のおかしい上段のソケットをすべてつけ直したところ無事動作しました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;上の段、全体的にソケットがうまくはんだ付けできてなかったみたいだった。今回はMX系のスイッチしかないので、Kailh Chocのソケットの導通は未確認。ざっとブログにまとめるか。&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1314927893680594944?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;h3 id=&#34;現在のキーマップ&#34;&gt;現在のキーマップ&lt;/h3&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20201011/dozen0_music_play.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20201011/dozen0_music_play.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;これが今のキーマップです。仕事中のBGMをラズパイ4の音楽プレーヤーで流していますが、
+部屋から出るときや、打ち合わせがあるときに音楽の停止、開始などを画面共有経由でやっています。
+が、わざわざマウス移動するのもめんどくさいなと。これに使えそうだというのもあったので、Dozen0を購入したというのがあります。
+残念ながら、&lt;code&gt;Prev Track&lt;/code&gt;とかがうまく動かないので、ショートカットを調べてキーマップ書き換える予定ですが、非常に便利になりました。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、Dozen0を作ってみましたが、楽しかったです。すんなりと行かなかったのがまた良かったです。
+試行錯誤して動いたときの喜びが何倍もありました。また、キースイッチの感触も知ることができました。
+たぶんGateron Silentクリア軸もしくは赤軸くらいが良さそうだなぁと(こうやって沼へ。。。)。
+キーマップの仕組みを調べたり、もっと面白い使い方できないかな?と探りつつ、次のステップに進もうかなと。&lt;/p&gt;
+&lt;p&gt;次は本格的なセパレートタイプのキーボードを作る予定です。が、お店のオープンを待ってからということになってます。はやくオープンしないかなぁ!!&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;がんばって!!&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1310887394879496193?ref_src=twsrc%5Etfw&#34;&gt;September 29, 2020&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+</content:encoded>
     </item>
     
   </channel>

@@ -14,6 +14,178 @@
       
       <guid>https://blog.johtani.info/blog/2012/12/20/jira%E3%81%AEdb%E7%A7%BB%E8%A1%8Chsqldb%E3%81%8B%E3%82%89postgresql%E3%81%B8-augj/</guid>
       <description>Atlassian Advent Calendar 2012の20日目。（急遽参戦） （某イケメンにMT（改変リツイート）されたので書いてみました） 久々に、勉強会以外のエントリです。（So</description>
+      <content:encoded>&lt;p&gt;Atlassian Advent Calendar 2012の20日目。（急遽参戦）
+（某イケメンにMT（改変リツイート）されたので書いてみました）
+久々に、勉強会以外のエントリです。（Solrとかlucene-gosenじゃないんだが。。。）&lt;/p&gt;
+&lt;p&gt;私は、最近忘れっぽくなってきてしまったので、さくらVPSを借りてJIRAを立てて、タスク管理とかに使い始めました。
+有料ツールなので、まずは、評価版から入れましたと。
+評価版をインストールするときに、楽なのでHSQLDBを選択していました。が、
+インストール時に「HSQLDBは評価版だけで使用してください。正式版ではサポートしてないです」みたいなことを言われていたので、PostgreSQLに切り替えようかと。
+ちなみに、MySQLも選択肢としてはあったのですが、PostgreSQLのほうが触ってるし（つかいこなせてるわけではない）、補完機能になれてるというのもありPostgreSQLを選んでみました。&lt;/p&gt;
+&lt;p&gt;作業のログとして、ブログ書いとこうと思いたったのでメモ的に残しておきます。&lt;/p&gt;
+&lt;p&gt;作業の流れはこんなかんじでした。
+（基本的にはサポートサイトの&lt;a href=&#34;https://confluence.atlassian.com/display/JIRA052/Switching+Databases#SwitchingDatabases-differenttype&#34;&gt;ここ&lt;/a&gt;に載ってます。サポートいいね。）
+この手順通りでいいみたい。&lt;/p&gt;
+&lt;p&gt;###1.  JIRAのデータのバックアップ（JIRAの管理画面からバックアップ）&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;まずは管理画面へ。ページ右上に管理へのリンクがあるのでクリック。
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548699.jpg&#34; alt=&#34;管理画面へ&#34;/&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548699.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+&lt;/p&gt;
+&lt;p&gt;開いた管理画面の右下あたりにエクスポート（バックアップ）へのリンクがあります。
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548700.jpg&#34; alt=&#34;管理画面右下のこのへん&#34;/&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548700.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+&lt;/p&gt;
+&lt;p&gt;クリックしたあとに、エクスポートのファイル指定画面が現れるので、ファイル名を指定してバックアップボタンを押します。
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548714.jpg&#34; alt=&#34;ファイル指定画面&#34;/&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548714.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+&lt;/p&gt;
+&lt;p&gt;バックアップが完了するとバックアップファイルの場所が表示されます。
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548701.jpg&#34; alt=&#34;完了画面&#34;/&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548701.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+&lt;/p&gt;
+&lt;p&gt;###2. JIRAの停止&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;バックアップが終わったのでJIRAを停止します。&lt;/p&gt;
+&lt;p&gt;###3.  PostgreSQLのインストール（yum）
+PostgreSQLが入ってないので、yum installします。（軟弱者なので）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+yum install postgresql-server
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;####initdbで四苦八苦
+PostgreSQLはインストールしただけでは起動できません。なので、初期化をします。
+yumでインストールしたPostgreSQLだとつぎのコマンドでinitdbできるようです。（これが罠でした）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+service postgresql initdb
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;このコマンドでinitdbすると、encodingが指定できませんでした。（私がしらないだけという話も。。。）
+encodingを指定できていないと、このあと4.を実行するときにエラーが出ました。（これも回避方法あるのかも。）
+ということで、結局、昔とった杵柄なやり方でinitdbコマンドで&amp;ndash;encoding=UTF8 &amp;ndash;no-localeを指定しました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+initdb --encoding=UTF8 --no-locale -D/var/lib/pgsql/data
+service postgresql start
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これで初期化が完了するので、PostgreSQLを起動します。&lt;/p&gt;
+&lt;p&gt;###4.  JIRA用DBとユーザの作成&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;まずは、ユーザの作成。そして、DB作成&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+createuser jirauser
+createdb -E UNICODE jiradb
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;テーブルなど作成しません。あとの処理がやってくれます。&lt;/p&gt;
+&lt;p&gt;###5.  JIRAにJDBCドライバを入れる（必要なかった。）&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;warじゃないJIRAをインストールした場合はすでに入ってるみたいです。
+ここを見るとわかります。JIRA Installation Directoryの下のlibですかね。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+/opt/atlassian/jira/lib
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;###&lt;del&gt;6.  マニュアルでPostgreSQLの接続設定（あれ、これいらないのか。）&lt;/del&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;~~　コンソールオンリーなので、JIRAが提供してくれているツールが使えないため、手で設定。
+　/var/atlassian/application-data/jira
+　にあるdbconfig.xmlを修正~~
+ちゃんと英語読めってことですね。。。必要なかったです。。。&lt;/p&gt;
+&lt;p&gt;###7.  JIRAのdbconfig.xmlを削除&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;DB接続の設定を初期セットアップウィザードで再設定するため、dbconfig.xmlを消します。
+（一応、インストールディレクトリとホームディレクトリとかバックアップしたほうがいいみたい）
+場所はここ。
+中身はdbcpとかのデータソースの設定に似てました。
+今は、HSQLDBのJDBCドライバが記載されてました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+rm /var/atlassian/application-data/jira/dbconfig.xml
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;###8.  JIRAの起動&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;7.のファイルを消したあとにJIRAを起動します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+service jira start
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;###9.  JIRAにアクセスとDB接続設定&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;アクセスすると、インストールした時と同じDB接続の指定を行うセットアップウィザードの画面が現れます。
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548715.jpg&#34; alt=&#34;最初のセットアップ画面&#34;/&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548715.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+&lt;/p&gt;
+&lt;p&gt;今回はJIRAサーバの外にあるPostgreSQLなので、「外部」を選んで四角で囲んだ部分を入力します。
+入力したら、「接続テスト」を押して接続できることを確認したら「次へ」を押します。
+マシンのスペックにもよると思いますが、ここでJIRAサーバがDBに接続してテーブルのCREATEなどDBのセットアップを実行してるのでちょっと時間がかかります。&lt;/p&gt;
+&lt;p&gt;###10. バックアップしたデータのインポート&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;DBのセットアップが終わったら、アプリケーションのセットアップ画面が出てきます。
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548716.jpg&#34; alt=&#34;インポートファイル指定画面へ&#34;/&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548716.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+新規インストールではないので、「ここ」にある「既存のデータをインポート」リンクをクリックします。
+すると、インポートファイルの指定画面が現れるので、1.でバックアップしたファイル名を指定してインポートします。
+すると、インポート中画面が出てきます。
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548817.jpg&#34; alt=&#34;インポート中画面&#34;/&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20121220/20121220_2548817.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+で、インポートが完了すると無事JIRAにログインできますと。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;とこんなかんじです。
+私の場合は、まだJIRAをインストールしてから間もないため、チケットの数が少なかったり、添付ファイルが無かったりなので、すぐにインポートが完了しました。
+添付ファイルがある場合は、別途添付ファイルが保存されているディレクトリのバックアップと復旧などもあるみたいです。
+最初にも書きましたが、ドキュメントのサイトに「Switching Databases」という項目があり、そのページの手順で問題なく切り替えできました。
+次は、定期的にデータをバックアップするのを考えないとですかね。&lt;/p&gt;
+&lt;p&gt;いやぁブログ書くのが、思いの外、手こずりました。
+手こずった原因はスクリーンショットだったんですけどね。。。
+safariでページ全体のスクリーンショットがとれなかったので、結局Chromeで&lt;a href=&#34;http://awesomescreenshot.com/&#34;&gt;Awesome Screenshotプラグイン&lt;/a&gt;使いました。
+safariの拡張もあるんですが、ページ全体のスクリーンショットがうまく動かないみたいです。。。
+ということで、備忘録でした。（次はちゃんとSolrとかの記事書かないとなー。その前に忘年ブログかな）&lt;/p&gt;
+</content:encoded>
     </item>
     
   </channel>

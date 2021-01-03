@@ -14,6 +14,28 @@
       
       <guid>https://blog.johtani.info/blog/2012/06/13/twitter%E3%81%8C%E5%85%AC%E9%96%8B%E3%81%97%E3%81%9F%E5%88%86%E6%95%A3%E3%83%88%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%B3%E3%82%B0%E8%BF%BD%E8%B7%A1%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0zipkin/</guid>
       <description>すでに読まれた方もいるかも知れませんが、気になったのでメモを書いてみようかと。 先週の木曜日にTwitterのエンジニアブログでZipkinと</description>
+      <content:encoded>&lt;p&gt;すでに読まれた方もいるかも知れませんが、気になったのでメモを書いてみようかと。&lt;/p&gt;
+&lt;p&gt;先週の木曜日に&lt;a href=&#34;http://engineering.twitter.com/2012/06/distributed-systems-tracing-with-zipkin.html&#34;&gt;TwitterのエンジニアブログでZipkinというOSSを公開したという記事&lt;/a&gt;がでました。
+非常に興味深いシステムだったので、ちょっとずつ読み解いていきたいなという宣言（というか、ハッパをかけてもらうため）も兼ねて、まずはブログの内容をメモ程度に残しておきます。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/twitter/zipkin&#34;&gt;Zipkin&lt;/a&gt;は分散トレースシステム（distributed tracing system）です。Twitter APIの１リクエストを構成する様々なサービスのタイミングデータ（計時データ）を集めるために作りました。
+Firebugのような性能プロファイラのよなもので、しかもバックエンドのサービスもプロファイル可能です。
+ZipkinはAPLv2ライセンスでOSSとしてGithubで公開しています。&lt;/p&gt;
+&lt;p&gt;ZipkinはWebのユーザインタフェースを持っています。（元記事参照）
+各サービス（縦軸）でどのくらい時間がかかっているか（横軸）がわかり、クリックすることでより詳細な情報が得られます。
+Zipkinはパフォーマンス改善の余地のある部分（遅いMySQLのSELECTなど）を見つけるのに役立ちます。&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Zipkinはどのように動くの？&lt;/b&gt;
+Twitterに届いたリクエストからサンプリングしたリクエストに対してトレース可能なIDを付与して、すべてのサービスに渡していきます。
+全リクエストの一部をサンプリングすることで、トレースのオーバヘッドを減らし、常に本番環境で利用できるようにしています。
+Zipkinコレクタ（collector）が、Scribe経由でタイミングデータを受け取り、Cassandraに保存してインデックスを作成します。
+Zipkinクエリデーモンがインデックスを利用して、WebUIにトレースデータを見つけます。&lt;/p&gt;
+&lt;p&gt;ZipkinはHack Weekで開始されました。
+最初はThriftに対する&lt;a href=&#34;http://research.google.com/pubs/pub36356.html&#34;&gt;Google Dapper&lt;/a&gt;の論文の基本的な部分の実装から始まり、現在ではHttp、Thrift、Memcache、SQL、Redisリクエストをサポートしています。
+これらはFinagleライブラリで経由で動作します。Rubyのgemも用意してあります。&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;ということで、ほぼ直訳ですが、何かの役に立てればと。
+ちょっとずつですが、Githubのページやソースを読みながら記事を書いていこうと思っています。&lt;/p&gt;
+</content:encoded>
     </item>
     
   </channel>

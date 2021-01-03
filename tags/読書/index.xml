@@ -14,6 +14,130 @@
       
       <guid>https://blog.johtani.info/blog/2020/07/09/hap15-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/&#34;&gt;Rust the book - 第9章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/28/chap10-rust-the-book/&#34;&gt;Rust the book - 第10章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/06/04/chap13-rust-the-book/&#34;&gt;Rust the book - 第13章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;14章は飛ばして、15章です(Cargoはまた別途調べればいいかな?と思って)。&lt;/p&gt;
+&lt;h2 id=&#34;第15章-スマートポインタ&#34;&gt;第15章 スマートポインタ&lt;/h2&gt;
+&lt;p&gt;たぶん、これを理解すれば、参照とベクタや構造体とかの組み合わせがもう少し効率よく使えるようになるのかなぁ?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ポインタの強い版?
+&lt;ul&gt;
+&lt;li&gt;参照カウント方式のスマートポインタ型 - Luceneとかで実装されてた気がするなぁ
+&lt;ul&gt;
+&lt;li&gt;複数の所有者!?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;DerefとDropトレイトを実装している構造体&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;ヒープのデータを指すboxtを使用する&#34;&gt;ヒープのデータを指すBox&lt;T&gt;を使用する&lt;/h3&gt;
+&lt;p&gt;これはコンパイルエラー。&lt;code&gt;let y&lt;/code&gt;のタイミングで借用してるので、書き換えでエラーになる。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let mut x = 5;
+    let y = &amp;amp;x;
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+    x = 6;
+    assert_eq!(6, x);
+    assert_eq!(6, *y);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;こっちはOK。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let mut x = 5; // in stack
+    let y = Box::new(x); // in heap
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+    x = 6;
+    assert_eq!(6, x);
+    assert_eq!(6, *y);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;余談:コンパイラが変なワーニングを出してくれた。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;use std::ops::Deref;
+
+impl&amp;lt;T, Z&amp;gt; Deref for MyBox&amp;lt;T, Z&amp;gt; {
+    type Target = T;
+
+    fn deref(&amp;amp;self) -&amp;gt; &amp;amp;T {
+        &amp;amp;self.0
+    }
+}
+
+struct MyBox&amp;lt;T, Z&amp;gt;(T, Z);
+
+impl&amp;lt;T, Z&amp;gt; MyBox&amp;lt;T, Z&amp;gt; {
+    fn new(x: T, y: Z) -&amp;gt; MyBox&amp;lt;T, Z&amp;gt; {
+        MyBox(x, y)
+    }
+}
+
+fn main() {
+    let x = 5;
+    let z = &amp;quot;10&amp;quot;;
+    let y = MyBox::new(x, z);
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;derefトレイトでスマートポインタを普通の参照のように扱う&#34;&gt;Derefトレイトでスマートポインタを普通の参照のように扱う&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;参照外し型強制&lt;/code&gt; : 日本語ムズカシイネ&lt;/li&gt;
+&lt;li&gt;Derefを自分で実装しないといけない場面がちょっと想像できてない。たぶん、Boxとかの説明に必要なので出てきたって感じなんだろうけど。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;dropトレイトで片付け時にコードを走らせる&#34;&gt;Dropトレイトで片付け時にコードを走らせる&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;こっちは、リソース開放とかでいい感じにできそうだってのはわかった。&lt;/li&gt;
+&lt;li&gt;Dropはどんなときに実装するんだろう?Tantivyだとオブジェクトプールとかで使ってた。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;rctは参照カウント方式のスマートポインタ&#34;&gt;Rc&lt;T&gt;は、参照カウント方式のスマートポインタ&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;これ、ここで作ったConsのリストを追っかけるためのサンプルも書いてほしい。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;#[derive(Debug)]
+enum List {
+    Cons(i32, Rc&amp;lt;List&amp;gt;),
+    Nil,
+}
+
+fn print_typename&amp;lt;T&amp;gt;(_: T) {
+    println!(&amp;quot;{}&amp;quot;, std::any::type_name::&amp;lt;T&amp;gt;());
+}
+
+use List::{Cons, Nil};
+use std::rc::Rc;
+use std::borrow::Borrow;
+
+fn main() {
+    let z = Cons(5, Rc::new(Cons(10, Rc::new(Nil))));
+    let a = Rc::new(z);
+    let _b = Cons(3, Rc::clone(&amp;amp;a));
+    let _c = Cons(4, Rc::clone(&amp;amp;a));
+    match &amp;amp;(*a) {
+        Cons(v1, v2) =&amp;gt; {
+            print_typename(v2);
+            println!(&amp;quot;{}, {:?}&amp;quot;, v1, v2);
+        },
+        Nil =&amp;gt; println!(&amp;quot;Nil!!&amp;quot;)
+    };
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;refcelltと内部可変性パターン&#34;&gt;RefCell&lt;T&gt;と内部可変性パターン&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;循環参照はメモリをリークすることもある&#34;&gt;循環参照は、メモリをリークすることもある&lt;/h3&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -23,6 +147,78 @@
       
       <guid>https://blog.johtani.info/blog/2020/06/04/chap13-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/&#34;&gt;Rust the book - 第9章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/28/chap10-rust-the-book/&#34;&gt;Rust the book - 第10章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;11章、12章はちょっと飛ばして、13章です。&lt;/p&gt;
+&lt;h2 id=&#34;第13章&#34;&gt;第13章&lt;/h2&gt;
+&lt;p&gt;イテレータ、クロージャです。
+12章の話もちょっと出てくるのか。&lt;/p&gt;
+&lt;h3 id=&#34;クロージャ&#34;&gt;クロージャ&lt;/h3&gt;
+&lt;p&gt;基本的に、「変数には値が束縛されている」という固定観念がずっと頭にこびりついたままなので、クロージャに慣れないんだろうなぁ。そろそろこの固定概念をどうにかしないと。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;匿名関数で、変数に保存したり引数に渡せる&lt;/li&gt;
+&lt;li&gt;ちょっと面白い話(ワークアウト)で実際に考えられる手法の説明がいくつか行われる&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;関数でリファクタリング
+&lt;ul&gt;
+&lt;li&gt;これが自分がよくやるパターンかなぁ。クロージャになれてないので。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;クロージャーを変数に束縛
+&lt;ul&gt;
+&lt;li&gt;呼び出しは関数みたいな感じ(ここで少し混乱)&lt;/li&gt;
+&lt;li&gt;これだと、結局呼び出されたタイミングが複数回あるよね? -&amp;gt; あはりそうだった&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;ここで、閑話休題で、クロージャの型推論とか注釈の話。
+クロージャは狭い文脈だし、外に公開しているものでもないので、戻り値なども定義してなくてもいいよねとのこと。書くことも可能?なので、書いてわかりやすくするのもありなんだろうな。&lt;/p&gt;
+&lt;p&gt;推論についてはこれまで通りで、2回異なる型の変数で呼び出すと、2回目で怒られていた。&lt;/p&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;遅延評価(クロージャを保持する構造体!?)
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Fn&lt;/code&gt;トレイト&lt;/li&gt;
+&lt;li&gt;トレイトとMatchの組み合わせだからこのへんで説明する形になるのか。&lt;/li&gt;
+&lt;li&gt;これを真似すれば、いくつか処理を簡素化できるかもしれないなぁ、たしかに。&lt;/li&gt;
+&lt;li&gt;なければ実行するみたいな処理を書きたいことがよくあるし。Javaだとnullで定義しといて、nullだったらみたいなのがあるから。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Cacher&lt;/code&gt;はサンプルだからこの名前でいいけど、自分だと、どんな名前にするかなぁ?&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;振る舞いは難しくなるのか。&lt;code&gt;Cacher実装の限界&lt;/code&gt;を読むと。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;関数にするとスコープが変わるのでアクセスできなくなると。。。コンパイラが教えてくれるのは便利だな。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;環境から値をキャプチャする3つの方法&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;多分この話が一番クロージャに意味がある話なんだと思う。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;イテレータ&#34;&gt;イテレータ&lt;/h3&gt;
+&lt;p&gt;回しましょう。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;便利。ただ、こういう書き方に自分が慣れてないので、そっちを補正しないとなぁ。&lt;/li&gt;
+&lt;li&gt;どれがイテレータ?っていうのを判別するのがちょっとむずかしい(慣れの問題かなぁ)&lt;/li&gt;
+&lt;li&gt;イテレータアダプタ便利。どんなのがあるのか?とかがやっとわかってきた。&lt;/li&gt;
+&lt;li&gt;パフォーマンスに関しては、うーん、どうなんだろう?という感想だった。&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -32,6 +228,93 @@
       
       <guid>https://blog.johtani.info/blog/2020/05/28/chap10-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/&#34;&gt;Rust the book - 第9章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第10章&#34;&gt;第10章&lt;/h2&gt;
+&lt;p&gt;ジェネリック、トレイト、ライフタイムです。
+手強そう。&lt;/p&gt;
+&lt;p&gt;いきなり関数の切り出し方みたいな話が始まって面食らいました。&lt;/p&gt;
+&lt;h3 id=&#34;ジェネリックなデータ型&#34;&gt;ジェネリックなデータ型&lt;/h3&gt;
+&lt;p&gt;ジェネリックはJavaにもあるので、それほど理解に苦しむことはなかったです。
+また、OptionやResultですでに経験済みでしたし。&lt;/p&gt;
+&lt;p&gt;ただ、&lt;code&gt;impl&amp;lt;T&amp;gt; Point&amp;lt;T&amp;gt;{&lt;/code&gt;、このメソッド定義は少し最初は戸惑いました。
+言われてみれば、なるほどなんですけど。&lt;/p&gt;
+&lt;p&gt;コンパイル時にコンパイラが単相化を行うことにより、必要最低限なコードを生成してくるというのは理にかなっているなぁと。&lt;/p&gt;
+&lt;h3 id=&#34;トレイト-共通の振る舞いを定義する&#34;&gt;トレイト: 共通の振る舞いを定義する&lt;/h3&gt;
+&lt;p&gt;出だしにもありますが、「インターフェイス」という機能に類似していると考えると割とすんなりと理解が進みました。
+ただ、Javaだと、インターフェースはクラスとセットなため、トレイとの実装に関する記述方法は少し戸惑いが。&lt;/p&gt;
+&lt;p&gt;デフォルト実装との組み合わせはAbstractに似た処理になるなと考えながら読みすすめました。&lt;/p&gt;
+&lt;p&gt;「トレイト境界」という日本語には少し違和感を覚えましたが、線引をして、制限をかけるという理解でいいのかな?&lt;/p&gt;
+&lt;p&gt;実際には&lt;code&gt;#[derive()]&lt;/code&gt;などで、トレイトを自分で実装する必要がないなどの、便利機能も用意されており、このあたりのコードの追い方がまだ少し慣れていないかもなぁと。便利なんですけど。。。&lt;/p&gt;
+&lt;p&gt;少しだけ気になったので、動作確認したのは次の実装です。&lt;/p&gt;
+&lt;p&gt;トレイトで宣言されている関数と構造体が独自に実装する関数の名前がかぶるとどうなるのかという実験です。
+構造体独自のメソッドが優先される感じになりそう。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Tweet&lt;/span&gt; {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; username: String,
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; content: String,
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; reply: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; retweet: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Summary {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        &lt;span style=&#34;color:#75715e&#34;&gt;// {}さんからもっと読む
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(Read more from {}...)&amp;#34;&lt;/span&gt;, self.summarize_author())
+    }
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Tweet {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge {}&amp;#34;&lt;/span&gt;, self.username)
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;to_string&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fuga&amp;#34;&lt;/span&gt;)
+    }
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Summary &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Tweet {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@{}&amp;#34;&lt;/span&gt;, self.username)
+    }
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;T: &lt;span style=&#34;color:#a6e22e&#34;&gt;Summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;(hoge: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;T&lt;/span&gt;) {
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, hoge.summarize_author());
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tweet &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Tweet {
+        username: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;horse_ebooks&amp;#34;&lt;/span&gt;),
+        content: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;of course, as you probably already know, people&amp;#34;&lt;/span&gt;),
+        reply: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
+        retweet: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
+    };
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, tweet.summarize_author());
+    summary(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet);
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, Summary::summarize_author(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet));
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;ライフタイムで参照を有効化する&#34;&gt;ライフタイムで参照を有効化する&lt;/h3&gt;
+&lt;p&gt;言われてみればそうですが、プログラマが色々考えないとまぁ、行けないんですねという感想。&lt;/p&gt;
+&lt;p&gt;ただ、借用チェッカーが賢くやってくれるおかげで、全てにライフタイム注釈をつけなくて良くなっているというのがわかりました。
+逆に言うと、なんとなくRustを書き始めてしまったので、それを知らずに書いたせいで、コンパイラに怒られてても「?」となっていたのかと。。。&lt;/p&gt;
+&lt;p&gt;疑問点がいくつかあって、&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通常はどんなライフタイム注釈をみんな書いてるんだろう?&lt;code&gt;&#39;a&lt;/code&gt;とかざっくりしすぎてる?&lt;/li&gt;
+&lt;li&gt;1つのメソッド、関数にライフタイム注釈が大量に出てくるような書き方をした場合は設計がおかしいのでは?って考えたほうがいいのかも?&lt;/li&gt;
+&lt;li&gt;ジェネリックな型とライフタイム引数の順序を入れ替えてみても動くだろ?とおもって入れ替えてみたら怒られた。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;あとは、構造体+ジェネリックが絡んできたら少しこんがらがってきそうっという感じです。
+まぁ、これから先は実際に書いてみないことにはわからないんだろうなと。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;読みました。
+実際にはプログラムを書きながら慣れていく感じだろうなぁと。
+まだまだ、あれ?ジェネリックってどう書くんだっけ?とか、ライフタイム注釈どうやって付けて、使うときはどうすんだ?みたいになりながら、
+出てくるサンプルを少し変えてみてはどうやって動くんだろうこの場合?みたいなことをやってました。
+次は、11章、12章を少しだけ自習しつつ、13章に入る予定です(知り合いと一緒に読みすすめてる)。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -41,6 +324,37 @@
       
       <guid>https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第9章&#34;&gt;第9章&lt;/h2&gt;
+&lt;p&gt;エラー処理です。
+NLP100とか、いくつかのプログラムを書いていて、なんとなくは扱っていますが、きちんと勉強しないと。&lt;/p&gt;
+&lt;p&gt;とりあえず、「Rustには例外は存在しません。」が一番知っておくことかな。&lt;/p&gt;
+&lt;h3 id=&#34;panicで回復不能なエラー&#34;&gt;panic!で回復不能なエラー&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;panic!&lt;/code&gt;マクロでスタックを巻き戻して掃除をして終了。
+&lt;ul&gt;
+&lt;li&gt;異常終了(&lt;code&gt;panic = &#39;abort&#39;&lt;/code&gt;)にもできる。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;「&lt;code&gt;RUST_BACKTRACE&lt;/code&gt;を0以外の変数にセットして実行」
+*&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;resultで回復可能なエラー&#34;&gt;Resultで回復可能なエラー&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;expect()&lt;/code&gt;は気持ち悪い名前じゃないかなぁ?&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch09-02-recoverable-errors-with-result.html#a%E3%82%A8%E3%83%A9%E3%83%BC%E3%82%92%E5%A7%94%E8%AD%B2%E3%81%99%E3%82%8B&#34;&gt;ここ&lt;/a&gt;で&lt;code&gt;io::Error&lt;/code&gt;ではないものもエラーが発生する場合には&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;panicすべきかするまいか&#34;&gt;panic!すべきかするまいか&lt;/h3&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;「Rustには例外は存在しない」ので、回復不能か可能かを考えつつ処理を書こうと。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -50,6 +364,142 @@
       
       <guid>https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 第8章 7章はパ</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第8章&#34;&gt;第8章&lt;/h2&gt;
+&lt;p&gt;7章はパッケージなので後回しにして、8章に入ります。
+8章はコレクションです。&lt;/p&gt;
+&lt;h3 id=&#34;ベクタ型&#34;&gt;ベクタ型&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;ベクタは同じ型の値だけ保持可能。
+&lt;ul&gt;
+&lt;li&gt;ジェネリクスで型を指定可能 - &lt;code&gt;Vec&amp;lt;i32&amp;gt;&lt;/code&gt;とか。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;vec!&lt;/code&gt;マクロで初期値とか設定すると便利。&lt;/li&gt;
+&lt;li&gt;ベクタに値を追加するのは&lt;code&gt;push&lt;/code&gt;。もちろん値が変わるので元のベクタには&lt;code&gt;mut&lt;/code&gt;が必要&lt;/li&gt;
+&lt;li&gt;ベクタのスコープ(ライフサイクル)は要素に対する参照があるのとないので話が変わってくる
+&lt;ul&gt;
+&lt;li&gt;メモリの確保などの影響で、ベクタ全体に対して借用の規則が矯正されると。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;ベクタの値を読むのはいくつか方法あり
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;get&lt;/code&gt;メソッドはOptionを返す&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;amp;v[2]&lt;/code&gt;の添字記法の場合はパニックの可能性あり&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;走査(唐突に参照外しが出てきた)
+&lt;ul&gt;
+&lt;li&gt;単純に値を取り出す場合は&lt;code&gt;for - in &amp;amp;v&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Enumをベクタにいれることで、異なる型も保持可能(まぁ、Enumの型では固定されるけど)。
+&lt;ul&gt;
+&lt;li&gt;これだけのためにEnumを使うことってあるのかな?&lt;/li&gt;
+&lt;li&gt;トレイとオブジェクトに関する文章はちょっとわかりにくい。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;説明以外のメソッドなどについてはAPIドキュメント見ましょうと(リンクも張ってくれてると嬉しいなぁと思ったり。まぁ、バージョンとかの絡みがあるから難しいか)。&lt;/p&gt;
+&lt;h3 id=&#34;文字列型&#34;&gt;文字列型&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;文字列はUTF-8でエンコードされた文字を扱うための型。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;str&lt;/code&gt;は文字列データへの参照。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;String&lt;/code&gt;型は言語のコアではなく、標準ライブラリに入っている文字列型。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;他にもあるのか。。。&lt;code&gt;OsString&lt;/code&gt;とか。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;文字リテラルはDisplayトレイトを実装していると。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;.to_string()&lt;/code&gt; = &lt;code&gt;String::from&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Stringはコレクションだから追加とかが可能なのか、なるほど。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;push_str&lt;/code&gt;と&lt;code&gt;push&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch08-02-strings.html#a%E6%BC%94%E7%AE%97%E5%AD%90%E3%81%BE%E3%81%9F%E3%81%AFformat%E3%83%9E%E3%82%AF%E3%83%AD%E3%81%A7%E9%80%A3%E7%B5%90&#34;&gt;&lt;code&gt;+&lt;/code&gt;演算子での参照&lt;/a&gt;。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;&amp;amp;String&lt;/code&gt;は&lt;code&gt;&amp;amp;str&lt;/code&gt;に型強制(キャスト?)してくれる。してくれる場合としてくれない場合もあるのかな?&lt;code&gt;s2&lt;/code&gt;の所有権は奪わない形で扱うので&lt;code&gt;s2&lt;/code&gt;はこのあとも使えていると。&lt;/li&gt;
+&lt;li&gt;ここでは、&lt;code&gt;s1&lt;/code&gt;を変更したあとに所有権が&lt;code&gt;s3&lt;/code&gt;に持っていかれてる?&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;format!&lt;/code&gt;を使うとどの所有権も奪わないので、これを使うほうが考え方は簡単そう。ただし、効率がいいかはわからん。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;添字記法でのアクセスを&lt;code&gt;String&lt;/code&gt;は許容していない&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;文字の境界が必ずしも1バイトとは限らないから。&lt;/li&gt;
+&lt;li&gt;スライスも同様。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;基本的には&lt;code&gt;.chars()&lt;/code&gt;で文字としてアクセスするのが良い。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;逆にバイト表現を得る方法はどうするんだろう?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L155&#34;&gt;NLP100本ノックでは&lt;code&gt;encode_utf8&lt;/code&gt;メソッド使ったけど。&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;ハッシュマップ&#34;&gt;ハッシュマップ&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;いろんな呼び方あるよね。Rustではハッシュマップだよ。&lt;/li&gt;
+&lt;li&gt;ハッシュマップは&lt;code&gt;use&lt;/code&gt;しないと使えない&lt;/li&gt;
+&lt;li&gt;キーは1つの型、値も1つの型&lt;/li&gt;
+&lt;li&gt;タプルのベクタから&lt;code&gt;collect&lt;/code&gt;で生成。なるほど。
+&lt;ul&gt;
+&lt;li&gt;タプルのベクタだと、タプルの中身は同じものであることが言える?
+&lt;ul&gt;
+&lt;li&gt;-&amp;gt; 言える。エレメント数が異なるとコンパイルエラーになった&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch08-03-hash-maps.html#a%E3%83%8F%E3%83%83%E3%82%B7%E3%83%A5%E3%83%9E%E3%83%83%E3%83%97%E3%81%A8%E6%89%80%E6%9C%89%E6%A8%A9&#34;&gt;所有権周りの話。&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;これ、ベクタのときに話してほしい感じがした。&lt;/li&gt;
+&lt;li&gt;値を渡すか参照を渡すかによって話が変わってくる。詳しくは10章&lt;/li&gt;
+&lt;li&gt;このあたりが自分が混乱していた元だ。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;entry&lt;/code&gt;と&lt;code&gt;insert&lt;/code&gt;の違い
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;entry&lt;/code&gt;の戻り値は&lt;code&gt;Entry&lt;/code&gt;というenumで&lt;code&gt;or_insert&lt;/code&gt;というメソッドがありそれを使うと存在しない場合だけinsertが呼ばれる。
+&lt;ul&gt;
+&lt;li&gt;これ便利だ。毎回&lt;code&gt;exist&lt;/code&gt;あたりで存在チェックしてた気がする。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;or_insert&lt;/code&gt;は可変参照&lt;code&gt;&amp;amp;mut V&lt;/code&gt;を返す。
+&lt;ul&gt;
+&lt;li&gt;これを&lt;code&gt;let count&lt;/code&gt;で束縛するときに、中身が可変かどうかをcountには指定しないのか。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;一応、大学などで習ってた(はず)ですが、
+スタックとヒープを意識して考えないといけないなぁというのを何度か意識させられた感じです。&lt;/p&gt;
+&lt;p&gt;あと、これはRustに限らずですが、それぞれがどんな関数を持っているか、どんなメソッドを持っているか、どんなマクロが存在するかなどを探すときにみんなどうしてるんだろう?
+人に教えてもらっているのか、APIリファレンスを探すのか、そういったところをみんながどういう感じにプログラミング言語を勉強しているか、業務で書いているのかと言うのが気になりました。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -59,6 +509,67 @@
       
       <guid>https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 第6章 Enumです。matc</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第6章&#34;&gt;第6章&lt;/h2&gt;
+&lt;p&gt;Enumです。&lt;code&gt;match&lt;/code&gt;式に大活躍&lt;/p&gt;
+&lt;h3 id=&#34;enumを定義する&#34;&gt;Enumを定義する&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;列挙型は取りうる値をすべて&lt;em&gt;列挙&lt;/em&gt;できる。これが名前の由来&lt;/li&gt;
+&lt;li&gt;列挙型と列挙子
+&lt;ul&gt;
+&lt;li&gt;2連コロン(&lt;code&gt;::&lt;/code&gt;)で列挙子を指定可能&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;列挙子にデータ(構造体も)が格納可能。
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-lang.org/stable/std/net/enum.IpAddr.html&#34;&gt;標準ライブラリに実装例あり。&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;疑問:&lt;code&gt;Write(String)&lt;/code&gt;とかはタプルの表現になるのかな?
+&lt;ul&gt;
+&lt;li&gt;と思ったが、タプルでは1つだけの変数を持つものは定義(正確には定義できるが、内部で普通の変数にもどされてるっぽい)できなかった。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;メソッド定義も可能
+&lt;ul&gt;
+&lt;li&gt;関連関数もできる? -&amp;gt; できる&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;optionの紹介&#34;&gt;Optionの紹介&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Rustに&lt;code&gt;null&lt;/code&gt;はない。代わりにOptionがある&lt;/li&gt;
+&lt;li&gt;Noneを指定する場合に型が必要。Someの場合はすでに値が入るから推測可能なため。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;match制御フロー演算子&#34;&gt;match制御フロー演算子&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;アーム -&amp;gt; matchしたときの処理のこと
+&lt;ul&gt;
+&lt;li&gt;短い場合は波括弧は不要&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;returnなしでmatchが書いてあるだけだと、慣れない場合に値を返していることに気づかないかも(実際気づけてないかも)&lt;/li&gt;
+&lt;li&gt;Enumが値を持っているときに、値の束縛がmatch式で可能&lt;/li&gt;
+&lt;li&gt;すべての列挙子を網羅していないことをコンパイラが検知してくれるのはすごく助かる。
+&lt;ul&gt;
+&lt;li&gt;ただし、&lt;code&gt;_&lt;/code&gt;を利用していなければだけど&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;if-letで簡潔な制御フロー&#34;&gt;if letで簡潔な制御フロー&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;enumで1つのパターンのときに処理をしたい場合に使えるmatchの糖衣構文&lt;/li&gt;
+&lt;li&gt;elseもかけるよ。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;enumに慣れていないので、値や構造体を持つenumを利用するという想像ができないことがありそうだなぁと読みながら思いました。
+それになれると、色々とプログラムがシンプルに書ける部分が多くなりそうかな。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -68,6 +579,126 @@
       
       <guid>https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 第5章 構造体です。勝手知ったるなんとやら?</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第5章&#34;&gt;第5章&lt;/h2&gt;
+&lt;p&gt;構造体です。勝手知ったるなんとやら?オブジェクト指向的な部分は問題ないかなぁと。&lt;/p&gt;
+&lt;h3 id=&#34;定義とインスタンス化&#34;&gt;定義とインスタンス化&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;struct&lt;/code&gt;で定義&lt;/li&gt;
+&lt;li&gt;インスタンスの生成は引数は順不同でOK&lt;/li&gt;
+&lt;li&gt;構造体のインスタンスを可変にするとフィールドの値も変更可能
+&lt;ul&gt;
+&lt;li&gt;特定のフィールドのみ可変にすることは不可能&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;インスタンス化する関数の最後でreturnなしでインスタンスの返却を暗黙にできる(return書いてほしいな。。。)&lt;/li&gt;
+&lt;li&gt;インスタンス化時にフィールド初期化省略記法が可能(これはちょっと便利?)&lt;/li&gt;
+&lt;li&gt;構造体更新記法&lt;code&gt;..user1&lt;/code&gt;のように、明示的に設定されていない他のフィールドをコピーしてくれる機能あり&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;タプル構造体&#34;&gt;タプル構造体&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;タプル構造体!? &lt;code&gt;struct Color(i32, i32, i32);&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;いつ使うんだろう?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;ユニット様構造体&#34;&gt;ユニット様構造体&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;ユニット様構造体 = フィールドのない構造体。トレイトを実装したいけどインスタンスで持つ値はない場合に利用&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;ライフタイム&#34;&gt;ライフタイム&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;構造体が参照を持つときにライフタイムという話が出てくる。なるほど。
+&lt;ul&gt;
+&lt;li&gt;ライフタイム指定子が必要になる -&amp;gt; 10章での話&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;プログラム例&#34;&gt;プログラム例&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;タプルを引数かぁ。タプルは慣れないので構造体作りそう&lt;/li&gt;
+&lt;li&gt;Debugトレイトと&lt;code&gt;{:?}&lt;/code&gt;という書き方
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;derive(Debug)&lt;/code&gt;でデバッグ用のトレイトを自動で実装=継承してくれる&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;{:#?}&lt;/code&gt;だとpretty printになる(改行とか入る)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;この辺の便利なトレイとは&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/appendix-03-derivable-traits.html&#34;&gt;付録C&lt;/a&gt;にあるらしい。この辺はやりながら覚えるしかないか。&lt;/p&gt;
+&lt;h3 id=&#34;メソッド記法&#34;&gt;メソッド記法&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;最初の引数は必ず&lt;code&gt;self&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;impl&lt;/code&gt;は構造体とは別の場所に書く = Javaのクラスとは違う&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Rectangle&lt;/span&gt; {
+    width: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
+    height: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Rectangle {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;area&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt; {
+        self.width &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; self.height
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;参照じゃない&lt;code&gt;self&lt;/code&gt;も使えるらしい。どういうときに使うんだろう?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;関連関数&#34;&gt;関連関数&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;self&lt;/code&gt;なしの関数をimplにかける。Javaのスタティックメソッドみたいな感じ&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;その他&#34;&gt;その他&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;impl&lt;/code&gt;ブロックがあちこちにかける。これはつらいな。。。&lt;/li&gt;
+&lt;li&gt;2つにわかれた&lt;code&gt;impl&lt;/code&gt;ブロックに同じメソッドを書いてみたら、CLionのプラグインではエラーを検知してもらえなかった。
+&lt;ul&gt;
+&lt;li&gt;cargo buildではきちんとエラーが表示された。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;blockquote&gt;
+&lt;p&gt;複数のimplブロックが有用になるケースは第10章で見ますが、そこではジェネリック型と、トレイトについて議論します。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;人の構造体に自分のトレイトを適用したりもできる。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;実験&#34;&gt;実験&lt;/h4&gt;
+&lt;p&gt;スコープとかどうなりそう?って実験もしてみた。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Hoge {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
+    }
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Hoge &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; String {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) {
+            println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hogehoge {}&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
+        }
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge&amp;#34;&lt;/span&gt;);
+    c.trim();
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, fuga(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;c));
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;fuga&lt;/span&gt;(d: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;String) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt; {
+    d.trim()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力はこんな感じ&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;hogehoge hoge
+hoge
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;気になったのは以下の点。そのうち分かるようになってくるのかな。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;構造体更新記法はどういったときに使うのを想定して作ったんだろう?とか&lt;/li&gt;
+&lt;li&gt;可変長引数はマクロじゃないとだめ&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -77,6 +708,88 @@
       
       <guid>https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた 第4章 第4章です。たぶん、これがいちばん大事な概念だと思</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第4章&#34;&gt;第4章&lt;/h2&gt;
+&lt;p&gt;第4章です。たぶん、これがいちばん大事な概念だと思います、Rustの。
+そして、つまみ食いしながらRust書いてましたが、ここがきちんと理解できないまま書いてたってのもあります。。。&lt;/p&gt;
+&lt;h3 id=&#34;所有権とは&#34;&gt;所有権とは?&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;drop&lt;/code&gt;関数ってのがあって、明示的に呼ぶことも可能。次のような感じで。2つ目の&lt;code&gt;println!&lt;/code&gt;はエラーになる。sがもう無いのに借用しようとしてるから。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let mut s = String::from(&amp;quot;hello&amp;quot;);
+    s.push_str(&amp;quot;, world!&amp;quot;);
+    println!(&amp;quot;{}&amp;quot;, s);
+    drop(s);
+    println!(&amp;quot;{}&amp;quot;, s);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;ムーブ - shallow copyではない。以下の2行目がムーブ。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;let s1 = String::from(&amp;quot;hello&amp;quot;);
+let s2 = s1;
+
+println!(&amp;quot;{}, world!&amp;quot;, s1);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;スタックとヒープの話が絡んでくる。あんまり意識すること無いよなぁ。
+スタック = 固定長のデータを入れる場所。ポインタ、数値など
+ヒープ = 可変長のデータが入る場所。可変の文字列とか。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;クローン - ヒープのデータをコピーすること。&lt;/li&gt;
+&lt;li&gt;コピー - スタックに収まるデータの場合はクローンが必要なくコピーで事足りる。
+&lt;ul&gt;
+&lt;li&gt;CopyトレイととDropトレイとは同居できない。&lt;/li&gt;
+&lt;li&gt;タプルのコピーはややこしそう&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch04-01-what-is-ownership.html#a%E6%89%80%E6%9C%89%E6%A8%A9%E3%81%A8%E9%96%A2%E6%95%B0&#34;&gt;所有権と関数&lt;/a&gt;でまた、スタックに入れられるような変数と可変のオブジェクトの違いが出てくる。
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;takes_ownership(s: String)&lt;/code&gt;が参照を受け取れば問題なく、このあとも使える。&lt;/li&gt;
+&lt;li&gt;戻り値でもムーブが発生&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;参照と借用&#34;&gt;参照と借用&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;借用 - 関数の引数に参照を取ること&lt;/li&gt;
+&lt;li&gt;可変な参照&lt;code&gt;&amp;amp;mut&lt;/code&gt;は1つ(不変な参照も含めて1つ)しか許さない
+&lt;ul&gt;
+&lt;li&gt;データの競合を防ぐため。&lt;/li&gt;
+&lt;li&gt;不変な参照を複数用いるのはOK&lt;/li&gt;
+&lt;li&gt;実際に変更が実行されるタイミングでエラーと判定される場合もある。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;let mut s = String::from(&amp;quot;hello&amp;quot;);
+
+{
+    let r1 = &amp;amp;mut s;
+
+} // r1はここでスコープを抜けるので、問題なく新しい参照を作ることができる
+
+let r2 = &amp;amp;mut s;
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;ダングリング参照はテスト書くときとかにやってるかも。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;fn dangle() -&amp;gt; &amp;amp;String { // dangleはStringへの参照を返す
+
+    let s = String::from(&amp;quot;hello&amp;quot;); // sは新しいString
+
+    &amp;amp;s // String sへの参照を返す
+} // ここで、sはスコープを抜け、ドロップされる。そのメモリは消される。
+  // 危険だ
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;スライス型&#34;&gt;スライス型&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;部分的な参照。開始位置+長さで構成されているっぽい&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;amp;str&lt;/code&gt;の説明がよくわからなかった。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch04-03-slices.html#a%E5%BC%95%E6%95%B0%E3%81%A8%E3%81%97%E3%81%A6%E3%81%AE%E6%96%87%E5%AD%97%E5%88%97%E3%82%B9%E3%83%A9%E3%82%A4%E3%82%B9&#34;&gt;引数としての文字列スライス&lt;/a&gt;のテクニックは色々と使いまわせそう。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;所有権、これまで特に難しいと思ってたのは、固定長の変数と、可変長の変数の違いを意識してなかったのが原因っぽい。
+まぁ、Vecとかがどうなるのかとか、他にもいくつか気になるところはあるので、もうちょっとやらないといけないなと思いました。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -86,6 +799,104 @@
       
       <guid>https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/</guid>
       <description>自転車本を読み始めましたが、その前にRust the bookを読んだほうが良いかも?と知り合いと話をしていてなったので、先にRust the bookを読</description>
+      <content:encoded>&lt;p&gt;自転車本を読み始めましたが、その前にRust the bookを読んだほうが良いかも?と知り合いと話をしていてなったので、先にRust the bookを読み始めてます。
+コツコツ読むってのが苦手なので、知り合いと小規模オンライン読書会しながら読むことになりました(基本的になにか書きながら、使い方を調べるので、存在そのものを知らない記述や使用法などがあったりする)。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/&#34;&gt;日本語版Rust the book&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-lang.org/book/title-page.html&#34;&gt;Rust the book&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;基本は日本語版を読んでいます。まずは1章から3章あたり。&lt;/p&gt;
+&lt;p&gt;気になった点などを。自分用のメモなので、読みやすさとかは考えてないです(あとで自分が死ぬパターン?)。&lt;/p&gt;
+&lt;h2 id=&#34;1章&#34;&gt;1章&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;rustfmt便利。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;CLionのRustプラグインでは、保存時にrustfmtするというオプションがある。デフォルトはオフ。&amp;ldquo;Run rustfmt on Save&amp;rdquo;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;cargoの&lt;code&gt;--bin&lt;/code&gt;オプション。意識してつけたことなかった=デフォルトだった。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ライブラリにするときは&lt;code&gt;--lib&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;2章&#34;&gt;2章&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;「変数を値に束縛」という言い回しにまだ慣れない。
+&lt;ul&gt;
+&lt;li&gt;「代入」という言い方に慣れているから?&lt;/li&gt;
+&lt;li&gt;ただ、エラーにはassignってあるな。&amp;ldquo;error[E0384]: cannot assign twice to immutable variable &lt;code&gt;x&lt;/code&gt;&amp;rdquo;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;preludeというのがデフォルトで読み込まれる型が存在する場所。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.expect()&lt;/code&gt;により、Resultが評価済みになる&lt;/li&gt;
+&lt;li&gt;マクロがまだ慣れない&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;extern crate rand;&lt;/code&gt;が&lt;a href=&#34;https://doc.rust-lang.org/book/ch02-00-guessing-game-tutorial.html#generating-a-random-number&#34;&gt;最新版だと要らなくなっている&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;rand::Rng&lt;/code&gt;は&lt;code&gt;gen_range&lt;/code&gt;のためにuseしている。CLionだとかってにuseを推測して追加してくれた。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;match&lt;/code&gt;はswitch文みたいな感じ。けど、defaultが必ず実行されるって感じではないな。
+&lt;ul&gt;
+&lt;li&gt;ただし、全て網羅しないと怒られるのが便利。&lt;/li&gt;
+&lt;li&gt;アームという呼び方が新鮮&lt;/li&gt;
+&lt;li&gt;単一の式のときは{}が省略できる&lt;/li&gt;
+&lt;li&gt;ブロック{}のときは、終わりにカンマを入力するとrustfmtが除去する(最後の条件かどうかは関係ない)。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;シャドーイングは面白い。
+&lt;ul&gt;
+&lt;li&gt;よく、&lt;code&gt;hoge_str&lt;/code&gt;や&lt;code&gt;hoge_int&lt;/code&gt;のような変数を書くので、ありがたい。&lt;/li&gt;
+&lt;li&gt;ただし、コードを読むときに少し混乱しそう?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;let ... match&lt;/code&gt;で変数への束縛でmatchが使えるのは便利(これまで知らなかったので、変数宣言して条件つけて束縛する処理書いてた)。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;シャドーイング&#34;&gt;シャドーイング?&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let x = 5;
+
+    let x = x + 1;
+
+    let x = x * 2;
+
+    println!(&amp;quot;The value of x is: {}&amp;quot;, x);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;とか&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;let spaces = &amp;quot;   &amp;quot;;
+let spaces = spaces.len();
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;みたいに、同一変数名を使い回せること。再代入ではない&lt;/p&gt;
+&lt;h2 id=&#34;3章&#34;&gt;3章&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;constは型注釈が必須&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;100_000&lt;/code&gt;のような記述が便利(&lt;a href=&#34;https://docs.oracle.com/javase/jp/8/docs/technotes/guides/language/underscores-literals.html&#34;&gt;Javaもできるって言われてびっくりしたw&lt;/a&gt;)&lt;/li&gt;
+&lt;li&gt;タプルの中身を一部だけ書き換え可能。(mutを指定すれば)
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;tup.0 = 20;&lt;/code&gt;のような感じで。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;配列は固定長でかつ、同一の型のものだけが入る&lt;/li&gt;
+&lt;li&gt;文末にセミコロンがない場合に四季になるというのはちょっと射にくいので辛いのでは。。。
+&lt;ul&gt;
+&lt;li&gt;自分は明示的に&lt;code&gt;return&lt;/code&gt;を書きたくなる。が、returnだと動かない場合もある。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;let ... if&lt;/code&gt;のような記述もできる。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;(1..4)&lt;/code&gt;はRange型&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;おまけ&#34;&gt;おまけ&lt;/h3&gt;
+&lt;p&gt;フィボナッチ数列計算してみろというのがまとめにあったので。こんな感じでいいのかな?&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fn calc_fibonacci(n: usize) -&amp;gt; usize {
+    if n == 0 {
+        return 0;
+    } else if n==1 {
+        return 1;
+    } else {
+        return calc_fibonacci(n-1) + calc_fibonacci(n-2);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;その他&#34;&gt;その他&lt;/h2&gt;
+&lt;p&gt;知り合いと読みすすめると、人が不思議に思ったところが、自分が理解が曖昧だったことなどに気づけて便利です。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -95,6 +906,22 @@
       
       <guid>https://blog.johtani.info/blog/2020/03/02/finish-bicycle-book-chap3/</guid>
       <description>これまで 実践Rust入門はじめました 実践Rust入門の3章を読んでるところ 3章終了 3章の終わりまで読み終えた。 いきなり実践的なプログラムで少</description>
+      <content:encoded>&lt;p&gt;これまで&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/31/start-reading-bicycle-book&#34;&gt;実践Rust入門はじめました&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/02/23/bicycle-book-chap3&#34;&gt;実践Rust入門の3章を読んでるところ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;3章終了&#34;&gt;3章終了&lt;/h2&gt;
+&lt;p&gt;3章の終わりまで読み終えた。&lt;/p&gt;
+&lt;p&gt;いきなり実践的なプログラムで少し面食らっていたが、ステップを追って所有権周りの話まで来たので、
+なんとなくRustのいいところが理解できたような気がする。&lt;/p&gt;
+&lt;p&gt;ただ、最後の&lt;code&gt;split_at_mut&lt;/code&gt;が実際には内部でどういう形に変換することによって、コンパイルエラーにならずに、
+借用がうまく行っているのかあたりは、まだきちんと理解できていない。&lt;/p&gt;
+&lt;p&gt;これは、どの言語にも言えるんだけど、リファレンスをうまく読み解きながら、
+自分がやりたい処理ができるかどうかを考えるのって結構むずかしいなぁと思う。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;benchmark.rs&lt;/code&gt;はコピペして実行しただけなので、またあとで読み返してみるかな。&lt;/p&gt;
+&lt;p&gt;ということで、ここから先は、基本を勉強する感じで4章から読みつつ、なんかプログラムをまた書いてみるか。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -104,6 +931,49 @@
       
       <guid>https://blog.johtani.info/blog/2020/02/23/bicycle-book-chap3/</guid>
       <description>これまでのはこちら。読書メモなので、本と合わせて読んでいただくのが良いです。 実践Rust入門はじめました 3章のクイックツアーを読んでます。 バ</description>
+      <content:encoded>&lt;p&gt;これまでのはこちら。読書メモなので、本と合わせて読んでいただくのが良いです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/31/start-reading-bicycle-book&#34;&gt;実践Rust入門はじめました&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;3章のクイックツアーを読んでます。
+バイトニックソート自体の理解はちょっとおいておいて、読み進めています。
+いくつか疑問に思ったことがあったので、またメモを。
+まだ、3.5.7の手前ですが。&lt;/p&gt;
+&lt;h2 id=&#34;疑問点&#34;&gt;疑問点&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;3.4.1のジェネリクス対応のテストケースの部分で、既存のu32用のテストケースの入力のデータ列に&lt;code&gt;Vec&amp;lt;u32&amp;gt;&lt;/code&gt;という型注釈をつけるのですが、
+追加した文字列の入力データには注釈をここではつけないのはなんでなんだろう?&lt;em&gt;ちなみに、なくても動いた。バージョンの違いとかあるのかしら?&lt;/em&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;3.4.6のmatch文&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;match&lt;/code&gt;文の引数?が&lt;code&gt;*order&lt;/code&gt;になっていたが、&lt;code&gt;order&lt;/code&gt;でも実行できた。引数にくるのが参照だから&lt;code&gt;*&lt;/code&gt;が付いてるんだとも運だが、なくても動くのはコンパイラがよしなに解釈してくれてるからかな?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;便利なツール&#34;&gt;便利なツール&lt;/h2&gt;
+&lt;p&gt;Rust標準のツールの説明がいくつか3章で紹介されてて便利だったのでメモ。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;rustfmt&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;フォーマッター。デフォルトでフォーマット機能が付いてるの便利ですね。言語として決まってると、プロジェクトごとに悩まなくていいってのがありますし。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-zsh&#34; data-lang=&#34;zsh&#34;&gt;rustfmt ファイル名
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;という形で使えるみたい。
+プロジェクトごとだと&lt;code&gt;cargo fmt&lt;/code&gt;のほうが楽そうかな。&lt;/p&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;標準ライブラリAPIドキュメントをブラウザで閲覧&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;rustup doc --std
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これでデフォルトブラウザでRustの公式ドキュメントが開きます。
+しかもローカルファイルだからサクサク。検索バーもついてて便利です。&lt;/p&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;エラーのドキュメントを閲覧&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;rustc --explain 308
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;コンパイル時にエラーが出たときに、&lt;code&gt;error[E0308]&lt;/code&gt;のようにコンソールに出てきます。
+ヒントも出てくるのですが、詳細が上記のコマンドで読めるみたいです。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -113,6 +983,55 @@
       
       <guid>https://blog.johtani.info/blog/2020/01/31/start-reading-bicycle-book/</guid>
       <description>実践Rust入門という本を買っていた(去年の7月だ。。。)のですが、積んであったので、時間を作って読み始めようかと。 実践Rust入門[言語仕</description>
+      <content:encoded>&lt;p&gt;実践Rust入門という本を買っていた(去年の7月だ。。。)のですが、積んであったので、時間を作って読み始めようかと。&lt;/p&gt;
+
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4297105594/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=4297105594&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4297105594/?tag=johtani-22&#34;&gt;
+      実践Rust入門[言語仕様から開発手法まで] | κeen, 河野 達也, 小松 礼人 |本 | 通販 | Amazon
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;h2 id=&#34;経緯&#34;&gt;経緯&lt;/h2&gt;
+&lt;p&gt;もともとは、&lt;a href=&#34;https://blog.johtani.info/blog/2018/02/14/start-nlp100-with-rust/#undefined&#34;&gt;言語処理100本ノックはじめました(Rust)&lt;/a&gt;という感じで、触っていたのですが、場当たり的にやってても時間を持っていかれるだけだなということに気づいたのが最初です。&lt;/p&gt;
+&lt;p&gt;今年の目標は、覚えられなので、ちょっとずつでもアウトプットしていこうってのもあり、
+読書記録をつけつつ、読んでいこうかなぁと。&lt;/p&gt;
+&lt;h2 id=&#34;どこまで読んだ&#34;&gt;どこまで読んだ?&lt;/h2&gt;
+&lt;p&gt;2章の&lt;code&gt;2-2-5&lt;/code&gt;までです。
+前回、Rustの環境はセットアップしていたのですが、新PCに切り替わったので、&lt;code&gt;rustup&lt;/code&gt;からはじめました。&lt;/p&gt;
+&lt;h3 id=&#34;rustup&#34;&gt;rustup&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;rustup&lt;/code&gt;ではデフォルト設定のままではなく、&lt;code&gt;PATH&lt;/code&gt;変数の書き換えだけはしない形でインストールを行いました。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;PATH&lt;/code&gt;変数は&lt;code&gt;.zshrc&lt;/code&gt;ファイルで変更したかったためです(&lt;code&gt;rustup&lt;/code&gt;コマンドに変更して貰う場合は&lt;code&gt;.profile&lt;/code&gt;などのファイルが変更されそうだったため)。&lt;/p&gt;
+&lt;p&gt;インストールが終わったあとに&lt;code&gt;.zshrc&lt;/code&gt;に以下の行を追加しました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;### For Rust env
+source $HOME/.cargo/env
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;疑問点&#34;&gt;疑問点&lt;/h2&gt;
+&lt;p&gt;ここまで読んだ疑問点です。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;cargo new hello&lt;/code&gt;したあとに&lt;code&gt;main.rs&lt;/code&gt;に以下の&lt;code&gt;main()&lt;/code&gt;関数が出来上がっている!?&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    println!(&amp;quot;Hello, world!&amp;quot;);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;驚きましたが、&lt;code&gt;cargo new hoge&lt;/code&gt;ってやっても、おなじ&lt;code&gt;main.rs&lt;/code&gt;ができてました。デフォルトで出来上がるんですね。どんな超能力!?と思ってしまいましたw&lt;/p&gt;
+&lt;ol start=&#34;2&#34;&gt;
+&lt;li&gt;&lt;code&gt;cargo new hello&lt;/code&gt;して出来上がった&lt;code&gt;Cargo.toml&lt;/code&gt;に著者名が入力されていた。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;authors = [&amp;quot;Jun Ohtani &amp;lt;メアド&amp;gt;&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;なんで?と思いました。まだ解明してないです。
+本を読んでいけばわかるかな?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;予想:gitの設定(&lt;code&gt;~/.gitconfig&lt;/code&gt;)に氏名とメアドが設定されているので、これを利用しているのかな?&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -122,6 +1041,90 @@
       
       <guid>https://blog.johtani.info/blog/2013/05/03/%E3%83%9D%E3%83%A2%E3%83%89%E3%83%BC%E3%83%AD%E5%9B%9E%E3%81%97%E3%81%A6%E3%81%BE%E3%81%99%E3%83%9D%E3%83%A2%E3%83%89%E3%83%BC%E3%83%AD%E3%83%86%E3%82%AF%E3%83%8B%E3%83%83%E3%82%AF%E5%85%A5%E9%96%80%E8%AA%AD%E3%81%BF%E3%81%BE%E3%81%97%E3%81%9F/</guid>
       <description>アジャイルな時間管理術 ポモドーロテクニック入門 ポモドーロテクニック入門という本を読みました。 きっかけは、Twitter上で何度か「ポモドーロ</description>
+      <content:encoded>&lt;p&gt;
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4048689525/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=4048689525&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4048689525/?tag=johtani-22&#34;&gt;
+      アジャイルな時間管理術 ポモドーロテクニック入門
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+ポモドーロテクニック入門という本を読みました。
+きっかけは、Twitter上で何度か「ポモドーロ」という単語を何度か見ていたためです。
+最初は、なんだろう？というのが発端です。
+「ポモドーロ＝トマト」なのですが、実際にはトマト型のキッチンタイマーが元になっているらしいです。
+このタイマーを使った時間（タスク）管理術がポモドーロ・テクニックです。&lt;/p&gt;
+&lt;p&gt;私は、ここ数年、複数の仕事がパラで走ることが時々ありました。
+このような場合に、日によって異なる複数のタスクが存在します。
+このとき、異なるタスクにスイッチするのに結構な時間を取られます。。。
+また、急な割り込みが入った時も同様に、以前のタスクに戻るのになにしてたっけ？となることが多々あります。
+普通に自己管理ができている方なら問題ないのでしょうが、私は結構ニガテでした。
+そのようなときに、Twitter上で「ポモドーロ」という単語を見かけて、軽くググってみたところ、
+タスク管理、時間管理によさそうな本だったので、その点を矯正するのも兼ねて、読んだ次第です。
+また、タスクに集中できるという利点もあるそうです。&lt;/p&gt;
+&lt;p&gt;本については、少し読みにくいところがありました。
+ポモドーロテクニックとはどんなものかという全体像や単語に関する説明がないままに、話が進んでいくので。。。
+1度読み終わったあとに実践しながらパラパラめくっているような状況です。
+実際には、個々人のやり方などを考慮しながら、改善していくべきなのもあり、型を説明してないのかもしれないですが、もうすこし概観がわかる感じのほうが良かったです。&lt;/p&gt;
+&lt;p&gt;で、4月初旬くらいから実践してみています。
+効果が実際にあるかというと、まだわからないです。&lt;/p&gt;
+&lt;p&gt;私がポモドーロテクニックに利用しているのはキッチンタイマーではなく、&lt;a href=&#34;http://code.google.com/p/pomodairo/&#34;&gt;pomodairo&lt;/a&gt;というAdobeAIR上で動くアプリになります。
+ほかにも&lt;a href=&#34;http://www.pomodoroapp.com&#34;&gt;PomodoroApp&lt;/a&gt;というのもあるのですが、Free版だと登録できるタスクの上限があったので、pomodairoを選びました。（今見たら、3.0にバージョンが上がって、Limitがなくなってるかも）
+AIRだと、WinでもMacでも動作するのというも決定した要因です。&lt;/p&gt;
+&lt;p&gt;まだ、1ヶ月経ってませんが、私が実践してきて良かった点、できてない点、うまくいってない点はつぎのような感じです。&lt;/p&gt;
+&lt;h3 id=&#34;良かった点&#34;&gt;良かった点&lt;/h3&gt;
+&lt;hr&gt;
+&lt;ul&gt;
+&lt;li&gt;目の前のタスクに集中できる。（25分スパンなので、Twitterを意識的に見なくできる。。。）&lt;/li&gt;
+&lt;li&gt;適度な休憩が挟める。25分に5分の休憩が入るので、適度な没頭になる（没頭し過ぎない）&lt;/li&gt;
+&lt;li&gt;自宅で作業するときにかなり有効。（5分の休憩時にTwitterやFB以外に漫画をパラパラ読んだりもできるので）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ということで、自宅で作業するときには結構いいです。
+自宅ですと、pomodairoを使っていてタイマーの音を気兼ねなく出せるので、きちんとポモドーロが回せます。&lt;/p&gt;
+&lt;h3 id=&#34;できてない点&#34;&gt;できてない点&lt;/h3&gt;
+&lt;hr&gt;
+&lt;ul&gt;
+&lt;li&gt;アクティビティ在庫管理。個人的にJIRAを使っていて、そこで管理しようと思っているのですが、うまくできてないです。pomodairoのアプリにもタスクを登録しているのもあり2重登録などを手間に思ってしまって。。。&lt;/li&gt;
+&lt;li&gt;レコーディングと今日のTodo作成。&lt;/li&gt;
+&lt;li&gt;インタラプトの記録&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;アクティビティ在庫管理ができてないのは、レコーディングがきちんと出来てないためでしょう。。。
+二重管理になっている＋pomodairoで統計情報が出るが、当日分の統計情報がレコーディングできてないというのが痛いです。
+また、このレコーディングが出来てないので、効果が出ているかがわからないという問題かと。。。
+きりが悪かったりして、どうしても、仕事時間ギリギリまでタスクをこなしてしまい、レコーディング＋アクティビティ在庫の管理の時間が取れていません。
+ここは意識してちゃんとやらないと意味がないよなぁと。今後の大きな課題です。&lt;/p&gt;
+&lt;h3 id=&#34;うまくいってない点&#34;&gt;うまくいってない点&lt;/h3&gt;
+&lt;hr&gt;
+&lt;p&gt;できてない（やろうとしてできてない）点とは別に、どうもしっくり来ていないのがつぎのような点です。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;プログラミングしていると、25分のタイマーで区切りがすごく悪い時がおおい&lt;/li&gt;
+&lt;li&gt;自宅以外でのタイマー音が出せない&lt;/li&gt;
+&lt;li&gt;自宅以外での休憩の取り方&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;プログラミングをやっていて、乗ってきたタイミングでタイマーが鳴ってしまったり、
+ちょっと頭のなかで整理していたあとの今まさに、頭のなかにある処理の流れをコードに落としている途中でタイマーがなってしまったり。
+このような状況だと、休憩に入れなくて、ずるずるとコーディングを続けてしまうということが多々あります。
+メモ（ソース上のコメントや手元）を残して休憩すればいいのでしょうが、どうしても今までの癖もありズルズルとやってしまい、すごく時間が経ってることが何度もあります。
+ポモドーロテクニック的にはやはりNGなんでしょうが、なかなか治らない＋治したくない気もしています。
+また、自宅以外の場合、基本的には自社ではなく客先に出ていることが多いのでどうしても音を出すことができません。
+これもまた、切り替えができない要因になっています。
+タイマーだけ携帯のアプリを使用しするという手もあるのでしょうが、この場合さらにレコーディングが出来ない状況に陥りそうで。。。
+また、スマホだと電池が持たないのも問題点です。（Twitterを見るのに利用してるから電池が持たないという話もあるのですが。。。）
+レコーディングに関しては、手描きのメモを使うのがいいのかなぁと。本では＋や◎などの印を付けるだけにしておけば良いとありますが、アプリのタイマーだと自動でそれができるので、悩みどころです。
+最後の休憩の取り方も、ネットやTwitterを見るのもありなのですが、画面から離れる休憩を取りたいなぁと思うところもあり。。。
+職場だと技術書やWEB+DBのような雑誌はあるのですが、休憩にはあまり向いていないなぁと。&lt;/p&gt;
+&lt;p&gt;つらつらと書いて来ましたが、本を読んで、1ヶ月実践してきた（できてないとこも多いが）現状をメモしておきます。
+こうやってるよ、こうしたら良かったよ、こうしてみれば？などありましたら、コメントいただけると助かります。&lt;/p&gt;
+&lt;p&gt;来週以降はとりあえず、JIRAできちんとアクティビティ在庫管理をしながら、1日の結果をレコーディングしていくのを意識していこうと思います。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -131,6 +1134,48 @@
       
       <guid>https://blog.johtani.info/blog/2013/01/09/%E3%82%B3%E3%83%BC%E3%83%89%E3%82%B7%E3%83%B3%E3%83%97%E3%83%AA%E3%82%B7%E3%83%86%E3%82%A3%E3%82%92%E8%AA%AD%E3%81%BF%E3%81%BE%E3%81%97%E3%81%9Fkindle-paperwhite%E3%81%AE%E4%BD%BF%E3%81%84%E5%8B%9D%E6%89%8B%E3%81%AE%E7%A2%BA%E8%AA%8D%E3%82%82%E5%85%BC%E3%81%AD%E3%81%A6/</guid>
       <description>年末から年始にかけて、「コード・シンプリシティ」を読みました。 先日の記事にも書きましたが、Kindle paperwhiteを思いかけず入手で</description>
+      <content:encoded>&lt;p&gt;年末から年始にかけて、「&lt;a href=&#34;http://booklog.jp/item/11/9784873115757&#34;&gt;コード・シンプリシティ&lt;/a&gt;」を読みました。&lt;/p&gt;
+&lt;p&gt;先日の記事にも書きましたが、Kindle paperwhiteを思いかけず入手できたので、eBookを読みたいなぁと思いまして。
+Kindleのお試しも兼ねて読んでみました。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;まずは、本の感想。&lt;/strong&gt;
+短めの書籍＋読み物なので、サクっと読めました。
+題名に「コード」と書かれていますが、コードの実例が出てくる書籍ではありません。
+「ソフトウェア」を以下にシンプルに保って、管理しやすくするか、機能追加、テストをやりやすくするかといった指針について書かれています。
+機能追加に関して検討しないといけないバランス（先読みしすぎずと実装しすぎないとか）の話や定期的なデザインの見直しなどについても書かれています。
+ソフトウェアに関しては動くこともだが、デザインが重要であること。（確かに。）
+すでにあるソフトウェアについて、どのように簡潔にしていくかという話もありました。
+ただ、読んでいて一番重要だと思ったのは、「悪いプログラマーと良いプログラマーの違いは理解力だ」という一文です。
+何をしているかを「理解」していないと、根本的な問題点の解決もできないですし、どうすればコードが簡潔になるかといったこともわからないです。
+また、やっている作業がどんなもので、何のためにやっているのか、それを行うことで今後にどのような影響があるのかといったことも理解しておく必要があるかと。
+ま、ある程度考えながら作業とかしましょうってことですかね。（強引なまとめかも。。。）&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;で本題です。&lt;/strong&gt;
+Kindle paperwhiteとiPadの使い分けを検討するのも兼ねて本を読んでました。
+iPadを持っているのもあり、Kindleはそもそも眼中になかったのですが、めっけ物でした。
+やはり実際に使ってみないとわからないことありますねぇと。
+paperwihteはつぎのような利点があるかと。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;読書に没頭できる。→本を読むというシンプルな目的を達成するものだけが実装されている&lt;/li&gt;
+&lt;li&gt;目が疲れない→Twitterでも話に上がったのですが、液晶とは異なり字が読みやすいです&lt;/li&gt;
+&lt;li&gt;軽いし小さい→電車で立っていても楽に持てるし、カバンからの出し入れも楽です（iPadに比べて）&lt;/li&gt;
+&lt;li&gt;複数の端末のKindleアプリで同期できる。→あまり異なる端末では読まないですが、paperwhiteで読んだところが、iPadでも同期されるのですんなり続きが読めます&lt;/li&gt;
+&lt;li&gt;電池長持ち&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ということで、本を読むのに没頭できるし目が疲れないと。
+ただ、つぎの点では不満もあります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PDFは読みにくい。→画面のサイズが小さいので大きめの書籍のPDF版は読みにくいです。&lt;/li&gt;
+&lt;li&gt;PDFは読みにくい。→文字のサイズを変更できないのもキツイです。Kindle専用のmobi形式の書籍が読みやすいです&lt;/li&gt;
+&lt;li&gt;ページめくりに一定時間がかかる→紙の書籍やiPadで書籍を読むのとは異なり、ページをめくるのに時間がかかります。e-inkの再描画の問題かと。パラパラと書籍を読みたい場合は厳しいです&lt;/li&gt;
+&lt;li&gt;白黒。カラーの電子書籍は読めないですねぇ&lt;/li&gt;
+&lt;li&gt;ソースコードなどもキツイ→長めのコードが書いてある本だとコードが頭に入ってこないです。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;という感想でした。
+今後は基本Kindle paperwhiteを持ち歩きmobi形式の本を読むようにすると思います。
+iPadは自炊本やカラーの本を読むとき、映像、ネットを見るような場合に持ち歩くことになりそうです。
+私は基本的にMBAを持ち歩いているというのもあるので、paperwhiteのほうが主流になりそうです。
+ネットを見るときなどは最悪、MBAを開くでしょうし。
+小説とかをメインに読むのであれば断然、paperwhiteだと思います（最近読んでないなぁ）&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -140,6 +1185,38 @@
       
       <guid>https://blog.johtani.info/blog/2012/04/30/id%E3%81%AE%E7%A7%98%E5%AF%86%E3%82%92%E8%AA%AD%E3%81%BF%E3%81%BE%E3%81%97%E3%81%9F/</guid>
       <description>IDの秘密 (丸善ライブラリー―情報研シリーズ) 非常に面白く読めました。 バーコードの話に始まり、最後はシステムで付与するIDに関する考慮点まで</description>
+      <content:encoded>&lt;p&gt;
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4621053809/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=4621053809&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4621053809/?tag=johtani-22&#34;&gt;
+      IDの秘密 (丸善ライブラリー―情報研シリーズ)
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+非常に面白く読めました。
+バーコードの話に始まり、最後はシステムで付与するIDに関する考慮点まで幅広くIDについて語られています。&lt;/p&gt;
+&lt;p&gt;適度に配置されたコラムがまた面白く、ここまで書いてもいいのかな？と思いながらも楽しく読ませて頂きました。
+2次元バーコードが汚れに強いのも知らなかったし、チロルチョコの話は知らなかったし、指コレクションとか面白すぎです。
+また、JRのSuicaの導入に7年もかけている点などは、やはりすごい技術なのだなぁというため息混じりの感想です。
+それほど長い期間のテストや設計は想像がつかないです。&lt;/p&gt;
+&lt;p&gt;最後の2章（７，８章）については、エンジニアの以外のシステムに関わる方やエンジニアになられたばかりの方たちにぜひ読んで欲しいと思いました。
+もちろん、エンジニアの方にも読んでほしい内容です。&lt;/p&gt;
+&lt;p&gt;いくつか疑問点や気になる点もあったので。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;「静脈や指紋が人によって異なるって確率はどうやって決めたんだろう？」&lt;/li&gt;
+&lt;li&gt;Twitterの説明文のあとにFBの画面の図番号が書いてある。&lt;/li&gt;
+&lt;li&gt;日本語がデコードされたけど、QRコードの文字コードって、この中に含まれてるのかな？それとも規格で決まってるのかな？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;最後に、&lt;a href=&#34;http://yfrog.com/nuepmlrj&#34;&gt;書影がNIIに合ったので撮影しました。写真へのリンク&lt;/a&gt;です。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -149,6 +1226,56 @@
       
       <guid>https://blog.johtani.info/blog/2012/03/20/%E8%87%AA%E5%88%86%E3%81%AE%E5%B0%8F%E3%81%95%E3%81%AA%E7%AE%B1%E3%81%8B%E3%82%89%E8%84%B1%E5%87%BA%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95%E3%82%92%E8%AA%AD%E3%81%BF%E3%81%BE%E3%81%97%E3%81%9F/</guid>
       <description>TLで面白いと見かけて、Amazonで買ってしまいました。 SEやってるのに、つい最近Amazonを使い始めた軟弱者です。 それにしてもAmaz</description>
+      <content:encoded>&lt;p&gt;TLで面白いと見かけて、Amazonで買ってしまいました。
+SEやってるのに、つい最近Amazonを使い始めた軟弱者です。
+それにしてもAmazon危険です。スマートフォンにAmazonの
+Androidアプリを入れたのですが、これがまた、レコメンドに面白そうな本が出てきて危険です。&lt;/p&gt;
+&lt;p&gt;話がそれてしまいましたが、面白い本でした。
+久々に、小説でも技術書でもない本を短期間で読みました。
+「箱」と呼ばれる概念の中と外について、とある会社に転職した管理職の人が学んでいくという物語風の作りです。
+いくつか、自分の経験にカブるシーンがあったので、サクサク読めました。
+今までの自分になかった考えである「箱」という視点が得られたのがよかったです。&lt;/p&gt;
+&lt;p&gt;ただ、いくつか気になる点もあるので、また少し時間を開けてからサラっと流し読みしたいと思います。&lt;/p&gt;
+&lt;p&gt;あと、すこしだけ、キリスト教チックな考え方でもあるかなぁと思う部分もありました。（キリスト教をちゃんと勉強してるわけではないので認識が間違ってるかもしれないです）&lt;/p&gt;
+&lt;p&gt;人によっては共感出来なかったり、読みにくかったりすると思いますが、私は面白いと思った本でした。
+なんとなく、人間関係に違和感を感じていることがある場合は目を通してみるといいかもしれません。&lt;/p&gt;
+&lt;p&gt;Twitterで読み終えたというツイートをしたら、&lt;a href=&#34;http://twitter.com/#!/ledsun/status/182100538727473152?PHPSESSID=43e66de98af6cc0a11e1a6953d2619a2&#34;&gt;「自分を変える気づきの瞑想法」を読むとまた面白いですという＠ツイート（これがmentionの日本語の正式名称らしい？）&lt;/a&gt;を&lt;a href=&#34;http://twitter.com/ledsun&#34;&gt;@ledsun&lt;/a&gt;いただきました。
+箱に入る原理が別の視点で書かれているようです。
+読んでみたいです。（本会過ぎてる気がするので、図書館で探そうかなぁ。。。）&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/490450786X/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=490450786X&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/490450786X/?tag=johtani-22&#34;&gt;
+      自分を変える気づきの瞑想法【増補改訂版】
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/490450786X/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=490450786X&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/490450786X/?tag=johtani-22&#34;&gt;
+      自分を変える気づきの瞑想法【増補改訂版】
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -158,6 +1285,45 @@
       
       <guid>https://blog.johtani.info/blog/2012/03/03/clean-coder%E3%82%92%E8%AA%AD%E3%82%93%E3%81%A0/</guid>
       <description>Clean Coder プロフェッショナルプログラマへの道 Clean Coderを読みました。 理由はTwitterで「Clean Code」がいい本だと流れてきたためです。</description>
+      <content:encoded>&lt;p&gt;
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4048860690/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=4048860690&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4048860690/?tag=johtani-22&#34;&gt;
+      Clean Coder プロフェッショナルプログラマへの道
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+Clean Coderを読みました。
+理由はTwitterで「Clean Code」がいい本だと流れてきたためです。
+「Clean Code」はまだ読んでいないのですが、クリーンなコード（メンテナンスしやすく、修正などもやりやすいコード？）を書くために必要な話が書いてあるのだと思います。（まだ妄想）&lt;/p&gt;
+&lt;p&gt;そして、何も考えずに、「Clean Code”r”」という本が新しく出ていたので、新しい方に手を出しました。
+まぁ、軽い勘違いですｗ（コードの構造の話などは出てこなかったです。）
+それほど分厚くなく、軽く読めそうだということで読み進めると軽い衝撃を受けました。
+Clean Coderはプロのプログラマとして、どのような意識を持つべきか、立ち居振る舞いをするべきかなどが書かれています。
+「～したい」はまず守らない約束だという話、ユニットテストを書くことはプロとして当たり前の行為だ、目的意識を明確に持つことなどなど、耳の痛いことが色々と書かれています。
+これは、著者の方（パンチカードのころからコーディングをされている！）の実体験を元に、失敗した経験から導きだされているようです。
+ところどころ、古くてよくわからない話やちょっとだけしっくりこない表現（ビジネス、QAといった単語）もありましたが、概ねわかりやすい話でした。&lt;/p&gt;
+&lt;p&gt;基本的にはアジャイルなスタイルの開発を行うプログラマ（設計書に基づいてコーディングするだけの人ではない）について書かれています。
+この本を読んでいて、昨年、仕事をご一緒させていただいたRubyistの方たちの開発スタイルを思い出しました。
+私よりもこの本に書かれているプロに近いなぁと。
+ペアプロやったり、実装方法について相談していたりと。&lt;/p&gt;
+&lt;p&gt;勘違いでしたが、良い本に出会えて本当によかったです。
+私もこの本に書かれているようなチームでのプログラミングをやりたい、またなにかコーディングをしたいという気にさせてくれました。（「～したい」じゃダメって書いてあったのに。。。）
+自分を戒めるためにも、定期的に読み返したい本です。
+プログラマでいたい方、ある程度プログラミングができるようになってきた方にはぜひ読んでいただきたい本です。
+（この流れで、アジャイルサムライやClean Codeを読んだら理解が深まりそうだなぁ）&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;参考URL：
+&lt;a href=&#34;http://d.hatena.ne.jp/ledsun/touch/20120128/1327759675&#34;&gt;35歳定年説をブチ破れ！「Clean Coder プロフェッショナルプログラマへの道 Robert C. Martin」 - ledsunの日記 &lt;/a&gt;&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -167,6 +1333,44 @@
       
       <guid>https://blog.johtani.info/blog/2012/02/26/%E8%A6%AA%E5%AD%90%E3%81%A7%E6%A5%BD%E3%81%97%E3%82%81%E3%82%8B-%E7%B5%B5%E6%9C%AC%E3%81%A7%E8%8B%B1%E8%AA%9E%E3%82%92%E3%81%AF%E3%81%98%E3%82%81%E3%82%8B%E6%9C%AC/</guid>
       <description>親子で楽しめる 絵本で英語をはじめる本 Twitterでこの本について書かれたブログ記事が流れてきて、購入しました。 最近、英語を身につけておいた</description>
+      <content:encoded>&lt;p&gt;
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/479931131X/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=479931131X&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/479931131X/?tag=johtani-22&#34;&gt;
+      親子で楽しめる 絵本で英語をはじめる本
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+Twitterでこの本について書かれたブログ記事が流れてきて、購入しました。&lt;/p&gt;
+&lt;p&gt;最近、英語を身につけておいたほうがいいなと思うことが多々あり、子供にも英語を勉強してもらいたいなと思っていたところでした。
+あとは、私自身が英語が苦手というのもあり、子供をダシにして勉強したいというのもありまして。。。
+サラっと読んでみましたが、参考になりました。
+特に「多読」というキーワードが面白かったです。&lt;a href=&#34;http://www.seg.co.jp/sss/&#34;&gt;こちら&lt;/a&gt;が元のようですが。
+多読とは、文章を分析しないで大意を把握する読書法だそうです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;辞書を引かずに楽しめるものを読む&lt;/li&gt;
+&lt;li&gt;わかるところをつなげて読む&lt;/li&gt;
+&lt;li&gt;自分が面白いと思う本を選んで読む&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;という原則があるようで、確かにいいなと思いました。
+絵本だと絵が書かれているので、辞書を引かなくても想像できそうですし、楽しめそうだなぁと。
+また、多読は&lt;a href=&#34;http://johtani.jugem.jp/?eid=46&#34;&gt;先日読んだ、速読の本に書かれていた本の読み方&lt;/a&gt;にも通じるものがあるなと。（まだ、実践できてないんですけどね）&lt;/p&gt;
+&lt;p&gt;どうしても英語を勉強させたい！、勉強しないと！と思ってしまいがちですが、この本にも書いてあるように楽に楽しんでやったほうがやっぱいいなぁと。
+楽しくないと続かないですからねぇ（実際、何度も挫折してるし、押し付けられるとヤル気がなくなるので。。。）&lt;/p&gt;
+&lt;p&gt;ということで、実践してみようと思います。（平日は子供が寝てしまってから帰宅なので、まずは土日から）子供のためというよりは、自分の英語の勉強のために。
+まずは、簡単な絵本を購入して。
+この本の後半半分は、著者の方の感想や説明がついた、オススメの絵本50冊が書かれています。
+英語の絵本を入手するのは、結構大変（実際に売ってる店もなかなかないし、手にとって見る機会も少ない）だと思うのですごく参考になりそうです。
+いくつかピックアップして、あわよくば本屋で手にとってみようかと。なければ、Amazonで購入しようかなぁと思ってる所です。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -176,6 +1380,39 @@
       
       <guid>https://blog.johtani.info/blog/2011/11/29/%E3%81%A9%E3%82%93%E3%81%AA%E6%9C%AC%E3%81%A7%E3%82%82%E5%A4%A7%E9%87%8F%E3%81%AB%E8%AA%AD%E3%82%81%E3%82%8B%E9%80%9F%E8%AA%AD%E3%81%AE%E6%9C%AC%E3%82%92%E8%AA%AD%E3%81%BF%E3%81%BE%E3%81%97%E3%81%9F/</guid>
       <description>どんな本でも大量に読める「速読」の本 Twitterで知り合った方がこの本について書かれていたブログ記事を読んで興味を持ち、読みました。 書籍（</description>
+      <content:encoded>&lt;p&gt;
+
+&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
+  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
+    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4479793313/?tag=johtani-22&#34;&gt;
+      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=4479793313&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
+    &lt;/a&gt;
+  &lt;/div&gt;
+  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
+    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
+      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/4479793313/?tag=johtani-22&#34;&gt;
+      どんな本でも大量に読める「速読」の本
+      &lt;/a&gt;
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+Twitterで知り合った方がこの本について書かれていた&lt;a href=&#34;http://www.metisous.com/2011/10/post-62&#34;&gt;ブログ記事&lt;/a&gt;を読んで興味を持ち、読みました。
+書籍（特に技術書）が山になっていたこともあり、速読に興味を持っていたところちょうど記事を目にしたのは
+きっと何かのタイミングなんだろうなと。&lt;/p&gt;
+&lt;p&gt;悪い癖で、電車で読もうと本を常に持ち歩くのですが、ついついスマートフォンやゲームで遊んでしまい、今回も読むのに時間がかかってしまいました。
+３章の途中までを今月頭に読んでいたのですが、そこから少しほったらかしで、読み終わったのが昨日でした。&lt;/p&gt;
+&lt;p&gt;本の内容ですが、先ほどのブログにも書かれていますが、速読は技術ではない。
+&lt;span style=&#34;color:#FF0000&#34;&gt;### 速読　＝　速読技術　X　ストック（知識、経験、情報）&lt;/span&gt;
+であると。あとは、わからなくてもいいから、ざっと目を通す感じで繰り返し読みなさいと。
+さらに、１回でわからんくてもいいから、とにかく繰り返し読むことが重要だということでした。&lt;/p&gt;
+&lt;p&gt;確かに「速読＝１回で速く読む」、「読書＝１回で理解する」という意識がどこかにあったなぁと気付かされました。
+プログラム組んだり、あることを覚えるときは繰り返しを意識してたのに、読書は１回読んで「はい、おしまい。」という気になってました。（マンガは繰り返し読むんですけどねぇ）&lt;/p&gt;
+&lt;p&gt;他の速読の本は胡散臭いし、絶対無理だよなぁと思ってたのですが、この本に書かれている話は筋が通っているように感じました。
+ただ、考えずにサラサラ読みなさいという部分の実践はなかなか難しいかな。どうしても頭の中で音読してしまうので。
+私は間を開けてしまったせいで、時間がかかってしまいましたが普通なら１日あれば読める内容なので速読に関してちょっとと思ってる方は読んでみると面白いかと思います。&lt;/p&gt;
+&lt;p&gt;ちょっとだけショックだったのは、この本の論理だと電子書籍は速読に向いていないというところです。
+せっかく溜まった書籍をPDF化して、タブレット購入して（まだ買ってない。。。）読もうと思っていたところなのに。。。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -185,6 +1422,48 @@
       
       <guid>https://blog.johtani.info/blog/2011/09/23/7%E3%81%A4%E3%81%AE%E8%A8%80%E8%AA%9E-7%E3%81%A4%E3%81%AE%E4%B8%96%E7%95%8C-io-0%E6%97%A5%E7%9B%AE/</guid>
       <description>台風15号すごかったですね。幸いにも（？）夏休みだったので、通勤などでひどい目に合わずにすみました。 風雨はすごくてちょっと怖かったですが。。</description>
+      <content:encoded>&lt;p&gt;台風15号すごかったですね。幸いにも（？）夏休みだったので、通勤などでひどい目に合わずにすみました。
+風雨はすごくてちょっと怖かったですが。。。&lt;/p&gt;
+&lt;p&gt;さて、夏休みに進める予定が、子供の寝かしつけで一緒に寝てしまう日が続いてしまい、
+間が開いてしまいました。&lt;/p&gt;
+&lt;p&gt;0日目というタイトルになっているのは、まだ、1日目に入ってないからです。。。
+Ioという未知の言語をMBAにそのままインストールするのも抵抗があり、VirtualBox上にLinuxをインストールしてから
+進めようとして思いの外手こずってしまったためです。
+ということで、0日目として、VirtualBox上にScientific Linux 6.1をインストールしてIoのインストールまでではまった箇所を記録として残しておきます。&lt;/p&gt;
+&lt;h3 id=&#34;罠その１&#34;&gt;罠その１&lt;/h3&gt;
+&lt;p&gt;罠と言うよりは、私の無知に関する部類なのですが。。。
+Scientific Linux 6.1のインストールは特に手こずることなくインストールでき、
+起動も出来ました。
+次にscpコマンドでダウンロードしてきたIoのソースをLinuxに渡そうとしてはまりました。
+問題となったのはネットワーク接続が「NAT」のみだったため。
+NATのため、Linux（ゲストOS）から外部への接続は可能だったのですが、Mac（ホストOS）からLinux（ゲストOS）への接続ができませんでした。
+で、変更したのは以下の2点。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;VirtualBoxの環境設定-&amp;gt;ネットワーク-&amp;gt;ホストオンリーネットワークの追加&lt;/li&gt;
+&lt;li&gt;仮想マシン（Linux）の設定-&amp;gt;ネットワーク-&amp;gt;アダプタ2を有効にしてホストオンリーアダプタを割り当て&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;1番目のホストオンリーネットワークの追加をしておかないと、2番目のアダプタ2でホストオンリーアダプタを選択したときにエラーが出て、設定ができませんでした。割り当てるべきアダプタを先に用意しとかないとダメですよね、そりゃあ。&lt;/p&gt;
+&lt;h3 id=&#34;罠その２&#34;&gt;罠その２&lt;/h3&gt;
+&lt;p&gt;これも罠というほどではないのですが。。。
+Ioのビルドには&lt;a href=&#34;http://www.cmake.org/&#34;&gt;cmake&lt;/a&gt;が必要なのですが、Scientific Linux 6.1に入っているcmakeはバージョンが古い（2.6.4）ため、必要なバージョン（2.8以上）をインストールしないとダメでした。
+インストール自体はcmakeのサイトにある手順通りのため割愛します。&lt;/p&gt;
+&lt;h3 id=&#34;罠その３&#34;&gt;罠その３&lt;/h3&gt;
+&lt;p&gt;これもちゃんとドキュメント読めよというレベルですが。。。
+Ioのインストールは以下のコマンドを実行するという話です。
+私がcmakeについて知らなかったと言われればそれまで。。。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+$ cd io
+$ mkdir build &amp;amp;amp;&amp;amp;amp; cd build
+$ ccmake ..
+$ make
+$ sudo make install
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;3つ目の「ccmake」の部分がIoのGetting Startedの下の方にありました。上の方に記載がある「cmake」ではエラーがでてうまく行かなかったので。
+IoのGetting Startedにもありますが、ccmakeの場合はCUI上にGUIのようなものが起動するので、「c」（configure）と実行後、「g」（generate）を実行して最後に「e」（exit）でccmakeを離れます。
+するとmakeが実行できるようになりました。&lt;/p&gt;
+&lt;p&gt;あとは、/etc/ld.so.conf.d/io.confファイルを作成し、「/usr/local/lib」と記述。ldconfigを実行することで、Ioが実行可能になります。
+ということで、1日目に入れず終了。。。&lt;/p&gt;
+&lt;p&gt;明日は出来るかなぁ。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -194,6 +1473,125 @@
       
       <guid>https://blog.johtani.info/blog/2011/09/14/7%E3%81%A4%E3%81%AE%E8%A8%80%E8%AA%9E-7%E3%81%A4%E3%81%AE%E4%B8%96%E7%95%8C-ruby-3%E6%97%A5%E7%9B%AE%E6%9C%80%E7%B5%82%E6%97%A5/</guid>
       <description>ということで、Rubyの最終日の感想。 今回もセルフスタディの私の回答が最後の方に記載されてます。見たくない人は気をつけてください。 ツッコミ大</description>
+      <content:encoded>&lt;p&gt;ということで、Rubyの最終日の感想。
+&lt;span style=&#34;color:#FF0000&#34;&gt;今回もセルフスタディの私の回答が最後の方に記載されてます。&lt;/span&gt;見たくない人は気をつけてください。
+ツッコミ大募集です。コメント欄にどしどしコメントください。そこは違うだろ？こっちのほうがいいのでは？という感じで。&lt;/p&gt;
+&lt;h2 id=&#34;感想&#34;&gt;感想：&lt;/h2&gt;
+&lt;h3 id=&#34;メタプログラミングが特徴&#34;&gt;◎メタプログラミングが特徴&lt;/h3&gt;
+&lt;p&gt;例：ActiveRecordのhas_many、has_oneがいい例&lt;/p&gt;
+&lt;h3 id=&#34;オープンクラス&#34;&gt;◎オープンクラス&lt;/h3&gt;
+&lt;p&gt;クラス定義をいつでも変更可能。
+あらゆるクラスやオブジェクトをいつでも再定義できる
+書きやすいコードのために再定義が可能＝何でもできるが気を付ける必要あり。
+DSLの定義に便利。
+確かに便利。ただ、範囲を限定しないと予期せぬ場所で問題が発生しそう。
+&lt;span style=&#34;color:#0000FF&#34;&gt;※解析するための手段はいいのがあるのかな？=&amp;gt;method_missingみたい&lt;/span&gt;&lt;/p&gt;
+&lt;h3 id=&#34;method_missing&#34;&gt;◎method_missing&lt;/h3&gt;
+&lt;p&gt;対象メソッドが見つからない場合に最後に実行されるメソッド
+通常はNoMethodErrorが発行される。&lt;/p&gt;
+&lt;h3 id=&#34;モジュールによるメタプログラミング&#34;&gt;◎モジュールによるメタプログラミング&lt;/h3&gt;
+&lt;p&gt;defやattr_accessorなどその一例。
+DSLではモジュール内にメソッドを定義してメソッド＋定数を利用
+&lt;span style=&#34;color:#0000FF&#34;&gt;ActsAs&amp;hellip;ってそういう意味合いだったのか。&lt;/span&gt;
+親クラスバージョン、親クラス＋マクロ、モジュールそれぞれの実装の仕方の紹介。
+&lt;span style=&#34;color:#0000FF&#34;&gt;※マクロもinclude同様、実行順で、メソッドの上書きが発生するのか？&lt;/span&gt;
+ActiveRecordではメタプログラミングを利用してDBのカラム名からアクセサを追加。
+シンタックスの美しさ＝読みやすさ&lt;/p&gt;
+&lt;h2 id=&#34;感想疑問点&#34;&gt;感想＆疑問点：&lt;/h2&gt;
+&lt;p&gt;メタプログラミングはフレームワークを作成するのが便利そう。
+ただし、エラーや問題が起きた時の対処をきちんと準備しておかないとひどい目に合いそう。
+&lt;span style=&#34;color:#0000FF&#34;&gt;クラスやモジュールはわかりやすい単位で1ファイルにまとめるもの？&lt;/span&gt;
+&lt;span style=&#34;color:#0000FF&#34;&gt;ファイル名の規則とかあったりする？&lt;/span&gt;
+&lt;span style=&#34;color:#0000FF&#34;&gt;ディレクトリ構成でパッケージ構成が可能？&lt;/span&gt;
+&lt;span style=&#34;color:#0000FF&#34;&gt;複数のモジュール（gemとか）を組み合わせて使っている場合にincludeの順序がどのようになるかが気になる。&lt;/span&gt;
+予期せぬ順序でincludeされて利用しようと思ったメソッドがオーバーライドされてるとかありそう。
+追っかけるのがまた大変そうだ。
+異なるパフォーマンス（開発者の開発速度）の観点が一番おもしろかった。ただ、なれるまでは大変そう。すんなりinjectとかコードブロックをうまく利用するイメージがわかない。
+まぁ、思考については反復練習かな。これは他の言語でも一緒かな&lt;/p&gt;
+&lt;p&gt;ようやく、Rubyの世界が終わりました。楽しかった。次は未知の言語である「Io」です。&lt;/p&gt;
+&lt;p&gt;　　　&lt;/p&gt;
+&lt;h3 id=&#34;試してみよう&#34;&gt;（試してみよう：）&lt;/h3&gt;
+&lt;dl&gt;
+&lt;dt&gt;○eachメソッドがCsvRowオブジェクトを返すようにCSVアプリケーションを変更せよ。そのCsvRowのmethod_mmissingを使って、与えられた見出しの列の値を返すようにせよ。&lt;/dt&gt;
+&lt;dd&gt;
+モジュールにて実装してみた。
+```
+&lt;p&gt;module ActsAsCsv&lt;/p&gt;
+&lt;p&gt;def self.included(base)
+base.extend ClassMethods
+end
+　　　　　
+module ClassMethods
+def acts_as_csv
+include InstanceMethods
+end
+end&lt;/p&gt;
+&lt;p&gt;module InstanceMethods&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;def read
+  @csv_rows = []
+  file = File.new(self.class.to_s.downcase + &#39;.txt&#39;)
+  headers = file.gets.chomp.split(&#39;, &#39;)
+
+  file.each do |row|
+    @csv_rows &amp;lt;&amp;lt; CsvRow.new(headers,row.chomp.split(&#39;, &#39;))
+  end
+end
+
+def each(&amp;amp;block)
+  csv_rows.each(&amp;amp;block)
+end
+
+attr_accessor :csv_rows
+
+def initialize
+  read
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;end&lt;/p&gt;
+&lt;p&gt;class CsvRow
+def initialize(headers, csv_contents)
+@headers = headers
+@csv_contents = csv_contents
+end&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;attr_accessor :headers, :csv_contents
+
+def method_missing name, *args
+  csv_contents.fetch(headers.find_index(name.to_s))
+end
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;end
+end&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ここまでが実装したモジュール＋クラス。
+以下は実行例。id,name,sizeというheaderをもつCSVを使ってみた。
+
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;require &amp;lsquo;acts_as_csv_module_mod.rb&amp;rsquo;
+=&amp;gt; true
+class RubyCsv
+include ActsAsCsv
+acts_as_csv
+end
+=&amp;gt; RubyCsv
+csv = RubyCsv.new
+=&amp;gt; #&amp;lt;RubyCsv:0x103c4c530 @csv_rows=[#&amp;lt;ActsAsCsv::CsvRow:0x103c4c030 @csv_contents=[&amp;ldquo;1&amp;rdquo;, &amp;ldquo;RubyCsv.class&amp;rdquo;, &amp;ldquo;20&amp;rdquo;], @headers=[&amp;ldquo;id&amp;rdquo;, &amp;ldquo;name&amp;rdquo;, &amp;ldquo;size&amp;rdquo;]&amp;gt;, #&amp;lt;ActsAsCsv::CsvRow:0x103c4be78 @csv_contents=[&amp;ldquo;2&amp;rdquo;, &amp;ldquo;JRubyCsv.class&amp;rdquo;, &amp;ldquo;50&amp;rdquo;], @headers=[&amp;ldquo;id&amp;rdquo;, &amp;ldquo;name&amp;rdquo;, &amp;ldquo;size&amp;rdquo;]&amp;gt;]&amp;gt;
+csv.each {|row| puts row.name}
+RubyCsv.class
+JRubyCsv.class
+=&amp;gt; [#&amp;lt;ActsAsCsv::CsvRow:0x103c4c030 @csv_contents=[&amp;ldquo;1&amp;rdquo;, &amp;ldquo;RubyCsv.class&amp;rdquo;, &amp;ldquo;20&amp;rdquo;], @headers=[&amp;ldquo;id&amp;rdquo;, &amp;ldquo;name&amp;rdquo;, &amp;ldquo;size&amp;rdquo;]&amp;gt;, #&amp;lt;ActsAsCsv::CsvRow:0x103c4be78 @csv_contents=[&amp;ldquo;2&amp;rdquo;, &amp;ldquo;JRubyCsv.class&amp;rdquo;, &amp;ldquo;50&amp;rdquo;], @headers=[&amp;ldquo;id&amp;rdquo;, &amp;ldquo;name&amp;rdquo;, &amp;ldquo;size&amp;rdquo;]&amp;gt;]
+csv.each {|row| puts row.id}
+(irb):8: warning: Object#id will be deprecated; use Object#object_id
+2179096600
+(irb):8: warning: Object#id will be deprecated; use Object#object_id
+2179096380
+=&amp;gt; [#&amp;lt;ActsAsCsv::CsvRow:0x103c4c030 @csv_contents=[&amp;ldquo;1&amp;rdquo;, &amp;ldquo;RubyCsv.class&amp;rdquo;, &amp;ldquo;20&amp;rdquo;], @headers=[&amp;ldquo;id&amp;rdquo;, &amp;ldquo;name&amp;rdquo;, &amp;ldquo;size&amp;rdquo;]&amp;gt;, #&amp;lt;ActsAsCsv::CsvRow:0x103c4be78 @csv_contents=[&amp;ldquo;2&amp;rdquo;, &amp;ldquo;JRubyCsv.class&amp;rdquo;, &amp;ldquo;50&amp;rdquo;], @headers=[&amp;ldquo;id&amp;rdquo;, &amp;ldquo;name&amp;rdquo;, &amp;ldquo;size&amp;rdquo;]&amp;gt;]&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;
+&amp;lt;span style=&amp;quot;color:#FF0000&amp;quot;&amp;gt;※idというcsvフィールド名にしたら、object_idとかぶっているようでwarningが出てしまった。&amp;lt;/span&amp;gt;
+
+CsvRowクラスの定義がモジュールの中に入っているが、この実装でも動くみたい。ただ、パッケージみたいな感じ7日までは調査してない。。。
+&lt;/code&gt;&lt;/pre&gt;</content:encoded>
     </item>
     
     <item>
@@ -203,6 +1601,195 @@
       
       <guid>https://blog.johtani.info/blog/2011/09/10/7%E3%81%A4%E3%81%AE%E8%A8%80%E8%AA%9E-7%E3%81%A4%E3%81%AE%E4%B8%96%E7%95%8C-ruby-2%E6%97%A5%E7%9B%AE/</guid>
       <description>ということで、Ruby2日目の感想（2日目だけで2日間かかったのは内緒。。。） 今回もセルフスタディの私の回答が最後の方に記載されてます。見た</description>
+      <content:encoded>&lt;p&gt;ということで、Ruby2日目の感想（2日目だけで2日間かかったのは内緒。。。）
+&lt;span style=&#34;color:#FF0000&#34;&gt;今回もセルフスタディの私の回答が最後の方に記載されてます。&lt;/span&gt;見たくない人は気をつけてください。
+ツッコミ大募集です。コメント欄にどしどしコメントください。そこは違うだろ？こっちのほうがいいのでは？という感じで。&lt;/p&gt;
+&lt;h2 id=&#34;感想&#34;&gt;感想：&lt;/h2&gt;
+&lt;h3 id=&#34;関数の定義span-stylecolor0000ffありゃ利用するのはダメなんだこれじゃspanspan-stylecolorff0000--gt単なるタイプミスでしたお恥ずかしいspan&#34;&gt;◎関数の定義：&lt;del&gt;&lt;span style=&#34;color:#0000FF&#34;&gt;ありゃ、利用するのはダメなんだ、これじゃ。&lt;/span&gt;&lt;/del&gt;&lt;span style=&#34;color:#FF0000&#34;&gt;&amp;ndash;&amp;gt;単なるタイプミスでした。お恥ずかしい。。。&lt;/span&gt;&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;
+&amp;gt;&amp;gt; def tell_the_truth
+&amp;gt;&amp;gt;   true
+&amp;gt;&amp;gt; end
+=&amp;gt; nil
+&amp;gt;&amp;gt; tell_the_trueth()
+NoMethodError: undefined method `tell_the_trueth&#39; for main:Object
+     from (irb):4
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配列そしてシンタックスシュガー&#34;&gt;◎配列：そしてシンタックスシュガー&lt;/h3&gt;
+&lt;p&gt;puts animalsで内容が出力されるのはうれしい。JavaだとHashCodeが出てくるから。出力メソッド書かないといけなくなる。
+animals[-1]で最後の要素とかかなり便利。
+animals[0..1]はRangeクラスを利用する形。Rangeはやはり便利。substringなどもできそう。
+カラ配列の定義は必要。a = []
+1.9と1.8でinclude?の書き方が異なるので注意！
+配列（Array）クラスは中はObjectが入る。
+多次元配列もOK。popやpushでキューとしても利用可能。&lt;/p&gt;
+&lt;h3 id=&#34;ハッシュ&#34;&gt;◎ハッシュ：&lt;/h3&gt;
+&lt;p&gt;Mapのようなもの。任意のキーが利用可能。:付きの文字列はシンボルと呼ばれる定数値を簡単に定義する方法。
+object_idという属性？関数によりObjectのハッシュコードが取れるらしい。
+ブレース＝「{}」のカッコのこと。do～endでも代用可能&lt;/p&gt;
+&lt;h3 id=&#34;コードブロックとyeild&#34;&gt;◎コードブロックとyeild&lt;/h3&gt;
+&lt;p&gt;コードブロック＝名前なし関数。習慣では複数行の場合、do/endで、１行は{}みたい。Javaと混同しそう。
+コードブロックは引数も指定可能。
+「yield」予約語？を利用してコードブロック自体をメソッド内部などで呼び出し可能。
+ということで、コードブロックは引数にも指定できると。&lt;span style=&#34;color:#0000FF&#34;&gt;コードブロック＝関数もObjectとして扱われてる感じか？&lt;/span&gt;
+&lt;span style=&#34;color:#0000FF&#34;&gt;実行遅延、分岐、共通関数とか？Javaだとabstractメソッドを利用して処理するようなイメージか？&lt;/span&gt;ちょっと違うなぁ。
+なれると、yieldはコードを読みやすくできそう。また、シンタックスハイライトしてくれるツールがあれば、更に便利。&lt;/p&gt;
+&lt;h3 id=&#34;ファイルの実行&#34;&gt;◎ファイルの実行&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;
+ruby ファイル名
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;vi、Emacs、TextMateなどがあるよ。&lt;/p&gt;
+&lt;h3 id=&#34;クラスの定義&#34;&gt;◎クラスの定義&lt;/h3&gt;
+&lt;p&gt;※数字で始まる変数は利用できない！Javaと一緒
+Tree.rbとログを参考にすること。
+&amp;amp;使うとブロックに名前が付けられる。&lt;span style=&#34;color:#0000FF&#34;&gt;yieldじゃなくてもいい？&lt;/span&gt;
+クラス名はキャメルケース。
+変数とメソッド名は「_」アンダーバーつなぎ
+インスタンス変数の頭は@
+クラス変数は@@
+定数は大文字
+※メソッド名、変数名には違和感が。&lt;span style=&#34;color:#0000FF&#34;&gt;なんでこんな規則？？&lt;/span&gt;
+判定用関数とメソッドには「?」（if test?）をつける！！Javaでいう「is」か。&lt;/p&gt;
+&lt;h3 id=&#34;mixin多重継承モジュールと呼ばれるものを利用&#34;&gt;◎Mixin（多重継承？モジュールと呼ばれるものを利用）&lt;/h3&gt;
+&lt;p&gt;多重継承のような類似の振る舞いを伝搬する仕組み。
+Javaではインタフェースでやること。
+Rubyではモジュールといい、関数と定数の集まり。
+クラスに機能を盛り込む場合はincludeする
+&lt;span style=&#34;color:#0000FF&#34;&gt;※複数includeして、includeしたものの中に同じメソッドとかあったらどーなる？&lt;/span&gt;
+&lt;span style=&#34;color:#0000FF&#34;&gt;　&amp;ndash;&amp;gt;Overrideされた＝includeがあとにあるもので上書きされる&lt;/span&gt;
+Abstractにできないものをモジュール化できるの楽。
+javaだとstaticメソッドだらけのUtilクラスを別途起こすイメージだけど、内部で呼ばれるメソッド（コードブロック）が同じインタフェースじゃないと行けないから、インタフェースの記述もしないと行けない。
+ただし、同一名のメソッドを持ってるとややこしそう。
+&lt;span style=&#34;color:#0000FF&#34;&gt;※モジュールからモジュールは呼べる？&lt;/span&gt;&lt;/p&gt;
+&lt;h3 id=&#34;モジュールenumerableセット&#34;&gt;◎モジュール、Enumerable、セット&lt;/h3&gt;
+&lt;p&gt;EnumerableとComparable（JavaのCollectionまわりかな。）
+宇宙船演算子（&amp;lt;=&amp;gt;）Javaのequalsに似てる
+any?とかCollectionUtils？？に似たのあったな。
+&lt;span style=&#34;color:#0000FF&#34;&gt;※今利用しているクラスが何をincludeしてるかってのは分かる仕組みあるのかな？
+※そういえば、メソッドごとに戻り値があるが、全部newされてインスタンス化されてGCの対象になってるのか？irbだけ？&lt;/span&gt;
+injectはすんなり使うイメージが出にくそう。また、ソースをぱっと見て理解出来ない。なれだろうけど。
+※injectしながらinjectとかあるんだろうな。&lt;/p&gt;
+&lt;h3 id=&#34;探してみよう&#34;&gt;（探してみよう：）&lt;/h3&gt;
+&lt;dl&gt;
+&lt;dt&gt;○コードブロックを使った場合と使わない場合の両方について、ファイルにアクセスするコードを書く。コードブロックの利点は？&lt;/dt&gt;
+&lt;dd&gt;※コードブロックあり。
+```
+&lt;p&gt;File.open(&amp;ldquo;tree.rb&amp;rdquo;, &amp;lsquo;r&amp;rsquo;) {|f| f.each {|line| puts &amp;ldquo;#{f.lineno} : #{line}&amp;quot;}}&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;※コードブロックなし
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;f = File.open(&amp;ldquo;tree.rb&amp;rdquo;, &amp;lsquo;r&amp;rsquo;)
+while line = f.gets
+puts &amp;ldquo;#{f.lineno} : #{line}&amp;rdquo;
+end&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;コードブロックの利点：
+　見通しの良さ。行数が少なくてすむ。繰り返し処理が簡単に記述できる。
+　※うーん、まだきちんと理解できてないか？
+&amp;lt;/dd&amp;gt;
+&amp;lt;dt&amp;gt;○ハッシュを配列に変換するにはどうすればよいか？また、逆に配列をハッシュに変換する方法は？&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;
+※間違えた。。。
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;h = [:key1 =&amp;gt; &amp;ldquo;hoge&amp;rdquo;, :key2 =&amp;gt; &amp;ldquo;boke&amp;rdquo;, :key3 =&amp;gt; &amp;ldquo;fuga&amp;rdquo;]
+h.each {|key, value| puts &amp;ldquo;#{key} is #{value}&amp;quot;}
+=&amp;gt;key1hogekey2bokekey3fuga is&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;/blockquote&gt;
+&lt;pre&gt;&lt;code&gt;
+ハッシュ-&amp;amp;gt;配列変換
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;h.to_a&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+配列-&amp;amp;gt;ハッシュ変換
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a = [&amp;ldquo;value1&amp;rdquo;, &amp;ldquo;valu2&amp;rdquo;, &amp;ldquo;value3&amp;rdquo;]
+h = {}
+a.each {|i| h.store(a.index(i),i) }&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;※また間違い？なんでそうなる？
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a.inject(h2) {|hoge, i| hoge[a.index(i).to_s] = i}&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;こっちならいいみたい。まだinjectがわかってない。
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a.inject(h2) {|hoge, i| hoge[a.index(i).to_s] = i;puts &amp;ldquo;#{i}&amp;quot;; hoge}&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+&amp;lt;/dd&amp;gt;
+&amp;lt;dt&amp;gt;○ハッシュの各要素について繰り返すにはどうすればよいか？&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;h.each {|key, value| puts &amp;ldquo;#{key} is #{value}&amp;quot;}&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;/dd&amp;gt;
+&amp;lt;dt&amp;gt;○Rubyの配列はスタックとしても使える。スタック以外に配列で実現可能なよくあるデータ構造体を挙げよ。&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;キュー。
+他にある？Treeとか？Treeはハッシュじゃないか？Set？順番が関係ないけど。&amp;lt;/dd&amp;gt;
+&amp;lt;/dl&amp;gt;
+
+
+### **（試してみよう：）**
+&amp;lt;dl&amp;gt;
+&amp;lt;dt&amp;gt;○最初に、eachだけを用いて、１６個の数値と４個の数値の配列の中身を同時に出力せよ。次に、同じ事をEnumerableのeach_sliceを用いて実行せよ。&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;
+&amp;lt;span style=&amp;quot;color:#FF0000&amp;quot;&amp;gt;&amp;lt;em&amp;gt;※これ日本語がわからないんだが、4個ずつ出せってことか？？&amp;lt;/em&amp;gt;&amp;lt;/span&amp;gt;ということで、「16個の数字の配列の中身を4個ずつ同時に出力せよ。」と解釈して実装してみた
+※each利用版
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+s = []
+a.each do |b|
+unless s.length &amp;lt; 4
+puts s.inspect
+s.clear
+end
+s &amp;laquo; b
+end&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+※each_slice
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+a.each_slice(4) {|b| puts b.inspect}&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;また、えらい違いだな。
+&amp;lt;/dd&amp;gt;
+&amp;lt;dt&amp;gt;○Treeクラスは面白いクラスだったが、きれいなインタフェースを用いて新しいツリーを指定することは出来なかった。そこで、initializerにハッシュと配列が入れ子になった構造体を指定できるようにせよ。具体的には、次のようなツリーを指定できるようにしたい。{&#39;grandpa&#39; =&amp;amp;gt; { &#39;dad&#39; =&amp;amp;gt; {&#39;child 1&#39; =&amp;amp;gt; [], &#39;child 2&#39; =&amp;amp;gt; [] }, &#39;uncle&#39; =&amp;amp;gt; {&#39;child 3&#39; =&amp;amp;gt; [], &#39;child 4&#39; =&amp;lt; [] } } }&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;&amp;lt;span style=&amp;quot;color:#FF0000&amp;quot;&amp;gt;※root（ここではgrandpaレベル）が複数あると破綻しないのか？&amp;lt;/span&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;class Tree
+attr_accessor :children, :node_name&lt;/p&gt;
+&lt;p&gt;def initialize(name, children=[])
+@children = children
+@node_name = name
+end&lt;/p&gt;
+&lt;p&gt;def initialize(hash)
+hash.each do |key, value|
+@node_name = key
+@children = value.inject([]) do |array, (child_key, child_val)|
+puts &amp;ldquo;inject! #{key}&amp;rdquo;
+[Tree.new({child_key =&amp;gt; child_val})] + array
+end
+end
+end&lt;/p&gt;
+&lt;p&gt;def visit_all(&amp;amp;block)
+visit &amp;amp;block
+children.each {|c| c.visit_all &amp;amp;block}
+end&lt;/p&gt;
+&lt;p&gt;def visit(&amp;amp;block)
+block.call self
+end
+end&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;
+残念ながらちょっとカンニングしてしまいました。。。
+&amp;lt;/dd&amp;gt;
+&amp;lt;dt&amp;gt; ○ファイル内で、あるフレーズを含む全ての行を出力する簡単なgrepをかけ。簡単な正規表現でマッチングを行い、ファイルから行を読み出す必要がある（この処理はRubyでは驚くほど簡単にかける）。必要なら行番号も出力してみると良い。&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;※メソッドだけでいいな。&amp;lt;span style=&amp;quot;color:#0000FF&amp;quot;&amp;gt;ファイルクローズはこの記述の場合はコーディングブロックのendのタイミングでクローズされるのか？&amp;lt;/span&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;class RegGrep
+def grep(filename, regexp)
+File.open(filename, &amp;lsquo;r&amp;rsquo;) do |f|
+f.each do |line|
+puts &amp;ldquo;#{f.lineno} : #{line}&amp;rdquo; if line.match(regexp)
+end
+end
+end
+end&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;/dd&amp;gt;
+&amp;lt;/dl&amp;gt;
+
+ということで、2日目終了。
+恥ずかしいコードだらけだけど、ぜひツッコミ入れてもらえると助かります。
+
+数年前までは、恥ずかしいからとか見せられるレベルじゃないからと、ほとんどアウトプットしなかったのですが、
+最近はそれではものすごく損をしていると思っています。
+ホントは発表するとか議論するとかする場もあればいいのですが。
+アウトプットすることで、フィードバックが貰えて、いろんなかたの考えが参考になり、糧となり成長していけるのかと。
+（これじゃ成長できないレベルだよという話でなければいいのだが。。。）
+
+一度、Rubyのプロフェッショナル各位に見てもらいたいなぁｗ
+&lt;/code&gt;&lt;/pre&gt;</content:encoded>
     </item>
     
     <item>
@@ -212,6 +1799,140 @@
       
       <guid>https://blog.johtani.info/blog/2011/09/09/7%E3%81%A4%E3%81%AE%E8%A8%80%E8%AA%9E-7%E3%81%A4%E3%81%AE%E4%B8%96%E7%95%8C-ruby-1%E6%97%A5%E7%9B%AE/</guid>
       <description>実に3年ぶりくらいにゆっくりできる日々が訪れたので、積読状態の本を消化しようと「7つの言語 7つの世界」を読み始めました。 せっかくブログも始め</description>
+      <content:encoded>&lt;p&gt;実に3年ぶりくらいにゆっくりできる日々が訪れたので、積読状態の本を消化しようと「7つの言語　7つの世界」を読み始めました。&lt;/p&gt;
+&lt;p&gt;せっかくブログも始めたので、備忘録も兼ねて感想などを書いていこうかと。&lt;/p&gt;
+&lt;p&gt;この本ですが、以下の7つの言語についてエッセンスがまとめられています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ruby&lt;/li&gt;
+&lt;li&gt;Io&lt;/li&gt;
+&lt;li&gt;Prolog&lt;/li&gt;
+&lt;li&gt;Scala&lt;/li&gt;
+&lt;li&gt;Erlang&lt;/li&gt;
+&lt;li&gt;Clojure&lt;/li&gt;
+&lt;li&gt;Haskell&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;まずはRubyからです。
+ここ2年ほどRuby（Rails）に関連する仕事をしていたのですが、Ruby周りはプロフェッショナルな方たちがいたので、きちんと勉強していないことがこの本を読み始めてわかりました。&lt;/p&gt;
+&lt;p&gt;ということで、前置きはそれなりな記述ですが、感想は適当になりますので、あしからず。&lt;/p&gt;
+&lt;h3 id=&#34;感想&#34;&gt;感想：&lt;/h3&gt;
+&lt;p&gt;irbが便利。簡単に動作確認ができるのが便利。Javaだとコンパイルが必要。
+変数を定義する必要がない気軽さはある。
+必ず戻り値が帰ってくる「puts &amp;lsquo;hello, world&amp;rsquo;」でも。=&amp;gt;nil
+putsは楽かな。まぁ、Eclipse使ってると一緒か。
+「4」もオブジェクトとなっている。ここもJavaと異なる。
+(x &amp;lt;= 4).classという記述でTrueClassというクラスだとわかる。
+unlessが結構便利。ただし、記述方法が多数あるので、可読性は落ちる？場合によってはわかりやすいか？
+あと、括弧()がないのも慣れない。（まぁ、これは慣れの問題。ただし、カッコありでもOK）
+{}のかわりがif～endなのはわかりやすいかも。
+if not はわかりやすくていい。!はだいたい間違えるから。。。
+whileも１行形式で書けるのか。「x = x + 1 while x &amp;lt; 10」慣れないと厳しい。個人的には混在すると読めないなぁ。
+nilとfalse以外がすべてtrueに評価されるのは厳しいのでは？型のチェックがないので、booleanが入ってると想定してない場合に挙動を読めないかも。実行時に動作が変だなーと思うことが出てきそう。
+and、orの記述が使えるのは読みやすい。ただし、混在するとやっかい。
+判定結果が明らかになった時点で実行が中止されるのは普通。&amp;amp;、|の挙動はJava同様。&lt;/p&gt;
+&lt;p&gt;やりながら疑問点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;NetBeansとかIDEでフォーマッタやcheckstyleみたいなのはあるのか？&lt;/li&gt;
+&lt;li&gt;コーディング規約はあるのか？（2日目に「習慣」があるらしいとの記載があった。）&lt;/li&gt;
+&lt;li&gt;必ず戻り値が戻ってくるのは、必ずGC対象になりうるオブジェクトが生成されるってことか？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ここまでが感想と疑問点。で、この本の面白いところは最後に調査、コーディングを行う練習問題的なものがある部分です。
+一応、私なりの答えを書いておこうかと。（一覧などで見えないようにはしますが、ネタバレがあるので注意してください。）&lt;/p&gt;
+&lt;p&gt;ということで、セルフスタディの回答。&lt;/p&gt;
+&lt;h3 id=&#34;探してみよう&#34;&gt;（探してみよう）&lt;/h3&gt;
+&lt;dl&gt;
+&lt;dt&gt;○Ruby API&lt;/dt&gt;
+&lt;dd&gt;http://ruby-doc.org/core/&lt;/dd&gt;
+&lt;dt&gt;○Programming Ruby: The Pragmatic Programmer&#39;s Guideのオンライン版&lt;/dt&gt;
+&lt;dd&gt;http://www.ruby-doc.org/docs/ProgrammingRuby/参考資料：http://www.swlab.it.okayama-u.ac.jp/man/ruby/uguide/uguide00.html&lt;/dd&gt;
+&lt;dt&gt;○文字列の一部を置換するメソッド&lt;/dt&gt;
+&lt;dd&gt;&#34;hello&#34;.gsub(/[aeiou]/, &#39;*&#39;)&lt;/dd&gt;
+&lt;dt&gt;○Rubyの正規表現に関する情報&lt;/dt&gt;
+&lt;dd&gt;日本語：http://www.namaraii.com/rubytips/?%A5%D1%A5%BF%A1%BC%A5%F3%A5%DE%A5%C3%A5%C1
+英語の試せるサイト（irbが動けば必要ないかもね）：http://rubular.com/&lt;/dd&gt;
+&lt;dt&gt;○Rubyの範囲に関する情報&lt;/dt&gt;
+&lt;dd&gt;日本語：http://doc.okkez.net/static/192/class/Range.html
+英語：RDocのRangeクラスに相当するのかな。&lt;/dd&gt;
+&lt;/dl&gt;
+&lt;h3 id=&#34;試してみよう&#34;&gt;（試してみよう）&lt;/h3&gt;
+&lt;dl&gt;
+&lt;dt&gt;○文字列&#34;Hello, world&#34;を出力する。&lt;/dt&gt;
+&lt;dd&gt;```
+&lt;dt&gt;○文字列&#34;Hello, Ruby&#34;の中の&#34;Ruby&#34;という単語のインデックスを検索する。&lt;/dt&gt;
+&lt;dd&gt;```
+&lt;p&gt;s = &amp;lsquo;Hello, Ruby&amp;rsquo;
+s.index(&amp;lsquo;Ruby&amp;rsquo;) //indexofで間違えた&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-&lt;/dd&gt;&#34; data-lang=&#34;&lt;/dd&gt;&#34;&gt;&amp;lt;dt&amp;gt;○自分の名前を10回出力する。&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;```
+
+※まずは、正統派。
+i = 0
+while i &amp;lt; 10
+  puts &amp;quot;johtani&amp;quot;
+  i = i + 1
+end
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;※Rangeを利用
+(1..10).each {|n| puts &amp;quot;johtani #{n}&amp;quot;}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+※forもあるよね
+for i in 1..10
+  puts &amp;quot;johtani&amp;quot;
+end
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+※timesってのもある。（0始まり）
+10.times {|n| puts &amp;quot;johtani #{n}&amp;quot;}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+※uptoなんてのもあるのか。
+1.upto(10) {|n| puts &amp;quot;johtani #{n}&amp;quot;}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+※downtoも
+10.downto(1) {puts &amp;quot;johtani&amp;quot;}
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+※stepもある。
+10.step(1, -1) {puts &amp;quot;johtani&amp;quot;}//step(上限,ステップ)
+```&amp;lt;/dd&amp;gt;
+&amp;lt;dt&amp;gt;○文字列&amp;quot;This is sentence number 1&amp;quot;の1を10までカウントアップしながら10回出力する。&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;```
+
+1.upto(10) {|n| puts &amp;quot;This is sentence number #{n}&amp;quot;}
+※あとは上記と一緒
+```&amp;lt;/dd&amp;gt;
+&amp;lt;dt&amp;gt;○ファイルに格納されているRubyプログラムを実行する。&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;```
+
+vi hoge.rb
+※#上記処理をどれか記述
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+ $ ruby hoge.rb
+&lt;/code&gt;&lt;/pre&gt;&lt;/dd&gt;
+&lt;dt&gt;○ボーナス問題：少し物足りない人は、乱数を選択するプログラムを書いてみてほしい。プレーヤーに数字を選択してもらい、その数字が生成された乱数よりも大きいか小さいかを返す。&lt;/dt&gt;
+&lt;dd&gt;
+```
+&lt;h1 id=&#34;---coding-utf-8---&#34;&gt;-&lt;em&gt;- coding: utf-8 -&lt;/em&gt;-&lt;/h1&gt;
+&lt;p&gt;range = (1..100)
+while true
+puts &amp;ldquo;#{range.min}から#{range.max}の数字を入力してください&amp;rdquo;
+n = gets
+n = n.to_i
+if range.include?(n)
+break;
+else
+puts &amp;ldquo;範囲外の入力値です。もう一度入力してください&amp;rdquo;
+end
+end
+i = rand(range.max)
+if i &amp;lt; n
+puts &amp;ldquo;入力「#{n}」は乱数「#{i}」より大きいです&amp;rdquo;
+elsif i == n
+puts &amp;ldquo;入力「#{n}」は乱数「#{i}」と等しいです&amp;rdquo;
+else
+puts &amp;ldquo;入力「#{n}」は乱数「#{i}」より小さいです&amp;rdquo;
+end&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-&lt;/dd&gt;&#34; data-lang=&#34;&lt;/dd&gt;&#34;&gt;&amp;lt;/dl&amp;gt;
+
+とまぁ、こんな感じ。こんな方法もあるよ、ここおかしくない？などあれば、コメント欄まで。
+リアクション大募集です。
+はやく、シンタックスライター導入せねば。
+&lt;/code&gt;&lt;/pre&gt;</content:encoded>
     </item>
     
   </channel>

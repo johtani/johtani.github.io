@@ -14,6 +14,164 @@
       
       <guid>https://blog.johtani.info/blog/2020/06/09/difference-analyzers-in-azure-search/</guid>
       <description>Azure Cognitive Searchで日本語を扱うときに、形態素解析器を使いたい場合、2種類のAnalyzerが用意されています。今回はこれらの違いがどんなもの</description>
+      <content:encoded>&lt;p&gt;Azure Cognitive Searchで日本語を扱うときに、形態素解析器を使いたい場合、2種類のAnalyzerが用意されています。今回はこれらの違いがどんなものかを見ていくことにします。&lt;/p&gt;
+&lt;h2 id=&#34;analyzerとは&#34;&gt;Analyzerとは?&lt;/h2&gt;
+&lt;p&gt;まずは、その前にAnalyzerとは何者か?というのを少しだけ。
+Azure Cognitive Searchは&lt;a href=&#34;https://ja.wikipedia.org/wiki/%E8%BB%A2%E7%BD%AE%E3%82%A4%E3%83%B3%E3%83%87%E3%83%83%E3%82%AF%E3%82%B9&#34;&gt;転置インデックス&lt;/a&gt;を内部で作成して、検索を行っています。
+この、転置インデックスは、「単語」がどのドキュメントに入っているか?を素早く見つけることができるデータ構造となっています。&lt;/p&gt;
+&lt;p&gt;Azure Cognitive Searchは、この「単語」を入力された文章から生成するときに、Analyzerというものを利用します。
+Analyzerは入力された文章をある規則に則って単語に分割する機能です。
+この「ある規則」が、各種言語や用途によって様々に用意されています。
+今回はこの中の&lt;code&gt;ja.lucene&lt;/code&gt;と&lt;code&gt;ja.microsoft&lt;/code&gt;という2種類のAnalyzerについて違いを見ていきます。&lt;/p&gt;
+&lt;h2 id=&#34;2種類のanalyzerの違いはどんなもの&#34;&gt;2種類のAnalyzerの違いはどんなもの?&lt;/h2&gt;
+&lt;p&gt;このAnalyzerの挙動を見るためのエンドポイントとして&lt;code&gt;analyze&lt;/code&gt;というAPIがあります(&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/19/azure-search-analyze-plugin/&#34;&gt;詳細は昔のブログを参照&lt;/a&gt;)。&lt;/p&gt;
+&lt;p&gt;このAPIを利用して、Wikipediaのいくつかの文章を単語に区切って見て、
+&lt;code&gt;ja.microsoft&lt;/code&gt;がどんな動きをしているのか想像してみます(残念ながら&lt;code&gt;ja.microsoft&lt;/code&gt;の仕様?や挙動についてはページが見つからないため)。&lt;/p&gt;
+&lt;h3 id=&#34;もとの文章と解析結果一部抜粋&#34;&gt;もとの文章と解析結果(一部抜粋)&lt;/h3&gt;
+&lt;p&gt;文章は、手元のElasticsearchに登録したjawikiのデータからランダムに抽出しています。また、自前のツールで生成したWikipediaのデータなので、まだ一部、見苦しい文字列になっています(そっちもなおさないと)。&lt;/p&gt;
+&lt;h4 id=&#34;1-砂川熊本県&#34;&gt;1. 砂川（熊本県）&lt;/h4&gt;
+&lt;blockquote&gt;
+&lt;p&gt;thumb|250px|right|上砂川橋より上流方砂川（すながわ）は、熊本県宇城市・八代郡氷川町を流れる二級河川。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;この文字列から抽出された単語で特徴的なものを一部抜粋しました。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;code&gt;ja.microsoft&lt;/code&gt;&lt;/th&gt;
+&lt;th&gt;&lt;code&gt;ja.lucene&lt;/code&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;250px&lt;/td&gt;
+&lt;td&gt;250&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;px&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;上砂&lt;/td&gt;
+&lt;td&gt;上, 上砂川&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;川橋&lt;/td&gt;
+&lt;td&gt;砂川&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;橋&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;宇城&lt;/td&gt;
+&lt;td&gt;宇&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;市&lt;/td&gt;
+&lt;td&gt;城市&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;二級&lt;/td&gt;
+&lt;td&gt;二&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;^&lt;/td&gt;
+&lt;td&gt;級&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;まず、最初の&lt;code&gt;250px&lt;/code&gt;ですが、&lt;code&gt;ja.microsoft&lt;/code&gt;では、&lt;code&gt;px&lt;/code&gt;が単位であると判定しているのか、数値と合わせた単語として抽出されています。この場合、&lt;code&gt;250&lt;/code&gt;で検索しても、この文字列はヒットしない形になるので、ノイズが減ることが考えられるかと。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;上砂川橋&lt;/code&gt;という文字は、分割の仕方が別れました。
+&lt;code&gt;ja.lucene&lt;/code&gt;では、&lt;code&gt;上砂川&lt;/code&gt;という単語が地名として辞書に存在するために、このような分割になっています。&lt;code&gt;ja.microsoft&lt;/code&gt;のデータは品詞の情報が取れないのですが、&lt;code&gt;上砂&lt;/code&gt;、&lt;code&gt;川橋&lt;/code&gt;ともに、名詞として辞書に存在しているのではないかなと。&lt;code&gt;ja.lucene&lt;/code&gt;には&lt;code&gt;川橋&lt;/code&gt;という単語は存在していないようでした。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;宇城市&lt;/code&gt;(うきし)については、2005年に合併でできた市のようで、&lt;code&gt;ja.lucene&lt;/code&gt;が利用している辞書には存在しない可能性があり、&lt;code&gt;宇城&lt;/code&gt;という文字が抽出できてないと思われます。&lt;/p&gt;
+&lt;p&gt;最後は&lt;code&gt;二級&lt;/code&gt;です。&lt;code&gt;ja.lucene&lt;/code&gt;では、数字と助数詞として分割されています。こちらも何かしらのロジックにより、&lt;code&gt;二級&lt;/code&gt;という1単語でヒットできるように数字と単位?が合わせた単語で出てくる仕組みが&lt;code&gt;ja.microsoft&lt;/code&gt;なのかなと。&lt;/p&gt;
+&lt;h4 id=&#34;2-uefa-u-18女子選手権2000&#34;&gt;2. UEFA U-18女子選手権2000&lt;/h4&gt;
+&lt;blockquote&gt;
+&lt;p&gt;UEFA U-18女子選手権2000は第3回目のUEFA U-18女子選手権である。決勝トーナメントは2000年7月27日から8月4日までフランスで行われ、ドイツが初優勝を果たした。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;この文字列から抽出された単語で特徴的なものを一部抜粋しました。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;code&gt;ja.microsoft&lt;/code&gt;&lt;/th&gt;
+&lt;th&gt;&lt;code&gt;ja.lucene&lt;/code&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;u-18, u&lt;/td&gt;
+&lt;td&gt;u&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;18, nn18&lt;/td&gt;
+&lt;td&gt;18&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;第3回目&lt;/td&gt;
+&lt;td&gt;第&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;3&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;回&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;目&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;トーナメント, トナメント&lt;/td&gt;
+&lt;td&gt;トーナメント&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;2000年&lt;/td&gt;
+&lt;td&gt;2000&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;年&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;7月&lt;/td&gt;
+&lt;td&gt;7&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;月&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;27日&lt;/td&gt;
+&lt;td&gt;27&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;日&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;数字を含む単語&lt;code&gt;第3回目&lt;/code&gt;や&lt;code&gt;2000年&lt;/code&gt;、&lt;code&gt;7月&lt;/code&gt;などは、&lt;code&gt;ja.microsoft&lt;/code&gt;は先程と同様、数字と単位の組み合わせを1単語として出力しています。&lt;/p&gt;
+&lt;p&gt;また、&lt;code&gt;トーナメント&lt;/code&gt;という単語を&lt;code&gt;トナメント&lt;/code&gt;という形で、長音を除去した形で出力しています。
+今回の文字列ではないですが、この他に、&lt;code&gt;センター&lt;/code&gt;を&lt;code&gt;センター&lt;/code&gt;と&lt;code&gt;センタ&lt;/code&gt;の2パターンの単語で出力するといったことを行っています。
+&lt;code&gt;ja.lucene&lt;/code&gt;の場合、単語の最後に長音がある場合だけ&lt;code&gt;センタ&lt;/code&gt;として、長音を除去した単語が出力されます。
+これは、長音の表記ゆれに対応するためではないかなと。たとえば、&lt;code&gt;インターフェース&lt;/code&gt;と&lt;code&gt;インタフェース&lt;/code&gt;、&lt;code&gt;インターフェイス&lt;/code&gt;のように、人や文章によって、間にでてくる長音を使ったり使わなかったりという表記ゆれに対応するためだと思われます。
+その他にも、&lt;code&gt;イプロゥヴェト&lt;/code&gt;を&lt;code&gt;イプロゥベト&lt;/code&gt;に、&lt;code&gt;ネクスト&lt;/code&gt;を&lt;code&gt;ネキスト&lt;/code&gt;に、&lt;code&gt;バラエティ&lt;/code&gt;を&lt;code&gt;バラエチ&lt;/code&gt;にも変換するなどといった処理をしてくれるようです。カタカナの表記ゆれには強そうですね(これどうやってるんだろう?)。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;ja.microsoft&lt;/code&gt;では、&lt;code&gt;nn18&lt;/code&gt;というちょっと変わった単語も出てきていました。純粋な数字の場合は&lt;code&gt;nn&lt;/code&gt;と入力してくれるようで、数字だけで検索したい場合に利用できるのかな?これはドキュメントに書いておいてほしいかも?&lt;/p&gt;
+&lt;h3 id=&#34;共通点&#34;&gt;共通点&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;ja.lucene&lt;/code&gt;、&lt;code&gt;ja.microsoft&lt;/code&gt;ともに、共通している動作として、「てにをは」といった単語は除去されていました。違いがあるものとしては、「より」(助詞-格助詞-一般)、「されている」(動詞-自立、動詞-接尾、助詞-接続助詞、動詞-非自立)、「ある」(助動詞)といったものは&lt;code&gt;ja.microsoft&lt;/code&gt;では除去されずに出てきていました。
+ストップワード的に「てにをは」あたりを除去をしている感じでしょうか?&lt;/p&gt;
+&lt;p&gt;アルファベットで構成されている単語についても、基本はそのまま出力される挙動のようでした。&lt;/p&gt;
+&lt;h2 id=&#34;じゃあどっちがいいの&#34;&gt;じゃあどっちがいいの?&lt;/h2&gt;
+&lt;p&gt;残念ながらどちらがいいかは、一長一短かなぁと。
+&lt;code&gt;ja.lucene&lt;/code&gt;に関しては、Luceneの仕組みを利用しているので、Elasticsearchなどを使えば、個別の単語についてより詳細の情報を取得することが可能です(品詞、読みなど)。&lt;code&gt;ja.microsoft&lt;/code&gt;については、残念ながら手の入れようがないので、そういう動きのものだという割り切った使い方になるでしょうか?
+ただ、長音の除去による表記ゆれなどについては、便利な機能なので、そのあたりの問題に対応したい場合は、&lt;code&gt;ja.microsoft&lt;/code&gt;を活用するのも良いかと思います。&lt;/p&gt;
+&lt;p&gt;個人的には、より細かい単語としてインデックスに登録できるもののほうが、柔軟な検索には対応できるのではないかなぁと考えています(Kuromojiの辞書をUniDicにするとか?も考えますが、これはAzure Searchではできないですが)。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;Wikipediaのデータをいくつか使って、&lt;code&gt;ja.microsoft&lt;/code&gt;と&lt;code&gt;ja.lucene&lt;/code&gt;の違いについて、考察してみました。何かの役に立てばと。
+他に、これはどんな感じになるの?などありましたら、コメントいただければと。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -23,6 +181,29 @@
       
       <guid>https://blog.johtani.info/blog/2013/12/20/release-elasticsearch-0-90-8/</guid>
       <description>昨夜、Elasticsearchの0.90.8がリリースされました。 リリースされた内容などについては、本家のブログ「0.90.8 releas</description>
+      <content:encoded>&lt;p&gt;昨夜、Elasticsearchの0.90.8がリリースされました。&lt;/p&gt;
+&lt;p&gt;リリースされた内容などについては、本家のブログ「&lt;a href=&#34;http://www.elasticsearch.org/blog/0-90-8-released/&#34;&gt;0.90.8 released&lt;/a&gt;」をご覧いただくこととして。
+1点注意したほうが良い点があります。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-analysis-kuromoji&#34;&gt;elasticsearch-analysis-kuromoji&lt;/a&gt;を利用している場合は、0.90.8に対応したバージョンがリリースされるのを待つ必要があります。&lt;/p&gt;
+&lt;p&gt;elasticsearch 0.90.8はLuceneのバージョンが4.6.0に変更されています。
+Lucene 4.6.0では、TokenStreamというTokenizerのI/Fに変更があり、Tokenizerの実装を変更する必要があります。&lt;/p&gt;
+&lt;p&gt;現時点（2013年12月19日現在）のelasticsearch-analysis-kuromojiの1.6.0にはlucene-analyzers-kuromoji-4.5.1.jarが含まれており、この部分でI/Fが異なるためエラーが発生してしまいます。
+プラグインをインストールする時点ではエラーは発生せず、実際にKuromojiのTokenizerやAnalyzerを利用するタイミングでエラーが出ます。
+以下、0.90.8にanalysis-kuromojiの1.6.0をインストールした状態で&lt;code&gt;_analyze&lt;/code&gt;を実行した時のエラー。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPOST &#39;localhost:9200/_analyze?tokenizer=kuromoji_tokenizer&amp;amp;filters=kuromoji_baseform&amp;amp;pretty&#39; -d &#39;寿司が美味しかった&#39;
+{
+  &amp;quot;error&amp;quot; : &amp;quot;IllegalStateException[TokenStream contract violation: reset()/close() call missing, reset() called multiple times, or subclass does not call super.reset(). Please see Javadocs of TokenStream class for more information about the correct consuming workflow.]&amp;quot;,
+  &amp;quot;status&amp;quot; : 500
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ということで、1.7.0がリリースされるのを待つか、自分で&lt;code&gt;mvn package&lt;/code&gt;してビルドする必要があります。
+他にも独自でTokenizerなどを造られている方は注意が必要かと。&lt;/p&gt;
+&lt;p&gt;たぶん、すぐにリリースされるんじゃないかなぁと。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;2013/12/20追記&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;とりあえず、masterブランチが0.90.8に変更されたみたいです。(と書いてるそばから、1.7.0がリリースされました)
+ということで、0.90.8では1.7.0を使うとエラーが出ないです。
+（あと、踊り字対応のcharfilterも追加されたみたいです）&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -32,6 +213,61 @@
       
       <guid>https://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/</guid>
       <description>前々回紹介した、日本語Wikipediaのデータをインデックス登録する記事の続きです。 今回は、Kuromojiのアナライザを利用してインデッ</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch&#34;&gt;前々回紹介した、日本語Wikipediaのデータをインデックス登録する記事&lt;/a&gt;の続きです。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;今回は、Kuromojiのアナライザを利用してインデックス登録してみます。&lt;/p&gt;
+&lt;h2 id=&#34;余談proxy環境でのプラグインインストール&#34;&gt;余談（Proxy環境でのプラグインインストール）&lt;/h2&gt;
+&lt;p&gt;ElasticSearchのpluginコマンドはJavaで実装されています。（&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/plugins/PluginManager.java#L315&#34;&gt;org.elasticsearch.plugins.PluginManager&lt;/a&gt;）
+プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。&lt;/p&gt;
+&lt;p&gt;ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;elasticsearch-analysis-kuromojiのインストール&#34;&gt;elasticsearch-analysis-kuromojiのインストール&lt;/h2&gt;
+&lt;p&gt;WikipediaのデータをKuromojiを使って、形態素解析ベースの転置インデックスを作成していきます。
+まずは、Kuromojiを利用するために、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-analysis-kuromoji&#34;&gt;Analysisプラグイン&lt;/a&gt;のインストールです。
+ElasticSearchのバージョンに対応したプラグインのバージョンがあります。（プラグインのページに対応したバージョンの記載あり）
+今回はElasticSearchの0.90.3を利用しているため、1.5.0をインストールします。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;インストール後は再起動しておきます。
+なお、Kuromojiを利用して、Wikipediaのデータを登録するばあい、デフォルトの設定では、ヒープが足りなくなるおそれがあります。
+ElasticSearchの起動時に以下のオプションを指定して、最大ヒープサイズを2Gとしておきます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;export ES_HEAP_SIZE=2g;./bin/elasticsearch
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;indexの作成デフォルトでkuromojiのanalyzerを利用する&#34;&gt;Indexの作成（デフォルトでKuromojiのAnalyzerを利用する）&lt;/h2&gt;
+&lt;p&gt;Wikipediaのデータを登録する際に、Kuromojiのアナライザを利用したいのが今回の趣旨でした。
+一番ラクな方法として、Wikipediaデータのインデックスの設定として、デフォルトのアナライザをKuromojiにしてしまいます。
+（きちんと設計する場合は、必要に応じてフィールドごとに指定しましょう）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPUT &#39;localhost:9200/ja-wikipedia-kuromoji&#39; -d &#39;{
+    &amp;quot;settings&amp;quot;: {
+        &amp;quot;analysis&amp;quot;: {
+            &amp;quot;analyzer&amp;quot;: {
+                &amp;quot;default&amp;quot; : {
+                    &amp;quot;type&amp;quot; : &amp;quot;kuromoji&amp;quot;
+                }
+            }
+        }
+    }
+}&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これでkuromojiのアナライザがデフォルトで利用される形となります。
+あとは、Riverを起動して登録するだけです。&lt;/p&gt;
+&lt;h2 id=&#34;riverの実行&#34;&gt;Riverの実行&lt;/h2&gt;
+&lt;p&gt;前回と一緒です。
+インデックス名（&lt;strong&gt;_river/&amp;lt;インデックス名&amp;gt;/_meta&lt;/strong&gt;）だけは、先ほど作成した「&lt;code&gt;ja-wikipedia-kuromoji&lt;/code&gt;」に変更してください。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d &#39;
+{
+    &amp;quot;type&amp;quot; : &amp;quot;wikipedia&amp;quot;,
+    &amp;quot;wikipedia&amp;quot; : {
+        &amp;quot;url&amp;quot; : &amp;quot;file:/home/johtani/src/jawiki-latest-pages-articles.xml&amp;quot;
+    },
+    &amp;quot;index&amp;quot; : {
+        &amp;quot;bulk_size&amp;quot; : 10000
+    }
+}&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あとは、インデックスされるのを待つだけです。&lt;/p&gt;
+&lt;h2 id=&#34;データ量とか&#34;&gt;データ量とか&lt;/h2&gt;
+&lt;p&gt;5.8gbになりました。Kuromojiを利用したため、形態素解析により単語にきちんとトークないずされた結果でしょう。
+Uni-gramだと、転置インデックスのボキャブラリも単語に対してヒットするドキュメント数も大きくなるため、
+インデックスサイズも大きくなっているのかと。&lt;/p&gt;
+&lt;p&gt;検索クエリのサンプルなどはまた後日。（夜遅いので。。。）&lt;/p&gt;
+</content:encoded>
     </item>
     
   </channel>

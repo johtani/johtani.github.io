@@ -14,6 +14,227 @@
       
       <guid>https://blog.johtani.info/blog/2018/04/20/directory-layout-and-architecture/</guid>
       <description>第2回から少し間が空いてしまいましたが、templateで作成したプラグインのディレクトリ構成とどういう流れでデータがやり取りされるかについ</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;http://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin/&#34;&gt;第2回&lt;/a&gt;から少し間が空いてしまいましたが、templateで作成したプラグインのディレクトリ構成とどういう流れでデータがやり取りされるかについてみていきます。
+（2018/02月時点で作成したディレクトリ構成にしたがって説明します）
+ちなみに、JavaScriptの優れた開発者ではないので、誤解している点や、効率の悪い書き方などがあるかもしれません。見つけた場合は、連絡をいただければと思います。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;では、まずは作成したディレクトリ構成についてみていきましょう。&lt;/p&gt;
+&lt;h2 id=&#34;ディレクトリ構成&#34;&gt;ディレクトリ構成&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;simple-sample-kibana-plugin&lt;/code&gt;がプラグインのプロジェクトのトップディレクトリになります。このディレクトリに次のような構成でサブディレクトリが存在します(なお、画像はIntelliJに取り込んだ後のディレクトリになっているので、&lt;code&gt;.iml&lt;/code&gt;など、不要なファイル/ディレクトリが存在しています)。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:400&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20180420/directories.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20180420/directories.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;主要なディレクトリ、ファイルについて簡単に一覧で説明します(順不同)。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;ファイル/ディレクトリ名&lt;/th&gt;
+&lt;th&gt;説明&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;index.js&lt;/td&gt;
+&lt;td&gt;プラグインの本体。Kibanaはこのファイルのオブジェクトを読み込みプラグインを起動。設定などの読み込みもこちら。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;package.json&lt;/td&gt;
+&lt;td&gt;npm/yarnのパッケージに関する情報を定義するファイル&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;README.md&lt;/td&gt;
+&lt;td&gt;README。プラグインの説明などを記載する。インストール方法なども記載すると便利&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;public&lt;/td&gt;
+&lt;td&gt;ブラウザ側に配布されるプログラムや画像一式&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;public/less/main.less&lt;/td&gt;
+&lt;td&gt;LESS用のファイル。アプリ固有のスタイルなどを記載&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;public/app.js&lt;/td&gt;
+&lt;td&gt;ブラウザ側で読み込まれるプラグインのモジュールなど。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;public/template/index.html&lt;/td&gt;
+&lt;td&gt;HTMLのテンプレート。ブラウザ上での描画に利用&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;server/routes&lt;/td&gt;
+&lt;td&gt;Kibanaサーバー側で動作するプラグイン。hapi.jsを利用してREST APIを実装する&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;重要なファイルについて少しだけ説明します。&lt;/p&gt;
+&lt;h4 id=&#34;packagejson&#34;&gt;package.json&lt;/h4&gt;
+&lt;p&gt;npmやyarnでビルドなどをするときに使用するパッケージ情報を記載するためのファイルです。
+プラグインの名前、バージョン、説明などを記載します。
+Kibanaのバージョンについてもこちらで管理します。この情報を
+また、ライブラリなどの依存関係についてもこちらで記載しています。
+以下、抜粋。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;simple-sample-kibana-plugin&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;version&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;0.0.0&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;description&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Sample plugin for explaining how to make kibana app&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;main&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;index.js&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;kibana&amp;#34;&lt;/span&gt;: {
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;version&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;6.2.1&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;templateVersion&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;7.2.4&amp;#34;&lt;/span&gt;
+  },
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;scripts&amp;#34;&lt;/span&gt;: {
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;lint&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;eslint **/*.js&amp;#34;&lt;/span&gt;,
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;...&lt;/span&gt;
+  },
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;devDependencies&amp;#34;&lt;/span&gt;: {
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;@elastic/eslint-config-kibana&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;^0.14.0&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;@elastic/eslint-import-resolver-kibana&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;^0.9.0&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;@elastic/plugin-helpers&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;^7.1.3&amp;#34;&lt;/span&gt;,
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;...&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;expect.js&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;^0.3.1&amp;#34;&lt;/span&gt;
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ちなみに私は、&lt;code&gt;version&lt;/code&gt;などをリリースするたびに変更しています。&lt;/p&gt;
+&lt;h4 id=&#34;indexjs&#34;&gt;index.js&lt;/h4&gt;
+&lt;p&gt;最初にKibanaに読み込まれるオブジェクトになります。
+Kibanaのアプリの名前や、必要なモジュールなどを記載します。&lt;/p&gt;
+&lt;p&gt;また、&lt;code&gt;kibana.yml&lt;/code&gt;から設定など読み込む処理なども書くことができます。&lt;/p&gt;
+&lt;p&gt;2行目の&lt;code&gt;exampleRoute&lt;/code&gt;はサーバー側のAPIとして利用するhapi.js用のファイルのパスになります。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;uiExports&lt;/code&gt;はこのアプリの画面に関する設定などの記載になります。
+&lt;code&gt;app&lt;/code&gt;の部分が実際にアプリの情報で、
+&lt;code&gt;main&lt;/code&gt;があとで説明するこのプラグインのUIのためのJavaScriptファイル(public/app.js)になります。mainですので、最初に読み込まれる処理が記載されているものを指定します。&lt;code&gt;app.js&lt;/code&gt;というファイル名を変更する場合は、こちらの&lt;code&gt;app&lt;/code&gt;の部分を変更したファイルに合わせましょう。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;config(Joi)&lt;/code&gt;の関数が設定ファイルの読み込みなどの処理を記載する場所です。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;init(server, options)&lt;/code&gt;の関数が初期化処理を記載する場所になります。
+このサンプルアプリでは、2行目の&lt;code&gt;import&lt;/code&gt;で読み込んだhapi.js用のファイルの関数を呼び出しています。引数で渡している&lt;code&gt;server&lt;/code&gt;がhapi.jsの&lt;code&gt;server&lt;/code&gt;オブジェクトになります。
+&lt;code&gt;route&lt;/code&gt;メソッドを使用して作成しているプラグイン用のREST APIを追加しています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; { &lt;span style=&#34;color:#a6e22e&#34;&gt;resolve&lt;/span&gt; } &lt;span style=&#34;color:#a6e22e&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;path&amp;#39;&lt;/span&gt;;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;exampleRoute&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;./server/routes/example&amp;#39;&lt;/span&gt;;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;default&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;function&lt;/span&gt; (&lt;span style=&#34;color:#a6e22e&#34;&gt;kibana&lt;/span&gt;) {
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;kibana&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Plugin&lt;/span&gt;({
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;require&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;elasticsearch&amp;#39;&lt;/span&gt;],
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;name&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simple-sample-kibana-plugin&amp;#39;&lt;/span&gt;,
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;uiExports&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+
+      &lt;span style=&#34;color:#a6e22e&#34;&gt;app&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#a6e22e&#34;&gt;title&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Simple Sample Kibana Plugin&amp;#39;&lt;/span&gt;,
+        &lt;span style=&#34;color:#a6e22e&#34;&gt;description&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Sample plugin for explaining how to make kibana app&amp;#39;&lt;/span&gt;,
+        &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;plugins/simple-sample-kibana-plugin/app&amp;#39;&lt;/span&gt;
+      },
+
+...
+    },
+
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;Joi&lt;/span&gt;) {
+      &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Joi&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;object&lt;/span&gt;({
+        &lt;span style=&#34;color:#a6e22e&#34;&gt;enabled&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Joi&lt;/span&gt;.&lt;span style=&#34;color:#66d9ef&#34;&gt;boolean&lt;/span&gt;().&lt;span style=&#34;color:#66d9ef&#34;&gt;default&lt;/span&gt;(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;),
+      }).&lt;span style=&#34;color:#66d9ef&#34;&gt;default&lt;/span&gt;();
+    },
+
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;init&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;server&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;options&lt;/span&gt;) {
+      &lt;span style=&#34;color:#75715e&#34;&gt;// Add server routes and initialize the plugin here
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;      &lt;span style=&#34;color:#a6e22e&#34;&gt;exampleRoute&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;server&lt;/span&gt;);
+    }
+  });
+};
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;publicappjs&#34;&gt;public/app.js&lt;/h4&gt;
+&lt;p&gt;画面用のモジュールです。
+&lt;code&gt;uiRoutes&lt;/code&gt;という機能を使用して、アプリの呼び出しURLを定義します。テンプレートで作成したばかりの場合は、&lt;code&gt;/&lt;/code&gt;というURLが追加されるのみです。&lt;/p&gt;
+&lt;p&gt;実際に画面を表示する際に動くコントローラーの部分はその下の
+&lt;code&gt;uiModules.controller&lt;/code&gt;に指定してあるfunctionが画面描画の
+処理を書く部分になります。
+templateで作成したプラグインでは、&amp;ldquo;title&amp;quot;など表示に必要なデータを&lt;code&gt;$scope&lt;/code&gt;というオブジェクトに詰め込んでいます。
+これはAngularJS(1系)でのモデルオブジェクトになります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;moment&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;moment&amp;#39;&lt;/span&gt;;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; { &lt;span style=&#34;color:#a6e22e&#34;&gt;uiModules&lt;/span&gt; } &lt;span style=&#34;color:#a6e22e&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;ui/modules&amp;#39;&lt;/span&gt;;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;uiRoutes&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;ui/routes&amp;#39;&lt;/span&gt;;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;ui/autoload/styles&amp;#39;&lt;/span&gt;;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;./less/main.less&amp;#39;&lt;/span&gt;;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;template&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;./templates/index.html&amp;#39;&lt;/span&gt;;
+
+&lt;span style=&#34;color:#a6e22e&#34;&gt;uiRoutes&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;enable&lt;/span&gt;();
+&lt;span style=&#34;color:#a6e22e&#34;&gt;uiRoutes&lt;/span&gt;
+  .&lt;span style=&#34;color:#a6e22e&#34;&gt;when&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;/&amp;#39;&lt;/span&gt;, {
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;template&lt;/span&gt;,
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;resolve&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+...
+    }
+  });
+
+&lt;span style=&#34;color:#a6e22e&#34;&gt;uiModules&lt;/span&gt;
+  .&lt;span style=&#34;color:#a6e22e&#34;&gt;get&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;app/simple-sample-kibana-plugin&amp;#39;&lt;/span&gt;, [])
+  .&lt;span style=&#34;color:#a6e22e&#34;&gt;controller&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simpleSampleKibanaPluginHelloWorld&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;function&lt;/span&gt; (&lt;span style=&#34;color:#a6e22e&#34;&gt;$scope&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;$route&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;$interval&lt;/span&gt;) {
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;$scope&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;title&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Simple Sample Kibana Plugin&amp;#39;&lt;/span&gt;;
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;$scope&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;description&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Sample plugin for explaining how to make kibana app&amp;#39;&lt;/span&gt;;
+...
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;$scope&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;$watch&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;$destroy&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;unsubscribe&lt;/span&gt;);
+  });
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;serverroutesexamplejs&#34;&gt;server/routes/example.js&lt;/h4&gt;
+&lt;p&gt;&lt;a href=&#34;https://hapijs.com&#34;&gt;hapi.js&lt;/a&gt;というNode.jsのためのサーバーフレームワークです。
+このフレームワークをKibanaは使っており、Kibanaのサーバーとブラウザとのやり取りに使用するREST APIを記述するために使用しています。
+例えば、Elasticsearchとのやり取りを実際に行うAPIなどをこのREST API内部で記述します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;export&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;default&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;function&lt;/span&gt; (&lt;span style=&#34;color:#a6e22e&#34;&gt;server&lt;/span&gt;) {
+
+  &lt;span style=&#34;color:#a6e22e&#34;&gt;server&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;route&lt;/span&gt;({
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;path&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;/api/simple-sample-kibana-plugin/example&amp;#39;&lt;/span&gt;,
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;method&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;GET&amp;#39;&lt;/span&gt;,
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;handler&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;req&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;reply&lt;/span&gt;) {
+      &lt;span style=&#34;color:#a6e22e&#34;&gt;reply&lt;/span&gt;({ &lt;span style=&#34;color:#a6e22e&#34;&gt;time&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Date()).&lt;span style=&#34;color:#a6e22e&#34;&gt;toISOString&lt;/span&gt;() });
+    }
+  });
+
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;path&lt;/code&gt;の部分がブラウザ側からアクセスするURLになります。
+実際にElasticsearchとやり取りする処理の書き方については、次回の記事で説明します。&lt;/p&gt;
+&lt;h2 id=&#34;アーキテクチャ簡易版&#34;&gt;アーキテクチャ（簡易版）&lt;/h2&gt;
+&lt;p&gt;ざっくりですが、ファイルやディレクトリについて説明しました。
+簡単なデータのやり取りについての流れを説明します。&lt;/p&gt;
+&lt;p&gt;Kibana自体はNode.jsで実装されサーバーとして動作していますが、ブラウザでアクセスすることで画面を描画しています。
+簡単なコンポーネントを並べるとデータのやり取りはこのような形です。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20180420/architecture.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20180420/architecture.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;すごく簡易で大雑把な絵ですが。。。&lt;/p&gt;
+&lt;p&gt;実際のプラグインとしては大きく、2つの処理があります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ブラウザ上の処理
+&lt;ul&gt;
+&lt;li&gt;クリックなどのイベント処理&lt;/li&gt;
+&lt;li&gt;HTMLなどのレンダリング処理&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Kibanaサーバー上の処理(Elasticsearchなどとの通信が必要な場合)
+&lt;ul&gt;
+&lt;li&gt;外部との通信処理&lt;/li&gt;
+&lt;li&gt;ブラウザ上では重い処理&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;絵に記載しましたが、ブラウザ上の処理についてはAngularJSが主なフレームワークで、サーバー上の処理についてはhapi.jsがフレームワークとなっています。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、今回はディレクトリ構造とファイルの説明、どういったフレームワークが使われ、データのやり取りがどのように行われているか説明しました。&lt;/p&gt;
+&lt;p&gt;次回からは、実際に私が作成した&lt;a href=&#34;https://github.com/johtani/analyze-api-ui-plugin&#34;&gt;Analyze UI&lt;/a&gt;を元にElasticsearchとのデータのやり取りなどについて紹介していきます。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -23,6 +244,130 @@
       
       <guid>https://blog.johtani.info/blog/2018/02/09/getting-started-template-kibana-plugin/</guid>
       <description>第1回では、Analyze UIというプラグインの紹介をしました、ごく簡単にですが。 第2回では、Kibanaのプラグインの作成方法を順を追って</description>
+      <content:encoded>&lt;p&gt;第1回では、&lt;a href=&#34;https://github.com/johtani/analyze-api-ui-plugin&#34;&gt;Analyze UIというプラグイン&lt;/a&gt;の紹介をしました、ごく簡単にですが。&lt;/p&gt;
+&lt;p&gt;第2回では、Kibanaのプラグインの作成方法を順を追って見ていこうと思います。今回は、プラグインのプロジェクトの作り方を説明します。
+どんなファイルがあるのかなどについては第3回で説明します（2018/02月現在の方法になります。残念ながら、Kibanaのプラグイン作成自体はまだExperimentalな話になっていますので、変更がある可能性があります）。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;実はそれほど難しいというわけではありません。Kibanaのプラグインを作成するためのテンプレートが用意されています。&lt;a href=&#34;https://github.com/elastic/template-kibana-plugin/&#34;&gt;template-kiban-plugin&lt;/a&gt;です。
+テンプレートのリポジトリのREADMEに作業手順の記載があります。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;KibanaのリポジトリをClone、Checkout&lt;/li&gt;
+&lt;li&gt;Node.jsの環境を用意する&lt;/li&gt;
+&lt;li&gt;Kibanaを起動できるようにする&lt;/li&gt;
+&lt;li&gt;SAOのインストール&lt;/li&gt;
+&lt;li&gt;テンプレートによるプロジェクトファイルの生成&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;順を追って説明します。
+&lt;code&gt;PLUGIN_DEV_DIR&lt;/code&gt;というディレクトリ配下で作業をしている想定になります。&lt;/p&gt;
+&lt;h2 id=&#34;1-kibanaのリポジトリをclonecheckout&#34;&gt;1. KibanaのリポジトリをClone、Checkout&lt;/h2&gt;
+&lt;p&gt;開発環境として、Kibanaが必要です。Kibanaのプラグインを作るので。
+手順などは&lt;a href=&#34;https://github.com/elastic/kibana/blob/6.2/CONTRIBUTING.md#contributing-code&#34;&gt;KibanaのCONTRIBUTING.md&lt;/a&gt;に記載があります。
+ということで、まずはKibanaのリポジトリをCloneします。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cd PLUGIN_DEV_DIR
+git clone git@github.com:elastic/kibana.git
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;このままだと、masterブランチなので、開発したい対象のKibanaのバージョンのブランチもしくはタグをcloneします。今回は6.2.1向けということで、次のようになります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;git checkout v6.2.1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これで、ソースが6.2.1向けになりました。&lt;/p&gt;
+&lt;h2 id=&#34;2-nodejsの環境を用意する&#34;&gt;2. Node.jsの環境を用意する&lt;/h2&gt;
+&lt;p&gt;Node.jsをインストールします。
+Kibanaのリポジトリに&lt;code&gt;.node-version&lt;/code&gt;というファイルがあります。
+こちらにNode.jsのバージョンが記載されています。
+Kibanaが使用しているNode.jsを利用できるようにします。ローカルでは&lt;a href=&#34;https://github.com/creationix/nvm#installation&#34;&gt;nvm&lt;/a&gt;利用してインストールしました。後から、切り替えが可能だからです。
+nvm自体のインストールについては&lt;a href=&#34;https://github.com/creationix/nvm&#34;&gt;nvmのサイト&lt;/a&gt;をご覧ください。
+nvmがインストールできたら、次のコマンドで、Kibanaが使用しているバージョンをインストールします。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cd kibana
+nvm install &amp;quot;$(cat .node-version)&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;すでにnvmを利用している場合などは、Kibana起動時にKibanaのバージョンに合わせたNode.jsに切り替えるようにしてください。&lt;/p&gt;
+&lt;h2 id=&#34;3-kibanaを起動できるようにする&#34;&gt;3. Kibanaを起動できるようにする&lt;/h2&gt;
+&lt;p&gt;Kibanaでは&lt;a href=&#34;https://yarnpkg.com/lang/en/&#34;&gt;yarn&lt;/a&gt;というjavascript向けのパッケージマネージャーを利用して起動やビルドなどを行います。まずはyarnをインストールします。&lt;a href=&#34;https://github.com/elastic/kibana/pull/15485&#34;&gt;最近npmからyarnに切り替えた&lt;/a&gt;ようです。
+私はMacだったので、&lt;a href=&#34;https://yarnpkg.com/en/docs/install&#34;&gt;brewでインストール&lt;/a&gt;しました。
+インストールできたら、次のコマンドを実行します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;yarn
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これにより、package.jsonから必要なライブラリなどをダウンロードして来てくれます。
+問題なければ「✨  Done in 439.30s.」というような表示がされます（結構時間かかりますね）。
+では、Kibanaを起動できるか確認してみましょう。
+さらに、Elasticsearchも起動してみます。
+Kibanaのpackage.jsonの中にはElasticsearchを起動するためのスクリプトも用意されています。実際には&lt;a href=&#34;https://gruntjs.com&#34;&gt;grunt&lt;/a&gt;を利用してタスクを実行しているようです。Elasticsearchの起動にはJavaが必要になります。
+今回は6.2.1なので、JDK 8以降がインストールされている必要があります。
+こちらはインストールされているものとします。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;yarn elasticsearch
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;で起動できます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;gt;&amp;gt; Started 1 Elasticsearch nodes.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;という表示が出てればOKです。
+次にKibanaです。別のTerminalを起動して、以下のコマンドで起動できます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;yarn start
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これだけです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;server    log   [06:58:56.930] [info][listening] Server running at http://localhost:5603
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;この辺りが出てればKibanaのServerは起動済みです。また、Elasticsearchに接続できていれば、次のログが出ているはずです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;server    log   [07:02:18.010] [info][status][plugin:elasticsearch@6.2.1] Status changed from red to green - Ready
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Elasticsearch接続用のKibanaのプラグインの状態になります。
+これで、Kibanaの環境が整ったことが確認できました。
+もちろん、Elasticsearchに関しては、yarnで起動せずに、tar.gzなどでダウンロードして来たElasticsearchを起動しておき、アクセスするといったことも可能です。プラグインなどをElasticsearchにもいれてテストしたい場合などはそちらの方が便利かもしれません。&lt;/p&gt;
+&lt;h2 id=&#34;4-saoのインストール&#34;&gt;4. SAOのインストール&lt;/h2&gt;
+&lt;p&gt;では、一度、ElasticsearchとKibanaを停止しましょう。フォワグラウンドで起動しているので、それぞれのTerminalでCtrl+Cで停止できます。
+Kibanaのプラグイン作成むけに、テンプレートが作られています。&lt;a href=&#34;https://sao.js.org&#34;&gt;sao.js&lt;/a&gt;というGitHubのリポジトリやnpmのパッケージをテンプレートとして使うことができるツールを利用してプラグインのプロジェクト（リポジトリ）を作成します。
+実際にテンプレートとなるリポジトリは&lt;a href=&#34;https://github.com/elastic/template-kibana-plugin&#34;&gt;template-kibana-plugin&lt;/a&gt;になります。
+まずはSaoのインストールです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;npm install -g sao
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;プラグインのテンプレートのページには上記のようにnpmを利用したインストール方法になっていますが、次のようにyarnでも可能です。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;yarn global add sao
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これで、saoがインストールできました。&lt;/p&gt;
+&lt;h2 id=&#34;5-テンプレートによるプロジェクトファイルの生成&#34;&gt;5. テンプレートによるプロジェクトファイルの生成&lt;/h2&gt;
+&lt;p&gt;あとは、テンプレートを元にプロジェクトを作成します。
+&lt;code&gt;PLUGIN_DEV_DIR&lt;/code&gt;ディレクトリ配下に、kibanaと同じ階層で作成するプラグイン用のディレクトリを作成します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;mkdir simple-sample-kibana-plugin
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;以下のような構成になります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;kibana                      simple-sample-kibana-plugin
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;次にテンプレートを適用していきます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cd simple-sample-kibana-plugin
+sao kibana-plugin@7.2.4
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;2行目がsaoを利用してプロジェクトを作成しているコマンドになります。
+すると、次のような質問が出て来ます。
+これらに答えるとプロジェクトに必要なファイル（package.jsonやREADME.mdなど）に入力した情報を適用したものを作ってくれます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;? Name of your plugin?
+? Provide a short description
+? What Kibana version are you targeting?
+? Should an app component be generated?
+? Should translation files be generated?
+? Should an hack component be generated?
+? Should a server API be generated?
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;実際に答えた内容はこちら。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;? Name of your plugin? simple-sample-kibana-plugin
+? Provide a short description Sample plugin for explaining how to make kibana app
+? What Kibana version are you targeting? 6.2.1
+? Should an app component be generated? Yes
+? Should translation files be generated? Yes
+? Should an hack component be generated? Yes
+? Should a server API be generated? Yes
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;プラグインの名前などは、ディレクトリ名と同じものを入力補完してくれているので、そのままEnterでもOKです。
+Descriptionについてはわかりやすいものを入力しましょう。
+バージョンは、先ほどのKibanaのリポジトリに合わせて、&lt;code&gt;6.2.1&lt;/code&gt;にしてあります。
+あとは、作るプラグインの種類に応じて、必要なコンポーネントを作るかどうかの質問にYes/Noで答えます。
+今回はサンプルの説明ということもあるので、全てYesで答えました。
+ちなみに、私が実際に作成した&lt;a href=&#34;https://github.com/johtani/analyze-api-ui-plugin/&#34;&gt;analyze-api-ui-plugin&lt;/a&gt;では、&lt;code&gt;app&lt;/code&gt;と&lt;code&gt;translation&lt;/code&gt;と&lt;code&gt;server&lt;/code&gt;の3つを作成しました。
+ただし、&lt;code&gt;translation&lt;/code&gt;については現在はテンプレートで作成したままのファイルが入っており、実際には利用してないです。&lt;/p&gt;
+&lt;p&gt;完了したら、プラグインのサンプル入りのプロジェクトが完成です。
+もう一度、Elasticsearchを立ち上げて、プラグインのプロジェクトからKibanaを起動してアクセスしてみます。まずは、&lt;code&gt;PLUGIN_DEV_DIR/kibana&lt;/code&gt;ディレクトリの下で、Elasticsearchを起動します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;yarn elasticsearch
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;次に、&lt;code&gt;PLUGIN_DEV_DIR/simple-sample-kibana-plugin&lt;/code&gt;ディレクトリの下で、以下のコマンドを実行し、プラグインが入った状態のKibanaを起動します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;yarn start
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;問題なく起動すれば、ブラウザでアクセスすると次のような画面が表示されるはずです。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:800&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20180214/sample_start.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20180214/sample_start.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;左側にメニューが1つ増えています。
+クリックすると、上記画像のような画面が表示されるはずです。&lt;/p&gt;
+&lt;p&gt;これで、カスタムプラグインの開発ができる環境ができました！
+次回は、プロジェクトのディレクトリ構成や、どんなツールが内部で使用されてデータのやり取りが行われているかについて説明します。お楽しみに。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -32,6 +377,107 @@
       
       <guid>https://blog.johtani.info/blog/2018/01/19/how-to-make-kibana-plugin-example-analysis-ui/</guid>
       <description>あけましておめでとうございます。今年はサボりがちだったブログをちょっとずつ復活させようかと。 ということで、第1弾として、昨年少し作っていたK</description>
+      <content:encoded>&lt;p&gt;あけましておめでとうございます。今年はサボりがちだったブログをちょっとずつ復活させようかと。
+ということで、第1弾として、昨年少し作っていたKibanaのプラグインを何度かに分けて紹介したいと思います。&lt;/p&gt;
+&lt;p&gt;今回は&lt;a href=&#34;https://github.com/johtani/analyze-api-ui-plugin&#34;&gt;Analyze UIというプラグイン&lt;/a&gt;の紹介です。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;今回はインストール方法と簡単な機能紹介です。
+細かな紹介は個別にやりたいと思います。&lt;/p&gt;
+&lt;h3 id=&#34;analyze-ui-pluginとは&#34;&gt;Analyze UI pluginとは？&lt;/h3&gt;
+&lt;p&gt;Elasticsearchの&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html&#34;&gt;&lt;code&gt;_analyze&lt;/code&gt;というAPI&lt;/a&gt;(個人的に好きなAPIです)をご存知でしょうか？&lt;/p&gt;
+&lt;p&gt;Elasticsearchは全文検索エンジンで、データの検索には&lt;a href=&#34;https://ja.wikipedia.org/wiki/%E8%BB%A2%E7%BD%AE%E3%82%A4%E3%83%B3%E3%83%87%E3%83%83%E3%82%AF%E3%82%B9&#34;&gt;転置インデックス&lt;/a&gt;というものを使用します。
+Elasticsearchにデータを登録する際に、&lt;code&gt;text&lt;/code&gt;型のデータの場合、この転置インデックスのキーとなる単語を決める処理のことを&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis.html&#34;&gt;Analysis&lt;/a&gt;と呼びます（Analysisの詳細については割愛します。後日説明するかも？）。
+このAnalysisの処理が、入力されたデータの文字列に対してどのように行われて、結果としてどんな単語がキーとして用いられているかを確認できる機能が&lt;code&gt;_analyze&lt;/code&gt; APIです。検索で単語がうまくヒットしないな？とか、なんで、こんなので検索結果に出てくるんだ？といった場合、このAPIを利用すると、どのような単語で転置インデックスが作られているかがわかるので、検索にヒットしない/する理由を見つけることができます。&lt;/p&gt;
+&lt;p&gt;Elasticsearchの便利な点はRESTfulなAPI＋JSONでやりとりができる点なのですが、&lt;code&gt;_analyze&lt;/code&gt; APIの結果をJSONで受け取っても、見るのにちょっと苦労します。。。こんな感じ。&lt;/p&gt;
+&lt;p&gt;リクエスト：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;POST _analyze
+{
+  &amp;quot;analyzer&amp;quot;: &amp;quot;kuromoji&amp;quot;,
+  &amp;quot;text&amp;quot;: &amp;quot;今年はブログをいっぱい書きますよ！&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;レスポンス：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+  &amp;quot;tokens&amp;quot;: [
+    {
+      &amp;quot;token&amp;quot;: &amp;quot;今年&amp;quot;,
+      &amp;quot;start_offset&amp;quot;: 0,
+      &amp;quot;end_offset&amp;quot;: 2,
+      &amp;quot;type&amp;quot;: &amp;quot;word&amp;quot;,
+      &amp;quot;position&amp;quot;: 0
+    },
+    {
+      &amp;quot;token&amp;quot;: &amp;quot;ブログ&amp;quot;,
+      &amp;quot;start_offset&amp;quot;: 3,
+      &amp;quot;end_offset&amp;quot;: 6,
+      &amp;quot;type&amp;quot;: &amp;quot;word&amp;quot;,
+      &amp;quot;position&amp;quot;: 2
+    },
+    {
+      &amp;quot;token&amp;quot;: &amp;quot;いっぱい&amp;quot;,
+      &amp;quot;start_offset&amp;quot;: 7,
+      &amp;quot;end_offset&amp;quot;: 11,
+      &amp;quot;type&amp;quot;: &amp;quot;word&amp;quot;,
+      &amp;quot;position&amp;quot;: 4
+    },
+    {
+      &amp;quot;token&amp;quot;: &amp;quot;書く&amp;quot;,
+      &amp;quot;start_offset&amp;quot;: 11,
+      &amp;quot;end_offset&amp;quot;: 13,
+      &amp;quot;type&amp;quot;: &amp;quot;word&amp;quot;,
+      &amp;quot;position&amp;quot;: 5
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;このくらいの量であればまだなんとかなりますが、文章が長くなると辛いですよね。&lt;/p&gt;
+&lt;p&gt;ということで、GUIがあると便利だろうなぁと。で、作ってみましたというのが今日紹介するKibana用のAnalyze UIプラグインです。
+こんな感じで、Kibanaのアプリの一部として動作しブラウザ上で、入力テキストの文字列がどのようにanalyzeされて、単語になるかがわかります。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:800&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20180119/analyze_ui_sample_1.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20180119/analyze_ui_sample_1.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;（先ほどのAPIのサンプルと同じものを画面で入力した結果になります）。&lt;/p&gt;
+&lt;h3 id=&#34;インストール方法&#34;&gt;インストール方法&lt;/h3&gt;
+&lt;p&gt;現時点の最新版Kibana（6.1.2）に対応しています。
+Kibanaのディレクトリで&lt;code&gt;kibana-plugin&lt;/code&gt;コマンドを利用してインストールします。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/kibana-plugin install https://github.com/johtani/analyze-api-ui-plugin/releases/download/6.1.2/analyze-api-ui-plugin-6.1.2.zip
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これだけです。
+で、Kibanaを起動していただくと、左のメニューに「Analyze UI」という項目が増えています。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:400&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20180119/kibana_menu.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20180119/kibana_menu.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;クリックすると、Analyze UIが表示されます。&lt;/p&gt;
+&lt;p&gt;初期画面は入力された文字を特定のAnalyzerで処理した場合の結果を見るための画面です。綱目の説明は画像をご覧ください。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:800&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20180119/intro_analyze_ui_1.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20180119/intro_analyze_ui_1.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;先ほどのJSONよりは見やすくなったかと思います。
+そのほかにもいくつか画面や機能があるのですが、今日はこの辺りで。
+「&lt;code&gt;_analyze&lt;/code&gt; API便利なんだけど、JSONは。。。」とか「検索うまくできないなぁなんでだろう？」と思っている方は、ぜひ試して見ていただければと。
+問題点などありましたら、GitHubのIssueを登録してください。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -41,6 +487,225 @@
       
       <guid>https://blog.johtani.info/blog/2016/07/22/making-ingest-processor-plugin-with-cookiecutter/</guid>
       <description>久しぶりに、技術的なブログ書いてます。 Ingest Processorのプラグインを作ってみたくなったので、書いてみました。 ただ書いてみるんじゃ3番煎じ</description>
+      <content:encoded>&lt;p&gt;久しぶりに、技術的なブログ書いてます。&lt;/p&gt;
+&lt;p&gt;Ingest Processorのプラグインを作ってみたくなったので、書いてみました。
+ただ書いてみるんじゃ3番煎じになりそうなので、&lt;a href=&#34;https://cookiecutter.readthedocs.io/en/latest/readme.html&#34;&gt;cookiecutter&lt;/a&gt;を使ってみました。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;と言っても、同僚のAlexが&lt;a href=&#34;https://discuss.elastic.co/t/cookiecutter-template-for-writing-ingest-processors/52985&#34;&gt;cookiecutter-elasticsearch-ingest-processor&lt;/a&gt;と言うテンプレートを作ってくれているのを使っただけですが。（https://discuss.elastic.co に投稿された記事で、使い方がアニメgifで説明されててわかりやすいです）&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://cookiecutter.readthedocs.io/en/latest/readme.html&#34;&gt;cookiecutter&lt;/a&gt;とは、コマンドラインで質問に答えると、テンプレートからプロジェクトが生成できるツールです。
+Elasticでは、カスタムBeatを作る時に利用する例がいつかの日本語ブログや発表資料で話題になっていました。
+これのIngest Processorのプラグインバージョンです。&lt;/p&gt;
+&lt;p&gt;今回は、NEologdも使ってみたかったので、Lucene Kuromoji for NEologdを利用して
+指定した品詞の単語だけを抽出するProcessorを作ってみました。&lt;/p&gt;
+&lt;p&gt;GitHubのプロジェクト：https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract&lt;/p&gt;
+&lt;h3 id=&#34;cookiecutterの使い方&#34;&gt;Cookiecutterの使い方&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://cookiecutter.readthedocs.io/en/latest/readme.html&#34;&gt;Cookiecutterのインストールはサイト&lt;/a&gt;をご覧ください。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cookiecutter gh:spinscale/cookiecutter-elasticsearch-ingest-processor
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あとは、出てくる以下の項目を指定するだけです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;processor_type&lt;/code&gt; : Ingest Processorのタイプ名です。&lt;code&gt;kuromoji_part_of_speech_extract&lt;/code&gt;としました。（Alexのだと&lt;code&gt;_&lt;/code&gt;を使うとちょっと問題があるので後述）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;description&lt;/code&gt; : readme.mdに利用されます。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;developer_name&lt;/code&gt; : 名前を記載。Javaのファイルのヘッダに利用&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;elasticsearch_version&lt;/code&gt; : デフォルトで&lt;code&gt;5.0.0-alpha4&lt;/code&gt;が指定されているので、特に指定せず&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;以上の質問に答えたら、プロジェクトのディレクトリ構造が出来上がってます。
+プロジェクトのビルドなどにはGradleを利用します。&lt;/p&gt;
+&lt;h3 id=&#34;プロジェクトのintellij-idea用のファイルを生成&#34;&gt;プロジェクトのIntelliJ IDEA用のファイルを生成&lt;/h3&gt;
+&lt;p&gt;build.gradleファイルでGradleのideaプラグインがapplyされているので、以下のコマンドを叩けばIntelliJ IDEAのプロジェクトファイル（？）が生成され、IntelliJで開けばすぐに開発ができる状態にできます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;gradle idea
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;コーディング&#34;&gt;コーディング&lt;/h3&gt;
+&lt;p&gt;あとは、必要処理をコーディングします。
+実際にコーディングするクラスは&lt;code&gt;org.elasticsearch.plugin.ingest.kuromoji_part_of_speech_extract&lt;/code&gt;のパッケージにある以下の2つです。（パッケージ名にはprocessor_typeの名前が指定されている）&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;IngestKuromojiPartOfSpeechExtractPlugin&lt;/li&gt;
+&lt;li&gt;KuromojiPartOfSpeechExtractProcessor&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;ingestkuromojipartofspeechextractplugin&#34;&gt;IngestKuromojiPartOfSpeechExtractPlugin&lt;/h4&gt;
+&lt;p&gt;Pluginというクラスは、プラグインをNodeのModuleとして登録する処理を書くクラスとなります。
+生成してすぐは、次のような形になっています。（※importやクラス定義の部分は省略しています。）&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-Java&#34; data-lang=&#34;Java&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;...&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; Setting&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; YOUR_SETTING &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Setting&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&amp;gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ingest.kuromoji_part_of_speech_extract.setting&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;foo&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;value&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; value&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; Setting&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Property&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;NodeScope&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; List&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Setting&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;?&amp;gt;&amp;gt;&lt;/span&gt; getSettings&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Arrays&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;asList&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;YOUR_SETTING&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;onModule&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;NodeModule nodeModule&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;throws&lt;/span&gt; IOException &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        nodeModule&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;registerProcessor&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;KuromojiPartOfSpeechExtractProcessor&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;TYPE&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt;
+                &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;registry&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; KuromojiPartOfSpeechExtractProcessor&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Factory&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;());&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;...&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;YOUR_SETTING&lt;/code&gt;プロパティと&lt;code&gt;getSettings()&lt;/code&gt;メソッドは&lt;code&gt;elasticsearch.yml&lt;/code&gt;で指定したい設定を記述する場合の例になります。今回は特に必要ないので両方削除しました。
+最終系は&lt;a href=&#34;https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract&#34;&gt;GitHubのコード&lt;/a&gt;をご覧ください。&lt;/p&gt;
+&lt;h4 id=&#34;kuromojipartofspeechextractprocessor&#34;&gt;KuromojiPartOfSpeechExtractProcessor&lt;/h4&gt;
+&lt;p&gt;Processorは実際にIngest Nodeで行う処理を書くところです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-Java&#34; data-lang=&#34;Java&#34;&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; String TYPE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kuromoji_part_of_speech_extract&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; String field&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; String targetField&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;KuromojiPartOfSpeechExtractProcessor&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String tag&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; String field&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; String targetField&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;throws&lt;/span&gt; IOException &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;super&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;tag&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;field&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; field&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;targetField&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; targetField&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;IngestDocument ingestDocument&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;throws&lt;/span&gt; Exception &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        String content &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ingestDocument&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;getFieldValue&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;field&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; String&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        &lt;span style=&#34;color:#75715e&#34;&gt;// TODO implement me!
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        ingestDocument&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;setFieldValue&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;targetField&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; content&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; String &lt;span style=&#34;color:#a6e22e&#34;&gt;getType&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; TYPE&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Factory&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;extends&lt;/span&gt; AbstractProcessorFactory&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;KuromojiPartOfSpeechExtractProcessor&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+
+        &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; KuromojiPartOfSpeechExtractProcessor &lt;span style=&#34;color:#a6e22e&#34;&gt;doCreate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String processorTag&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; Map&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; Object&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; config&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;throws&lt;/span&gt; Exception &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+            String field &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; readStringProperty&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;TYPE&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; processorTag&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; config&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+            String targetField &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; readStringProperty&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;TYPE&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; processorTag&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; config&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;target_field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;default_field_name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; KuromojiPartOfSpeechExtractProcessor&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;processorTag&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; field&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; targetField&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;TYPE&lt;/code&gt;が&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/master/put-pipeline-api.html&#34;&gt;Ingest APIのPipelineでProcessorを指定するときに使う名前&lt;/a&gt;になります。ここは、cookiecutterの時にprocessor_typeに入力した文字列になっています。
+&lt;code&gt;kuromoji_part_of_speech_extract&lt;/code&gt;だと長いので、&lt;code&gt;kuromoji_pos_extract&lt;/code&gt;に変えました。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;execute()&lt;/code&gt;メソッドに&lt;code&gt;// TODO implement me!&lt;/code&gt;とあります。
+この部分に実際の処理を記述していきます。&lt;/p&gt;
+&lt;p&gt;あとは、&lt;code&gt;Factory&lt;/code&gt;クラスでIngest APIで指定された設定項目を読み込みます。
+今回作成した&lt;code&gt;elasticsearch-ingest-kuromoji-pos-extract&lt;/code&gt;では品詞を指定する必要があるので、&lt;code&gt;pos_tags&lt;/code&gt;を指定できるように処理を追加しました。&lt;/p&gt;
+&lt;p&gt;私が実装したものの説明をするとちょっと長くなりそうなので、&lt;a href=&#34;https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract&#34;&gt;GitHubのコード&lt;/a&gt;をご覧ください。&lt;/p&gt;
+&lt;h3 id=&#34;テストのコーディング&#34;&gt;テストのコーディング&lt;/h3&gt;
+&lt;p&gt;テストのクラスもテンプレートで生成されています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;KuromojiPartOfSpeechExtractProcessorTests&lt;/li&gt;
+&lt;li&gt;KuromojiPartOfSpeechExtractRestIT&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;kuromojipartofspeechextractprocessortests&#34;&gt;KuromojiPartOfSpeechExtractProcessorTests&lt;/h4&gt;
+&lt;p&gt;Processorクラスのテストになります。生成直後は次のような感じです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-Java&#34; data-lang=&#34;Java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;testThatProcessorWorks&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;throws&lt;/span&gt; Exception &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    Map&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; Object&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; document &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; HashMap&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+    document&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;put&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;source_field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fancy source field content&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    IngestDocument ingestDocument &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; RandomDocumentPicks&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;randomIngestDocument&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;random&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt; document&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+
+    KuromojiPartOfSpeechExtractProcessor processor &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; KuromojiPartOfSpeechExtractProcessor&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;randomAsciiOfLength&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;10&lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;source_field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;target_field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    processor&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;ingestDocument&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    Map&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; Object&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; data &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ingestDocument&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;getSourceAndMetadata&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+
+    assertThat&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;data&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; hasKey&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;target_field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
+    assertThat&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;target_field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt; is&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fancy source field content&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;// TODO add fancy assertions here
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;テストメソッドも実装されていますが、パラメータの追加の設定処理やアサーションが書かれてません。
+実装に合わせて、アサーションや設定処理を追加しましょう。&lt;/p&gt;
+&lt;h4 id=&#34;kuromojipartofspeechextractrestit&#34;&gt;KuromojiPartOfSpeechExtractRestIT&lt;/h4&gt;
+&lt;p&gt;こちらはIntegration Testになります。
+実際にElasticsearchに対して外部からAPIを叩くような感じです。
+APIを叩くときに利用するJSONの設定やアサーションは&lt;code&gt;src/test/resources&lt;/code&gt;にyamlファイルがあります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;10_basic.yaml&lt;/li&gt;
+&lt;li&gt;20_kuromoji_part_of_speech_extract_processor.yaml&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;code&gt;10_basic.yaml&lt;/code&gt;はプラグインがインストールされているかの確認のテストです。特に変更する必要はないです。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;20_kuromoji_part_of_speech_extract_processor.yaml&lt;/code&gt;は実際にコーディングしたProcessorが動くかどうかのテストです。&lt;/p&gt;
+&lt;p&gt;テストの内容については、&lt;a href=&#34;https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract&#34;&gt;GitHubのコード&lt;/a&gt;をご覧ください。&lt;/p&gt;
+&lt;h3 id=&#34;テストの実行とzipの生成&#34;&gt;テストの実行とZipの生成&lt;/h3&gt;
+&lt;p&gt;テストの実行とZipの生成は次のコマンドを実行すればOKです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;gradle check
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;テストに問題があった場合は、コケますし、問題なければ&lt;code&gt;SUCCESS&lt;/code&gt;と表示が出ます。
+成功した場合は&lt;code&gt;build/distributions/&lt;/code&gt;というディレクトリにzipファイルができています。
+これをElasticsearchのpluginコマンドでインストールすれば動きます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;bin/plugin install file:///path/to/elasticsearch-ingest-kuromoji-pos-extract/build/distribution/ingest-kuromoji_part_of_speech_extract-0.0.1-SNAPSHOT.zip
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;kuromoji_pos_extractの利用方法&#34;&gt;kuromoji_pos_extractの利用方法&lt;/h3&gt;
+&lt;p&gt;Ingest APIには便利な&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/master/simulate-pipeline-api.html&#34;&gt;Simulate Pipeline API&lt;/a&gt;があります。&lt;/p&gt;
+&lt;p&gt;ということで、&lt;a href=&#34;https://github.com/neologd/mecab-ipadic-neologd/blob/master/README.ja.md&#34;&gt;mecab-ipadic-NEologd&lt;/a&gt;にあったサンプルの文章を使って、使い方の説明です。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-JSON&#34; data-lang=&#34;JSON&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;_ingest/pipeline/_simulate&lt;/span&gt;
+{
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;pipeline&amp;#34;&lt;/span&gt; : {
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;description&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kuromoji neologd extract test&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;processors&amp;#34;&lt;/span&gt; : [
+      {
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;kuromoji_pos_extract&amp;#34;&lt;/span&gt; : {
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;field&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;body&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;target_field&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;noun_field&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;pos_tags&amp;#34;&lt;/span&gt; : [
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;名詞-固有名詞-組織&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;名詞-固有名詞-一般&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;名詞-固有名詞-人名-一般&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;名詞-固有名詞-地域-一般&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;名詞-固有名詞-地域-国&amp;#34;&lt;/span&gt;
+          ]
+        }
+      }
+      ]
+  },
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;docs&amp;#34;&lt;/span&gt; : [
+    {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;index&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;body&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。&amp;#34;&lt;/span&gt;
+      }
+    }
+    ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;結果はこちら。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-JSON&#34; data-lang=&#34;JSON&#34;&gt;{
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;docs&amp;#34;&lt;/span&gt;: [
+    {
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;doc&amp;#34;&lt;/span&gt;: {
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;index&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_type&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;: {
+          &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;noun_field&amp;#34;&lt;/span&gt;: [
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;10日&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;中居正広のミになる図書館&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;テレビ朝日&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;SMAP&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;中居正広&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;篠原信一&amp;#34;&lt;/span&gt;
+          ],
+          &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;body&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;10日放送の「中居正広のミになる図書館」（テレビ朝日系）で、SMAPの中居正広が、篠原信一の過去の勘違いを明かす一幕があった。&amp;#34;&lt;/span&gt;
+        },
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_ingest&amp;#34;&lt;/span&gt;: {
+          &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;timestamp&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2016-07-22T06:18:49.007+0000&amp;#34;&lt;/span&gt;
+        }
+      }
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;noun_field&lt;/code&gt;に固有名詞の単語が抜き出せているのがわかるかと思います。&lt;/p&gt;
+&lt;h3 id=&#34;alexのテンプレートで困った点&#34;&gt;Alexのテンプレートで困った点&lt;/h3&gt;
+&lt;p&gt;テンプレートは便利だったのですが、&lt;code&gt;processor_type&lt;/code&gt;に&lt;code&gt;_&lt;/code&gt;を使用したタイプ名を指定すると次のような問題（？）が発生しました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;クラス名が&lt;code&gt;Kuromoji_part_of_speech_extractProcessor&lt;/code&gt;となってしまう&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;深刻な問題ではないのですが、JavaだとCamel Caseが普通なのでちょっと気になって。
+ということで、&lt;a href=&#34;https://github.com/spinscale/cookiecutter-elasticsearch-ingest-processor/pull/1&#34;&gt;プルリク&lt;/a&gt;作って出してみました。まだ取り込まれてないかな。&lt;/p&gt;
+&lt;p&gt;取り込み前に使いたい方は以下のコマンドを実行してください。
+&lt;code&gt;processor_class_name&lt;/code&gt;という項目が増えています。
+デフォルトだと&lt;code&gt;processor_type&lt;/code&gt;の&lt;code&gt;_&lt;/code&gt;の部分を取り除きつつCamel Caseにしたものが入ります。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cookiecutter gh:johtani/cookiecutter-elasticsearch-ingest-processor
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;まとめ&#34;&gt;まとめ&lt;/h3&gt;
+&lt;p&gt;ということで、とりあえず作ってみましたというものになります。
+特徴的な単語（固有名詞だけ）を抜き出して、別のフィールドにできるので、タグみたいなものをこれを使って前処理で作れるようになるかなぁと。&lt;/p&gt;
+&lt;h2 id=&#34;参考ブログ元ネタ&#34;&gt;参考ブログ（元ネタ？）&lt;/h2&gt;
+&lt;p&gt;インスパイア元となったブログです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://dev.classmethod.jp/server-side/elasticsearch/ingest-plugin-useragent/&#34;&gt;User Agentを解析するIngest Pluginを書いてみた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://blog.cybozu.io/entry/2016/07/05/080000&#34;&gt;Elasticsearch 5.0.0のIngest Node用プラグインを書いた話&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -50,6 +715,27 @@
       
       <guid>https://blog.johtani.info/blog/2014/10/15/versioning-of-sonatype/</guid>
       <description>Elasticsearch 1.4.0.Beta1がリリースされました。 個人でelasticsearch-extended-analyzeというプラグインを開発してま</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;http://blog.johtani.info/blog/2014/10/02/elasticsearch-1-4-0-beta-released-ja/&#34;&gt;Elasticsearch 1.4.0.Beta1がリリース&lt;/a&gt;されました。&lt;/p&gt;
+&lt;p&gt;個人で&lt;a href=&#34;https://github.com/johtani/elasticsearch-extended-analyze&#34;&gt;elasticsearch-extended-analyze&lt;/a&gt;というプラグインを開発してます。
+こちらも1.4.0.Beta1に対応するべく作業をしてて、少し戸惑ったことがあったので、メモをば。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;ここ最近はプラグインのバージョン番号をElasticsearchのバージョン番号と同じものを利用していました。
+（プラグインの機能追加をサボってる？？）
+その時に、&lt;code&gt;1.4.0.Beta1&lt;/code&gt;という番号を指定したのですが、意味不明なエラーに悩まされてしまいまして。&lt;/p&gt;
+&lt;p&gt;プラグインのリリースでは、以下のコマンドを実行します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ mvn release:prepare
+$ mvn release:perform
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最初のコマンド（prepare）で、パッケージングを実施し、Githubにリリースタグを打ったバージョンがpushされます。
+次のコマンド（perform）で、パッケージングされたzipファイルがsonatypeのサイトに公開するためにアップロードされます。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;1.4.0.Beta1&lt;/code&gt;というバージョン文字列を利用した場合、prepareは問題なく実行できたのですが、
+performで以下の様なエラーが返ってきました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Return code is: 401, ReasonPhrase: Unauthorized.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;バージョン番号が&lt;code&gt;1.3.0&lt;/code&gt;では特に問題はなかったのですが、、、
+結局、バージョン番号を&lt;code&gt;1.4.0-beta1&lt;/code&gt;に変更すると問題なくリリースが完了しました。&lt;/p&gt;
+&lt;p&gt;mike_neckさんと話をしていて、&lt;a href=&#34;http://semver.org&#34;&gt;Semantic Versioning&lt;/a&gt;に関係しているのかなぁという話にはなったのですが、
+詳しく調べていません。。。&lt;/p&gt;
+&lt;p&gt;そのうち調べようかなぁ。。。。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -59,6 +745,44 @@
       
       <guid>https://blog.johtani.info/blog/2014/08/01/plugin-using-under-proxy-env/</guid>
       <description>Proxy環境で働いている方も結構いると思います。 Twitter上で、Elasticsearchのpluginコマンドでプラグインがインスト</description>
+      <content:encoded>&lt;p&gt;Proxy環境で働いている方も結構いると思います。
+Twitter上で、Elasticsearchのpluginコマンドでプラグインがインストールできなくて困っている方がいたので、
+調べてみたのでメモしておきます。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;プラグインコマンド&#34;&gt;プラグインコマンド&lt;/h2&gt;
+&lt;p&gt;Elasticsearchでは、プラグインという形でいくつかの便利な機能が公開されています。
+&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-analysis-kuromoji&#34;&gt;形態素解析ライブラリのKuromoji&lt;/a&gt;を使うためのプラグインや、&lt;a href=&#34;https://github.com/lmenezes/elasticsearch-kopf&#34;&gt;クラスタの管理がGUIで可能なkopf&lt;/a&gt;プラグインなどがあります。
+公式、サードパーティいろいろです。&lt;/p&gt;
+&lt;p&gt;これらのプラグインをElasticsearchにインストールする場合、以下のコマンドを実行すれば
+自動的にダウンロードして&lt;code&gt;plugins&lt;/code&gt;ディレクトリにインストールしてくれます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ここで、&lt;code&gt;elasticsearch/elasticsearch-analysis-kuromoji/2.3.0&lt;/code&gt;がプラグインのパスになります（例では、&lt;code&gt;提供元/プラグイン名/プラグインバージョン&lt;/code&gt;となっています。）。&lt;/p&gt;
+&lt;p&gt;この&lt;code&gt;plugin&lt;/code&gt;コマンドがダウンロード元にアクセスに行くのですが、プロキシ環境だとプロキシの設定が必要になります。&lt;/p&gt;
+&lt;h2 id=&#34;プロキシの指定maclinuxとwindowsでの違い&#34;&gt;プロキシの指定（Mac/LinuxとWindowsでの違い）&lt;/h2&gt;
+&lt;h3 id=&#34;maclinuxshコマンド&#34;&gt;Mac/Linux(shコマンド)&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;http://blog.johtani.info/blog/2013/09/03/ja-wikipedia-with-kuromoji/&#34;&gt;以前の記事&lt;/a&gt;でプロキシのポート番号などの指定方法を
+以下のように説明していました。
+（※昔の記事のため、kuromojiプラグインのバージョンが古いです）&lt;/p&gt;
+&lt;p&gt;ElasticsearchのpluginコマンドはJavaで実装されています。（org.elasticsearch.common.http.client.HttpDownloadHelper）
+プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。&lt;/p&gt;
+&lt;p&gt;ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;LinuxやMacの環境であれば、こちらのコマンドでプロキシの指定が可能です。
+ただし、Windows環境ではうまくいきません。&lt;/p&gt;
+&lt;p&gt;Elasticsearchは、環境の違いにより、ダウンロードするファイルが異なります。
+Windows環境の方は、zipファイルをダウンロードしてもらうようになっています。
+elasticsearchコマンドおよびpluginコマンドがbat形式で提供されているのがzipファイルとなるからです。&lt;/p&gt;
+&lt;h3 id=&#34;windowsbatコマンド&#34;&gt;Windows(batコマンド)&lt;/h3&gt;
+&lt;p&gt;Windows環境では次のように指定します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;set JAVA_OPTS=&amp;quot;-DproxyHost=ホスト名 -DproxyPort=ポート番号&amp;quot;
+bin\plugin -i elasticsearch/elasticsearch-analysis-kuromoji/2.3.0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;コマンドの実装方法が少し異なるために、このようになっています。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;プロキシ環境で利用される場合は、プラグインコマンドは上記のように実行していただければと。&lt;/p&gt;
+&lt;p&gt;公式ガイドには、これらの情報を追記するPRを送る予定です。
+また、WindowsのコマンドでもMac/Linuxと同様にできたほうがいい気がするので、Issueをあげようと思います。&lt;/p&gt;
+&lt;p&gt;不明点などあれば、コメントいただければと。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -68,6 +792,36 @@
       
       <guid>https://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/</guid>
       <description>今日はelasticsearch-kopfのAnalysis画面の紹介です。 （簡単なところから。。。その３） ちょっとあいだが開いてしまいまし</description>
+      <content:encoded>&lt;p&gt;今日はelasticsearch-kopfのAnalysis画面の紹介です。&lt;/p&gt;
+&lt;p&gt;（簡単なところから。。。その３）&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;ちょっとあいだが開いてしまいましたが、再開です。
+メニューの&lt;code&gt;aliases&lt;/code&gt;を選択すると、次のような画面が表示されます。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20140504/kopf-aliases.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20140504/kopf-aliases.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+      &lt;figcaption align=&#34;center&#34;&gt;&lt;h4&gt;Aliases画面&lt;/h4&gt;
+      &lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Elasticsearchの&lt;code&gt;alias&lt;/code&gt;を画面で確認できます。&lt;/p&gt;
+&lt;p&gt;エイリアスは、インデックスに別名をつけることができるElasticsearchの機能です。
+１エイリアス＝１インデックスでも良いですが、１エイリアスに対して複数のエイリアスを付与することもできます。
+この機能を利用することで、次のようなことが可能となります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;インデックスの切り替えをアプリ側に意識させずに実施（アプリはエイリアス名に対して検索すればOKなので）&lt;/li&gt;
+&lt;li&gt;直近１週間のログを検索するためのエイリアスの作成（複数のインデックスを１つのエイリアスに割り当て可能）&lt;/li&gt;
+&lt;li&gt;特定のルーティングによる検索（特定のデータに対する検索だけに絞るためにfilterを指定する）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;エイリアスについて詳しく知りたい方は&lt;a href=&#34;http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-aliases.html&#34;&gt;公式ガイド&lt;/a&gt;をご覧いただくのが良いかと。&lt;/p&gt;
+&lt;p&gt;画面は非常にわかりやすい作りになっているので、特に説明必要ないんですよね。。。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -77,6 +831,63 @@
       
       <guid>https://blog.johtani.info/blog/2014/04/09/intro-elasticsearch-kopf-analysis/</guid>
       <description>今日はelasticsearch-kopfのAnalysis画面の紹介です。 （簡単なところから。。。その２） メニューのanalysisを選択</description>
+      <content:encoded>&lt;p&gt;今日はelasticsearch-kopfのAnalysis画面の紹介です。&lt;/p&gt;
+&lt;p&gt;（簡単なところから。。。その２）&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;メニューの&lt;code&gt;analysis&lt;/code&gt;を選択すると、次のような画面が表示されます。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20140409/kopf-analysis.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20140409/kopf-analysis.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+      &lt;figcaption align=&#34;center&#34;&gt;&lt;h4&gt;Analysis画面&lt;/h4&gt;
+      &lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Elasticsearchの&lt;code&gt;_analyze&lt;/code&gt; APIを画面で確認できます。
+画面で動作の確認ができるのは嬉しいですよね。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;入力文字列：入力となるドキュメントに含まれる文字列や検索キーワードを入力&lt;/li&gt;
+&lt;li&gt;フィールドの指定：対象とするインデックス名、タイプ名、フィールド名を選択&lt;/li&gt;
+&lt;li&gt;analyze：ボタンを押す&lt;/li&gt;
+&lt;li&gt;トークナイズされた結果：入力文字列がどのようなトークンに分割されるか
+&lt;ul&gt;
+&lt;li&gt;start、end：入力文字列中の文字列の位置&lt;/li&gt;
+&lt;li&gt;pos：トークンの位置&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;という形でElasticsearchが指定されたフィールドで入力文字をどのようにトークナイズしたかを確認することができます。&lt;/p&gt;
+&lt;p&gt;Elasticsearchは内部でこのトークナイズされた単語を元に転置インデックスを作成し、検索に利用します。
+ですので、特定のデータが検索に上手くヒットしないときに、この画面でデータの文字列をトークナイズしてみるといった用途に使えます。&lt;/p&gt;
+&lt;p&gt;フィールドの設定がどのようにして入力文字列をトークンにしているかといった点については、今度のElasticsearch勉強会で話す予定です。&lt;/p&gt;
+&lt;p&gt;フィールドの設定を利用する以外に、アナライザを指定してどのようにトークナイズされるかを見ることもできます。
+「ANALYZE BYANALYZER」をクリックすると利用できます。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20140409/kopf-analysis-analyzer.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20140409/kopf-analysis-analyzer.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+      &lt;figcaption align=&#34;center&#34;&gt;&lt;h4&gt;ANALYZE BY ANALYZER&lt;/h4&gt;
+      &lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;トークナイズしたい文字列を入力し、インデックス名と、インデックスに設定されているアナライザ名を選択してanalyzeボタンを押すと
+結果が表示されます。
+（例では、kuromojiアナライザを利用して出力になっています。また、出力結果のposの表示位置がFIELD TYPEの時と違うのが少し気になりました。）&lt;/p&gt;
+&lt;p&gt;ただ、残念ながら、インデックスのマッピングで指定したアナライザしか利用できないみたいなので、
+どのアナライザがどんな挙動かを調べたい場合は、以前紹介した&lt;a href=&#34;http://blog.johtani.info/blog/2013/09/23/intro-elasticsearch-inquisitor/&#34;&gt;elasticsearch-inquisitor&lt;/a&gt;を
+利用したほうが良さそうです。&lt;/p&gt;
+&lt;p&gt;ということで、今日はanalysis画面の説明でした。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -86,6 +897,65 @@
       
       <guid>https://blog.johtani.info/blog/2014/04/07/intro-elasticsearch-kopf-rest/</guid>
       <description>今日はelasticsearch-kopfのREST画面の紹介です。 （簡単なところから。。。） メニューのrestを選択すると、次のような画面</description>
+      <content:encoded>&lt;p&gt;今日はelasticsearch-kopfのREST画面の紹介です。&lt;/p&gt;
+&lt;p&gt;（簡単なところから。。。）&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;メニューの&lt;code&gt;rest&lt;/code&gt;を選択すると、次のような画面が表示されます。&lt;/p&gt;
+&lt;p&gt;Elasticsearch自体が、さまざまな操作をRESTでできる仕組みになっています。
+検索にも利用しますが、それ以外の設定などにつてもリクエストを送ればOKです。&lt;/p&gt;
+&lt;p&gt;ですので、リクエストや設定を自分で組み立てて送ることができる画面が用意されているととても便利です。
+（もちろん、curlコマンドでもいいのですが、画面があると便利ですよね）&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20140407/kopf-rest.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20140407/kopf-rest.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+      &lt;figcaption align=&#34;center&#34;&gt;&lt;h4&gt;REST画面&lt;/h4&gt;
+      &lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&#34;history&#34;&gt;History&lt;/h2&gt;
+&lt;p&gt;履歴表示画面です。
+これまで、kopfのrest画面を利用して送信したリクエストが一覧で表示されます。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;History&lt;/code&gt;という文字をクリックすることで、表示/非表示の切り替えが可能です。（最初は非表示）
+マウスオーバーすると、リクエストボディがポップアップで表示されます。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20140407/kopf-history.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20140407/kopf-history.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+      &lt;figcaption align=&#34;center&#34;&gt;&lt;h4&gt;History&lt;/h4&gt;
+      &lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;履歴にあるURLはクリック可能で、クリックすると実行されます。
+履歴は&lt;code&gt;localStorage&lt;/code&gt;に保存されるみたいです。（ブラウザの仕様？あんまり詳しくないので。。。）
+たぶん、30件が上限かと（ソースで確認しただけ）&lt;/p&gt;
+&lt;h2 id=&#34;url&#34;&gt;URL&lt;/h2&gt;
+&lt;p&gt;rest画面でリクエストを送信する先のURLを指定します。
+メソッドは右側のSELECTで選択可能です。&lt;/p&gt;
+&lt;p&gt;リクエストパラメータも指定が可能です。&lt;/p&gt;
+&lt;h2 id=&#34;リクエストボディ&#34;&gt;リクエストボディ&lt;/h2&gt;
+&lt;p&gt;検索や設定のJSONを記述するところです。
+一応、JSON的にエラーがある場合は行数の左側にバツ印が出てきておかしなところもわかるようになっています。&lt;/p&gt;
+&lt;p&gt;インデントなどは行ってくれますが、senseみたいな補完などはないので、少し辛いところです。&lt;/p&gt;
+&lt;h2 id=&#34;レスポンス&#34;&gt;レスポンス&lt;/h2&gt;
+&lt;p&gt;送信したリクエストに対するレスポンスが返ってきます。
+インデントされた状態で表示されるので読みやすいかと。
+また、入れ子になっているJSONについては、閉じたり開いたりすることも可能です。
+（開始のカッコの右側に&lt;code&gt;-&lt;/code&gt;が表示されていて、クリックすると閉じることができます。閉じると&lt;code&gt;+&lt;/code&gt;に変わります）&lt;/p&gt;
+&lt;p&gt;簡単ですが、rest画面の説明でした。
+KOPFを使っていて、ちょっとしたクエリを送ったりするのには便利だと思います。&lt;/p&gt;
+&lt;p&gt;複雑な検索クエリなどについては、やはりsenseを使うのが良いかと思いますが。。。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -95,6 +965,65 @@
       
       <guid>https://blog.johtani.info/blog/2014/04/05/intro-elasticsearch-kopf-1/</guid>
       <description>なんだか、ドタバタしてて久しぶりの更新です。 ベルリンの旅行記みたいなのも書きたいのですが、まずはこちらかと。 elasticsearch-ko</description>
+      <content:encoded>&lt;p&gt;なんだか、ドタバタしてて久しぶりの更新です。
+ベルリンの旅行記みたいなのも書きたいのですが、まずはこちらかと。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/lmenezes/elasticsearch-kopf&#34;&gt;elasticsearch-kopf&lt;/a&gt;プラグインの紹介です。&lt;/p&gt;
+&lt;p&gt;今回は概要の説明だけになります。機能が結構多いので。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;elasticsearch-kopfとは&#34;&gt;elasticsearch-kopfとは？&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;_site&lt;/code&gt;プラグインの一つで、クラスタ管理用のプラグインになります。
+&lt;code&gt;head&lt;/code&gt;プラグインや&lt;code&gt;HQ&lt;/code&gt;プラグインと同様です。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20140405/kopf.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20140405/kopf.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+      &lt;figcaption align=&#34;center&#34;&gt;&lt;h4&gt;プラグインの画面&lt;/h4&gt;
+      &lt;/figcaption&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;このようにシンプルな画面で、スッキリとしています。
+緑を基調にした画面構成はElasticsearchの緑色を意識してるんでしょうか？&lt;/p&gt;
+&lt;p&gt;上記の画像に簡単なコメントを入れてあります。&lt;/p&gt;
+&lt;h3 id=&#34;メニュー&#34;&gt;メニュー&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;KOPF：KOPF自体の設定（接続先とリフレッシュインターバルの変更）&lt;/li&gt;
+&lt;li&gt;cluster：クラスタ管理、情報（デフォルト表示画面）&lt;/li&gt;
+&lt;li&gt;rest：RESTリクエスト送信、結果表示画面&lt;/li&gt;
+&lt;li&gt;aliases：エイリアス管理&lt;/li&gt;
+&lt;li&gt;analysis：&lt;code&gt;analysis API&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;percolator：パーコレータ管理&lt;/li&gt;
+&lt;li&gt;warmup：ウォームアップクエリ管理&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;上記のようなメニューです。各メニューについては、今後のブログで少しずつ紹介しようかと。
+このメニューの色が、クラスタの状態も表しています。ステータスがYELLOWなら黄色、REDなら赤色に変わります。&lt;/p&gt;
+&lt;h3 id=&#34;インデックス&#34;&gt;インデックス&lt;/h3&gt;
+&lt;p&gt;インデックスは列として表示されます。先ほどの画像では、2つのインデックスが表示されている状態です。
+インデックス毎に、シャードも表示されます。これは、各ノードがどのシャードを保持しているかという情報です。
+色の濃いシャードがプライマリでしょう。
+インデックス名やシャードの箱はクリックできるようになっていて、それぞれの情報がJSONで表示されます。
+その他にもドキュメント数、サイズなども表示されます。
+インデックスの各種操作（closeやdeleteなど）もここからメニューが表示されます。（これも次回詳しく）&lt;/p&gt;
+&lt;h3 id=&#34;ノード&#34;&gt;ノード&lt;/h3&gt;
+&lt;p&gt;ノードの情報が行として表示されます。ノードが増えると下に追加されていきます。
+&lt;code&gt;node1&lt;/code&gt;というのが、ノード名です。（ヒーローの名前とかが出てくるやつです。）&lt;/p&gt;
+&lt;p&gt;その他に、IPアドレス、ポート番号、負荷、ヒープサイズなども表示されています。
+電源ボタンはノードのシャットダウンを行うためのボタンです。（確認用のダイアログが表示される）&lt;/p&gt;
+&lt;h3 id=&#34;その他&#34;&gt;その他&lt;/h3&gt;
+&lt;p&gt;その他に、クラスタの概要として、ノード数、インデックス数、シャード数、ドキュメント数なども表示されます。
+インデックスの作成などは、アイコンから操作が可能です。
+大規模なクラスタを管理している場合、検索ボックスを利用することで、インデックス名やノード名による絞込もできるようになっています。&lt;/p&gt;
+&lt;h2 id=&#34;感想&#34;&gt;感想&lt;/h2&gt;
+&lt;p&gt;シンプルな構成の画面で、個人的には&lt;code&gt;head&lt;/code&gt;よりも好きな画面です。
+&lt;code&gt;HQ&lt;/code&gt;よりもシャードの分散具合がわかりやすいので、今後はこのプラグインを利用していこうと考えています。&lt;/p&gt;
+&lt;p&gt;まずは、簡単な紹介です。今後、各画面についてもう少し説明をブログに書いていこうかと考えています。
+待てない方は、触ってみてもらうのが良いかと。
+もちろん、続きを書いてもらってもいいですよ！！&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -104,6 +1033,58 @@
       
       <guid>https://blog.johtani.info/blog/2014/03/11/es-plugin-installed-to-my-env/</guid>
       <description>elasticsearchに、このへん入れるときっと幸せになれるはず・たぶん。&amp;#10;elasticsearch/elasticsearc</description>
+      <content:encoded>&lt;blockquote class=&#34;twitter-tweet&#34; lang=&#34;ja&#34;&gt;&lt;p&gt;elasticsearchに、このへん入れるときっと幸せになれるはず・たぶん。&amp;#10;elasticsearch/elasticsearch-analysis-kuromoji/1.6.0&amp;#10;oyrusso/elasticsearch-HQ&amp;#10;mobz/elasticsearch-head&lt;/p&gt;&amp;mdash; toshi_miura (@toshi_miura) &lt;a href=&#34;https://twitter.com/toshi_miura/statuses/441230280041304066&#34;&gt;2014, 3月 5&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;//platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;p&gt;こんなツイートを見かけたので、普段入れてるプラグインを簡単に紹介してみようかと。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;ローカルの環境に普段入れているプラグインの紹介です。
+ちゃんとクラスタを管理しているというよりは、最新版の動作などを確認するための環境になります。なので、ちょっと視点が異なるかもしれませんが参考になればと。&lt;/p&gt;
+&lt;h2 id=&#34;elasticsearch-analysis-kuromoji&#34;&gt;elasticsearch-analysis-kuromoji&lt;/h2&gt;
+&lt;p&gt;URL : &lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-analysis-kuromoji&#34;&gt;elasticsearch-analysis-kuromoji&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Kuromojiという日本語形態素解析のTokenizerなどを使えるようにするためのプラグインです。
+今度、発売される&lt;a href=&#34;http://www.amazon.co.jp/dp/4048662023?tag=johtani-22&amp;amp;camp=243&amp;amp;creative=1615&amp;amp;linkCode=as1&amp;amp;creativeASIN=4048662023&amp;amp;adid=072DC31D3GTPZCBQ6TYW&amp;amp;&amp;amp;ref-refURL=http%3A%2F%2Fblog.johtani.info%2Fblog%2F2014%2F03%2F03%2Frelease-elasticsearch-server-japanese-edition%2F&#34;&gt;「ElasticSearch Server」日本語版&lt;/a&gt;には付録として、利用方法を執筆しました。参考にしていただければと。
+READMEにもサンプルは掲載されてるので、こちらを参考にするのもありですが。&lt;/p&gt;
+&lt;h2 id=&#34;elasticsearch-extended-analyze&#34;&gt;elasticsearch-extended-analyze&lt;/h2&gt;
+&lt;p&gt;URL : &lt;a href=&#34;https://github.com/johtani/elasticsearch-extended-analyze&#34;&gt;elasticsearch-extended-analyze&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;私が開発しているプラグインです。
+Elasticsearchには&lt;code&gt;analyze&lt;/code&gt;というAPIが用意されています。
+文章を渡すと指定した&lt;code&gt;analyzer&lt;/code&gt;などでどのような単語に区切られるかがわかるAPIです。&lt;/p&gt;
+&lt;p&gt;ただ、&lt;code&gt;analyzer&lt;/code&gt;の内部では&lt;code&gt;char filter&lt;/code&gt;、&lt;code&gt;tokenizer&lt;/code&gt;、&lt;code&gt;token filter&lt;/code&gt;という個別のパーツがそれぞれ入力された文字列に対して処理を実施します。
+この過程が&lt;code&gt;analyze&lt;/code&gt; APIではわかりません。
+それをわかるようにしてみたのが&lt;code&gt;elasticsearch-extended-analyze&lt;/code&gt;プラグインになります。&lt;/p&gt;
+&lt;p&gt;詳細については&lt;a href=&#34;http://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/&#34;&gt;過去の記事&lt;/a&gt;を見ていただければと。
+画面があると便利だよなぁと思いつつ、作ってない。。。&lt;/p&gt;
+&lt;h2 id=&#34;polyfractalelasticsearch-inquisitor&#34;&gt;polyfractal/elasticsearch-inquisitor&lt;/h2&gt;
+&lt;p&gt;URL : &lt;a href=&#34;https://github.com/polyfractal/elasticsearch-inquisitor&#34;&gt;elasticsearch-inquisitor&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;クエリのデバッグとかに便利なプラグイン。&lt;/p&gt;
+&lt;p&gt;こちらも詳細は&lt;a href=&#34;http://blog.johtani.info/blog/2013/09/23/intro-elasticsearch-inquisitor/&#34;&gt;過去の記事&lt;/a&gt;を見ていただければと。&lt;/p&gt;
+&lt;h2 id=&#34;mobzelasticsearch-head&#34;&gt;mobz/elasticsearch-head&lt;/h2&gt;
+&lt;p&gt;URL : &lt;a href=&#34;http://mobz.github.io/elasticsearch-head/&#34;&gt;elasticsearch-head&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;クラスタ管理に便利なプラグインです。クラスタに存在するノードに対してインデックスのデータ（シャード）がどこに配置されているかなどが一目瞭然になる便利なプラグインです。
+プライマリシャードやレプリカなどもわかります。
+インデックスの削除もできるし、クエリを投げることもできるし、全部入りな感じのプラグインです。&lt;/p&gt;
+&lt;p&gt;私個人は、シャードの配置を見るのに主に利用しています。クエリを投げたりインデックスを消したりするのには殆ど使っていません。&lt;/p&gt;
+&lt;h2 id=&#34;royrussoelasticsearch-hq&#34;&gt;royrusso/elasticsearch-HQ&lt;/h2&gt;
+&lt;p&gt;URL : &lt;a href=&#34;https://github.com/royrusso/elasticsearch-HQ&#34;&gt;elasticsearch-HQ&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;これも管理系のプラグインです。こっちのほうが個人的にスッキリしていて好きなプラグインです。
+インデックスの管理やノードの停止などはこちらを主に使用しています。
+あくまでもローカルの簡易クラスタを管理する目的というのもあります。&lt;/p&gt;
+&lt;h2 id=&#34;polyfractalelasticsearch-segmentspy&#34;&gt;polyfractal/elasticsearch-segmentspy&lt;/h2&gt;
+&lt;p&gt;URL : &lt;a href=&#34;https://github.com/polyfractal/elasticsearch-segmentspy&#34;&gt;elasticsearch-segmentspy&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;こちらはモニタリングでしょうか。
+ElasticSearch Serverで紹介されていたのが主な理由で、入れてますがあんまり見てないかも。
+インデックスのSegment単位の情報が見ることが可能です。
+あと、ちょっと更新されてない感じがしますね。&lt;/p&gt;
+&lt;h2 id=&#34;elasticsearchmarvel&#34;&gt;elasticsearch/marvel&lt;/h2&gt;
+&lt;p&gt;Elasticsearch社から提供されている、モニタリングなどに使えるプラグインです。
+開発環境では無償提供という感じです。
+渡しの場合、モニタリング目的ではなく、senseと呼ばれるクエリの補完をしてくれるツールの目的のために使用しています。
+モニタリング部分を停止する方法とかないかなぁ。&lt;/p&gt;
+&lt;p&gt;詳細については&lt;a href=&#34;http://blog.johtani.info/blog/2014/01/29/simple-introduction-and-first-impression-es-marvel/&#34;&gt;過去の記事&lt;/a&gt;を参考にしていただければと。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ？&lt;/h2&gt;
+&lt;p&gt;ということで、簡単にローカルに入っているプラグインの紹介でした。
+他にもいっぱいあるので、おすすめがあれば、教えてもらえると助かります。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -113,6 +1094,80 @@
       
       <guid>https://blog.johtani.info/blog/2013/11/14/release-elasticsearch-extended-analyze-0-dot-5/</guid>
       <description>どーも。以前の記事で開発中としていたプラグインですが、とりあえず、pluginコマンドでインストール出来る形にしてみました。 インストールなど</description>
+      <content:encoded>&lt;p&gt;どーも。以前の記事で開発中としていたプラグインですが、とりあえず、pluginコマンドでインストール出来る形にしてみました。&lt;/p&gt;
+&lt;p&gt;インストールなどについては、&lt;a href=&#34;https://github.com/johtani/elasticsearch-extended-analyze&#34;&gt;READMEに記載した&lt;/a&gt;のでそちらを参照してもらうことにして、試行錯誤した話をメモとして残しておきます。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;プラグインの開発はしいてたのですが、やっぱりpluginコマンドでインストール出来ないと使ってもらえないよなということで、勉強会も終わったのでちょっと調べてました。&lt;/p&gt;
+&lt;h2 id=&#34;プラグインコマンド&#34;&gt;プラグインコマンド&lt;/h2&gt;
+&lt;p&gt;コマンドが用意されてますが、実態はJavaで実装されてて、通常はこんなかんじでプラグインをインストールします。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.6.0
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;この「&lt;code&gt;elasticsearch/elasticsearch-analysis-kuromoji/1.6.0&lt;/code&gt;」という文字列ですが、「&lt;code&gt;ユーザ名/リポジトリ名/バージョン&lt;/code&gt;」という意味になります。&lt;/p&gt;
+&lt;p&gt;で、ダウンロードするURLは以下のものの中から選ばれます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;elasticsearch.orgのダウンロード用サイト&lt;/li&gt;
+&lt;li&gt;search.maven.org&lt;/li&gt;
+&lt;li&gt;oss.sonatype.org&lt;/li&gt;
+&lt;li&gt;Githubのarchive&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;これらのサイトに先ほどのユーザ名、リポジトリ名、バージョンを利用したURLを組み立てて、ダウンロードしてくれるという仕組みになっています。&lt;/p&gt;
+&lt;p&gt;elasticsearch.orgについては、本家の人しかアップロードできないと思うので、なし。&lt;br&gt;
+maven、sonatypeについては、Mavenのリポジトリにリリースする必要があるんじゃないかなと。
+で、昔&lt;strike&gt;調べて&lt;/strike&gt;ググって途中で挫折したんですが、挫折してます。手順が結構手間で。。。
+（参考記事：&lt;a href=&#34;http://samuraism.jp/diary/2012/05/03/1336047480000.html&#34;&gt;【最新版】Maven Central Repository へのライブラリ登録方法 #maven&lt;/a&gt;）&lt;/p&gt;
+&lt;p&gt;ということで、Githubにアップしたらなんとかなるんじゃん？ということで色々と調査して試してみました。（結果はイマイチなんですが。。。）&lt;/p&gt;
+&lt;h2 id=&#34;その１mvn-releaseprepare&#34;&gt;その１：mvn release:prepare&lt;/h2&gt;
+&lt;p&gt;せっかくGithubだし、せっかくMavenなんだしなんか、pom.xmlに便利な設定したらコマンド一発でリリースできるんじゃない？という甘い気持ちで&lt;strike&gt;調査した&lt;/strike&gt;ググったらそれっぽい記事が見つかりました。
+「&lt;a href=&#34;http://www.kanasansoft.com/weblab/2009/11/integration_between_maven_and_github.html&#34;&gt;MavenとGitHubの連携&lt;/a&gt;」って記事です。&lt;br&gt;
+で、pom.xmlの設定にも他のプラグインを真似してコピペしたものに&lt;code&gt;&amp;lt;scm&amp;gt;&lt;/code&gt;ってタグがあったなぁと。このコマンドでついでにGithubにアップロードできるんじゃないの？ということで、試してみました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;mvn release:prepare
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;このコマンドを叩くと、記事にあるとおりにいくつか質問をされます。
+タグについては、&lt;code&gt;プロジェクト名-バージョン番号&lt;/code&gt;という文字列がデフォルトだと指定されているので、&lt;code&gt;v0.5&lt;/code&gt;と変更して実施してみると、Githubのreleaseにv0.5ってのができてるじゃないですか。&lt;br&gt;
+※&lt;code&gt;plugin&lt;/code&gt;コマンドはGithubを見に行く時に次のファイルをダウンロードしに行きます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;https://github.com/ユーザ名/リポジトリ名/archive/vバージョン名.zip
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;やった！と思い、早速pluginコマンドを実行してみましたが、エラーが出ました。。。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Trying https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip...
+Downloading ...DONE
+Installed johtani/elasticsearch-extended-analyze/0.5 into /Users/johtani/projects/tmp/ess_env/second_node/elasticsearch-0.90.7/plugins/extended-analyze
+Usage:
+    -u, --url     [plugin location]   : Set exact URL to download the plugin from
+...省略...
+
+Message:
+   Error while installing plugin, reason: IllegalArgumentException: Plugin installation assumed to be site plugin, but contains source code, aborting installation.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あらら、なんで？と。&lt;br&gt;
+で、実際にgithubにアップされてたzipファイルをダウンロードしてみたら、githubのリポジトリにあるディレクトリ構成がそのまま入ってるじゃないですか。。。
+そうですか、そうですよね。prepareだし、タグ打ってzipにかためてくれるだけなんですねと。。。&lt;/p&gt;
+&lt;p&gt;おそらく、siteプラグイン&lt;em&gt;だけ&lt;/em&gt;の場合はこの方法でpluginコマンド叩けばOKなんでしょうが、私がダウンロードしてもらいたいのは.jarファイルが入ったzipファイルなんです。&lt;/p&gt;
+&lt;p&gt;ということで、断念しました。（タグ消したりをgitコマンドで叩いて綺麗にし直すとか虚しい作業をしてました）&lt;/p&gt;
+&lt;h2 id=&#34;その２githubcomのwebでリリース&#34;&gt;その２：github.comのWebでリリース&lt;/h2&gt;
+&lt;p&gt;おとなしく、Sonatypeのサイトにアップロードする方向でがんばればいいんですが、とりあえず使えるようにするのが先だと思い、
+github.comのページでアップロードしてしまおうと。&lt;/p&gt;
+&lt;p&gt;「release」というタブをクリックすると、画面からアップロードできるようになります。&lt;br&gt;
+zipファイルを作ってアップロードしました。（zipファイル自体は&lt;code&gt;mvn package&lt;/code&gt;コマンドを実行したら&lt;code&gt;target/release&lt;/code&gt;というディレクトリに作成されてる）&lt;/p&gt;
+&lt;p&gt;これで行けるだろということで、またpluginコマンドを実行すると&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Trying https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip...
+Downloading ...DONE
+Installed johtani/elasticsearch-extended-analyze/0.5 into /Users/johtani/projects/tmp/ess_env/second_node/elasticsearch-0.90.7/plugins/extended-analyze
+Usage:
+    -u, --url     [plugin location]   : Set exact URL to download the plugin from
+...省略...
+
+Message:
+   Error while installing plugin, reason: IllegalArgumentException: Plugin installation assumed to be site plugin, but contains source code, aborting installation.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あれ？同じエラー？なんで？jar入りのzipファイルアップロードしたのに？？？&lt;/p&gt;
+&lt;p&gt;と。で、&lt;code&gt;https://github.com/johtani/elasticsearch-extended-analyze/releases&lt;/code&gt;にreleaseのページができてたので見てみると、あら。
+アップロードしたファイルについては次のようなURLになってるじゃないですか。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;https://github.com/johtani/elasticsearch-extended-analyze/releases/download/v0.5/v0.5.zip
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;で、よく見ると「Source code(zip)」というボタンもあるぞ？このリンクは？&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;。。。あぁ。そうですか。そういうことですか。理解してない私が悪いんですねと。&lt;/p&gt;
+&lt;h2 id=&#34;結論&#34;&gt;結論？&lt;/h2&gt;
+&lt;p&gt;ということで、とりあえず、releaseにjar入りファイルはアップロードできた（手動で）ので
+&lt;code&gt;-u&lt;/code&gt;オプションで直接URL指定すればインストールできるだろ！と諦めました。
+いい勉強になりました。。。&lt;/p&gt;
+&lt;p&gt;README見ていただくとインストール方法が分かりますが、長いです。。。&lt;/p&gt;
+&lt;p&gt;時間をとって本腰入れてSonatypeにMavenコマンドでアップロードできるようにしようかな。。。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -122,6 +1177,27 @@
       
       <guid>https://blog.johtani.info/blog/2013/11/04/improve-output-extended-analyze/</guid>
       <description>開発中ですと書きました、elasticsearch-extended-analyzeですが、改良しました。 改良と変更は以下のとおりです。 ソー</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/&#34;&gt;開発中です&lt;/a&gt;と書きました、&lt;a href=&#34;https://github.com/johtani/elasticsearch-extended-analyze&#34;&gt;elasticsearch-extended-analyze&lt;/a&gt;ですが、改良しました。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;p&gt;改良と変更は以下のとおりです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ソースのパッケージを&lt;code&gt;org.elasticsearch&lt;/code&gt;から&lt;code&gt;info.johtani&lt;/code&gt;に。MLで気になったので質問したら、変えたほうがいいよとのこと。ダウンロード化については、もう少々お待ちを。&lt;/li&gt;
+&lt;li&gt;出力形式を変更。可能な限りCharFilter、Tokenizer、TokenFilterそれぞれが出力する内容を返すようにしました。
+&lt;ul&gt;
+&lt;li&gt;ただし、既存のAnalyzer（JapaneseAnalyzerクラスとか）に関しては、現時点では出力しません。CharFilterなどを取得するI/Fが見えないためです。（改良できるかの調査は未着手）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;現時点でできてないのは以下の項目&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;pluginコマンドでインストール&lt;/li&gt;
+&lt;li&gt;出力したいAttributeの指定&lt;/li&gt;
+&lt;li&gt;TokenizeChainで変更されたTokenの追跡（現状はどのTokenがStopFilterで消されたかなどが不明）&lt;/li&gt;
+&lt;li&gt;画面の用意（簡単に確認できる画面）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ということで、README.mdに出力サンプルは貼り付けてるので、興味のある方は試してみてください。
+不明点などあれば、コメントかIssueかツイートでも。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -131,6 +1207,203 @@
       
       <guid>https://blog.johtani.info/blog/2013/10/25/developing-es-extended-analyze-plugin/</guid>
       <description>お久しぶりです。 気づいたらまた、結構ブログを書いてなかったです。。。 今回は、今開発しているElasticsearchのプラグインに関するお話</description>
+      <content:encoded>&lt;p&gt;お久しぶりです。
+気づいたらまた、結構ブログを書いてなかったです。。。&lt;/p&gt;
+&lt;p&gt;今回は、今開発しているElasticsearchのプラグインに関するお話です。&lt;/p&gt;
+&lt;p&gt;いやぁ、名前決めるの難しいですね。これで英語的に合ってるか不安ですが、&lt;a href=&#34;https://github.com/johtani/elasticsearch-extended-analyze&#34;&gt;elasticsearch-extended-analyze&lt;/a&gt;というプラグインを作っています。&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;どんなもの&#34;&gt;どんなもの？&lt;/h2&gt;
+&lt;p&gt;Solrの管理画面のanalysisに相当する機能が欲しくて作り始めました。&lt;/p&gt;
+&lt;p&gt;Elasticsearchには&lt;a href=&#34;http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-analyze.html&#34;&gt;analyze API&lt;/a&gt;というAPI（名前あってるのかなぁ?）が存在します。&lt;br&gt;
+これは、文字列を投げると、指定したアナライザやトークナイザでどのようなトークンに分割されるかを調べることができるAPIです。&lt;/p&gt;
+&lt;p&gt;例えば、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-analysis-kuromoji&#34;&gt;elasticsearch-analysis-kuromoji&lt;/a&gt;をインストールしたElasticsearchに対して、以下のcurlコマンドを実行します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPOST &#39;localhost:9200/_analyze?tokenizer=kuromoji_tokenizer&amp;amp;filters=kuromoji_baseform&amp;amp;pretty&#39; -d &#39;寿司が美味しい&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;すると、トークナイズされた結果が次のようなJSONで返ってきます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;tokens&amp;#34;&lt;/span&gt; : [ {
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;寿司&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;start_offset&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;end_offset&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;word&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+  }, {
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;が&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;start_offset&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;end_offset&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;word&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;
+  }, {
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;美味しい&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;start_offset&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;end_offset&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;word&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt; : &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;
+  } ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;トークナイズの結果がわかるのは嬉しいのですが、どんな品詞なのかといったKuromoji固有のTokenの属性情報がなくなってしまいます。&lt;/p&gt;
+&lt;p&gt;Solrでは、こんな画面が用意されていて、品詞情報とかが出力されます。あとは、各TokenFilterでどのトークンがなくなっているかなどもわかるようになっています。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20131025/solr_admin_analysis.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20131025/solr_admin_analysis.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;これって結構役立つと思うんですよ。
+ということで、Pluginも作ってみたかったので、いい機会だから作ってみようかと。&lt;/p&gt;
+&lt;h2 id=&#34;出力サンプル&#34;&gt;出力サンプル&lt;/h2&gt;
+&lt;p&gt;まずは、その他のAttribute（品詞とか）を表示するところを実装してみました。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;curl -XPOST &#39;localhost:9200/_extended_analyze?tokenizer=kuromoji_tokenizer&amp;amp;filters=kuromoji_baseform&amp;amp;pretty&#39; -d &#39;寿司が美味しい&#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;先ほどとほぼ一緒のcurlコマンドを実行します。違う点は**「_analyze」**が**「_extended_analyze」**となっている点です。&lt;br&gt;
+で、実行結果はこんな感じです。（長いですがそのまま載せてます。続きの文章がしたにあります。）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;{
+  &amp;quot;tokens&amp;quot; : [ {
+    &amp;quot;token&amp;quot; : &amp;quot;寿司&amp;quot;,
+    &amp;quot;start_offset&amp;quot; : 0,
+    &amp;quot;end_offset&amp;quot; : 2,
+    &amp;quot;type&amp;quot; : &amp;quot;word&amp;quot;,
+    &amp;quot;position&amp;quot; : 1,
+    &amp;quot;extended_attributes&amp;quot; : [ {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute#bytes&amp;quot; : &amp;quot;[e5 af bf e5 8f b8]&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute#positionLength&amp;quot; : 1
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.BaseFormAttribute#baseForm&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech&amp;quot; : &amp;quot;名詞-一般&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech (en)&amp;quot; : &amp;quot;noun-common&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading&amp;quot; : &amp;quot;スシ&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading (en)&amp;quot; : &amp;quot;sushi&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation&amp;quot; : &amp;quot;スシ&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation (en)&amp;quot; : &amp;quot;sushi&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType (en)&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm (en)&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.KeywordAttribute#keyword&amp;quot; : false
+    } ]
+  }, {
+    &amp;quot;token&amp;quot; : &amp;quot;が&amp;quot;,
+    &amp;quot;start_offset&amp;quot; : 2,
+    &amp;quot;end_offset&amp;quot; : 3,
+    &amp;quot;type&amp;quot; : &amp;quot;word&amp;quot;,
+    &amp;quot;position&amp;quot; : 2,
+    &amp;quot;extended_attributes&amp;quot; : [ {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute#bytes&amp;quot; : &amp;quot;[e3 81 8c]&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute#positionLength&amp;quot; : 1
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.BaseFormAttribute#baseForm&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech&amp;quot; : &amp;quot;助詞-格助詞-一般&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech (en)&amp;quot; : &amp;quot;particle-case-misc&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading&amp;quot; : &amp;quot;ガ&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading (en)&amp;quot; : &amp;quot;ga&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation&amp;quot; : &amp;quot;ガ&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation (en)&amp;quot; : &amp;quot;ga&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType (en)&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm (en)&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.KeywordAttribute#keyword&amp;quot; : false
+    } ]
+  }, {
+    &amp;quot;token&amp;quot; : &amp;quot;美味しい&amp;quot;,
+    &amp;quot;start_offset&amp;quot; : 3,
+    &amp;quot;end_offset&amp;quot; : 7,
+    &amp;quot;type&amp;quot; : &amp;quot;word&amp;quot;,
+    &amp;quot;position&amp;quot; : 3,
+    &amp;quot;extended_attributes&amp;quot; : [ {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute#bytes&amp;quot; : &amp;quot;[e7 be 8e e5 91 b3 e3 81 97 e3 81 84]&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.PositionLengthAttribute#positionLength&amp;quot; : 1
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.BaseFormAttribute#baseForm&amp;quot; : null
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech&amp;quot; : &amp;quot;形容詞-自立&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute#partOfSpeech (en)&amp;quot; : &amp;quot;adjective-main&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading&amp;quot; : &amp;quot;オイシイ&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#reading (en)&amp;quot; : &amp;quot;oishii&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation&amp;quot; : &amp;quot;オイシイ&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute#pronunciation (en)&amp;quot; : &amp;quot;oishii&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType&amp;quot; : &amp;quot;形容詞・イ段&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionType (en)&amp;quot; : &amp;quot;adj-group-i&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm&amp;quot; : &amp;quot;基本形&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.ja.tokenattributes.InflectionAttribute#inflectionForm (en)&amp;quot; : &amp;quot;base&amp;quot;
+    }, {
+      &amp;quot;org.apache.lucene.analysis.tokenattributes.KeywordAttribute#keyword&amp;quot; : false
+    } ]
+  } ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;先ほどの結果に**「extended_attributes」**という配列のオブジェクトが追加された形になっています。
+ちょっと長くなってしまいましたが。。。&lt;/p&gt;
+&lt;p&gt;Solrの処理を真似して作ったので大したことはやってないんですが、少しは便利になるかもなぁと。&lt;/p&gt;
+&lt;p&gt;現時点では、最終的な結果しか取得できないですが、今後は次のような機能を作っていこうかと思っています。
+できるかどうかは、やってみてって感じですが。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;pluginコマンドでインストール
+&lt;ul&gt;
+&lt;li&gt;pom.xmlはありますが、まだMavenとかに登録はされていません。ですので、&lt;code&gt;mvn package&lt;/code&gt;してからjarファイルをpluginsフォルダに配置しないといけません。pluginコマンドでインストールできるともっと使ってもらえるはず？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;出力したいAttributeの指定
+&lt;ul&gt;
+&lt;li&gt;リクエストパラメータで、出力したいAttribute名を指定するとか。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;出力形式の変更
+&lt;ul&gt;
+&lt;li&gt;今は、Solrの真似をしていますが、せっかくJSONだったりするので、もう少し検討しようかと（同じAttributeの異なる値も1オブジェクトとして出力されてる）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;TokenizeChainの出力
+&lt;ul&gt;
+&lt;li&gt;Solr同様、CharFilter、Tokenizer、TokenFilterが動作して、最終的なTokenがインデックスに登録されます。ですので、各処理の直後のTokenがどうなっているかもわかったほうが嬉しいと思うので、それらも取得できるようにしたいなぁと&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;画面の用意
+&lt;ul&gt;
+&lt;li&gt;せっかくプラグインなんだし、画面で見れると嬉しいかなと。これは当分先になっちゃうと思いますが、Webページで確認できるような画面を作ると確認しやすくなるかなぁと。上記対応が終わってから取替かかると思いますが。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;とりあえず、思いつくのはこんなかんじです。&lt;/p&gt;
+&lt;p&gt;Elasticsearchの_analyze APIを真似しただけのコードだし、テストも実装もまだまだですが、とりあえず公開してみました。&lt;/p&gt;
+&lt;p&gt;要望などあれば、コメント、Issue、ツイート（もちろん、テストコードなども！）なんでも受け付けてますので、お気軽に。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -140,6 +1413,110 @@
       
       <guid>https://blog.johtani.info/blog/2013/09/23/intro-elasticsearch-inquisitor/</guid>
       <description>今日は、ElasticSearchのMLで見つけたelasticsearch-inquisitorプラグインの紹介です。 ElasticSea</description>
+      <content:encoded>&lt;p&gt;今日は、ElasticSearchのMLで見つけた&lt;a href=&#34;https://github.com/polyfractal/elasticsearch-inquisitor&#34;&gt;elasticsearch-inquisitor&lt;/a&gt;プラグインの紹介です。&lt;/p&gt;
+&lt;p&gt;ElasticSearchはREST API形式で簡単にコマンドラインからいろいろな処理を実行できて便利ですが、
+GUIがあったほうが楽なこともまた事実です。
+今回紹介する、inquisitorプラグインもSiteプラグイン（Webブラウザでアクセスできるプラグイン）の1つです。
+（ただし、ローカルにインストールしてローカルのElasticSearchにしか接続できませんが。。。）&lt;/p&gt;
+&lt;!-- more --&gt;
+&lt;h2 id=&#34;インストール&#34;&gt;インストール&lt;/h2&gt;
+&lt;p&gt;プラグインですので、以下のコマンドでインストールが出来ます。インストール後はElasticSearchの再起動が必要です。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;bin/plugin -install polyfractal/elasticsearch-inquisitor
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ElasticSearch再起動後に、以下のURLにアクセスすればOKです。
+※ローカルでのみ動作可能なプラグインです。（内部で呼び出しているJSにlocalhostと記載があるため）&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;http://localhost:9200/_plugin/inquisitor/#/
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;何ができるの&#34;&gt;何ができるの？&lt;/h2&gt;
+&lt;p&gt;自分の書いたQueryが正しく動作するかや、Analyzerによって文章がどのように、Term（Token）に分割されるかといった挙動をWebブラウザ上で確認することができます。用意されている画面は「Queries」「Analyzers」「Tokenizers」の3種類です。&lt;/p&gt;
+&lt;h3 id=&#34;queries&#34;&gt;Queries&lt;/h3&gt;
+&lt;p&gt;クエリの確認、実行が可能な画面です。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20130923/queries_sample.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20130923/queries_sample.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;「Index」「Type」はプルダウンになっており、現在ElasticSearchに存在しているものが選択可能です。
+その下のテキストエリアがクエリを入力する画面です。&lt;/p&gt;
+&lt;p&gt;クエリを入力していると、入力しているクエリがValidかどうかをクエリのコンソール部分（右側上部）に表示してくれます。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20130923/query_error.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20130923/query_error.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;少し残念なことに、Tabを押すと、フォームのフォーカスが切り替わってしまうので、クエリを入力するのがちょっと面倒です。。。（私は通常の検索には、&lt;a href=&#34;https://chrome.google.com/webstore/detail/sense/doinijnbnggojdlcjifpdckfokbbfpbo&#34;&gt;ChromeプラグインのSense&lt;/a&gt;というものを利用してます。）&lt;/p&gt;
+&lt;p&gt;クエリに問題がない場合は、「Query」ボタンを押すことで実際の検索が実行されます。
+この時、画面真ん中のブルーのテーブル（内部で実行されるクエリ）の部分に、QueryがElasticSearch内部で解釈されたあとの、Luceneで実行されるレベルのクエリに変換されたクエリが表示されます。&lt;/p&gt;
+&lt;p&gt;これが便利です。JSONで記述したり、色々なタイプのクエリがElasticSearchでは実行できますが、望んだ形に単語が区切られているかなどを確認することができるため、非常に便利です。&lt;/p&gt;
+&lt;p&gt;ElasticSearchのQuery DSLでは&lt;a href=&#34;http://www.elasticsearch.org/guide/reference/api/search/explain/&#34;&gt;explain&lt;/a&gt;をtrueにすることで、ヒットしたドキュメントのスコア計算に用いられた単語などがわかるのですが、そもそもヒットしないクエリの場合は、explainでは単語の区切られ方などがわかりません。&lt;/p&gt;
+&lt;p&gt;その場合に、このプラグインで確認すると、想定と違う単語の区切られ方やクエリの造られ方がわかるかと思います。&lt;/p&gt;
+&lt;h3 id=&#34;analyzers&#34;&gt;Analyzers&lt;/h3&gt;
+&lt;p&gt;Analyzerによる文章のアナライズ結果の確認が出来る画面です。
+ElasticSearchやSolrにあまり詳しくない場合、どんなAnalyzerが文章をどのように単語に区切って、転置インデックスのキーワードとして利用しているかがわからないと思います。&lt;/p&gt;
+&lt;p&gt;このAnalyzerが文章をどのように単語に区切っているかを確認することができるのがAnalyzers画面です。
+こんなかんじの画面になります。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20130923/analyzers_sample.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20130923/analyzers_sample.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;一番上のテキストエリアが文章を入力する場所です。
+文章を入力していくと、その下のテーブルの「Analyzed Text」の部分が変化していくのが分かります。
+このグレーの単語が転置インデックスのキーワードとなります。&lt;/p&gt;
+&lt;p&gt;予め用意されているAnalyzer以外に、用意されているTokenzier＋Filterの組み合わせも簡単ですが確認可能です。（Tokenizer、Filtersとあるテーブル）
+ただし、ここまでのどちらも細かな設定は画面上ではできません（Filterの細かな引数の指定など）&lt;/p&gt;
+&lt;p&gt;一番下の部分が、ElasticSearchに存在しているインデックスごとに定義されたAnalyzerやフィールドを元にした解析結果を表示することができる領域です。&lt;/p&gt;
+&lt;p&gt;自分でマッピングを記述してフィールド定義したものの動作確認や、インデックスを適当に作ったけど、うまくヒットしない場合など、ここで、単語の区切れ方を確認することで、検索になぜヒットしないのかといった問題のヒントを得ることができると思います。&lt;/p&gt;
+&lt;p&gt;Analyzerによっては、インデックス対象の文字として扱わない文字があったりしますので。
+先ほどのQueries画面のLuceneに投げられる直前のクエリと、Analyzersでの単語の区切られ方を確認することで、検索がうまくヒットしていないことが判明すると思います。&lt;/p&gt;
+&lt;h3 id=&#34;tokenizers&#34;&gt;Tokenizers&lt;/h3&gt;
+&lt;p&gt;最後はTokenizers画面です。Analyzersとほぼ同様ですが、ちがいは、デフォルトで用意されているTokenizerの挙動の確認ができるというだけになります。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20130923/tokenizers_sample.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20130923/tokenizers_sample.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;簡単な確認ならここで可能かと。&lt;/p&gt;
+&lt;h2 id=&#34;注意点は&#34;&gt;注意点は？&lt;/h2&gt;
+&lt;p&gt;まだ開発途中のようで、つぎの部分が課題かと。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ローカルでのみ実行可能&lt;/li&gt;
+&lt;li&gt;Queries画面の結果の「Explain Result」リンクが未実装&lt;/li&gt;
+&lt;li&gt;Queries画面のクエリ入力が使いにくい（タブが打てないので）&lt;/li&gt;
+&lt;li&gt;カスタム登録のAnalyzersはインデックスを用意しないと確認できない。（Kuromojiのプラグインを登録しただけでは確認できなかった）&lt;/li&gt;
+&lt;li&gt;細かな設定のフィールドも用意しないと、Analyzers画面では利用できない&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、Inquisitor（読みがわからない）プラグインの簡単な説明でした。
+検索にうまくヒットしないという理由は大体の場合、
+クエリに入力した文字列が単語に区切られたものと、登録したデータが単語に区切られたものが異なるために検索にヒットしないというものです。&lt;/p&gt;
+&lt;p&gt;そのクエリ、データの単語の区切られ方を確認するのに役に立つプラグインじゃないでしょうか。&lt;/p&gt;
+&lt;p&gt;ちなみに、このプラグイン自体はHTML＋JSで作成されており、実際にはElasticSearchが持っているREST APIをキックしているだけになります。
+ですので、Web画面なんか要らないという方は、このプラグインが実際に送信しているリクエストを参考にするとcurlコマンドでどういったリクエストを投げればいいかというのがわかると思います。&lt;/p&gt;
+&lt;p&gt;私は軟弱者なので画面があったほうがいいですが。&lt;/p&gt;
+</content:encoded>
     </item>
     
   </channel>

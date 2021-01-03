@@ -14,6 +14,130 @@
       
       <guid>https://blog.johtani.info/blog/2020/07/09/hap15-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/&#34;&gt;Rust the book - 第9章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/28/chap10-rust-the-book/&#34;&gt;Rust the book - 第10章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/06/04/chap13-rust-the-book/&#34;&gt;Rust the book - 第13章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;14章は飛ばして、15章です(Cargoはまた別途調べればいいかな?と思って)。&lt;/p&gt;
+&lt;h2 id=&#34;第15章-スマートポインタ&#34;&gt;第15章 スマートポインタ&lt;/h2&gt;
+&lt;p&gt;たぶん、これを理解すれば、参照とベクタや構造体とかの組み合わせがもう少し効率よく使えるようになるのかなぁ?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ポインタの強い版?
+&lt;ul&gt;
+&lt;li&gt;参照カウント方式のスマートポインタ型 - Luceneとかで実装されてた気がするなぁ
+&lt;ul&gt;
+&lt;li&gt;複数の所有者!?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;DerefとDropトレイトを実装している構造体&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;ヒープのデータを指すboxtを使用する&#34;&gt;ヒープのデータを指すBox&lt;T&gt;を使用する&lt;/h3&gt;
+&lt;p&gt;これはコンパイルエラー。&lt;code&gt;let y&lt;/code&gt;のタイミングで借用してるので、書き換えでエラーになる。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let mut x = 5;
+    let y = &amp;amp;x;
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+    x = 6;
+    assert_eq!(6, x);
+    assert_eq!(6, *y);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;こっちはOK。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let mut x = 5; // in stack
+    let y = Box::new(x); // in heap
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+    x = 6;
+    assert_eq!(6, x);
+    assert_eq!(6, *y);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;余談:コンパイラが変なワーニングを出してくれた。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;use std::ops::Deref;
+
+impl&amp;lt;T, Z&amp;gt; Deref for MyBox&amp;lt;T, Z&amp;gt; {
+    type Target = T;
+
+    fn deref(&amp;amp;self) -&amp;gt; &amp;amp;T {
+        &amp;amp;self.0
+    }
+}
+
+struct MyBox&amp;lt;T, Z&amp;gt;(T, Z);
+
+impl&amp;lt;T, Z&amp;gt; MyBox&amp;lt;T, Z&amp;gt; {
+    fn new(x: T, y: Z) -&amp;gt; MyBox&amp;lt;T, Z&amp;gt; {
+        MyBox(x, y)
+    }
+}
+
+fn main() {
+    let x = 5;
+    let z = &amp;quot;10&amp;quot;;
+    let y = MyBox::new(x, z);
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}
+
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;derefトレイトでスマートポインタを普通の参照のように扱う&#34;&gt;Derefトレイトでスマートポインタを普通の参照のように扱う&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;参照外し型強制&lt;/code&gt; : 日本語ムズカシイネ&lt;/li&gt;
+&lt;li&gt;Derefを自分で実装しないといけない場面がちょっと想像できてない。たぶん、Boxとかの説明に必要なので出てきたって感じなんだろうけど。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;dropトレイトで片付け時にコードを走らせる&#34;&gt;Dropトレイトで片付け時にコードを走らせる&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;こっちは、リソース開放とかでいい感じにできそうだってのはわかった。&lt;/li&gt;
+&lt;li&gt;Dropはどんなときに実装するんだろう?Tantivyだとオブジェクトプールとかで使ってた。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;rctは参照カウント方式のスマートポインタ&#34;&gt;Rc&lt;T&gt;は、参照カウント方式のスマートポインタ&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;これ、ここで作ったConsのリストを追っかけるためのサンプルも書いてほしい。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;#[derive(Debug)]
+enum List {
+    Cons(i32, Rc&amp;lt;List&amp;gt;),
+    Nil,
+}
+
+fn print_typename&amp;lt;T&amp;gt;(_: T) {
+    println!(&amp;quot;{}&amp;quot;, std::any::type_name::&amp;lt;T&amp;gt;());
+}
+
+use List::{Cons, Nil};
+use std::rc::Rc;
+use std::borrow::Borrow;
+
+fn main() {
+    let z = Cons(5, Rc::new(Cons(10, Rc::new(Nil))));
+    let a = Rc::new(z);
+    let _b = Cons(3, Rc::clone(&amp;amp;a));
+    let _c = Cons(4, Rc::clone(&amp;amp;a));
+    match &amp;amp;(*a) {
+        Cons(v1, v2) =&amp;gt; {
+            print_typename(v2);
+            println!(&amp;quot;{}, {:?}&amp;quot;, v1, v2);
+        },
+        Nil =&amp;gt; println!(&amp;quot;Nil!!&amp;quot;)
+    };
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;refcelltと内部可変性パターン&#34;&gt;RefCell&lt;T&gt;と内部可変性パターン&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;循環参照はメモリをリークすることもある&#34;&gt;循環参照は、メモリをリークすることもある&lt;/h3&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -23,6 +147,78 @@
       
       <guid>https://blog.johtani.info/blog/2020/06/04/chap13-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/&#34;&gt;Rust the book - 第9章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/28/chap10-rust-the-book/&#34;&gt;Rust the book - 第10章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;11章、12章はちょっと飛ばして、13章です。&lt;/p&gt;
+&lt;h2 id=&#34;第13章&#34;&gt;第13章&lt;/h2&gt;
+&lt;p&gt;イテレータ、クロージャです。
+12章の話もちょっと出てくるのか。&lt;/p&gt;
+&lt;h3 id=&#34;クロージャ&#34;&gt;クロージャ&lt;/h3&gt;
+&lt;p&gt;基本的に、「変数には値が束縛されている」という固定観念がずっと頭にこびりついたままなので、クロージャに慣れないんだろうなぁ。そろそろこの固定概念をどうにかしないと。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;匿名関数で、変数に保存したり引数に渡せる&lt;/li&gt;
+&lt;li&gt;ちょっと面白い話(ワークアウト)で実際に考えられる手法の説明がいくつか行われる&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;関数でリファクタリング
+&lt;ul&gt;
+&lt;li&gt;これが自分がよくやるパターンかなぁ。クロージャになれてないので。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;クロージャーを変数に束縛
+&lt;ul&gt;
+&lt;li&gt;呼び出しは関数みたいな感じ(ここで少し混乱)&lt;/li&gt;
+&lt;li&gt;これだと、結局呼び出されたタイミングが複数回あるよね? -&amp;gt; あはりそうだった&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;ここで、閑話休題で、クロージャの型推論とか注釈の話。
+クロージャは狭い文脈だし、外に公開しているものでもないので、戻り値なども定義してなくてもいいよねとのこと。書くことも可能?なので、書いてわかりやすくするのもありなんだろうな。&lt;/p&gt;
+&lt;p&gt;推論についてはこれまで通りで、2回異なる型の変数で呼び出すと、2回目で怒られていた。&lt;/p&gt;
+&lt;ol start=&#34;3&#34;&gt;
+&lt;li&gt;遅延評価(クロージャを保持する構造体!?)
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Fn&lt;/code&gt;トレイト&lt;/li&gt;
+&lt;li&gt;トレイトとMatchの組み合わせだからこのへんで説明する形になるのか。&lt;/li&gt;
+&lt;li&gt;これを真似すれば、いくつか処理を簡素化できるかもしれないなぁ、たしかに。&lt;/li&gt;
+&lt;li&gt;なければ実行するみたいな処理を書きたいことがよくあるし。Javaだとnullで定義しといて、nullだったらみたいなのがあるから。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;Cacher&lt;/code&gt;はサンプルだからこの名前でいいけど、自分だと、どんな名前にするかなぁ?&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;振る舞いは難しくなるのか。&lt;code&gt;Cacher実装の限界&lt;/code&gt;を読むと。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;関数にするとスコープが変わるのでアクセスできなくなると。。。コンパイラが教えてくれるのは便利だな。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;環境から値をキャプチャする3つの方法&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;多分この話が一番クロージャに意味がある話なんだと思う。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;イテレータ&#34;&gt;イテレータ&lt;/h3&gt;
+&lt;p&gt;回しましょう。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;便利。ただ、こういう書き方に自分が慣れてないので、そっちを補正しないとなぁ。&lt;/li&gt;
+&lt;li&gt;どれがイテレータ?っていうのを判別するのがちょっとむずかしい(慣れの問題かなぁ)&lt;/li&gt;
+&lt;li&gt;イテレータアダプタ便利。どんなのがあるのか?とかがやっとわかってきた。&lt;/li&gt;
+&lt;li&gt;パフォーマンスに関しては、うーん、どうなんだろう?という感想だった。&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -32,6 +228,93 @@
       
       <guid>https://blog.johtani.info/blog/2020/05/28/chap10-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/&#34;&gt;Rust the book - 第9章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第10章&#34;&gt;第10章&lt;/h2&gt;
+&lt;p&gt;ジェネリック、トレイト、ライフタイムです。
+手強そう。&lt;/p&gt;
+&lt;p&gt;いきなり関数の切り出し方みたいな話が始まって面食らいました。&lt;/p&gt;
+&lt;h3 id=&#34;ジェネリックなデータ型&#34;&gt;ジェネリックなデータ型&lt;/h3&gt;
+&lt;p&gt;ジェネリックはJavaにもあるので、それほど理解に苦しむことはなかったです。
+また、OptionやResultですでに経験済みでしたし。&lt;/p&gt;
+&lt;p&gt;ただ、&lt;code&gt;impl&amp;lt;T&amp;gt; Point&amp;lt;T&amp;gt;{&lt;/code&gt;、このメソッド定義は少し最初は戸惑いました。
+言われてみれば、なるほどなんですけど。&lt;/p&gt;
+&lt;p&gt;コンパイル時にコンパイラが単相化を行うことにより、必要最低限なコードを生成してくるというのは理にかなっているなぁと。&lt;/p&gt;
+&lt;h3 id=&#34;トレイト-共通の振る舞いを定義する&#34;&gt;トレイト: 共通の振る舞いを定義する&lt;/h3&gt;
+&lt;p&gt;出だしにもありますが、「インターフェイス」という機能に類似していると考えると割とすんなりと理解が進みました。
+ただ、Javaだと、インターフェースはクラスとセットなため、トレイとの実装に関する記述方法は少し戸惑いが。&lt;/p&gt;
+&lt;p&gt;デフォルト実装との組み合わせはAbstractに似た処理になるなと考えながら読みすすめました。&lt;/p&gt;
+&lt;p&gt;「トレイト境界」という日本語には少し違和感を覚えましたが、線引をして、制限をかけるという理解でいいのかな?&lt;/p&gt;
+&lt;p&gt;実際には&lt;code&gt;#[derive()]&lt;/code&gt;などで、トレイトを自分で実装する必要がないなどの、便利機能も用意されており、このあたりのコードの追い方がまだ少し慣れていないかもなぁと。便利なんですけど。。。&lt;/p&gt;
+&lt;p&gt;少しだけ気になったので、動作確認したのは次の実装です。&lt;/p&gt;
+&lt;p&gt;トレイトで宣言されている関数と構造体が独自に実装する関数の名前がかぶるとどうなるのかという実験です。
+構造体独自のメソッドが優先される感じになりそう。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Tweet&lt;/span&gt; {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; username: String,
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; content: String,
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; reply: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; retweet: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Summary {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        &lt;span style=&#34;color:#75715e&#34;&gt;// {}さんからもっと読む
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(Read more from {}...)&amp;#34;&lt;/span&gt;, self.summarize_author())
+    }
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Tweet {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge {}&amp;#34;&lt;/span&gt;, self.username)
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;to_string&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fuga&amp;#34;&lt;/span&gt;)
+    }
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Summary &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Tweet {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@{}&amp;#34;&lt;/span&gt;, self.username)
+    }
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;T: &lt;span style=&#34;color:#a6e22e&#34;&gt;Summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;(hoge: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;T&lt;/span&gt;) {
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, hoge.summarize_author());
+}
+&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tweet &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Tweet {
+        username: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;horse_ebooks&amp;#34;&lt;/span&gt;),
+        content: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;of course, as you probably already know, people&amp;#34;&lt;/span&gt;),
+        reply: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
+        retweet: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
+    };
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, tweet.summarize_author());
+    summary(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet);
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, Summary::summarize_author(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet));
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;ライフタイムで参照を有効化する&#34;&gt;ライフタイムで参照を有効化する&lt;/h3&gt;
+&lt;p&gt;言われてみればそうですが、プログラマが色々考えないとまぁ、行けないんですねという感想。&lt;/p&gt;
+&lt;p&gt;ただ、借用チェッカーが賢くやってくれるおかげで、全てにライフタイム注釈をつけなくて良くなっているというのがわかりました。
+逆に言うと、なんとなくRustを書き始めてしまったので、それを知らずに書いたせいで、コンパイラに怒られてても「?」となっていたのかと。。。&lt;/p&gt;
+&lt;p&gt;疑問点がいくつかあって、&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通常はどんなライフタイム注釈をみんな書いてるんだろう?&lt;code&gt;&#39;a&lt;/code&gt;とかざっくりしすぎてる?&lt;/li&gt;
+&lt;li&gt;1つのメソッド、関数にライフタイム注釈が大量に出てくるような書き方をした場合は設計がおかしいのでは?って考えたほうがいいのかも?&lt;/li&gt;
+&lt;li&gt;ジェネリックな型とライフタイム引数の順序を入れ替えてみても動くだろ?とおもって入れ替えてみたら怒られた。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;あとは、構造体+ジェネリックが絡んできたら少しこんがらがってきそうっという感じです。
+まぁ、これから先は実際に書いてみないことにはわからないんだろうなと。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;読みました。
+実際にはプログラムを書きながら慣れていく感じだろうなぁと。
+まだまだ、あれ?ジェネリックってどう書くんだっけ?とか、ライフタイム注釈どうやって付けて、使うときはどうすんだ?みたいになりながら、
+出てくるサンプルを少し変えてみてはどうやって動くんだろうこの場合?みたいなことをやってました。
+次は、11章、12章を少しだけ自習しつつ、13章に入る予定です(知り合いと一緒に読みすすめてる)。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -41,6 +324,37 @@
       
       <guid>https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 Rust the book - 第8章</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/&#34;&gt;Rust the book - 第8章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第9章&#34;&gt;第9章&lt;/h2&gt;
+&lt;p&gt;エラー処理です。
+NLP100とか、いくつかのプログラムを書いていて、なんとなくは扱っていますが、きちんと勉強しないと。&lt;/p&gt;
+&lt;p&gt;とりあえず、「Rustには例外は存在しません。」が一番知っておくことかな。&lt;/p&gt;
+&lt;h3 id=&#34;panicで回復不能なエラー&#34;&gt;panic!で回復不能なエラー&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;panic!&lt;/code&gt;マクロでスタックを巻き戻して掃除をして終了。
+&lt;ul&gt;
+&lt;li&gt;異常終了(&lt;code&gt;panic = &#39;abort&#39;&lt;/code&gt;)にもできる。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;「&lt;code&gt;RUST_BACKTRACE&lt;/code&gt;を0以外の変数にセットして実行」
+*&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;resultで回復可能なエラー&#34;&gt;Resultで回復可能なエラー&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;expect()&lt;/code&gt;は気持ち悪い名前じゃないかなぁ?&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch09-02-recoverable-errors-with-result.html#a%E3%82%A8%E3%83%A9%E3%83%BC%E3%82%92%E5%A7%94%E8%AD%B2%E3%81%99%E3%82%8B&#34;&gt;ここ&lt;/a&gt;で&lt;code&gt;io::Error&lt;/code&gt;ではないものもエラーが発生する場合には&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;panicすべきかするまいか&#34;&gt;panic!すべきかするまいか&lt;/h3&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;「Rustには例外は存在しない」ので、回復不能か可能かを考えつつ処理を書こうと。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -50,6 +364,142 @@
       
       <guid>https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 Rust the book - 第6章 第8章 7章はパ</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/&#34;&gt;Rust the book - 第6章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第8章&#34;&gt;第8章&lt;/h2&gt;
+&lt;p&gt;7章はパッケージなので後回しにして、8章に入ります。
+8章はコレクションです。&lt;/p&gt;
+&lt;h3 id=&#34;ベクタ型&#34;&gt;ベクタ型&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;ベクタは同じ型の値だけ保持可能。
+&lt;ul&gt;
+&lt;li&gt;ジェネリクスで型を指定可能 - &lt;code&gt;Vec&amp;lt;i32&amp;gt;&lt;/code&gt;とか。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;vec!&lt;/code&gt;マクロで初期値とか設定すると便利。&lt;/li&gt;
+&lt;li&gt;ベクタに値を追加するのは&lt;code&gt;push&lt;/code&gt;。もちろん値が変わるので元のベクタには&lt;code&gt;mut&lt;/code&gt;が必要&lt;/li&gt;
+&lt;li&gt;ベクタのスコープ(ライフサイクル)は要素に対する参照があるのとないので話が変わってくる
+&lt;ul&gt;
+&lt;li&gt;メモリの確保などの影響で、ベクタ全体に対して借用の規則が矯正されると。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;ベクタの値を読むのはいくつか方法あり
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;get&lt;/code&gt;メソッドはOptionを返す&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;amp;v[2]&lt;/code&gt;の添字記法の場合はパニックの可能性あり&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;走査(唐突に参照外しが出てきた)
+&lt;ul&gt;
+&lt;li&gt;単純に値を取り出す場合は&lt;code&gt;for - in &amp;amp;v&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Enumをベクタにいれることで、異なる型も保持可能(まぁ、Enumの型では固定されるけど)。
+&lt;ul&gt;
+&lt;li&gt;これだけのためにEnumを使うことってあるのかな?&lt;/li&gt;
+&lt;li&gt;トレイとオブジェクトに関する文章はちょっとわかりにくい。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;説明以外のメソッドなどについてはAPIドキュメント見ましょうと(リンクも張ってくれてると嬉しいなぁと思ったり。まぁ、バージョンとかの絡みがあるから難しいか)。&lt;/p&gt;
+&lt;h3 id=&#34;文字列型&#34;&gt;文字列型&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;文字列はUTF-8でエンコードされた文字を扱うための型。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;str&lt;/code&gt;は文字列データへの参照。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;String&lt;/code&gt;型は言語のコアではなく、標準ライブラリに入っている文字列型。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;他にもあるのか。。。&lt;code&gt;OsString&lt;/code&gt;とか。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;文字リテラルはDisplayトレイトを実装していると。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;.to_string()&lt;/code&gt; = &lt;code&gt;String::from&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Stringはコレクションだから追加とかが可能なのか、なるほど。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;push_str&lt;/code&gt;と&lt;code&gt;push&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch08-02-strings.html#a%E6%BC%94%E7%AE%97%E5%AD%90%E3%81%BE%E3%81%9F%E3%81%AFformat%E3%83%9E%E3%82%AF%E3%83%AD%E3%81%A7%E9%80%A3%E7%B5%90&#34;&gt;&lt;code&gt;+&lt;/code&gt;演算子での参照&lt;/a&gt;。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;&amp;amp;String&lt;/code&gt;は&lt;code&gt;&amp;amp;str&lt;/code&gt;に型強制(キャスト?)してくれる。してくれる場合としてくれない場合もあるのかな?&lt;code&gt;s2&lt;/code&gt;の所有権は奪わない形で扱うので&lt;code&gt;s2&lt;/code&gt;はこのあとも使えていると。&lt;/li&gt;
+&lt;li&gt;ここでは、&lt;code&gt;s1&lt;/code&gt;を変更したあとに所有権が&lt;code&gt;s3&lt;/code&gt;に持っていかれてる?&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;format!&lt;/code&gt;を使うとどの所有権も奪わないので、これを使うほうが考え方は簡単そう。ただし、効率がいいかはわからん。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;添字記法でのアクセスを&lt;code&gt;String&lt;/code&gt;は許容していない&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;文字の境界が必ずしも1バイトとは限らないから。&lt;/li&gt;
+&lt;li&gt;スライスも同様。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;基本的には&lt;code&gt;.chars()&lt;/code&gt;で文字としてアクセスするのが良い。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;逆にバイト表現を得る方法はどうするんだろう?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L155&#34;&gt;NLP100本ノックでは&lt;code&gt;encode_utf8&lt;/code&gt;メソッド使ったけど。&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;ハッシュマップ&#34;&gt;ハッシュマップ&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;いろんな呼び方あるよね。Rustではハッシュマップだよ。&lt;/li&gt;
+&lt;li&gt;ハッシュマップは&lt;code&gt;use&lt;/code&gt;しないと使えない&lt;/li&gt;
+&lt;li&gt;キーは1つの型、値も1つの型&lt;/li&gt;
+&lt;li&gt;タプルのベクタから&lt;code&gt;collect&lt;/code&gt;で生成。なるほど。
+&lt;ul&gt;
+&lt;li&gt;タプルのベクタだと、タプルの中身は同じものであることが言える?
+&lt;ul&gt;
+&lt;li&gt;-&amp;gt; 言える。エレメント数が異なるとコンパイルエラーになった&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch08-03-hash-maps.html#a%E3%83%8F%E3%83%83%E3%82%B7%E3%83%A5%E3%83%9E%E3%83%83%E3%83%97%E3%81%A8%E6%89%80%E6%9C%89%E6%A8%A9&#34;&gt;所有権周りの話。&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;これ、ベクタのときに話してほしい感じがした。&lt;/li&gt;
+&lt;li&gt;値を渡すか参照を渡すかによって話が変わってくる。詳しくは10章&lt;/li&gt;
+&lt;li&gt;このあたりが自分が混乱していた元だ。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;entry&lt;/code&gt;と&lt;code&gt;insert&lt;/code&gt;の違い
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;entry&lt;/code&gt;の戻り値は&lt;code&gt;Entry&lt;/code&gt;というenumで&lt;code&gt;or_insert&lt;/code&gt;というメソッドがありそれを使うと存在しない場合だけinsertが呼ばれる。
+&lt;ul&gt;
+&lt;li&gt;これ便利だ。毎回&lt;code&gt;exist&lt;/code&gt;あたりで存在チェックしてた気がする。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;or_insert&lt;/code&gt;は可変参照&lt;code&gt;&amp;amp;mut V&lt;/code&gt;を返す。
+&lt;ul&gt;
+&lt;li&gt;これを&lt;code&gt;let count&lt;/code&gt;で束縛するときに、中身が可変かどうかをcountには指定しないのか。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;一応、大学などで習ってた(はず)ですが、
+スタックとヒープを意識して考えないといけないなぁというのを何度か意識させられた感じです。&lt;/p&gt;
+&lt;p&gt;あと、これはRustに限らずですが、それぞれがどんな関数を持っているか、どんなメソッドを持っているか、どんなマクロが存在するかなどを探すときにみんなどうしてるんだろう?
+人に教えてもらっているのか、APIリファレンスを探すのか、そういったところをみんながどういう感じにプログラミング言語を勉強しているか、業務で書いているのかと言うのが気になりました。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -59,6 +509,67 @@
       
       <guid>https://blog.johtani.info/blog/2020/04/07/chap6-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 Rust the book - 第5章 第6章 Enumです。matc</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/&#34;&gt;Rust the book - 第5章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第6章&#34;&gt;第6章&lt;/h2&gt;
+&lt;p&gt;Enumです。&lt;code&gt;match&lt;/code&gt;式に大活躍&lt;/p&gt;
+&lt;h3 id=&#34;enumを定義する&#34;&gt;Enumを定義する&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;列挙型は取りうる値をすべて&lt;em&gt;列挙&lt;/em&gt;できる。これが名前の由来&lt;/li&gt;
+&lt;li&gt;列挙型と列挙子
+&lt;ul&gt;
+&lt;li&gt;2連コロン(&lt;code&gt;::&lt;/code&gt;)で列挙子を指定可能&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;列挙子にデータ(構造体も)が格納可能。
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-lang.org/stable/std/net/enum.IpAddr.html&#34;&gt;標準ライブラリに実装例あり。&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;疑問:&lt;code&gt;Write(String)&lt;/code&gt;とかはタプルの表現になるのかな?
+&lt;ul&gt;
+&lt;li&gt;と思ったが、タプルでは1つだけの変数を持つものは定義(正確には定義できるが、内部で普通の変数にもどされてるっぽい)できなかった。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;メソッド定義も可能
+&lt;ul&gt;
+&lt;li&gt;関連関数もできる? -&amp;gt; できる&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;optionの紹介&#34;&gt;Optionの紹介&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Rustに&lt;code&gt;null&lt;/code&gt;はない。代わりにOptionがある&lt;/li&gt;
+&lt;li&gt;Noneを指定する場合に型が必要。Someの場合はすでに値が入るから推測可能なため。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;match制御フロー演算子&#34;&gt;match制御フロー演算子&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;アーム -&amp;gt; matchしたときの処理のこと
+&lt;ul&gt;
+&lt;li&gt;短い場合は波括弧は不要&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;returnなしでmatchが書いてあるだけだと、慣れない場合に値を返していることに気づかないかも(実際気づけてないかも)&lt;/li&gt;
+&lt;li&gt;Enumが値を持っているときに、値の束縛がmatch式で可能&lt;/li&gt;
+&lt;li&gt;すべての列挙子を網羅していないことをコンパイラが検知してくれるのはすごく助かる。
+&lt;ul&gt;
+&lt;li&gt;ただし、&lt;code&gt;_&lt;/code&gt;を利用していなければだけど&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;if-letで簡潔な制御フロー&#34;&gt;if letで簡潔な制御フロー&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;enumで1つのパターンのときに処理をしたい場合に使えるmatchの糖衣構文&lt;/li&gt;
+&lt;li&gt;elseもかけるよ。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;enumに慣れていないので、値や構造体を持つenumを利用するという想像ができないことがありそうだなぁと読みながら思いました。
+それになれると、色々とプログラムがシンプルに書ける部分が多くなりそうかな。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -68,6 +579,126 @@
       
       <guid>https://blog.johtani.info/blog/2020/04/02/chap5-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた Rust the book - 第4章 第5章 構造体です。勝手知ったるなんとやら?</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/&#34;&gt;Rust the book - 第4章&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第5章&#34;&gt;第5章&lt;/h2&gt;
+&lt;p&gt;構造体です。勝手知ったるなんとやら?オブジェクト指向的な部分は問題ないかなぁと。&lt;/p&gt;
+&lt;h3 id=&#34;定義とインスタンス化&#34;&gt;定義とインスタンス化&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;struct&lt;/code&gt;で定義&lt;/li&gt;
+&lt;li&gt;インスタンスの生成は引数は順不同でOK&lt;/li&gt;
+&lt;li&gt;構造体のインスタンスを可変にするとフィールドの値も変更可能
+&lt;ul&gt;
+&lt;li&gt;特定のフィールドのみ可変にすることは不可能&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;インスタンス化する関数の最後でreturnなしでインスタンスの返却を暗黙にできる(return書いてほしいな。。。)&lt;/li&gt;
+&lt;li&gt;インスタンス化時にフィールド初期化省略記法が可能(これはちょっと便利?)&lt;/li&gt;
+&lt;li&gt;構造体更新記法&lt;code&gt;..user1&lt;/code&gt;のように、明示的に設定されていない他のフィールドをコピーしてくれる機能あり&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;タプル構造体&#34;&gt;タプル構造体&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;タプル構造体!? &lt;code&gt;struct Color(i32, i32, i32);&lt;/code&gt;
+&lt;ul&gt;
+&lt;li&gt;いつ使うんだろう?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;ユニット様構造体&#34;&gt;ユニット様構造体&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;ユニット様構造体 = フィールドのない構造体。トレイトを実装したいけどインスタンスで持つ値はない場合に利用&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;ライフタイム&#34;&gt;ライフタイム&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;構造体が参照を持つときにライフタイムという話が出てくる。なるほど。
+&lt;ul&gt;
+&lt;li&gt;ライフタイム指定子が必要になる -&amp;gt; 10章での話&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;プログラム例&#34;&gt;プログラム例&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;タプルを引数かぁ。タプルは慣れないので構造体作りそう&lt;/li&gt;
+&lt;li&gt;Debugトレイトと&lt;code&gt;{:?}&lt;/code&gt;という書き方
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;derive(Debug)&lt;/code&gt;でデバッグ用のトレイトを自動で実装=継承してくれる&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;{:#?}&lt;/code&gt;だとpretty printになる(改行とか入る)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;この辺の便利なトレイとは&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/appendix-03-derivable-traits.html&#34;&gt;付録C&lt;/a&gt;にあるらしい。この辺はやりながら覚えるしかないか。&lt;/p&gt;
+&lt;h3 id=&#34;メソッド記法&#34;&gt;メソッド記法&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;最初の引数は必ず&lt;code&gt;self&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;impl&lt;/code&gt;は構造体とは別の場所に書く = Javaのクラスとは違う&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Rectangle&lt;/span&gt; {
+    width: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
+    height: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Rectangle {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;area&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt; {
+        self.width &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; self.height
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;li&gt;参照じゃない&lt;code&gt;self&lt;/code&gt;も使えるらしい。どういうときに使うんだろう?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;関連関数&#34;&gt;関連関数&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;self&lt;/code&gt;なしの関数をimplにかける。Javaのスタティックメソッドみたいな感じ&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;その他&#34;&gt;その他&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;impl&lt;/code&gt;ブロックがあちこちにかける。これはつらいな。。。&lt;/li&gt;
+&lt;li&gt;2つにわかれた&lt;code&gt;impl&lt;/code&gt;ブロックに同じメソッドを書いてみたら、CLionのプラグインではエラーを検知してもらえなかった。
+&lt;ul&gt;
+&lt;li&gt;cargo buildではきちんとエラーが表示された。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;blockquote&gt;
+&lt;p&gt;複数のimplブロックが有用になるケースは第10章で見ますが、そこではジェネリック型と、トレイトについて議論します。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;人の構造体に自分のトレイトを適用したりもできる。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;実験&#34;&gt;実験&lt;/h4&gt;
+&lt;p&gt;スコープとかどうなりそう?って実験もしてみた。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Hoge {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
+    }
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Hoge &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; String {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) {
+            println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hogehoge {}&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
+        }
+    }
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge&amp;#34;&lt;/span&gt;);
+    c.trim();
+    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, fuga(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;c));
+}
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;fuga&lt;/span&gt;(d: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;String) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt; {
+    d.trim()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力はこんな感じ&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;hogehoge hoge
+hoge
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;気になったのは以下の点。そのうち分かるようになってくるのかな。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;構造体更新記法はどういったときに使うのを想定して作ったんだろう?とか&lt;/li&gt;
+&lt;li&gt;可変長引数はマクロじゃないとだめ&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -77,6 +708,88 @@
       
       <guid>https://blog.johtani.info/blog/2020/03/26/chap4-rust-the-book/</guid>
       <description>前回の記事はこちら。自分用のメモなので、読みにくいかもです。 Rust the Bookを読み始めた 第4章 第4章です。たぶん、これがいちばん大事な概念だと思</description>
+      <content:encoded>&lt;p&gt;前回の記事はこちら。自分用のメモなので、読みにくいかもです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/&#34;&gt;Rust the Bookを読み始めた&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;第4章&#34;&gt;第4章&lt;/h2&gt;
+&lt;p&gt;第4章です。たぶん、これがいちばん大事な概念だと思います、Rustの。
+そして、つまみ食いしながらRust書いてましたが、ここがきちんと理解できないまま書いてたってのもあります。。。&lt;/p&gt;
+&lt;h3 id=&#34;所有権とは&#34;&gt;所有権とは?&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;drop&lt;/code&gt;関数ってのがあって、明示的に呼ぶことも可能。次のような感じで。2つ目の&lt;code&gt;println!&lt;/code&gt;はエラーになる。sがもう無いのに借用しようとしてるから。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let mut s = String::from(&amp;quot;hello&amp;quot;);
+    s.push_str(&amp;quot;, world!&amp;quot;);
+    println!(&amp;quot;{}&amp;quot;, s);
+    drop(s);
+    println!(&amp;quot;{}&amp;quot;, s);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;ムーブ - shallow copyではない。以下の2行目がムーブ。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;let s1 = String::from(&amp;quot;hello&amp;quot;);
+let s2 = s1;
+
+println!(&amp;quot;{}, world!&amp;quot;, s1);
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;スタックとヒープの話が絡んでくる。あんまり意識すること無いよなぁ。
+スタック = 固定長のデータを入れる場所。ポインタ、数値など
+ヒープ = 可変長のデータが入る場所。可変の文字列とか。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;クローン - ヒープのデータをコピーすること。&lt;/li&gt;
+&lt;li&gt;コピー - スタックに収まるデータの場合はクローンが必要なくコピーで事足りる。
+&lt;ul&gt;
+&lt;li&gt;CopyトレイととDropトレイとは同居できない。&lt;/li&gt;
+&lt;li&gt;タプルのコピーはややこしそう&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch04-01-what-is-ownership.html#a%E6%89%80%E6%9C%89%E6%A8%A9%E3%81%A8%E9%96%A2%E6%95%B0&#34;&gt;所有権と関数&lt;/a&gt;でまた、スタックに入れられるような変数と可変のオブジェクトの違いが出てくる。
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;takes_ownership(s: String)&lt;/code&gt;が参照を受け取れば問題なく、このあとも使える。&lt;/li&gt;
+&lt;li&gt;戻り値でもムーブが発生&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;参照と借用&#34;&gt;参照と借用&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;借用 - 関数の引数に参照を取ること&lt;/li&gt;
+&lt;li&gt;可変な参照&lt;code&gt;&amp;amp;mut&lt;/code&gt;は1つ(不変な参照も含めて1つ)しか許さない
+&lt;ul&gt;
+&lt;li&gt;データの競合を防ぐため。&lt;/li&gt;
+&lt;li&gt;不変な参照を複数用いるのはOK&lt;/li&gt;
+&lt;li&gt;実際に変更が実行されるタイミングでエラーと判定される場合もある。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;let mut s = String::from(&amp;quot;hello&amp;quot;);
+
+{
+    let r1 = &amp;amp;mut s;
+
+} // r1はここでスコープを抜けるので、問題なく新しい参照を作ることができる
+
+let r2 = &amp;amp;mut s;
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;ダングリング参照はテスト書くときとかにやってるかも。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;fn dangle() -&amp;gt; &amp;amp;String { // dangleはStringへの参照を返す
+
+    let s = String::from(&amp;quot;hello&amp;quot;); // sは新しいString
+
+    &amp;amp;s // String sへの参照を返す
+} // ここで、sはスコープを抜け、ドロップされる。そのメモリは消される。
+  // 危険だ
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;スライス型&#34;&gt;スライス型&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;部分的な参照。開始位置+長さで構成されているっぽい&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;amp;str&lt;/code&gt;の説明がよくわからなかった。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/ch04-03-slices.html#a%E5%BC%95%E6%95%B0%E3%81%A8%E3%81%97%E3%81%A6%E3%81%AE%E6%96%87%E5%AD%97%E5%88%97%E3%82%B9%E3%83%A9%E3%82%A4%E3%82%B9&#34;&gt;引数としての文字列スライス&lt;/a&gt;のテクニックは色々と使いまわせそう。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;所有権、これまで特に難しいと思ってたのは、固定長の変数と、可変長の変数の違いを意識してなかったのが原因っぽい。
+まぁ、Vecとかがどうなるのかとか、他にもいくつか気になるところはあるので、もうちょっとやらないといけないなと思いました。&lt;/p&gt;
+</content:encoded>
     </item>
     
     <item>
@@ -86,6 +799,104 @@
       
       <guid>https://blog.johtani.info/blog/2020/03/23/start-reading-rust-the-book/</guid>
       <description>自転車本を読み始めましたが、その前にRust the bookを読んだほうが良いかも?と知り合いと話をしていてなったので、先にRust the bookを読</description>
+      <content:encoded>&lt;p&gt;自転車本を読み始めましたが、その前にRust the bookを読んだほうが良いかも?と知り合いと話をしていてなったので、先にRust the bookを読み始めてます。
+コツコツ読むってのが苦手なので、知り合いと小規模オンライン読書会しながら読むことになりました(基本的になにか書きながら、使い方を調べるので、存在そのものを知らない記述や使用法などがあったりする)。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-jp.rs/book/second-edition/&#34;&gt;日本語版Rust the book&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://doc.rust-lang.org/book/title-page.html&#34;&gt;Rust the book&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;基本は日本語版を読んでいます。まずは1章から3章あたり。&lt;/p&gt;
+&lt;p&gt;気になった点などを。自分用のメモなので、読みやすさとかは考えてないです(あとで自分が死ぬパターン?)。&lt;/p&gt;
+&lt;h2 id=&#34;1章&#34;&gt;1章&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;rustfmt便利。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;CLionのRustプラグインでは、保存時にrustfmtするというオプションがある。デフォルトはオフ。&amp;ldquo;Run rustfmt on Save&amp;rdquo;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;cargoの&lt;code&gt;--bin&lt;/code&gt;オプション。意識してつけたことなかった=デフォルトだった。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ライブラリにするときは&lt;code&gt;--lib&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;2章&#34;&gt;2章&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;「変数を値に束縛」という言い回しにまだ慣れない。
+&lt;ul&gt;
+&lt;li&gt;「代入」という言い方に慣れているから?&lt;/li&gt;
+&lt;li&gt;ただ、エラーにはassignってあるな。&amp;ldquo;error[E0384]: cannot assign twice to immutable variable &lt;code&gt;x&lt;/code&gt;&amp;rdquo;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;preludeというのがデフォルトで読み込まれる型が存在する場所。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.expect()&lt;/code&gt;により、Resultが評価済みになる&lt;/li&gt;
+&lt;li&gt;マクロがまだ慣れない&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;extern crate rand;&lt;/code&gt;が&lt;a href=&#34;https://doc.rust-lang.org/book/ch02-00-guessing-game-tutorial.html#generating-a-random-number&#34;&gt;最新版だと要らなくなっている&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;rand::Rng&lt;/code&gt;は&lt;code&gt;gen_range&lt;/code&gt;のためにuseしている。CLionだとかってにuseを推測して追加してくれた。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;match&lt;/code&gt;はswitch文みたいな感じ。けど、defaultが必ず実行されるって感じではないな。
+&lt;ul&gt;
+&lt;li&gt;ただし、全て網羅しないと怒られるのが便利。&lt;/li&gt;
+&lt;li&gt;アームという呼び方が新鮮&lt;/li&gt;
+&lt;li&gt;単一の式のときは{}が省略できる&lt;/li&gt;
+&lt;li&gt;ブロック{}のときは、終わりにカンマを入力するとrustfmtが除去する(最後の条件かどうかは関係ない)。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;シャドーイングは面白い。
+&lt;ul&gt;
+&lt;li&gt;よく、&lt;code&gt;hoge_str&lt;/code&gt;や&lt;code&gt;hoge_int&lt;/code&gt;のような変数を書くので、ありがたい。&lt;/li&gt;
+&lt;li&gt;ただし、コードを読むときに少し混乱しそう?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;let ... match&lt;/code&gt;で変数への束縛でmatchが使えるのは便利(これまで知らなかったので、変数宣言して条件つけて束縛する処理書いてた)。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;シャドーイング&#34;&gt;シャドーイング?&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;fn main() {
+    let x = 5;
+
+    let x = x + 1;
+
+    let x = x * 2;
+
+    println!(&amp;quot;The value of x is: {}&amp;quot;, x);
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;とか&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;let spaces = &amp;quot;   &amp;quot;;
+let spaces = spaces.len();
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;みたいに、同一変数名を使い回せること。再代入ではない&lt;/p&gt;
+&lt;h2 id=&#34;3章&#34;&gt;3章&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;constは型注釈が必須&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;100_000&lt;/code&gt;のような記述が便利(&lt;a href=&#34;https://docs.oracle.com/javase/jp/8/docs/technotes/guides/language/underscores-literals.html&#34;&gt;Javaもできるって言われてびっくりしたw&lt;/a&gt;)&lt;/li&gt;
+&lt;li&gt;タプルの中身を一部だけ書き換え可能。(mutを指定すれば)
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;tup.0 = 20;&lt;/code&gt;のような感じで。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;配列は固定長でかつ、同一の型のものだけが入る&lt;/li&gt;
+&lt;li&gt;文末にセミコロンがない場合に四季になるというのはちょっと射にくいので辛いのでは。。。
+&lt;ul&gt;
+&lt;li&gt;自分は明示的に&lt;code&gt;return&lt;/code&gt;を書きたくなる。が、returnだと動かない場合もある。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;let ... if&lt;/code&gt;のような記述もできる。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;(1..4)&lt;/code&gt;はRange型&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;おまけ&#34;&gt;おまけ&lt;/h3&gt;
+&lt;p&gt;フィボナッチ数列計算してみろというのがまとめにあったので。こんな感じでいいのかな?&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;fn calc_fibonacci(n: usize) -&amp;gt; usize {
+    if n == 0 {
+        return 0;
+    } else if n==1 {
+        return 1;
+    } else {
+        return calc_fibonacci(n-1) + calc_fibonacci(n-2);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;その他&#34;&gt;その他&lt;/h2&gt;
+&lt;p&gt;知り合いと読みすすめると、人が不思議に思ったところが、自分が理解が曖昧だったことなどに気づけて便利です。&lt;/p&gt;
+</content:encoded>
     </item>
     
   </channel>

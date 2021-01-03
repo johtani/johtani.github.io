@@ -234,116 +234,116 @@
 実際にテンプレートが適用されるかどうかは、インデックス名で判断されます。</p>
 <p>例えば、大して重要でもなく、データ量も少ないインデックス用のテンプレートとして、シャード数が1、レプリカ数が0、&quot;_source&quot;を保存しない設定のテンプレートを登録する場合、
 次のようになります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#ae81ff">curl -XPUT localhost:9200/_template/template_1 -d &#39;</span>
-{
-  <span style="color:#e6db74">&#34;template&#34;</span> : <span style="color:#e6db74">&#34;te*&#34;</span>,
-  <span style="color:#e6db74">&#34;settings&#34;</span> : {
-    <span style="color:#e6db74">&#34;number_of_shards&#34;</span> : <span style="color:#ae81ff">1</span>,
-    <span style="color:#e6db74">&#34;number_of_replicas&#34;</span> : <span style="color:#ae81ff">0</span>
-  },
-  <span style="color:#e6db74">&#34;mappings&#34;</span> : {
-    <span style="color:#e6db74">&#34;type1&#34;</span> : {
-      <span style="color:#e6db74">&#34;_source&#34;</span> : { <span style="color:#e6db74">&#34;enabled&#34;</span> : <span style="color:#66d9ef">false</span> }
-    }
-  }
-}
-<span style="color:#ae81ff">&#39;</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">curl -XPUT localhost:<span style="color:#ae81ff">9200</span>/_template/template_1 -d <span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">{
+</span><span style="color:#e6db74">  &#34;template&#34; : &#34;te*&#34;,
+</span><span style="color:#e6db74">  &#34;settings&#34; : {
+</span><span style="color:#e6db74">    &#34;number_of_shards&#34; : 1,
+</span><span style="color:#e6db74">    &#34;number_of_replicas&#34; : 0
+</span><span style="color:#e6db74">  },
+</span><span style="color:#e6db74">  &#34;mappings&#34; : {
+</span><span style="color:#e6db74">    &#34;type1&#34; : {
+</span><span style="color:#e6db74">      &#34;_source&#34; : { &#34;enabled&#34; : false }
+</span><span style="color:#e6db74">    }
+</span><span style="color:#e6db74">  }
+</span><span style="color:#e6db74">}
+</span><span style="color:#e6db74">&#39;</span>
 </code></pre></div><p><code>_template</code>がインデックステンプレートを登録するためのエンドポイントです。
 <code>template_1</code>がこのテンプレートのIDです。削除などについては、このIDを利用します。</p>
-<p>そして、重要なのは、&quot;<code>template</code>&ldquo;の設定です。
-&ldquo;<code>template</code>&ldquo;には、このテンプレートが適用されるべきインデックス名を記載します。
+<p>そして、重要なのは、&ldquo;<code>template</code>&quot;の設定です。
+&ldquo;<code>template</code>&quot;には、このテンプレートが適用されるべきインデックス名を記載します。
 上記サンプルでは<code>te*</code>となっているため、<code>te</code>で始まる名前のインデックスを作成した場合にテンプレートにある設定が適用されます。</p>
 <h3 id="今回利用するテンプレート">今回利用するテンプレート</h3>
 <p>私がJJUG CCCや第7回Elasticsearch勉強会のKibana4のデモで利用したインデックスのテンプレートは次のものになります。
-&ldquo;<code>template</code>&ldquo;には、<a href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash/#output-elasticsearch">前回の記事で紹介したoutput/elasticsearchの設定</a> に合致する<code>new_demo_access_log-*</code>を指定しています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#ae81ff">curl -XPUT localhost:9200/_template/new_access_log_for_demo -d &#39;</span>
-{
-  <span style="color:#f92672">&#34;template&#34;: </span><span style="color:#e6db74">&#34;new_demo_access_log-*&#34;</span>,
-  <span style="color:#f92672">&#34;settings&#34;: </span>{
-    <span style="color:#f92672">&#34;number_of_shards&#34;: </span><span style="color:#e6db74">&#34;2&#34;</span>,
-    <span style="color:#f92672">&#34;number_of_replicas&#34;: </span><span style="color:#e6db74">&#34;0&#34;</span>
-  },
-  <span style="color:#f92672">&#34;mappings&#34;: </span>{
-    <span style="color:#f92672">&#34;_default_&#34;: </span>{
-      <span style="color:#f92672">&#34;dynamic_templates&#34;: </span>[
-        {
-          <span style="color:#f92672">&#34;string_template&#34;: </span>{
-            <span style="color:#f92672">&#34;mapping&#34;: </span>{
-              <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-            },
-            <span style="color:#f92672">&#34;match_mapping_type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>,
-            <span style="color:#f92672">&#34;match&#34;: </span><span style="color:#e6db74">&#34;*&#34;</span>
-          }
-        }
-      ],
-      <span style="color:#f92672">&#34;properties&#34;: </span>{
-        <span style="color:#f92672">&#34;path&#34;: </span>{
-          <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;multi_field&#34;</span>,
-          <span style="color:#f92672">&#34;fields&#34;: </span>{
-            <span style="color:#f92672">&#34;no_analyzed&#34;: </span>{
-              <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-            },
-            <span style="color:#f92672">&#34;analyzed&#34;: </span>{
-              <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;analyzed&#34;</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-            }
-          }
-        },
-        <span style="color:#f92672">&#34;referer&#34;: </span>{
-          <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;multi_field&#34;</span>,
-          <span style="color:#f92672">&#34;fields&#34;: </span>{
-            <span style="color:#f92672">&#34;no_analyzed&#34;: </span>{
-              <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-            },
-            <span style="color:#f92672">&#34;analyzed&#34;: </span>{
-              <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;analyzed&#34;</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-            }
-          }
-        },
-        <span style="color:#f92672">&#34;agent&#34;: </span>{
-          <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;multi_field&#34;</span>,
-          <span style="color:#f92672">&#34;fields&#34;: </span>{
-            <span style="color:#f92672">&#34;no_analyzed&#34;: </span>{
-              <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-            },
-            <span style="color:#f92672">&#34;analyzed&#34;: </span>{
-              <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;analyzed&#34;</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-            }
-          }
-        },
-        <span style="color:#f92672">&#34;geoip&#34;: </span>{
-          <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;object&#34;</span>,
-          <span style="color:#f92672">&#34;properties&#34;: </span>{
-            <span style="color:#f92672">&#34;location&#34;: </span>{
-              <span style="color:#f92672">&#34;geohash&#34;: </span><span style="color:#66d9ef">true</span>,
-              <span style="color:#f92672">&#34;geohash_precision&#34;: </span><span style="color:#ae81ff">10</span>,
-              <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;geo_point&#34;</span>,
-              <span style="color:#f92672">&#34;lat_lon&#34;: </span><span style="color:#66d9ef">true</span>,
-              <span style="color:#f92672">&#34;geohash_prefix&#34;: </span><span style="color:#66d9ef">true</span>
-            }
-          }
-        },
-        <span style="color:#f92672">&#34;response&#34;: </span>{
-          <span style="color:#f92672">&#34;copy_to&#34;: </span><span style="color:#e6db74">&#34;response_int&#34;</span>,
-          <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
-        },
-        <span style="color:#f92672">&#34;bytes&#34;: </span>{
-          <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;long&#34;</span>
-        },
-        <span style="color:#f92672">&#34;response_int&#34;: </span>{
-          <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;integer&#34;</span>
-        }
-      }
-    }
-  }
-}
-<span style="color:#ae81ff">&#39;</span>
+&ldquo;<code>template</code>&quot;には、<a href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash/#output-elasticsearch">前回の記事で紹介したoutput/elasticsearchの設定</a> に合致する<code>new_demo_access_log-*</code>を指定しています。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">curl -XPUT localhost:<span style="color:#ae81ff">9200</span>/_template/new_access_log_for_demo -d <span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">{
+</span><span style="color:#e6db74">  &#34;template&#34;: &#34;new_demo_access_log-*&#34;,
+</span><span style="color:#e6db74">  &#34;settings&#34;: {
+</span><span style="color:#e6db74">    &#34;number_of_shards&#34;: &#34;2&#34;,
+</span><span style="color:#e6db74">    &#34;number_of_replicas&#34;: &#34;0&#34;
+</span><span style="color:#e6db74">  },
+</span><span style="color:#e6db74">  &#34;mappings&#34;: {
+</span><span style="color:#e6db74">    &#34;_default_&#34;: {
+</span><span style="color:#e6db74">      &#34;dynamic_templates&#34;: [
+</span><span style="color:#e6db74">        {
+</span><span style="color:#e6db74">          &#34;string_template&#34;: {
+</span><span style="color:#e6db74">            &#34;mapping&#34;: {
+</span><span style="color:#e6db74">              &#34;index&#34;: &#34;not_analyzed&#34;,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">            },
+</span><span style="color:#e6db74">            &#34;match_mapping_type&#34;: &#34;string&#34;,
+</span><span style="color:#e6db74">            &#34;match&#34;: &#34;*&#34;
+</span><span style="color:#e6db74">          }
+</span><span style="color:#e6db74">        }
+</span><span style="color:#e6db74">      ],
+</span><span style="color:#e6db74">      &#34;properties&#34;: {
+</span><span style="color:#e6db74">        &#34;path&#34;: {
+</span><span style="color:#e6db74">          &#34;type&#34;: &#34;multi_field&#34;,
+</span><span style="color:#e6db74">          &#34;fields&#34;: {
+</span><span style="color:#e6db74">            &#34;no_analyzed&#34;: {
+</span><span style="color:#e6db74">              &#34;index&#34;: &#34;not_analyzed&#34;,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">            },
+</span><span style="color:#e6db74">            &#34;analyzed&#34;: {
+</span><span style="color:#e6db74">              &#34;index&#34;: &#34;analyzed&#34;,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">            }
+</span><span style="color:#e6db74">          }
+</span><span style="color:#e6db74">        },
+</span><span style="color:#e6db74">        &#34;referer&#34;: {
+</span><span style="color:#e6db74">          &#34;type&#34;: &#34;multi_field&#34;,
+</span><span style="color:#e6db74">          &#34;fields&#34;: {
+</span><span style="color:#e6db74">            &#34;no_analyzed&#34;: {
+</span><span style="color:#e6db74">              &#34;index&#34;: &#34;not_analyzed&#34;,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">            },
+</span><span style="color:#e6db74">            &#34;analyzed&#34;: {
+</span><span style="color:#e6db74">              &#34;index&#34;: &#34;analyzed&#34;,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">            }
+</span><span style="color:#e6db74">          }
+</span><span style="color:#e6db74">        },
+</span><span style="color:#e6db74">        &#34;agent&#34;: {
+</span><span style="color:#e6db74">          &#34;type&#34;: &#34;multi_field&#34;,
+</span><span style="color:#e6db74">          &#34;fields&#34;: {
+</span><span style="color:#e6db74">            &#34;no_analyzed&#34;: {
+</span><span style="color:#e6db74">              &#34;index&#34;: &#34;not_analyzed&#34;,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">            },
+</span><span style="color:#e6db74">            &#34;analyzed&#34;: {
+</span><span style="color:#e6db74">              &#34;index&#34;: &#34;analyzed&#34;,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">            }
+</span><span style="color:#e6db74">          }
+</span><span style="color:#e6db74">        },
+</span><span style="color:#e6db74">        &#34;geoip&#34;: {
+</span><span style="color:#e6db74">          &#34;type&#34;: &#34;object&#34;,
+</span><span style="color:#e6db74">          &#34;properties&#34;: {
+</span><span style="color:#e6db74">            &#34;location&#34;: {
+</span><span style="color:#e6db74">              &#34;geohash&#34;: true,
+</span><span style="color:#e6db74">              &#34;geohash_precision&#34;: 10,
+</span><span style="color:#e6db74">              &#34;type&#34;: &#34;geo_point&#34;,
+</span><span style="color:#e6db74">              &#34;lat_lon&#34;: true,
+</span><span style="color:#e6db74">              &#34;geohash_prefix&#34;: true
+</span><span style="color:#e6db74">            }
+</span><span style="color:#e6db74">          }
+</span><span style="color:#e6db74">        },
+</span><span style="color:#e6db74">        &#34;response&#34;: {
+</span><span style="color:#e6db74">          &#34;copy_to&#34;: &#34;response_int&#34;,
+</span><span style="color:#e6db74">          &#34;type&#34;: &#34;string&#34;
+</span><span style="color:#e6db74">        },
+</span><span style="color:#e6db74">        &#34;bytes&#34;: {
+</span><span style="color:#e6db74">          &#34;type&#34;: &#34;long&#34;
+</span><span style="color:#e6db74">        },
+</span><span style="color:#e6db74">        &#34;response_int&#34;: {
+</span><span style="color:#e6db74">          &#34;type&#34;: &#34;integer&#34;
+</span><span style="color:#e6db74">        }
+</span><span style="color:#e6db74">      }
+</span><span style="color:#e6db74">    }
+</span><span style="color:#e6db74">  }
+</span><span style="color:#e6db74">}
+</span><span style="color:#e6db74">&#39;</span>
 </code></pre></div><h4 id="settings設定">settings設定</h4>
 <p>デモ用であり、手元で2台のノードを起動するということもあり、<code>number_of_shards</code>に<code>2</code>を、<code>number_of_replicas</code>に<code>0</code>を指定してあります。</p>
 <h4 id="mappings設定">mappings設定</h4>
@@ -352,9 +352,9 @@
 今回のデモでは、1種類しかないのですが、タイプ名を特に意識しないために、<code>_default_</code>を使用しました。
 この場合、任意のタイプに適用されることとなります。
 タイプを指定してMappingの設定を行う場合は<code>_default_</code>の部分に特定のタイプ名を記入します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">&#34;mappings&#34;: </span>{
-  <span style="color:#f92672">&#34;_default_&#34;: </span>{
-    <span style="color:#ae81ff">...</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">&#34;mappings&#34;: </span>{
+  <span style="color:#66d9ef">&#34;_default_&#34;: </span>{
+    ...
 </code></pre></div><h5 id="ダイナミックテンプレート">ダイナミックテンプレート</h5>
 <p>次は<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/mapping-root-object-type.html#_dynamic_templates">ダイナミックテンプレート</a>です。
 インデックステンプレートはインデックスの設定をテンプレート化しました。ダイナミックテンプレートはフィールドに対してテンプレートを設定できます。</p>
@@ -362,15 +362,15 @@
 通常、<code>string</code>タイプのフィールドは<code>analyzed</code>となりますが、<code>not_analyzed</code>に変更してあります。
 詳しく検索したいフィールドの方が少ないためです。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
-<span style="color:#f92672">&#34;dynamic_templates&#34;: </span>[
+<span style="color:#66d9ef">&#34;dynamic_templates&#34;: </span>[
   {
-    <span style="color:#f92672">&#34;string_template&#34;: </span>{
-      <span style="color:#f92672">&#34;mapping&#34;: </span>{
-        <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
-        <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
+    <span style="color:#66d9ef">&#34;string_template&#34;: </span>{
+      <span style="color:#66d9ef">&#34;mapping&#34;: </span>{
+        <span style="color:#66d9ef">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
+        <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
       },
-      <span style="color:#f92672">&#34;match_mapping_type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>,
-      <span style="color:#f92672">&#34;match&#34;: </span><span style="color:#e6db74">&#34;*&#34;</span>
+      <span style="color:#66d9ef">&#34;match_mapping_type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>,
+      <span style="color:#66d9ef">&#34;match&#34;: </span><span style="color:#e6db74">&#34;*&#34;</span>
     }
   }
 ],
@@ -381,16 +381,16 @@
 <code>multi_field</code>設定を用いることで、1つのJSONのデータから、異なる形のフィールドを用意することが可能です。</p>
 <p>今回のテンプレートでは、<code>path</code>、<code>referer</code>、<code>agent</code>に<code>multi_field</code>を指定しました。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">...
-<span style="color:#f92672">&#34;path&#34;: </span>{
-  <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;multi_field&#34;</span>,
-  <span style="color:#f92672">&#34;fields&#34;: </span>{
-    <span style="color:#f92672">&#34;no_analyzed&#34;: </span>{
-      <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
-      <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
+<span style="color:#66d9ef">&#34;path&#34;: </span>{
+  <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;multi_field&#34;</span>,
+  <span style="color:#66d9ef">&#34;fields&#34;: </span>{
+    <span style="color:#66d9ef">&#34;no_analyzed&#34;: </span>{
+      <span style="color:#66d9ef">&#34;index&#34;: </span><span style="color:#e6db74">&#34;not_analyzed&#34;</span>,
+      <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
     },
-    <span style="color:#f92672">&#34;analyzed&#34;: </span>{
-      <span style="color:#f92672">&#34;index&#34;: </span><span style="color:#e6db74">&#34;analyzed&#34;</span>,
-      <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
+    <span style="color:#66d9ef">&#34;analyzed&#34;: </span>{
+      <span style="color:#66d9ef">&#34;index&#34;: </span><span style="color:#e6db74">&#34;analyzed&#34;</span>,
+      <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
     }
   }
 },
@@ -403,15 +403,15 @@
 <h5 id="geoip">geoip</h5>
 <p><a href="http://blog.johtani.info/blog/2014/11/21/import-apache-accesslog-using-logstash#filter-geoip">Logstashでgeoipデータ</a>を付与していました。
 このgeoipのデータをKibana4で利用するために、geoデータとして登録する必要があります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">&#34;geoip&#34;: </span>{
-  <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;object&#34;</span>,
-  <span style="color:#f92672">&#34;properties&#34;: </span>{
-    <span style="color:#f92672">&#34;location&#34;: </span>{
-      <span style="color:#f92672">&#34;geohash&#34;: </span><span style="color:#66d9ef">true</span>,
-      <span style="color:#f92672">&#34;geohash_precision&#34;: </span><span style="color:#ae81ff">10</span>,
-      <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;geo_point&#34;</span>,
-      <span style="color:#f92672">&#34;lat_lon&#34;: </span><span style="color:#66d9ef">true</span>,
-      <span style="color:#f92672">&#34;geohash_prefix&#34;: </span><span style="color:#66d9ef">true</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">&#34;geoip&#34;: </span>{
+  <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;object&#34;</span>,
+  <span style="color:#66d9ef">&#34;properties&#34;: </span>{
+    <span style="color:#66d9ef">&#34;location&#34;: </span>{
+      <span style="color:#66d9ef">&#34;geohash&#34;: </span><span style="color:#66d9ef">true</span>,
+      <span style="color:#66d9ef">&#34;geohash_precision&#34;: </span><span style="color:#ae81ff">10</span>,
+      <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;geo_point&#34;</span>,
+      <span style="color:#66d9ef">&#34;lat_lon&#34;: </span><span style="color:#66d9ef">true</span>,
+      <span style="color:#66d9ef">&#34;geohash_prefix&#34;: </span><span style="color:#66d9ef">true</span>
     }
   }
 },
@@ -434,15 +434,15 @@ response_intというフィールドにも値を入れています。
 <code>copy_to</code>を用いることで、異なるフィールドに値をコピーすることができます。</p>
 <p>bytesについては、longで扱いたいとういう理由だけです。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">
-<span style="color:#f92672">&#34;response&#34;: </span>{
-  <span style="color:#f92672">&#34;copy_to&#34;: </span><span style="color:#e6db74">&#34;response_int&#34;</span>,
-  <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
+<span style="color:#66d9ef">&#34;response&#34;: </span>{
+  <span style="color:#66d9ef">&#34;copy_to&#34;: </span><span style="color:#e6db74">&#34;response_int&#34;</span>,
+  <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;string&#34;</span>
 },
-<span style="color:#f92672">&#34;bytes&#34;: </span>{
-  <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;long&#34;</span>
+<span style="color:#66d9ef">&#34;bytes&#34;: </span>{
+  <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;long&#34;</span>
 },
-<span style="color:#f92672">&#34;response_int&#34;: </span>{
-  <span style="color:#f92672">&#34;type&#34;: </span><span style="color:#e6db74">&#34;integer&#34;</span>
+<span style="color:#66d9ef">&#34;response_int&#34;: </span>{
+  <span style="color:#66d9ef">&#34;type&#34;: </span><span style="color:#e6db74">&#34;integer&#34;</span>
 }
 </code></pre></div><h2 id="まとめ">まとめ</h2>
 <p>今回はデモに利用したインデックスてプレートについて説明しました。
