@@ -14,48 +14,48 @@
       
       <guid>https://blog.johtani.info/blog/2020/09/07/reboot-nlp100-ch04/</guid>
       <description>Rustで言語処理100本ノックの第4章です。 前回はこちら。 今回は早めに続きをやりました。 「形態素解析」ですしね。 第4章の概要 吾輩は猫である</description>
-      <content:encoded>&lt;p&gt;Rustで言語処理100本ノックの第4章です。&lt;/p&gt;
-&lt;p&gt;前回は&lt;a href=&#34;https://blog.johtani.info/blog/2020/09/04/reboot-nlp100-ch03&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;今回は早めに続きをやりました。
-「形態素解析」ですしね。&lt;/p&gt;
-&lt;h2 id=&#34;第4章の概要&#34;&gt;第4章の概要&lt;/h2&gt;
-&lt;p&gt;吾輩は猫であるの文章が用意されていて、MaCabで形態素解析した結果をファイルに保存したところからが開始となります。&lt;/p&gt;
-&lt;p&gt;が、せっかくRustでやっているのでKuromojiのRust版である&lt;a href=&#34;https://github.com/lindera-morphology/lindera&#34;&gt;Lindera&lt;/a&gt;を利用して形態素解析した結果を保存する部分から作成しました。
-3章に引き続き、大きな流れのところの説明だけにしておきます。&lt;/p&gt;
-&lt;h3 id=&#34;形態素解析&#34;&gt;形態素解析&lt;/h3&gt;
-&lt;p&gt;もとの&lt;code&gt;neko.txt&lt;/code&gt;が文章が1行ごとになっているので、そのまま1行ずつ読みならが、形態素解析していきます。読み込みの部分は3章とあまり変わらないので割愛します。
-以下は、形態素解析の処理と形態素解析結果用の構造体です。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Clone, Debug, Serialize, Deserialize)]&lt;/span&gt;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Token&lt;/span&gt; {
+      <content:encoded><p>Rustで言語処理100本ノックの第4章です。</p>
+<p>前回は<a href="/blog/2020/09/04/reboot-nlp100-ch03">こちら</a>。</p>
+<p>今回は早めに続きをやりました。
+「形態素解析」ですしね。</p>
+<h2 id="第4章の概要">第4章の概要</h2>
+<p>吾輩は猫であるの文章が用意されていて、MaCabで形態素解析した結果をファイルに保存したところからが開始となります。</p>
+<p>が、せっかくRustでやっているのでKuromojiのRust版である<a href="https://github.com/lindera-morphology/lindera">Lindera</a>を利用して形態素解析した結果を保存する部分から作成しました。
+3章に引き続き、大きな流れのところの説明だけにしておきます。</p>
+<h3 id="形態素解析">形態素解析</h3>
+<p>もとの<code>neko.txt</code>が文章が1行ごとになっているので、そのまま1行ずつ読みならが、形態素解析していきます。読み込みの部分は3章とあまり変わらないので割愛します。
+以下は、形態素解析の処理と形態素解析結果用の構造体です。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Clone, Debug, Serialize, Deserialize)]</span>
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Token</span> {
     surface: String,
     base: String,
     pos: String,
     pos1: String,
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;まずは構造体です。今回の問題では、必要な情報は4種類だったのでそれを構造体にしました。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;表層形（surface）&lt;/li&gt;
-&lt;li&gt;基本形（base）&lt;/li&gt;
-&lt;li&gt;品詞（pos）&lt;/li&gt;
-&lt;li&gt;品詞細分類1（pos1）&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;code&gt;derive&lt;/code&gt;でSerialize、Deserializeを付与しているのは、形態素解析の結果をJSON文字列として保存し、あとのそれぞれの課題で読み出すためにserde_jsonを利用するためです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenize&lt;/span&gt;(line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; tokenizer &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lindera::tokenizer::Tokenizer::new(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;normal&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; lindera_tokens &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; tokenizer.tokenize(line);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tokens &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lindera_tokens
+</code></pre></div><p>まずは構造体です。今回の問題では、必要な情報は4種類だったのでそれを構造体にしました。</p>
+<ul>
+<li>表層形（surface）</li>
+<li>基本形（base）</li>
+<li>品詞（pos）</li>
+<li>品詞細分類1（pos1）</li>
+</ul>
+<p><code>derive</code>でSerialize、Deserializeを付与しているのは、形態素解析の結果をJSON文字列として保存し、あとのそれぞれの課題で読み出すためにserde_jsonを利用するためです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tokenize</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tokenizer <span style="color:#f92672">=</span> lindera::tokenizer::Tokenizer::new(<span style="color:#e6db74">&#34;normal&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>);
+    <span style="color:#66d9ef">let</span> lindera_tokens <span style="color:#f92672">=</span> tokenizer.tokenize(line);
+    <span style="color:#66d9ef">let</span> tokens <span style="color:#f92672">=</span> lindera_tokens
         .iter()
-        .map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;lindera_token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; surface &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lindera_token.text.to_string();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; pos &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lindera_token.detail[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;].to_string();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; pos1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; pos &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;UNK&amp;#34;&lt;/span&gt; {
-                lindera_token.detail[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;].to_string()
-            } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
+        .map(<span style="color:#f92672">|</span>lindera_token<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">let</span> surface <span style="color:#f92672">=</span> lindera_token.text.to_string();
+            <span style="color:#66d9ef">let</span> pos <span style="color:#f92672">=</span> lindera_token.detail[<span style="color:#ae81ff">0</span>].to_string();
+            <span style="color:#66d9ef">let</span> pos1 <span style="color:#f92672">=</span> <span style="color:#66d9ef">if</span> pos <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;UNK&#34;</span> {
+                lindera_token.detail[<span style="color:#ae81ff">1</span>].to_string()
+            } <span style="color:#66d9ef">else</span> {
                 String::new()
             };
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; base &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; pos &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;UNK&amp;#34;&lt;/span&gt; {
-                lindera_token.detail[&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;].to_string()
-            } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
+            <span style="color:#66d9ef">let</span> base <span style="color:#f92672">=</span> <span style="color:#66d9ef">if</span> pos <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;UNK&#34;</span> {
+                lindera_token.detail[<span style="color:#ae81ff">6</span>].to_string()
+            } <span style="color:#66d9ef">else</span> {
                 String::new()
             };
             Token {
@@ -66,120 +66,120 @@
             }
         })
         .collect();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; tokens;
+    <span style="color:#66d9ef">return</span> tokens;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;次が形態素解析の処理です。
-入力に1行分の文章を受け取り、出力として、さきほどの構造体をベクタに入れたもの&lt;code&gt;Vec&amp;lt;Token&amp;gt;&lt;/code&gt;を返します。
-内部ではLinderaの&lt;code&gt;Tokenizer&lt;/code&gt;を&lt;code&gt;normal&lt;/code&gt;モードでインスタンス化してその&lt;code&gt;tokenizer()&lt;/code&gt;メソッドを叩いているだけです。
+</code></pre></div><p>次が形態素解析の処理です。
+入力に1行分の文章を受け取り、出力として、さきほどの構造体をベクタに入れたもの<code>Vec&lt;Token&gt;</code>を返します。
+内部ではLinderaの<code>Tokenizer</code>を<code>normal</code>モードでインスタンス化してその<code>tokenizer()</code>メソッドを叩いているだけです。
 インスタンス化のときの第2引数は辞書のディレクトリですが、今回はデフォルト辞書(IPADIC)を利用しています。
-戻り値はLinderaが用意したToken構造体なので、これを今回作成した&lt;code&gt;Token&lt;/code&gt;構造体に詰め替えているだけです。&lt;/p&gt;
-&lt;p&gt;注意点としてLinderaはMeCabとは異なり、未知語(辞書に出てこない単語)の処理が実装されていないので、品詞が&lt;code&gt;&amp;quot;UNK&amp;quot;&lt;/code&gt;の場合にはその他の情報が取得できないので、空文字を構造体に設定するようにしました。&lt;/p&gt;
-&lt;h3 id=&#34;結果の保存&#34;&gt;結果の保存&lt;/h3&gt;
-&lt;p&gt;形態素解析の結果はJSONで保存しました。
+戻り値はLinderaが用意したToken構造体なので、これを今回作成した<code>Token</code>構造体に詰め替えているだけです。</p>
+<p>注意点としてLinderaはMeCabとは異なり、未知語(辞書に出てこない単語)の処理が実装されていないので、品詞が<code>&quot;UNK&quot;</code>の場合にはその他の情報が取得できないので、空文字を構造体に設定するようにしました。</p>
+<h3 id="結果の保存">結果の保存</h3>
+<p>形態素解析の結果はJSONで保存しました。
 もとのファイルが1文が1行になっていたので、
-1行を読み込み、形態素解析し、それをVecで取り出して、1行1配列JSONの形で保存するようにしてあります。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;output_tokens&lt;/span&gt;(tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;, buf: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;mut&lt;/span&gt; File) {
-    writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(buf, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, serde_json::to_string(tokens).unwrap()).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during output json&amp;#34;&lt;/span&gt;);
+1行を読み込み、形態素解析し、それをVecで取り出して、1行1配列JSONの形で保存するようにしてあります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">output_tokens</span>(tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>, buf: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> File) {
+    writeln<span style="color:#f92672">!</span>(buf, <span style="color:#e6db74">&#34;{}&#34;</span>, serde_json::to_string(tokens).unwrap()).expect(<span style="color:#e6db74">&#34;Error during output json&#34;</span>);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;serde_json::to_string&lt;/code&gt;に&lt;code&gt;Vec&amp;lt;Token&amp;gt;&lt;/code&gt;を渡しているだけですが、構造体に&lt;code&gt;derive&lt;/code&gt;をつけているのでよしなにやってくれます(便利ー)。&lt;/p&gt;
-&lt;h3 id=&#34;jsonの読み込み処理&#34;&gt;JSONの読み込み処理&lt;/h3&gt;
-&lt;p&gt;1行1JSONの読み込み処理です。
-今回も3章のように読み込みながら、各文章ごとの形態素解析結果に対して処理を実施するために、処理を実行するための&lt;code&gt;trait&lt;/code&gt;を&lt;code&gt;Command&lt;/code&gt;として用意し、それぞれの問題で形態素解析結果に対して処理を書くような実装にしました。また、設問37で「猫」と共起している単語を処理するという課題があるので、文章に「猫」が入っているものだけを処理できるようにするための&lt;code&gt;Filter&lt;/code&gt;も用意し、これをJSONの読み込み処理のイテレータの&lt;code&gt;filter&lt;/code&gt;にわたすようにしています。
-特にフィルタリングが必要ない場合ように、&lt;code&gt;NonFilter&lt;/code&gt;を予め実装済みです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Command {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self, tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;);
-}
-
-&lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Filter {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;is_target&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self, line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;;
+</code></pre></div><p><code>serde_json::to_string</code>に<code>Vec&lt;Token&gt;</code>を渡しているだけですが、構造体に<code>derive</code>をつけているのでよしなにやってくれます(便利ー)。</p>
+<h3 id="jsonの読み込み処理">JSONの読み込み処理</h3>
+<p>1行1JSONの読み込み処理です。
+今回も3章のように読み込みながら、各文章ごとの形態素解析結果に対して処理を実施するために、処理を実行するための<code>trait</code>を<code>Command</code>として用意し、それぞれの問題で形態素解析結果に対して処理を書くような実装にしました。また、設問37で「猫」と共起している単語を処理するという課題があるので、文章に「猫」が入っているものだけを処理できるようにするための<code>Filter</code>も用意し、これをJSONの読み込み処理のイテレータの<code>filter</code>にわたすようにしています。
+特にフィルタリングが必要ない場合ように、<code>NonFilter</code>を予め実装済みです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">trait</span> Command {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>);
 }
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;NonFilter&lt;/span&gt; {}
+<span style="color:#66d9ef">trait</span> Filter {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">is_target</span>(<span style="color:#f92672">&amp;</span>self, line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; <span style="color:#66d9ef">bool</span>;
+}
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Filter &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; NonFilter {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;is_target&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self, line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">NonFilter</span> {}
+
+<span style="color:#66d9ef">impl</span> Filter <span style="color:#66d9ef">for</span> NonFilter {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">is_target</span>(<span style="color:#f92672">&amp;</span>self, line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; <span style="color:#66d9ef">bool</span> {
+        <span style="color:#66d9ef">true</span>
     }
 }
 
-&lt;span style=&#34;color:#75715e&#34;&gt;// ch04-30. 形態素解析結果の読み込み
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;load_json&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;T: &lt;span style=&#34;color:#a6e22e&#34;&gt;Command&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;(cmd: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;mut&lt;/span&gt; T) {
-    load_json_with_filter(cmd, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;NonFilter {});
+<span style="color:#75715e">// ch04-30. 形態素解析結果の読み込み
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Command</span><span style="color:#f92672">&gt;</span>(cmd: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> T) {
+    load_json_with_filter(cmd, <span style="color:#f92672">&amp;</span>NonFilter {});
 }
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;load_json_with_filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;T: &lt;span style=&#34;color:#a6e22e&#34;&gt;Command&lt;/span&gt;, U: &lt;span style=&#34;color:#a6e22e&#34;&gt;Filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;(cmd: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;mut&lt;/span&gt; T, filter: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;U&lt;/span&gt;) {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; file &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;./data/chap04/neko.txt.lindera.json&amp;#34;&lt;/span&gt;).unwrap();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(file);
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json_with_filter</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Command</span>, U: <span style="color:#a6e22e">Filter</span><span style="color:#f92672">&gt;</span>(cmd: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> T, filter: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">U</span>) {
+    <span style="color:#66d9ef">let</span> file <span style="color:#f92672">=</span> File::open(<span style="color:#e6db74">&#34;./data/chap04/neko.txt.lindera.json&#34;</span>).unwrap();
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(file);
     buf.lines()
-        .filter_map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;item&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; item.ok())
-        .filter(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; filter.is_target(line))
-        .for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tokens &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; parse_line_json(line.as_str());
-            cmd.execute(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tokens);
+        .filter_map(<span style="color:#f92672">|</span>item<span style="color:#f92672">|</span> item.ok())
+        .filter(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> filter.is_target(line))
+        .for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">let</span> tokens <span style="color:#f92672">=</span> parse_line_json(line.as_str());
+            cmd.execute(<span style="color:#f92672">&amp;</span>tokens);
         });
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;output_tokens&lt;/code&gt;では&lt;code&gt;serde_json::to_string&lt;/code&gt;を呼び出してましたが、読み込みでは、&lt;code&gt;serde_json::from_str&lt;/code&gt;を使うと構造体にしてくれます。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;parse_line_json&lt;/span&gt;(line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; serde_json::from_str(line).unwrap();
+</code></pre></div><p><code>output_tokens</code>では<code>serde_json::to_string</code>を呼び出してましたが、読み込みでは、<code>serde_json::from_str</code>を使うと構造体にしてくれます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">parse_line_json</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">return</span> serde_json::from_str(line).unwrap();
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、設問ごとに&lt;code&gt;Command&lt;/code&gt;トレイトを実装していく形です。
-たとえば、32.の動詞の原形を出力する場合は次のようになります。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;ExtractVerbBase&lt;/span&gt; {
-    out: &lt;span style=&#34;color:#a6e22e&#34;&gt;File&lt;/span&gt;,
+</code></pre></div><p>あとは、設問ごとに<code>Command</code>トレイトを実装していく形です。
+たとえば、32.の動詞の原形を出力する場合は次のようになります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ExtractVerbBase</span> {
+    out: <span style="color:#a6e22e">File</span>,
 }
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Command &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; ExtractVerbBase {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self, tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;) {
+<span style="color:#66d9ef">impl</span> Command <span style="color:#66d9ef">for</span> ExtractVerbBase {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>) {
         tokens
             .iter()
-            .filter(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; token.pos &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;動詞&amp;#34;&lt;/span&gt;)
-            .for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-                writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(self.out, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, token.base).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during writeln&amp;#34;&lt;/span&gt;);
-                println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, token.base);
+            .filter(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> token.pos <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;動詞&#34;</span>)
+            .for_each(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> {
+                writeln<span style="color:#f92672">!</span>(self.out, <span style="color:#e6db74">&#34;{}&#34;</span>, token.base).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
+                println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, token.base);
             })
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;標準出力とは別にファイルにも出力できるように&lt;code&gt;ExtractVerbBase&lt;/code&gt;に&lt;code&gt;out&lt;/code&gt;でファイルを保持しています。&lt;/p&gt;
-&lt;h3 id=&#34;34-名詞の連接&#34;&gt;34. 名詞の連接&lt;/h3&gt;
-&lt;p&gt;「名詞の連接（連続して出現する名詞）を最長一致で抽出せよ．」という課題だったのですが、最初は読み間違えて、名詞の連接の最も長いものだけを出力するようにしてました。。。
-やっぱり、出力結果とかのサンプルは用意しといてほしいなぁ。。。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Command &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; ExtractMaxConjunctionNoun {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self, tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;) {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; nouns &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[];
-        &lt;span style=&#34;color:#75715e&#34;&gt;// TODO 参照保持でどうにかしたいけどなぁ。
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        tokens.iter().map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; token.clone()).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; token.pos &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;名詞&amp;#34;&lt;/span&gt; {
+</code></pre></div><p>標準出力とは別にファイルにも出力できるように<code>ExtractVerbBase</code>に<code>out</code>でファイルを保持しています。</p>
+<h3 id="34-名詞の連接">34. 名詞の連接</h3>
+<p>「名詞の連接（連続して出現する名詞）を最長一致で抽出せよ．」という課題だったのですが、最初は読み間違えて、名詞の連接の最も長いものだけを出力するようにしてました。。。
+やっぱり、出力結果とかのサンプルは用意しといてほしいなぁ。。。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">impl</span> Command <span style="color:#66d9ef">for</span> ExtractMaxConjunctionNoun {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>) {
+        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> nouns <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
+        <span style="color:#75715e">// TODO 参照保持でどうにかしたいけどなぁ。
+</span><span style="color:#75715e"></span>        tokens.iter().map(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> token.clone()).for_each(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">if</span> token.pos <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;名詞&#34;</span> {
                 nouns.push(token);
-            } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; nouns.len() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; {
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#66d9ef">if</span> nouns.len() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span> {
                     self.buffer.push(nouns.clone());
                 }
-                nouns &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[]
+                nouns <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[]
             }
         });
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;名詞の場合に、nounsにバッファリングしつつ、違う品詞が来たら出力するという処理になっています。
-&lt;code&gt;clone&lt;/code&gt;を呼び出していますが、これを参照を引き回す感じにできるといいのかもなぁ(結構めんどくさい)。&lt;/p&gt;
-&lt;h3 id=&#34;36-頻度上位10語&#34;&gt;36. 頻度上位10語&lt;/h3&gt;
-&lt;p&gt;頻度を数えるのにはBTreeMapを利用しています。
+</code></pre></div><p>名詞の場合に、nounsにバッファリングしつつ、違う品詞が来たら出力するという処理になっています。
+<code>clone</code>を呼び出していますが、これを参照を引き回す感じにできるといいのかもなぁ(結構めんどくさい)。</p>
+<h3 id="36-頻度上位10語">36. 頻度上位10語</h3>
+<p>頻度を数えるのにはBTreeMapを利用しています。
 数えながら、Top10を保持する方法がいい気がしたのですが、いい入れ物を見つけられなかったので、数え上げたあとにBTreeMapのIteratorを回しながら、キーバリューのVecをまず生成します。
-その生成したVecに値でソートし、その後Iteratorから最初の10件を取得して表示する方法にしました。&lt;/p&gt;
-&lt;p&gt;ソートして取り出すという処理がついでにかかっています。。。
-&lt;a href=&#34;https://doc.rust-lang.org/std/collections/struct.BinaryHeap.html&#34;&gt;BinaryHeap&lt;/a&gt;がなにか使えそうな気もしたのですが、いい方法が思いつきませんでした。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_top10&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self) {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; key_values: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;String, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;
-            self.terms_count.iter().collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;String, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
-        key_values.sort_by(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;x, y&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; y.&lt;span style=&#34;color:#ae81ff&#34;&gt;1.&lt;/span&gt;cmp(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;x.&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;));
-        key_values.iter().take(&lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;(key, value)&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-            writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self.out, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}, {}&amp;#34;&lt;/span&gt;, key, value).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during writeln&amp;#34;&lt;/span&gt;);
-            println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}, {}&amp;#34;&lt;/span&gt;, key, value);
+その生成したVecに値でソートし、その後Iteratorから最初の10件を取得して表示する方法にしました。</p>
+<p>ソートして取り出すという処理がついでにかかっています。。。
+<a href="https://doc.rust-lang.org/std/collections/struct.BinaryHeap.html">BinaryHeap</a>がなにか使えそうな気もしたのですが、いい方法が思いつきませんでした。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">print_top10</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self) {
+        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> key_values: Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span>
+            self.terms_count.iter().collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;&gt;</span>();
+        key_values.sort_by(<span style="color:#f92672">|</span>x, y<span style="color:#f92672">|</span> y.<span style="color:#ae81ff">1.</span>cmp(<span style="color:#f92672">&amp;</span>x.<span style="color:#ae81ff">1</span>));
+        key_values.iter().take(<span style="color:#ae81ff">10</span>).for_each(<span style="color:#f92672">|</span>(key, value)<span style="color:#f92672">|</span> {
+            writeln<span style="color:#f92672">!</span>(<span style="color:#f92672">&amp;</span>self.out, <span style="color:#e6db74">&#34;{}, {}&#34;</span>, key, value).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
+            println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}, {}&#34;</span>, key, value);
         });
     }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;形態素解析結果をちゃんと眺めてはいないですが、処理としてはこんなところかなと。
+</code></pre></div><h2 id="まとめ">まとめ</h2>
+<p>形態素解析結果をちゃんと眺めてはいないですが、処理としてはこんなところかなと。
 グラフはめんどくさいのでスキップしてしまいました。。。
-Kibana/Esに食わせて見てみるのもありかなぁ?&lt;/p&gt;
-&lt;p&gt;次は係り受け解析です。Rustで使えるライブラリとかあるかなぁ?&lt;/p&gt;
+Kibana/Esに食わせて見てみるのもありかなぁ?</p>
+<p>次は係り受け解析です。Rustで使えるライブラリとかあるかなぁ?</p>
 </content:encoded>
     </item>
     
@@ -190,136 +190,136 @@ Kibana/Esに食わせて見てみるのもありかなぁ?&lt;/p&gt;
       
       <guid>https://blog.johtani.info/blog/2020/09/04/reboot-nlp100-ch03/</guid>
       <description>Rustで言語処理100本ノックの第3章です。 前回はこちら。 少し間が空きましたが、再開しました。 間が空いた理由は。。。「正規表現」ですかね。</description>
-      <content:encoded>&lt;p&gt;Rustで言語処理100本ノックの第3章です。&lt;/p&gt;
-&lt;p&gt;前回は&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/12/reboot-nlp100-ch02-12to19&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;少し間が空きましたが、再開しました。
+      <content:encoded><p>Rustで言語処理100本ノックの第3章です。</p>
+<p>前回は<a href="/blog/2020/05/12/reboot-nlp100-ch02-12to19">こちら</a>。</p>
+<p>少し間が空きましたが、再開しました。
 間が空いた理由は。。。「正規表現」ですかね。。。
 苦手なんです、正規表現。
-なので、28はちょっとギブアップしてしまいました。&lt;/p&gt;
-&lt;h2 id=&#34;第3章の概要&#34;&gt;第3章の概要&lt;/h2&gt;
-&lt;p&gt;個別に説明はせずに大きな流れのところだけ。
-それぞれの問題の解については&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/src/chapter03/answer.rs&#34;&gt;リポジトリ&lt;/a&gt;を御覧ください(興味ある人いるのかなぁ?)&lt;/p&gt;
-&lt;p&gt;第3章はNDJSON(new line delimited JSON)という、
+なので、28はちょっとギブアップしてしまいました。</p>
+<h2 id="第3章の概要">第3章の概要</h2>
+<p>個別に説明はせずに大きな流れのところだけ。
+それぞれの問題の解については<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter03/answer.rs">リポジトリ</a>を御覧ください(興味ある人いるのかなぁ?)</p>
+<p>第3章はNDJSON(new line delimited JSON)という、
 1行に1JSONという形式のデータを格納したファイルがgzipで圧縮された状態で提供されます。
-まずは、このJSONファイルからJSONを読み込むのが主な処理になります。&lt;/p&gt;
-&lt;p&gt;読み込んだデータに「イギリス」のWikipediaの記事が入っているので、そこから正規表現で必要なデータを抽出します。&lt;/p&gt;
-&lt;p&gt;最後の問題が少し特殊で、抜き出した情報の「国旗」のファイル名を元に、MediaWikiのREST APIを叩いて、結果を取得し、その一部の情報を抜き出すというものです。&lt;/p&gt;
-&lt;h3 id=&#34;jsonの読み込み処理&#34;&gt;JSONの読み込み処理&lt;/h3&gt;
-&lt;p&gt;gzipファイルを読み込んでから、1行ずつ抜き出してVecに入れる処理が次のようになります。
+まずは、このJSONファイルからJSONを読み込むのが主な処理になります。</p>
+<p>読み込んだデータに「イギリス」のWikipediaの記事が入っているので、そこから正規表現で必要なデータを抽出します。</p>
+<p>最後の問題が少し特殊で、抜き出した情報の「国旗」のファイル名を元に、MediaWikiのREST APIを叩いて、結果を取得し、その一部の情報を抜き出すというものです。</p>
+<h3 id="jsonの読み込み処理">JSONの読み込み処理</h3>
+<p>gzipファイルを読み込んでから、1行ずつ抜き出してVecに入れる処理が次のようになります。
 今回のgzipファイルは大した量が入っていないので、全部先に抜き出す処理としてまとめました。
 もっと巨大なファイルの場合は個別のJSONに対する処理を
-&lt;code&gt;buf.lines().map()&lt;/code&gt;のmapのなかで実行する形にすると思います。
-gzipのファイルを開くのに&lt;code&gt;flate2&lt;/code&gt;というクレート(ライブラリ)を利用しました。便利なのは、&lt;code&gt;BufReader&lt;/code&gt;に&lt;code&gt;lines()&lt;/code&gt;というメソッドがあるところですかね。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_ndjson_from_gzip&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found?&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; gz &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; GzDecoder::new(f);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(gz);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; lines: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; buf.lines().map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;l&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; l.unwrap()).collect();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; lines;
+<code>buf.lines().map()</code>のmapのなかで実行する形にすると思います。
+gzipのファイルを開くのに<code>flate2</code>というクレート(ライブラリ)を利用しました。便利なのは、<code>BufReader</code>に<code>lines()</code>というメソッドがあるところですかね。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_ndjson_from_gzip</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">let</span> f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found?&#34;</span>);
+    <span style="color:#66d9ef">let</span> gz <span style="color:#f92672">=</span> GzDecoder::new(f);
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(gz);
+    <span style="color:#66d9ef">let</span> lines: Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> buf.lines().map(<span style="color:#f92672">|</span>l<span style="color:#f92672">|</span> l.unwrap()).collect();
+    <span style="color:#66d9ef">return</span> lines;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;こちらは、上記のメソッドで抜き出したVecを元に、記事の情報を抜き出す処理をしています。
-JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリアライズするために、&lt;code&gt;serde&lt;/code&gt;というライブラリを使用しています。
-&lt;code&gt;serde&lt;/code&gt;自体は様々なデータ形式(JSON、YAMLなど)をパースするためのフレームワークです。今回はJSONなので、&lt;code&gt;serde_json&lt;/code&gt;の実装を利用しています。
-また、JSON文字列から構造体にデシリアライズするのを簡単にできるように構造体に&lt;code&gt;#[derive(Deserialize)]&lt;/code&gt;をつけています。
-あとは、&lt;code&gt;let article: Article = serde_json::from_str(json.as_str())&lt;/code&gt;という処理を実行すればserde_jsonがJSONをパースして構造体に変換してくれます。形式がわかっているJSONの扱いはこれが楽ですね。変数に型を明記してあるので、型の推論もしてくれてるようです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Deserialize)]&lt;/span&gt;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Article&lt;/span&gt; {
+</code></pre></div><p>こちらは、上記のメソッドで抜き出したVecを元に、記事の情報を抜き出す処理をしています。
+JSONをパースして構造体<code>Article</code>にデシリアライズするために、<code>serde</code>というライブラリを使用しています。
+<code>serde</code>自体は様々なデータ形式(JSON、YAMLなど)をパースするためのフレームワークです。今回はJSONなので、<code>serde_json</code>の実装を利用しています。
+また、JSON文字列から構造体にデシリアライズするのを簡単にできるように構造体に<code>#[derive(Deserialize)]</code>をつけています。
+あとは、<code>let article: Article = serde_json::from_str(json.as_str())</code>という処理を実行すればserde_jsonがJSONをパースして構造体に変換してくれます。形式がわかっているJSONの扱いはこれが楽ですね。変数に型を明記してあるので、型の推論もしてくれてるようです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Deserialize)]</span>
+<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Article</span> {
     title: String,
     text: String,
 }
 
-&lt;span style=&#34;color:#75715e&#34;&gt;// ch03-20. JSONデータの読み込み
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// https://serde.rs/
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;load_json&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, target_title: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Article&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; results &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[];
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; ndjson &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; extract_ndjson_from_gzip(input_file_name);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; json &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; ndjson {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; article: &lt;span style=&#34;color:#a6e22e&#34;&gt;Article&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; serde_json::from_str(json.as_str()).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;json parse error&amp;#34;&lt;/span&gt;);
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; article.title &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; target_title {
+<span style="color:#75715e">// ch03-20. JSONデータの読み込み
+</span><span style="color:#75715e">// https://serde.rs/
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, target_title: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Article<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> results <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
+    <span style="color:#66d9ef">let</span> ndjson <span style="color:#f92672">=</span> extract_ndjson_from_gzip(input_file_name);
+    <span style="color:#66d9ef">for</span> json <span style="color:#66d9ef">in</span> ndjson {
+        <span style="color:#66d9ef">let</span> article: <span style="color:#a6e22e">Article</span> <span style="color:#f92672">=</span> serde_json::from_str(json.as_str()).expect(<span style="color:#e6db74">&#34;json parse error&#34;</span>);
+        <span style="color:#66d9ef">if</span> article.title <span style="color:#f92672">==</span> target_title {
             results.push(article);
         }
     }
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; results;
+    <span style="color:#66d9ef">return</span> results;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;後続の処理ではパースした&lt;code&gt;Article&lt;/code&gt;から記事情報を取得して色々と処理をしています。&lt;/p&gt;
-&lt;h3 id=&#34;正規表現&#34;&gt;正規表現&lt;/h3&gt;
-&lt;p&gt;正規表現用のクレート&lt;code&gt;regex&lt;/code&gt;がRustに用意されています。&lt;code&gt;Regex::new(正規表現)&lt;/code&gt;で、正規表現をコンパイルし、あとは、この構造体のメソッドを利用して文字列を処理していきます。
-問題では、マッチするかどうか、マッチした一部の文字列を抜き出す、不要なタグを削除するといった処理を正規表現で行いました(Rust書くよりも正規表現の書き方とかを調べるのに大半の時間をもっていかれてます。。。)。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_category_lines&lt;/span&gt;(article: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Article&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; re &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Regex::new(&lt;span style=&#34;color:#e6db74&#34;&gt;r&amp;#34;\[\[Category:(.*)\]\]&amp;#34;).expect(&amp;#34;syntax error in regex&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; lines &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[];
-    article.lines_from_text().iter().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; re.is_match(line) {
+</code></pre></div><p>後続の処理ではパースした<code>Article</code>から記事情報を取得して色々と処理をしています。</p>
+<h3 id="正規表現">正規表現</h3>
+<p>正規表現用のクレート<code>regex</code>がRustに用意されています。<code>Regex::new(正規表現)</code>で、正規表現をコンパイルし、あとは、この構造体のメソッドを利用して文字列を処理していきます。
+問題では、マッチするかどうか、マッチした一部の文字列を抜き出す、不要なタグを削除するといった処理を正規表現で行いました(Rust書くよりも正規表現の書き方とかを調べるのに大半の時間をもっていかれてます。。。)。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
+<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_category_lines</span>(article: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Article</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">let</span> re <span style="color:#f92672">=</span> Regex::new(<span style="color:#e6db74">r&#34;\[\[Category:(.*)\]\]&#34;).expect(&#34;syntax error in regex&#34;</span>);
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
+    article.lines_from_text().iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+        <span style="color:#66d9ef">if</span> re.is_match(line) {
             lines.push(line.to_string());
         }
     });
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; lines;
+    <span style="color:#66d9ef">return</span> lines;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;mediawiki-apiリクエスト処理&#34;&gt;MediaWiki APIリクエスト処理&lt;/h3&gt;
-&lt;p&gt;最後の問題で国旗のファイル名を元に&lt;a href=&#34;https://www.mediawiki.org/wiki/API:Imageinfo&#34;&gt;MediaWiki API&lt;/a&gt;を叩いて、URLの文字列を取得しましょうという問題がありました。
-ファイル名をREST APIの引数に渡してHTTP経由でリクエストを送信し、返ってくるJSONレスポンスからURLを抜き出すという処理です。&lt;/p&gt;
-&lt;p&gt;HTTPのリクエストの送受信に&lt;code&gt;reqwest&lt;/code&gt;というクレートを利用しました。
-ちょっと長いけど、APIコールしている箇所はこんな形です。&lt;/p&gt;
-&lt;p&gt;この関数には&lt;code&gt;async&lt;/code&gt;とついています。非同期処理の関数です。内部で2回ほど(リクエスト送信の結果待ちとレスポンスのパース待ち)&lt;code&gt;.await&lt;/code&gt;があります。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;client&lt;/code&gt;に&lt;code&gt;.get(URL)&lt;/code&gt;や&lt;code&gt;query(&amp;amp;[])&lt;/code&gt;といったメソッドが用意されているので、URLやクエリパラメータを用意して&lt;code&gt;send()&lt;/code&gt;でリクエスト送信します。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
-async &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;call_api&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Result&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String, String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; client &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; reqwest::Client::new();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; file_name2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;File:{}&amp;#34;&lt;/span&gt;, file_name);
-    &lt;span style=&#34;color:#75715e&#34;&gt;//let mut file_name2 = file_name.to_string().replace(&amp;#34; &amp;#34;, &amp;#34;_&amp;#34;);
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; query &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; [
-        (&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;action&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;query&amp;#34;&lt;/span&gt;),
-        (&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;format&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;json&amp;#34;&lt;/span&gt;),
-        (&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;prop&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;imageinfo&amp;#34;&lt;/span&gt;),
-        (&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;iiprop&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;url&amp;#34;&lt;/span&gt;),
-        (&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;titles&amp;#34;&lt;/span&gt;, file_name2.as_str()),
+</code></pre></div><h3 id="mediawiki-apiリクエスト処理">MediaWiki APIリクエスト処理</h3>
+<p>最後の問題で国旗のファイル名を元に<a href="https://www.mediawiki.org/wiki/API:Imageinfo">MediaWiki API</a>を叩いて、URLの文字列を取得しましょうという問題がありました。
+ファイル名をREST APIの引数に渡してHTTP経由でリクエストを送信し、返ってくるJSONレスポンスからURLを抜き出すという処理です。</p>
+<p>HTTPのリクエストの送受信に<code>reqwest</code>というクレートを利用しました。
+ちょっと長いけど、APIコールしている箇所はこんな形です。</p>
+<p>この関数には<code>async</code>とついています。非同期処理の関数です。内部で2回ほど(リクエスト送信の結果待ちとレスポンスのパース待ち)<code>.await</code>があります。</p>
+<p><code>client</code>に<code>.get(URL)</code>や<code>query(&amp;[])</code>といったメソッドが用意されているので、URLやクエリパラメータを用意して<code>send()</code>でリクエスト送信します。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
+async <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">call_api</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Result<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">let</span> client <span style="color:#f92672">=</span> reqwest::Client::new();
+    <span style="color:#66d9ef">let</span> file_name2 <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;File:{}&#34;</span>, file_name);
+    <span style="color:#75715e">//let mut file_name2 = file_name.to_string().replace(&#34; &#34;, &#34;_&#34;);
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> query <span style="color:#f92672">=</span> [
+        (<span style="color:#e6db74">&#34;action&#34;</span>, <span style="color:#e6db74">&#34;query&#34;</span>),
+        (<span style="color:#e6db74">&#34;format&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>),
+        (<span style="color:#e6db74">&#34;prop&#34;</span>, <span style="color:#e6db74">&#34;imageinfo&#34;</span>),
+        (<span style="color:#e6db74">&#34;iiprop&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>),
+        (<span style="color:#e6db74">&#34;titles&#34;</span>, file_name2.as_str()),
     ];
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; client
-        .get(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://en.wikipedia.org/w/api.php&amp;#34;&lt;/span&gt;)
-        .query(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;query)
+    <span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> client
+        .get(<span style="color:#e6db74">&#34;https://en.wikipedia.org/w/api.php&#34;</span>)
+        .query(<span style="color:#f92672">&amp;</span>query)
         .send()
         .await;
 
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; result {
-        Ok(response) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; response.status() {
-            StatusCode::OK &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; body &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; response.json::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;MediaWikiResponse&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;().await;
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; body {
-                    Ok(obj) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; obj.get_url() {
-                        Some(url) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Ok(url),
-                        None &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Err(String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Cannot get url...&amp;#34;&lt;/span&gt;)),
+    <span style="color:#66d9ef">match</span> result {
+        Ok(response) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> response.status() {
+            StatusCode::OK <span style="color:#f92672">=&gt;</span> {
+                <span style="color:#66d9ef">let</span> body <span style="color:#f92672">=</span> response.json::<span style="color:#f92672">&lt;</span>MediaWikiResponse<span style="color:#f92672">&gt;</span>().await;
+                <span style="color:#66d9ef">match</span> body {
+                    Ok(obj) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> obj.get_url() {
+                        Some(url) <span style="color:#f92672">=&gt;</span> Ok(url),
+                        None <span style="color:#f92672">=&gt;</span> Err(String::from(<span style="color:#e6db74">&#34;Cannot get url...&#34;</span>)),
                     },
-                    Err(error) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Err(error.to_string()),
+                    Err(error) <span style="color:#f92672">=&gt;</span> Err(error.to_string()),
                 }
             }
-            _ &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Err(String::from(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(
-                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Status code is {}.&amp;#34;&lt;/span&gt;,
+            _ <span style="color:#f92672">=&gt;</span> Err(String::from(format<span style="color:#f92672">!</span>(
+                <span style="color:#e6db74">&#34;Status code is {}.&#34;</span>,
                 response.status()
             ))),
         },
-        Err(error) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; error_msg &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error occurred... {:?}&amp;#34;&lt;/span&gt;, error);
-            println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, error_msg.as_str());
+        Err(error) <span style="color:#f92672">=&gt;</span> {
+            <span style="color:#66d9ef">let</span> error_msg <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;Error occurred... {:?}&#34;</span>, error);
+            println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, error_msg.as_str());
             Err(error_msg)
         }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、呼び出し元で非同期の処理を実行するために、&lt;code&gt;tokio&lt;/code&gt;というクレートを利用しています。
-&lt;code&gt;block_on()&lt;/code&gt;で&lt;code&gt;call_api()&lt;/code&gt;の実行をして、結果が返ってくるのを待ち受けています。結果が返ってきて、問題なければ、&lt;code&gt;call_api&lt;/code&gt;の戻り値&lt;code&gt;Result&amp;lt;String, String&amp;gt;&lt;/code&gt;の左側のStringの値が取り出され、&lt;code&gt;get_image_url&lt;/code&gt;の戻り値となります。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;get_image_url&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; _rt &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; tokio::runtime::Runtime::new().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Fail initializing runtime&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; task &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; call_api(file_name);
-    _rt.block_on(task).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Something wrong...&amp;#34;&lt;/span&gt;)
+</code></pre></div><p>あとは、呼び出し元で非同期の処理を実行するために、<code>tokio</code>というクレートを利用しています。
+<code>block_on()</code>で<code>call_api()</code>の実行をして、結果が返ってくるのを待ち受けています。結果が返ってきて、問題なければ、<code>call_api</code>の戻り値<code>Result&lt;String, String&gt;</code>の左側のStringの値が取り出され、<code>get_image_url</code>の戻り値となります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_image_url</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> _rt <span style="color:#f92672">=</span> tokio::runtime::Runtime::new().expect(<span style="color:#e6db74">&#34;Fail initializing runtime&#34;</span>);
+    <span style="color:#66d9ef">let</span> task <span style="color:#f92672">=</span> call_api(file_name);
+    _rt.block_on(task).expect(<span style="color:#e6db74">&#34;Something wrong...&#34;</span>)
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一応、非同期に関して説明してみましたが、合っているのかどうか。。。
+</code></pre></div><p>一応、非同期に関して説明してみましたが、合っているのかどうか。。。
 クレートの関係などはまだちょっと自身がないです。。。
-あとは、エラーの処理の仕方とかももうちょっと勉強したいかな。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;一応、3章を終わらせました。だいぶ強引かつ1つスキップしましたが。。。
-次は&lt;a href=&#34;https://nlp100.github.io/ja/ch04.html&#34;&gt;第4章の形態素解析&lt;/a&gt;です。&lt;/p&gt;
+あとは、エラーの処理の仕方とかももうちょっと勉強したいかな。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>一応、3章を終わらせました。だいぶ強引かつ1つスキップしましたが。。。
+次は<a href="https://nlp100.github.io/ja/ch04.html">第4章の形態素解析</a>です。</p>
 </content:encoded>
     </item>
     
@@ -330,234 +330,234 @@ async &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&
       
       <guid>https://blog.johtani.info/blog/2020/05/12/reboot-nlp100-ch02-12to19/</guid>
       <description>Rustで言語処理100本ノックの第2章の残りです。 前回はこちら。 ちなみに、標準入力から受け取る処理は書いてないです。 出力に関してはファイル</description>
-      <content:encoded>&lt;p&gt;Rustで言語処理100本ノックの第2章の残りです。&lt;/p&gt;
-&lt;p&gt;前回は&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/08/rebootnlp100-ch02-10to11&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;ちなみに、標準入力から受け取る処理は書いてないです。
-出力に関してはファイル分割、保存と支持があるもの以外は文字列として取り出すところで終わっています。&lt;/p&gt;
-&lt;h2 id=&#34;12-1列目をcol1txtに2列目をcol2txtに保存&#34;&gt;12. 1列目をcol1.txtに，2列目をcol2.txtに保存&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_column&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, num: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;, output_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; input_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; read_buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(input_f);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; output_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; OpenOptions::new()
-        .write(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
-        .create(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
+      <content:encoded><p>Rustで言語処理100本ノックの第2章の残りです。</p>
+<p>前回は<a href="/blog/2020/05/08/rebootnlp100-ch02-10to11">こちら</a>。</p>
+<p>ちなみに、標準入力から受け取る処理は書いてないです。
+出力に関してはファイル分割、保存と支持があるもの以外は文字列として取り出すところで終わっています。</p>
+<h2 id="12-1列目をcol1txtに2列目をcol2txtに保存">12. 1列目をcol1.txtに，2列目をcol2.txtに保存</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_column</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
+    <span style="color:#66d9ef">let</span> input_f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
+    <span style="color:#66d9ef">let</span> read_buf <span style="color:#f92672">=</span> BufReader::new(input_f);
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
+        .write(<span style="color:#66d9ef">true</span>)
+        .create(<span style="color:#66d9ef">true</span>)
         .open(output_file_name)
-        .expect(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
-    read_buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
-        Ok(line) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; columns: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;_&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line.split(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;\t&amp;#39;&lt;/span&gt;).collect();
-            writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, columns[num]);
-            output_f.flush().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during flush&amp;#34;&lt;/span&gt;);
+        .expect(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
+    read_buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+        Ok(line) <span style="color:#f92672">=&gt;</span> {
+            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
+            writeln<span style="color:#f92672">!</span>(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, columns[num]);
+            output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error &amp;#34;&lt;/span&gt;),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error &#34;</span>),
     });
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;13で出力結果を利用するので入力として出力ファイル名も受け取るようにしました。
-問題としては、1列目と2列目を別々に出力すればいいので、1回の処理で書いても良かったのですが、1回1ファイルの出力という形で実装しました(効率は悪い)。&lt;/p&gt;
-&lt;p&gt;改行コードあたりを考えるのがめんどくさかったので&lt;code&gt;writeln!&lt;/code&gt;マクロでファイルに書き出しています。が、普通に&lt;code&gt;write&lt;/code&gt;メソッドで改行コードを追加しても良かったのかなと。&lt;/p&gt;
-&lt;p&gt;あとは、出力先ファイルが存在しない場合だけ&lt;code&gt;open&lt;/code&gt;するように&lt;code&gt;OpenOptions&lt;/code&gt;を利用してみています。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;flush&lt;/code&gt;を呼び出すべきなのかどうか?を調べないとな。。。&lt;/p&gt;
-&lt;h2 id=&#34;13-col1txtとcol2txtをマージ&#34;&gt;13. col1.txtとcol2.txtをマージ&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;merge_files&lt;/span&gt;(col1_file: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, col2_file: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, output_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col1_buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(col1_file).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col2_buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(col2_file).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; output_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; OpenOptions::new()
-        .write(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
-        .create(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
+</code></pre></div><p>13で出力結果を利用するので入力として出力ファイル名も受け取るようにしました。
+問題としては、1列目と2列目を別々に出力すればいいので、1回の処理で書いても良かったのですが、1回1ファイルの出力という形で実装しました(効率は悪い)。</p>
+<p>改行コードあたりを考えるのがめんどくさかったので<code>writeln!</code>マクロでファイルに書き出しています。が、普通に<code>write</code>メソッドで改行コードを追加しても良かったのかなと。</p>
+<p>あとは、出力先ファイルが存在しない場合だけ<code>open</code>するように<code>OpenOptions</code>を利用してみています。</p>
+<p><code>flush</code>を呼び出すべきなのかどうか?を調べないとな。。。</p>
+<h2 id="13-col1txtとcol2txtをマージ">13. col1.txtとcol2.txtをマージ</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">merge_files</span>(col1_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col2_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
+    <span style="color:#66d9ef">let</span> col1_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col1_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+    <span style="color:#66d9ef">let</span> col2_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col2_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
+        .write(<span style="color:#66d9ef">true</span>)
+        .create(<span style="color:#66d9ef">true</span>)
         .open(output_file_name)
-        .expect(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
+        .expect(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
     col1_buf
         .lines()
         .zip(col2_buf.lines())
-        .for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;(col1, col2)&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; col1.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error col1&amp;#34;&lt;/span&gt;);
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; col2.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error col2&amp;#34;&lt;/span&gt;);
-            writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\t{}&amp;#34;&lt;/span&gt;, col1, col2);
-            output_f.flush().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during flush&amp;#34;&lt;/span&gt;);
+        .for_each(<span style="color:#f92672">|</span>(col1, col2)<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">let</span> col1 <span style="color:#f92672">=</span> col1.expect(<span style="color:#e6db74">&#34;parse error col1&#34;</span>);
+            <span style="color:#66d9ef">let</span> col2 <span style="color:#f92672">=</span> col2.expect(<span style="color:#e6db74">&#34;parse error col2&#34;</span>);
+            writeln<span style="color:#f92672">!</span>(output_f, <span style="color:#e6db74">&#34;{}\t{}&#34;</span>, col1, col2);
+            output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
         });
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;2つのファイル名を入力として受け取り、タブでくっつけて出力します。
-&lt;code&gt;zip&lt;/code&gt;を利用することで、2つのイテレーターを同時に回しています。&lt;/p&gt;
-&lt;h2 id=&#34;14-先頭からn行を出力&#34;&gt;14. 先頭からN行を出力&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;head&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, lines: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; head &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
-    buf.lines().take(lines).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        head.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;)).as_str());
+</code></pre></div><p>2つのファイル名を入力として受け取り、タブでくっつけて出力します。
+<code>zip</code>を利用することで、2つのイテレーターを同時に回しています。</p>
+<h2 id="14-先頭からn行を出力">14. 先頭からN行を出力</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">head</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> head <span style="color:#f92672">=</span> String::new();
+    buf.lines().take(lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+        head.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
     });
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; head;
+    <span style="color:#66d9ef">return</span> head;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;イテレーターのメソッドに&lt;a href=&#34;https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.take&#34;&gt;&lt;code&gt;take&lt;/code&gt;&lt;/a&gt;があります。
-これを利用することで、引数に指定した数のエレメントが取得できるので、これでheadが実現できます。&lt;/p&gt;
-&lt;h2 id=&#34;15-末尾のn行を出力&#34;&gt;15. 末尾のN行を出力&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tail&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, lines: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; tail &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; line_count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; word_count(input_file_name);
-    buf.lines().skip(line_count &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; lines).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        tail.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;)).as_str());
+</code></pre></div><p>イテレーターのメソッドに<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.take"><code>take</code></a>があります。
+これを利用することで、引数に指定した数のエレメントが取得できるので、これでheadが実現できます。</p>
+<h2 id="15-末尾のn行を出力">15. 末尾のN行を出力</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tail</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tail <span style="color:#f92672">=</span> String::new();
+    <span style="color:#66d9ef">let</span> line_count <span style="color:#f92672">=</span> word_count(input_file_name);
+    buf.lines().skip(line_count <span style="color:#f92672">-</span> lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+        tail.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
     });
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; tail;
+    <span style="color:#66d9ef">return</span> tail;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;tailの場合は少し複雑で、11で作成した行数をカウントするメソッドで総行数を取り出し、そこから引数で指定された行数を引き算した数(=出力しない行数)を、イテレーターの&lt;code&gt;skip&lt;/code&gt;メソッドの引数に渡しています。これにより、指定された数のエレメントをスキップしたあとの処理がかけます。&lt;/p&gt;
-&lt;h2 id=&#34;16-ファイルをn分割する&#34;&gt;16. ファイルをN分割する&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;split_files&lt;/span&gt;(
-    input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;,
-    num: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;,
-    output_file_prefix: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;,
-    output_file_suffix: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;,
+</code></pre></div><p>tailの場合は少し複雑で、11で作成した行数をカウントするメソッドで総行数を取り出し、そこから引数で指定された行数を引き算した数(=出力しない行数)を、イテレーターの<code>skip</code>メソッドの引数に渡しています。これにより、指定された数のエレメントをスキップしたあとの処理がかけます。</p>
+<h2 id="16-ファイルをn分割する">16. ファイルをN分割する</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">split_files</span>(
+    input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+    num: <span style="color:#66d9ef">usize</span>,
+    output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+    output_file_suffix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
 ) {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; total &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; word_count(input_file_name) &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;f64&lt;/span&gt;;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; lines_in_file &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; total &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt; num &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;f64&lt;/span&gt;;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; lines_in_file &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lines_in_file.ceil() &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;; &lt;span style=&#34;color:#75715e&#34;&gt;//
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
+    <span style="color:#66d9ef">let</span> total <span style="color:#f92672">=</span> word_count(input_file_name) <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">f64</span>;
+    <span style="color:#66d9ef">let</span> lines_in_file <span style="color:#f92672">=</span> total <span style="color:#f92672">/</span> num <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">f64</span>;
+    <span style="color:#66d9ef">let</span> lines_in_file <span style="color:#f92672">=</span> lines_in_file.ceil() <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">usize</span>; <span style="color:#75715e">//
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
 
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; output_files: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;File&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; create_file_vec(output_file_prefix, num, output_file_suffix);
+    <span style="color:#66d9ef">let</span> output_files: Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> create_file_vec(output_file_prefix, num, output_file_suffix);
 
-    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;split file each {} lines.&amp;#34;&lt;/span&gt;, lines_in_file);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; lines &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; buf.lines();
+    println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;split file each {} lines.&#34;</span>, lines_in_file);
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> buf.lines();
 
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; output_f &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; output_files {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; current &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;while&lt;/span&gt; current &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt; lines_in_file &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; line &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lines.next();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; Some(line_rs) &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; Ok(line_str) &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line_rs {
-                    writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, line_str);
+    <span style="color:#66d9ef">for</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#66d9ef">in</span> output_files {
+        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> current <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+        <span style="color:#66d9ef">while</span> current <span style="color:#f92672">&lt;</span> lines_in_file <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> {
+            <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> lines.next();
+            <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Some(line_rs) <span style="color:#f92672">=</span> line {
+                <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ok(line_str) <span style="color:#f92672">=</span> line_rs {
+                    writeln<span style="color:#f92672">!</span>(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, line_str);
                 }
             }
-            current &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; current &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+            current <span style="color:#f92672">=</span> current <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
         }
-        output_f.flush().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;error during flush&amp;#34;&lt;/span&gt;);
+        output_f.flush().expect(<span style="color:#e6db74">&#34;error during flush&#34;</span>);
     }
 }
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;create_file_vec&lt;/span&gt;(output_file_prefix: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, num: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;, output_file_suffix: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;File&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; files &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Vec::with_capacity(num);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; i &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;..num {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; output_file_name &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}{}{}&amp;#34;&lt;/span&gt;, output_file_prefix, i &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, output_file_suffix);
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; output_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; OpenOptions::new()
-            .write(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
-            .create(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">create_file_vec</span>(output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_suffix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> files <span style="color:#f92672">=</span> Vec::with_capacity(num);
+    <span style="color:#66d9ef">for</span> i <span style="color:#66d9ef">in</span> <span style="color:#ae81ff">0</span>..num {
+        <span style="color:#66d9ef">let</span> output_file_name <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}{}{}&#34;</span>, output_file_prefix, i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, output_file_suffix);
+        <span style="color:#66d9ef">let</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
+            .write(<span style="color:#66d9ef">true</span>)
+            .create(<span style="color:#66d9ef">true</span>)
             .open(output_file_name.as_str())
-            .expect(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
+            .expect(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
         files.push(output_f);
     }
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; files;
+    <span style="color:#66d9ef">return</span> files;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ちょっと長いですね。&lt;/p&gt;
-&lt;p&gt;入力としては、分割するファイル数&lt;code&gt;N&lt;/code&gt;が指定されます。まずは、&lt;code&gt;総行数/N&lt;/code&gt;で各ファイルに保存されるべき行数を計算します。
-次に、2つ目の関数をつかって、必要な数のファイルオブジェクトをベクトルとして生成します。&lt;/p&gt;
-&lt;p&gt;ファイルオブジェクトのベクトルの要素を元にしたfor文を回しつつ、それぞれのファイルに必要な行数を出力している処理になっています。&lt;/p&gt;
-&lt;p&gt;総行数が&lt;code&gt;N&lt;/code&gt;で割り切れない場合に&lt;code&gt;ceil&lt;/code&gt;で切り上げした行数にするというちょっとした処理を入れてあります。&lt;/p&gt;
-&lt;h2 id=&#34;17-１列目の文字列の異なり&#34;&gt;17. １列目の文字列の異なり&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;count_uniq_words&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, col: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; words &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; HashSet::new();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
-    buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
-        Ok(line_str) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; columns: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;_&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line_str.split(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;\t&amp;#39;&lt;/span&gt;).collect();
+</code></pre></div><p>ちょっと長いですね。</p>
+<p>入力としては、分割するファイル数<code>N</code>が指定されます。まずは、<code>総行数/N</code>で各ファイルに保存されるべき行数を計算します。
+次に、2つ目の関数をつかって、必要な数のファイルオブジェクトをベクトルとして生成します。</p>
+<p>ファイルオブジェクトのベクトルの要素を元にしたfor文を回しつつ、それぞれのファイルに必要な行数を出力している処理になっています。</p>
+<p>総行数が<code>N</code>で割り切れない場合に<code>ceil</code>で切り上げした行数にするというちょっとした処理を入れてあります。</p>
+<h2 id="17-１列目の文字列の異なり">17. １列目の文字列の異なり</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">count_uniq_words</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col: <span style="color:#66d9ef">usize</span>) -&gt; <span style="color:#66d9ef">usize</span> {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> words <span style="color:#f92672">=</span> HashSet::new();
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
+            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
             words.insert(columns[col].to_string());
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error &amp;#34;&lt;/span&gt;),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error &#34;</span>),
     });
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; words.len();
+    <span style="color:#66d9ef">return</span> words.len();
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;HashSet&lt;/code&gt;を利用することでユニーク性を担保して、最後はHashSetの数を数え上げれば終了です。&lt;/p&gt;
-&lt;h2 id=&#34;18-各行を3コラム目の数値の降順にソート&#34;&gt;18. 各行を3コラム目の数値の降順にソート&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sort_on_col3&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; lines: &lt;span style=&#34;color:#a6e22e&#34;&gt;BTreeSet&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Line&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BTreeSet::new();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
-    buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
-        Ok(line_str) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; columns: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;_&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line_str.split(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;\t&amp;#39;&lt;/span&gt;).collect();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; num: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; columns[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;].parse().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;);
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; line &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Line {
-                line: &lt;span style=&#34;color:#a6e22e&#34;&gt;line_str&lt;/span&gt;,
+</code></pre></div><p><code>HashSet</code>を利用することでユニーク性を担保して、最後はHashSetの数を数え上げれば終了です。</p>
+<h2 id="18-各行を3コラム目の数値の降順にソート">18. 各行を3コラム目の数値の降順にソート</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_col3</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines: <span style="color:#a6e22e">BTreeSet</span><span style="color:#f92672">&lt;</span>Line<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> BTreeSet::new();
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
+            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
+            <span style="color:#66d9ef">let</span> num: <span style="color:#66d9ef">u32</span> <span style="color:#f92672">=</span> columns[<span style="color:#ae81ff">2</span>].parse().expect(<span style="color:#e6db74">&#34;parse error&#34;</span>);
+            <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> Line {
+                line: <span style="color:#a6e22e">line_str</span>,
                 num,
             };
             lines.insert(line);
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error&#34;</span>),
     });
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; sorted &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
-    lines.iter().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        sorted.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.line).as_str());
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
+    lines.iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+        sorted.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.line).as_str());
     });
 
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; sorted;
+    <span style="color:#66d9ef">return</span> sorted;
 }
 
-&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Eq)]&lt;/span&gt;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Line&lt;/span&gt; {
+<span style="color:#75715e">#[derive(Eq)]</span>
+<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Line</span> {
     line: String,
-    num: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
+    num: <span style="color:#66d9ef">u32</span>,
 }
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Ord &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Line {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;cmp&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self, other: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Self&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Ordering&lt;/span&gt; {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; ord &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; other.num.cmp(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self.num);
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; Ordering::Equal &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ord {
-            other.line.cmp(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self.line)
-        } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
+<span style="color:#66d9ef">impl</span> Ord <span style="color:#66d9ef">for</span> Line {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">cmp</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; <span style="color:#a6e22e">Ordering</span> {
+        <span style="color:#66d9ef">let</span> ord <span style="color:#f92672">=</span> other.num.cmp(<span style="color:#f92672">&amp;</span>self.num);
+        <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ordering::Equal <span style="color:#f92672">=</span> ord {
+            other.line.cmp(<span style="color:#f92672">&amp;</span>self.line)
+        } <span style="color:#66d9ef">else</span> {
             ord
         }
     }
 }
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; PartialOrd &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Line {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;partial_cmp&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self, other: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Self&lt;/span&gt;) -&amp;gt; Option&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Ordering&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
+<span style="color:#66d9ef">impl</span> PartialOrd <span style="color:#66d9ef">for</span> Line {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">partial_cmp</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; Option<span style="color:#f92672">&lt;</span>Ordering<span style="color:#f92672">&gt;</span> {
         Some(self.cmp(other))
     }
 }
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; PartialEq &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Line {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;eq&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self, other: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Self&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; {
+<span style="color:#66d9ef">impl</span> PartialEq <span style="color:#66d9ef">for</span> Line {
+    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">eq</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; <span style="color:#66d9ef">bool</span> {
         self.eq(other)
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;Line&lt;/code&gt;という、行の文章と第3カラム目の値をもった構造体を作成しました。そこにEq、Ord、PartialOrd、PartialEqを実装し、3カラム目での大小比較できるようにしました。
+</code></pre></div><p><code>Line</code>という、行の文章と第3カラム目の値をもった構造体を作成しました。そこにEq、Ord、PartialOrd、PartialEqを実装し、3カラム目での大小比較できるようにしました。
 この構造体をBTeeSetに格納していき、イテレーターで回すことで、ソートされた状態にしてあります。
-同一数値の場合は行の降順でソートできるようにOrdを実装してあります。&lt;/p&gt;
-&lt;h2 id=&#34;19-各行の1コラム目の文字列の出現頻度を求め出現頻度の高い順に並べる&#34;&gt;19. 各行の1コラム目の文字列の出現頻度を求め，出現頻度の高い順に並べる&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sort_on_frequency&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; names: &lt;span style=&#34;color:#a6e22e&#34;&gt;HashMap&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String, &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; HashMap::new();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
-    buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
-        Ok(line_str) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; columns: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;_&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line_str.split(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;\t&amp;#39;&lt;/span&gt;).collect();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; name_str &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; columns[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;].to_string();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; names.entry(name_str).or_insert(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
-            &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;count &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
+同一数値の場合は行の降順でソートできるようにOrdを実装してあります。</p>
+<h2 id="19-各行の1コラム目の文字列の出現頻度を求め出現頻度の高い順に並べる">19. 各行の1コラム目の文字列の出現頻度を求め，出現頻度の高い順に並べる</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_frequency</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> names: <span style="color:#a6e22e">HashMap</span><span style="color:#f92672">&lt;</span>String, <span style="color:#66d9ef">u32</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> HashMap::new();
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
+            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
+            <span style="color:#66d9ef">let</span> name_str <span style="color:#f92672">=</span> columns[<span style="color:#ae81ff">0</span>].to_string();
+            <span style="color:#66d9ef">let</span> count <span style="color:#f92672">=</span> names.entry(name_str).or_insert(<span style="color:#ae81ff">0</span>);
+            <span style="color:#f92672">*</span>count <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>;
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error&#34;</span>),
     });
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; sorted &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; sorted_names: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;String, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; names.iter().collect();
-    sorted_names.sort_by(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;(aname, acount), (bname, bcount)&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; ord &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; bcount.cmp(acount);
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; Ordering::Equal &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ord {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted_names: Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> names.iter().collect();
+    sorted_names.sort_by(<span style="color:#f92672">|</span>(aname, acount), (bname, bcount)<span style="color:#f92672">|</span> {
+        <span style="color:#66d9ef">let</span> ord <span style="color:#f92672">=</span> bcount.cmp(acount);
+        <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ordering::Equal <span style="color:#f92672">=</span> ord {
             bname.cmp(aname)
-        } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
+        } <span style="color:#66d9ef">else</span> {
             ord
         }
     });
-    sorted_names.iter().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;(name, count)&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        sorted.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{} {}\n&amp;#34;&lt;/span&gt;, count, name).as_str());
+    sorted_names.iter().for_each(<span style="color:#f92672">|</span>(name, count)<span style="color:#f92672">|</span> {
+        sorted.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{} {}\n&#34;</span>, count, name).as_str());
     });
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; sorted;
+    <span style="color:#66d9ef">return</span> sorted;
 }
 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;もうすこしうまくできる気がしますが、いったんこれで。
-数え上げのためにまずはHashMapに&lt;code&gt;第1カラムの文字列, 個数&lt;/code&gt;という組み合わせでデータを入れていきます。
-出来上がったHashMapをタプルのベクターに変換し、変換したベクターの&lt;code&gt;sort_by&lt;/code&gt;メソッドに比較用の関数を渡すことで個数の降順に並べています。同一個数の場合は文字列の降順になっています。
+</code></pre></div><p>もうすこしうまくできる気がしますが、いったんこれで。
+数え上げのためにまずはHashMapに<code>第1カラムの文字列, 個数</code>という組み合わせでデータを入れていきます。
+出来上がったHashMapをタプルのベクターに変換し、変換したベクターの<code>sort_by</code>メソッドに比較用の関数を渡すことで個数の降順に並べています。同一個数の場合は文字列の降順になっています。
 で、最後に並びかわったベクターのイテレーターを使って出力しておしまいです。
 内部的には最悪3回回る感じでしょうか?
-最初からベクトルに入れつつソートできる仕組みにするようなのがいいのかなぁ?&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;Unixコマンドの勉強になりましたw
+最初からベクトルに入れつつソートできる仕組みにするようなのがいいのかなぁ?</p>
+<h2 id="まとめ">まとめ</h2>
+<p>Unixコマンドの勉強になりましたw
 あとは、HashMapなどの勉強にもなりました。
-最後の方は効率がいまいち良くない気もしてはいますが、とりあえず第3章に進もうかと思います。&lt;/p&gt;
+最後の方は効率がいまいち良くない気もしてはいますが、とりあえず第3章に進もうかと思います。</p>
 </content:encoded>
     </item>
     
@@ -568,69 +568,69 @@ async &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&
       
       <guid>https://blog.johtani.info/blog/2020/05/08/rebootnlp100-ch02-10to11/</guid>
       <description>気づいたら1ヶ月サボってました、ごめんなさい。。。 Rustで言語処理100本ノックの第2章をはじめました。 前回はこちら。 確認用のUnixコマ</description>
-      <content:encoded>&lt;p&gt;気づいたら1ヶ月サボってました、ごめんなさい。。。&lt;/p&gt;
-&lt;p&gt;Rustで言語処理100本ノックの第2章をはじめました。&lt;/p&gt;
-&lt;p&gt;前回は&lt;a href=&#34;https://blog.johtani.info/blog/2020/05/08/reboot-nlp100-finish-ch01&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;h2 id=&#34;確認用のunixコマンド&#34;&gt;確認用のUnixコマンド&lt;/h2&gt;
-&lt;p&gt;確認用のファイルを先に生成して置きました。
-これで、Rustでコードを書いて、作成済みの確認ファイルを元に&lt;code&gt;assert_eq!&lt;/code&gt;でチェックするという方式を取ろうかと。&lt;/p&gt;
-&lt;p&gt;で、コマンド群は&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/commands/chap02.sh&#34;&gt;こちら&lt;/a&gt;です。&lt;/p&gt;
-&lt;p&gt;Unix/Linuxコマンド、昔から使っています。が、なにかちょっとした文字列処理やファイル処理をやるときは、Javaのプログラム(最近だとPython)を書くというのが基本になってるので、結構、使ったことの無いコマンドが今回ありました。使ったことがなかったのはこちらです。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;sed&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;tr&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;expand&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;paste&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;cut&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;split&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;code&gt;sed&lt;/code&gt;とかは普通さわってるだろ?って思われそうですね。。。&lt;/p&gt;
-&lt;p&gt;で、コマンドを&lt;code&gt;man&lt;/code&gt;で調べつつやりました、macOS上で。
-これがまたいくつか罠があったので書き残しておきます(自分が知らないだけかもしれないので、おかしいところがあったらツッコミお願いします。)。&lt;/p&gt;
-&lt;h3 id=&#34;sedコマンドでのタブの扱い&#34;&gt;&lt;code&gt;sed&lt;/code&gt;コマンドでのタブの扱い&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;## sed command for macOS. If using Linux, use &amp;#34;\t&amp;#34; for tab character&lt;/span&gt;
-cat $INPUT_FILE_NAME | sed -e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/	/ /g&amp;#39;&lt;/span&gt; &amp;gt; $OUTPUT_DIR/11_sed.txt
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;\t&lt;/code&gt;で行けると思ったのですが、うまく動きませんでした。&lt;code&gt;&amp;lt;tab&amp;gt;&lt;/code&gt;みたいな書き方もあると思うのですが、これも駄目で、結局タブ文字をそのまま打ち込みました。。。
+      <content:encoded><p>気づいたら1ヶ月サボってました、ごめんなさい。。。</p>
+<p>Rustで言語処理100本ノックの第2章をはじめました。</p>
+<p>前回は<a href="/blog/2020/05/08/reboot-nlp100-finish-ch01">こちら</a>。</p>
+<h2 id="確認用のunixコマンド">確認用のUnixコマンド</h2>
+<p>確認用のファイルを先に生成して置きました。
+これで、Rustでコードを書いて、作成済みの確認ファイルを元に<code>assert_eq!</code>でチェックするという方式を取ろうかと。</p>
+<p>で、コマンド群は<a href="https://github.com/johtani/nlp100-rust/blob/master/commands/chap02.sh">こちら</a>です。</p>
+<p>Unix/Linuxコマンド、昔から使っています。が、なにかちょっとした文字列処理やファイル処理をやるときは、Javaのプログラム(最近だとPython)を書くというのが基本になってるので、結構、使ったことの無いコマンドが今回ありました。使ったことがなかったのはこちらです。</p>
+<ul>
+<li><code>sed</code></li>
+<li><code>tr</code></li>
+<li><code>expand</code></li>
+<li><code>paste</code></li>
+<li><code>cut</code></li>
+<li><code>split</code></li>
+</ul>
+<p><code>sed</code>とかは普通さわってるだろ?って思われそうですね。。。</p>
+<p>で、コマンドを<code>man</code>で調べつつやりました、macOS上で。
+これがまたいくつか罠があったので書き残しておきます(自分が知らないだけかもしれないので、おかしいところがあったらツッコミお願いします。)。</p>
+<h3 id="sedコマンドでのタブの扱い"><code>sed</code>コマンドでのタブの扱い</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh"><span style="color:#75715e">## sed command for macOS. If using Linux, use &#34;\t&#34; for tab character</span>
+cat $INPUT_FILE_NAME | sed -e <span style="color:#e6db74">&#39;s/	/ /g&#39;</span> &gt; $OUTPUT_DIR/11_sed.txt
+</code></pre></div><p><code>\t</code>で行けると思ったのですが、うまく動きませんでした。<code>&lt;tab&gt;</code>みたいな書き方もあると思うのですが、これも駄目で、結局タブ文字をそのまま打ち込みました。。。
 これ、めんどくさくないですか???
-ちなみに、ターミナルで動作確認して、GitHubにあげてあるシェルファイルにコピペしてたのですが、CLionに貼り付けたらタブ文字がスペースに変換されてしまってて20分くらい悩みました。。。&lt;/p&gt;
-&lt;h3 id=&#34;splitコマンドに-nオプションがない&#34;&gt;&lt;code&gt;split&lt;/code&gt;コマンドに&lt;code&gt;-n&lt;/code&gt;オプションがない&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;
-LINES&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;cat $OUTPUT_DIR/10.txt&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;
-SPLIT_LINES&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;echo $LINES/$N | bc&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;
-split -a &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; -l $SPLIT_LINES $INPUT_FILE_NAME $OUTPUT_DIR/16_
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;split&lt;/code&gt;コマンドについてググると、&lt;code&gt;-n&lt;/code&gt;で指定した数のファイルに分割できるという記事がいくつも出てくるのですが、&lt;code&gt;man split&lt;/code&gt;をターミナル上でやるとそんなオプションがないと。。。
+ちなみに、ターミナルで動作確認して、GitHubにあげてあるシェルファイルにコピペしてたのですが、CLionに貼り付けたらタブ文字がスペースに変換されてしまってて20分くらい悩みました。。。</p>
+<h3 id="splitコマンドに-nオプションがない"><code>split</code>コマンドに<code>-n</code>オプションがない</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">
+LINES<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>cat $OUTPUT_DIR/10.txt<span style="color:#e6db74">`</span>
+SPLIT_LINES<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>echo $LINES/$N | bc<span style="color:#e6db74">`</span>
+split -a <span style="color:#ae81ff">1</span> -l $SPLIT_LINES $INPUT_FILE_NAME $OUTPUT_DIR/16_
+</code></pre></div><p><code>split</code>コマンドについてググると、<code>-n</code>で指定した数のファイルに分割できるという記事がいくつも出てくるのですが、<code>man split</code>をターミナル上でやるとそんなオプションがないと。。。
 macOSがBSD系だからっぽいです。
-ということで、行数を元に、指定した数(&lt;code&gt;N&lt;/code&gt;)で行数を割ってから、指定行数ごとにファイルを分割する方式にしました。&lt;/p&gt;
-&lt;p&gt;これらのコマンドの違いはHomebrewとかでインストールするとなくなるのかなぁ?(めんどくさいので確認してないですが。。。)&lt;/p&gt;
-&lt;p&gt;ってことで、2章のそれぞれの課題の正解ファイルの生成はこれでできたはずです。&lt;/p&gt;
-&lt;h2 id=&#34;10-行数のカウント&#34;&gt;10. 行数のカウント&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;wc -l&lt;/code&gt;ですね。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// ch02-10 行数のカウント
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;word_count&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(f);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; buf.lines().count();
+ということで、行数を元に、指定した数(<code>N</code>)で行数を割ってから、指定行数ごとにファイルを分割する方式にしました。</p>
+<p>これらのコマンドの違いはHomebrewとかでインストールするとなくなるのかなぁ?(めんどくさいので確認してないですが。。。)</p>
+<p>ってことで、2章のそれぞれの課題の正解ファイルの生成はこれでできたはずです。</p>
+<h2 id="10-行数のカウント">10. 行数のカウント</h2>
+<p><code>wc -l</code>ですね。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// ch02-10 行数のカウント
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">word_count</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; <span style="color:#66d9ef">usize</span> {
+    <span style="color:#66d9ef">let</span> f <span style="color:#f92672">=</span> File::open(file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
+    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(f);
+    <span style="color:#66d9ef">return</span> buf.lines().count();
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ファイルを読み込んで行数を数えます。
-文字列として読み込んで改行コードの数を数えるというのもありかな?と思いましたが、Rustの&lt;code&gt;BufReader&lt;/code&gt;に&lt;code&gt;lines()&lt;/code&gt;という行のイテレータ?が取れることがわかったので、それでカウントを取りました。&lt;/p&gt;
-&lt;h2 id=&#34;11-タブをスペースに置換&#34;&gt;11. タブをスペースに置換&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// ch02-11 タブをスペースに置換
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tab_2_space&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; contents&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
-    f.read_to_string(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; contents).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;read error&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; contents.replace(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;\t&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34; &amp;#34;&lt;/span&gt;);
+</code></pre></div><p>ファイルを読み込んで行数を数えます。
+文字列として読み込んで改行コードの数を数えるというのもありかな?と思いましたが、Rustの<code>BufReader</code>に<code>lines()</code>という行のイテレータ?が取れることがわかったので、それでカウントを取りました。</p>
+<h2 id="11-タブをスペースに置換">11. タブをスペースに置換</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// ch02-11 タブをスペースに置換
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tab_2_space</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> f <span style="color:#f92672">=</span> File::open(file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> contents<span style="color:#f92672">=</span> String::new();
+    f.read_to_string(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> contents).expect(<span style="color:#e6db74">&#34;read error&#34;</span>);
+    <span style="color:#66d9ef">return</span> contents.replace(<span style="color:#e6db74">&#34;\t&#34;</span>, <span style="color:#e6db74">&#34; &#34;</span>);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;こっちはファイル全体を文字列に読み込んでしまってから、文字列の&lt;code&gt;replace&lt;/code&gt;で置換するという方式です。
+</code></pre></div><p>こっちはファイル全体を文字列に読み込んでしまってから、文字列の<code>replace</code>で置換するという方式です。
 ファイルが大きい場合にこれでいいのか?という問題がある気がしますが、まずはこの実装にしました。
-やるとしたら、&lt;code&gt;read&lt;/code&gt;メソッドと&lt;code&gt;buffer&lt;/code&gt;を用意して、少しずつ読みながら、置換して吐き出す感じでしょうか?
-ちゃんとした文字コードの区切りで取れるかどうかを気にしないと行けないと思うので、思ったよりはめんどくさくなりそう。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;BufReader&lt;/code&gt;をつかって&lt;code&gt;read_line&lt;/code&gt;のほうがましかも?&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;ということで、サボっていたのを再開しました。
-Rustのコードを書く前に、Unixコマンドの処理に結構悩みましたw&lt;/p&gt;
-&lt;p&gt;Rustのコードとしてはファイル処理なので、今後も役立つ気がしてます。
-ということで、頑張っていくぞと。&lt;/p&gt;
+やるとしたら、<code>read</code>メソッドと<code>buffer</code>を用意して、少しずつ読みながら、置換して吐き出す感じでしょうか?
+ちゃんとした文字コードの区切りで取れるかどうかを気にしないと行けないと思うので、思ったよりはめんどくさくなりそう。</p>
+<p><code>BufReader</code>をつかって<code>read_line</code>のほうがましかも?</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、サボっていたのを再開しました。
+Rustのコードを書く前に、Unixコマンドの処理に結構悩みましたw</p>
+<p>Rustのコードとしてはファイル処理なので、今後も役立つ気がしてます。
+ということで、頑張っていくぞと。</p>
 </content:encoded>
     </item>
     
@@ -641,64 +641,64 @@ Rustのコードを書く前に、Unixコマンドの処理に結構悩みまし
       
       <guid>https://blog.johtani.info/blog/2020/05/08/reboot-nlp100-finish-ch01/</guid>
       <description>Rustで言語処理100本ノックのリファクタリングの続き。 前回はこちら。 とっくに終わってたのに、ブログ書いてなかった。。。 08. 暗号文 pub fn cipher(text: &amp;amp;str) -&amp;gt;</description>
-      <content:encoded>&lt;p&gt;Rustで言語処理100本ノックのリファクタリングの続き。&lt;/p&gt;
-&lt;p&gt;前回は&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/09/reboot-nlp100-ch01-03to05/&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;とっくに終わってたのに、ブログ書いてなかった。。。&lt;/p&gt;
-&lt;h3 id=&#34;08-暗号文&#34;&gt;08. 暗号文&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;cipher&lt;/span&gt;(text: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; String::from_iter(text.chars().map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;x&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; x.is_ascii_alphanumeric() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; x.is_lowercase() {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; b &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; [&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;];
-            x.encode_utf8(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; b);
-            b[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;219&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; b[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;];
-            char::from(b[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;])
-        } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
+      <content:encoded><p>Rustで言語処理100本ノックのリファクタリングの続き。</p>
+<p>前回は<a href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/">こちら</a>。</p>
+<p>とっくに終わってたのに、ブログ書いてなかった。。。</p>
+<h3 id="08-暗号文">08. 暗号文</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">cipher</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+    <span style="color:#66d9ef">return</span> String::from_iter(text.chars().map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> {
+        <span style="color:#66d9ef">if</span> x.is_ascii_alphanumeric() <span style="color:#f92672">&amp;&amp;</span> x.is_lowercase() {
+            <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> b <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>; <span style="color:#ae81ff">4</span>];
+            x.encode_utf8(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> b);
+            b[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">219</span> <span style="color:#f92672">-</span> b[<span style="color:#ae81ff">0</span>];
+            char::from(b[<span style="color:#ae81ff">0</span>])
+        } <span style="color:#66d9ef">else</span> {
             x
         }
     }));
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Rustの文字列はUTF-8でエンコードされたテキストを保持しているので、文字コード自体は意識していないです。
-&lt;code&gt;chars()&lt;/code&gt;でUnicodeスカラー値のイテレータが返ってくるので、1文字ずつ扱えるようになります。&lt;/p&gt;
-&lt;p&gt;ただ、1文字をバイトとして扱うのに手こずりました。
-&lt;code&gt;encode_utf8&lt;/code&gt;というメソッドを利用して1バイトだけ取り出して、計算するというのをやっています。
-文字種の判別のメソッドが用意されているのは便利ですね。&lt;/p&gt;
-&lt;p&gt;なんかもうちょっとスマートにできないのかな?と思いつつ動いたのでこれになってます。&lt;/p&gt;
-&lt;h3 id=&#34;09-typoglycemia&#34;&gt;09. Typoglycemia&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;typoglycemia&lt;/span&gt;(text: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; text
+</code></pre></div><p>Rustの文字列はUTF-8でエンコードされたテキストを保持しているので、文字コード自体は意識していないです。
+<code>chars()</code>でUnicodeスカラー値のイテレータが返ってくるので、1文字ずつ扱えるようになります。</p>
+<p>ただ、1文字をバイトとして扱うのに手こずりました。
+<code>encode_utf8</code>というメソッドを利用して1バイトだけ取り出して、計算するというのをやっています。
+文字種の判別のメソッドが用意されているのは便利ですね。</p>
+<p>なんかもうちょっとスマートにできないのかな?と思いつつ動いたのでこれになってます。</p>
+<h3 id="09-typoglycemia">09. Typoglycemia</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">typoglycemia</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+    <span style="color:#66d9ef">return</span> text
         .split_whitespace()
-        .map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;word&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; word.len() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt; {
+        .map(<span style="color:#f92672">|</span>word<span style="color:#f92672">|</span> {
+            <span style="color:#66d9ef">if</span> word.len() <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">4</span> {
                 word.to_string()
-            } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; original &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; word.chars().collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;char&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; first &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; original.get(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;).unwrap();
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; last &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; original.last().unwrap();
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; typo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; original[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;..original.len() &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]
+            } <span style="color:#66d9ef">else</span> {
+                <span style="color:#66d9ef">let</span> original <span style="color:#f92672">=</span> word.chars().collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>char<span style="color:#f92672">&gt;&gt;</span>();
+                <span style="color:#66d9ef">let</span> first <span style="color:#f92672">=</span> original.get(<span style="color:#ae81ff">0</span>).unwrap();
+                <span style="color:#66d9ef">let</span> last <span style="color:#f92672">=</span> original.last().unwrap();
+                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> original[<span style="color:#ae81ff">1</span>..original.len() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]
                     .iter()
-                    .map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;x&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; x.clone())
-                    .collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;char&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; rng &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; thread_rng();
-                typo.shuffle(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; rng);
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; typo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::from_iter(typo.iter());
-                typo.insert(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;, first.clone());
+                    .map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> x.clone())
+                    .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>char<span style="color:#f92672">&gt;&gt;</span>();
+                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> rng <span style="color:#f92672">=</span> thread_rng();
+                typo.shuffle(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> rng);
+                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> String::from_iter(typo.iter());
+                typo.insert(<span style="color:#ae81ff">0</span>, first.clone());
                 typo.push(last.clone());
                 typo
             }
         })
-        .collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;()
-        .join(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34; &amp;#34;&lt;/span&gt;);
+        .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;&gt;</span>()
+        .join(<span style="color:#e6db74">&#34; &#34;</span>);
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;一応、1行で記述できたかな?
-まずは、スペースで単語ごとに区切った後に、&lt;code&gt;word&lt;/code&gt;(単語)の長さによって、処理を分岐し、単語が5文字以上の場合にランダムに並び替えを行うというのをやっています。
-文字単位で処理を行うために、&lt;code&gt;chars()&lt;/code&gt;で1文字ずつ取り出しています。
-最初と最後の文字だけはそのままに、間の文字をランダムにシャッフルするというのをやるのに、もとの&lt;code&gt;word&lt;/code&gt;のスライスからコピーした文字列を作り出してから組み立て直すということをやっています。&lt;/p&gt;
-&lt;p&gt;コピーしないでゴニョゴニョする方法ってあるのかなぁ?
-思いつかなかったので、結構泥臭い感じの実装になってしまいました。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;めんどくさいので、コードをGitHubのソースコードからではなく、ブログにコードスニペットとしてコピペしました。Hugoでいい感じにGitHubのコードスニペット表示するのないかなぁ?&lt;/p&gt;
-&lt;p&gt;ということで、2年越しで1章が終了しました。
-2章もやらないとなぁ。&lt;/p&gt;
+</code></pre></div><p>一応、1行で記述できたかな?
+まずは、スペースで単語ごとに区切った後に、<code>word</code>(単語)の長さによって、処理を分岐し、単語が5文字以上の場合にランダムに並び替えを行うというのをやっています。
+文字単位で処理を行うために、<code>chars()</code>で1文字ずつ取り出しています。
+最初と最後の文字だけはそのままに、間の文字をランダムにシャッフルするというのをやるのに、もとの<code>word</code>のスライスからコピーした文字列を作り出してから組み立て直すということをやっています。</p>
+<p>コピーしないでゴニョゴニョする方法ってあるのかなぁ?
+思いつかなかったので、結構泥臭い感じの実装になってしまいました。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>めんどくさいので、コードをGitHubのソースコードからではなく、ブログにコードスニペットとしてコピペしました。Hugoでいい感じにGitHubのコードスニペット表示するのないかなぁ?</p>
+<p>ということで、2年越しで1章が終了しました。
+2章もやらないとなぁ。</p>
 </content:encoded>
     </item>
     
@@ -709,41 +709,41 @@ Rustのコードを書く前に、Unixコマンドの処理に結構悩みまし
       
       <guid>https://blog.johtani.info/blog/2020/04/09/reboot-nlp100-ch01-03to05/</guid>
       <description>Rustで言語処理100本ノックのリファクタリングの続き。 前回はこちら。 コードも載せたほうが見やすいかなぁ? 03. 円周率 2年前はこちら。 どちらか</description>
-      <content:encoded>&lt;p&gt;Rustで言語処理100本ノックのリファクタリングの続き。&lt;/p&gt;
-&lt;p&gt;前回は&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/08/reboot-nlp10-with-rust/&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;コードも載せたほうが見やすいかなぁ?&lt;/p&gt;
-&lt;h3 id=&#34;03-円周率&#34;&gt;03. 円周率&lt;/h3&gt;
-&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04/#03-%E5%86%86%E5%91%A8%E7%8E%87&#34;&gt;2年前はこちら&lt;/a&gt;。
+      <content:encoded><p>Rustで言語処理100本ノックのリファクタリングの続き。</p>
+<p>前回は<a href="/blog/2020/04/08/reboot-nlp10-with-rust/">こちら</a>。</p>
+<p>コードも載せたほうが見やすいかなぁ?</p>
+<h3 id="03-円周率">03. 円周率</h3>
+<p><a href="/blog/2018/02/19/nlp100-ch01-03to04/#03-%E5%86%86%E5%91%A8%E7%8E%87">2年前はこちら</a>。
 どちらかというとJavaっぽい書き方かな?
-入れ物を用意して、入力を整形して、それからループを回す感じで書いてました。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L50&#34;&gt;今回は1行で収めてみました&lt;/a&gt;。
-Rustっぽく、&lt;code&gt;return&lt;/code&gt;を省略してみました。
+入れ物を用意して、入力を整形して、それからループを回す感じで書いてました。</p>
+<p><a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L50">今回は1行で収めてみました</a>。
+Rustっぽく、<code>return</code>を省略してみました。
 あとは、Iteratorを組み合わせる感じでやってます。
-アルファベットの文字数ということで、&lt;code&gt;is_alphabetic()&lt;/code&gt;メソッドでfilterしてます。&lt;/p&gt;
-&lt;h3 id=&#34;04-元素記号&#34;&gt;04. 元素記号&lt;/h3&gt;
-&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04/#04-%E5%85%83%E7%B4%A0%E8%A8%98%E5%8F%B7&#34;&gt;2年前はこちら&lt;/a&gt;。
-エラー処理が多いのと、文字の扱いがちょっと&lt;/p&gt;
-&lt;p&gt;ここまで同様に&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L64&#34;&gt;極力イテレータを利用する&lt;/a&gt;という方針でリファクタリングしました。
+アルファベットの文字数ということで、<code>is_alphabetic()</code>メソッドでfilterしてます。</p>
+<h3 id="04-元素記号">04. 元素記号</h3>
+<p><a href="/blog/2018/02/19/nlp100-ch01-03to04/#04-%E5%85%83%E7%B4%A0%E8%A8%98%E5%8F%B7">2年前はこちら</a>。
+エラー処理が多いのと、文字の扱いがちょっと</p>
+<p>ここまで同様に<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L64">極力イテレータを利用する</a>という方針でリファクタリングしました。
 あとは、エラー処理を除去してます。
-正常系だけのテストなのでスッキリさせました。&lt;/p&gt;
-&lt;p&gt;こういった、ストリーム系?の書き方の場合にエラー処理をどう入れるかってところはちょっと悩みどころになるんじゃないかなぁ?と思いつつ、イレギュラーなものは後回しで(あとにやるのかなぁ?)&lt;/p&gt;
-&lt;h3 id=&#34;05-n-gram&#34;&gt;05. n-gram&lt;/h3&gt;
-&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/#05-n-gram&#34;&gt;2年前はこちら&lt;/a&gt;。
-これまでと同じく、入れ物を作ってから処理をしてます。&lt;/p&gt;
-&lt;p&gt;同じく、&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L82&#34;&gt;極力イテレータを利用する形&lt;/a&gt;で実装しました。
-いくつか型の変換が必要なので、&lt;code&gt;.map()&lt;/code&gt;を呼び出して詰め替えたりしています。&lt;/p&gt;
-&lt;h3 id=&#34;06-集合&#34;&gt;06. 集合&lt;/h3&gt;
-&lt;p&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/#06-%E9%9B%86%E5%90%88&#34;&gt;2年前はこちら&lt;/a&gt;。
-独自に実装しています。&lt;/p&gt;
-&lt;p&gt;せっかく&lt;code&gt;05&lt;/code&gt;で文字n-gramの配列を返す処理を実装しているので、
+正常系だけのテストなのでスッキリさせました。</p>
+<p>こういった、ストリーム系?の書き方の場合にエラー処理をどう入れるかってところはちょっと悩みどころになるんじゃないかなぁ?と思いつつ、イレギュラーなものは後回しで(あとにやるのかなぁ?)</p>
+<h3 id="05-n-gram">05. n-gram</h3>
+<p><a href="/blog/2018/03/20/nlp100-ch01-05to06/#05-n-gram">2年前はこちら</a>。
+これまでと同じく、入れ物を作ってから処理をしてます。</p>
+<p>同じく、<a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs#L82">極力イテレータを利用する形</a>で実装しました。
+いくつか型の変換が必要なので、<code>.map()</code>を呼び出して詰め替えたりしています。</p>
+<h3 id="06-集合">06. 集合</h3>
+<p><a href="/blog/2018/03/20/nlp100-ch01-05to06/#06-%E9%9B%86%E5%90%88">2年前はこちら</a>。
+独自に実装しています。</p>
+<p>せっかく<code>05</code>で文字n-gramの配列を返す処理を実装しているので、
 そちらを呼び出して、Setに入れるという処理に書き換えました。
-その後の集合に対する処理については特にリファクタリングしてないです。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;2年前にやってたところまでは追いつきました。
-07は特にリファクタリングする必要がないので、次は08からの予定です。&lt;/p&gt;
-&lt;p&gt;リファクタリングしているときになるのは、速度とかでしょうか。
+その後の集合に対する処理については特にリファクタリングしてないです。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>2年前にやってたところまでは追いつきました。
+07は特にリファクタリングする必要がないので、次は08からの予定です。</p>
+<p>リファクタリングしているときになるのは、速度とかでしょうか。
 実装の違いでなにか差が出るのかどうかはちょっと気になるところですが、
-今回の目的ではないので、目をつぶって進める予定です。&lt;/p&gt;
+今回の目的ではないので、目をつぶって進める予定です。</p>
 </content:encoded>
     </item>
     
@@ -754,36 +754,36 @@ Rustっぽく、&lt;code&gt;return&lt;/code&gt;を省略してみました。
       
       <guid>https://blog.johtani.info/blog/2020/04/08/reboot-nlp10-with-rust/</guid>
       <description>今回もツイートから。 言語処理100本ノックの2020年版を公開しました。最近の自然言語処理の研究動向を反映し、深層ニューラルネットワークに関</description>
-      <content:encoded>&lt;p&gt;今回もツイートから。&lt;/p&gt;
-&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;言語処理100本ノックの2020年版を公開しました。最近の自然言語処理の研究動向を反映し、深層ニューラルネットワークに関する問題を追加しました。留学生も一緒に取り組めるように多言語化を進め、その第１弾として英訳を部分公開しています（40番以降は順次公開予定）。 &lt;a href=&#34;https://t.co/52h362PIQQ&#34;&gt;https://t.co/52h362PIQQ&lt;/a&gt;&lt;/p&gt;&amp;mdash; Naoaki Okazaki (@chokkanorg) &lt;a href=&#34;https://twitter.com/chokkanorg/status/1247312205671874561?ref_src=twsrc%5Etfw&#34;&gt;April 6, 2020&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+      <content:encoded><p>今回もツイートから。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">言語処理100本ノックの2020年版を公開しました。最近の自然言語処理の研究動向を反映し、深層ニューラルネットワークに関する問題を追加しました。留学生も一緒に取り組めるように多言語化を進め、その第１弾として英訳を部分公開しています（40番以降は順次公開予定）。 <a href="https://t.co/52h362PIQQ">https://t.co/52h362PIQQ</a></p>&mdash; Naoaki Okazaki (@chokkanorg) <a href="https://twitter.com/chokkanorg/status/1247312205671874561?ref_src=twsrc%5Etfw">April 6, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-&lt;p&gt;&lt;a href=&#34;https://nlp100.github.io/ja/&#34;&gt;言語処理100本ノック&lt;/a&gt;が2020年版になったそうです。
-そうです、2年前に初めて、&lt;a href=&#34;https://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/&#34;&gt;準備運動&lt;/a&gt;で止まっていたんです!(衝撃的な続かなさ。。。)&lt;/p&gt;
-&lt;p&gt;ということで、Rust the bookも読んでいることだし、過去のプログラムをチェックしつつ再開しようかなと。
-ということで、いくつかリファクタリングしてみました。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs&#34;&gt;ソースはリポジトリ&lt;/a&gt;を御覧ください。&lt;/p&gt;
-&lt;h3 id=&#34;00-文字列の逆順&#34;&gt;00. 文字列の逆順&lt;/h3&gt;
-&lt;p&gt;&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L6&#34;&gt;2年前の実装&lt;/a&gt;では、&lt;code&gt;chars()&lt;/code&gt;メソッドで取り出したあとに、&lt;code&gt;collect()&lt;/code&gt;でVecにしていたのですが、&lt;a href=&#34;https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.rev&#34;&gt;RustのIteratorトレイトに&lt;code&gt;rev()&lt;/code&gt;という便利なメソッドが存在していました&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;ということで、これを取り出すと、最初の文字列の逆順で文字を取り出すIteratorが取得できます。
-あとは、&lt;a href=&#34;https://doc.rust-lang.org/std/iter/trait.FromIterator.html#tymethod.from_iter&#34;&gt;Stringが実装してくれている&lt;code&gt;from_iter&lt;/code&gt;&lt;/a&gt;に渡せば文字列が出来上がります。&lt;/p&gt;
-&lt;h3 id=&#34;01-パタトクカシーー&#34;&gt;01. 「パタトクカシーー」&lt;/h3&gt;
-&lt;p&gt;ストリーム処理っぽい書き方に変更しました。
+<p><a href="https://nlp100.github.io/ja/">言語処理100本ノック</a>が2020年版になったそうです。
+そうです、2年前に初めて、<a href="/blog/2018/03/20/nlp100-ch01-05to06/">準備運動</a>で止まっていたんです!(衝撃的な続かなさ。。。)</p>
+<p>ということで、Rust the bookも読んでいることだし、過去のプログラムをチェックしつつ再開しようかなと。
+ということで、いくつかリファクタリングしてみました。</p>
+<p><a href="https://github.com/johtani/nlp100-rust/blob/master/src/chapter01/answer.rs">ソースはリポジトリ</a>を御覧ください。</p>
+<h3 id="00-文字列の逆順">00. 文字列の逆順</h3>
+<p><a href="https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L6">2年前の実装</a>では、<code>chars()</code>メソッドで取り出したあとに、<code>collect()</code>でVecにしていたのですが、<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.rev">RustのIteratorトレイトに<code>rev()</code>という便利なメソッドが存在していました</a>。</p>
+<p>ということで、これを取り出すと、最初の文字列の逆順で文字を取り出すIteratorが取得できます。
+あとは、<a href="https://doc.rust-lang.org/std/iter/trait.FromIterator.html#tymethod.from_iter">Stringが実装してくれている<code>from_iter</code></a>に渡せば文字列が出来上がります。</p>
+<h3 id="01-パタトクカシーー">01. 「パタトクカシーー」</h3>
+<p>ストリーム処理っぽい書き方に変更しました。
 2年前はIteratorを取り出して、詰替していましたが、
-&lt;code&gt;enumerate()&lt;/code&gt;で添字と文字のタプルのイテレータに変換し、
-&lt;code&gt;filter&lt;/code&gt;で添字が偶数のときだけフィルタリングして、
-&lt;code&gt;map&lt;/code&gt;で対象の文字をまとめたイテレータにします。
+<code>enumerate()</code>で添字と文字のタプルのイテレータに変換し、
+<code>filter</code>で添字が偶数のときだけフィルタリングして、
+<code>map</code>で対象の文字をまとめたイテレータにします。
 で、最後はそれを元に文字列を生成することにしました。
-&lt;code&gt;iter&lt;/code&gt;を使わないでそのまま&lt;code&gt;String::from_iter&lt;/code&gt;の引数に渡すことも可能ですね。&lt;/p&gt;
-&lt;h3 id=&#34;02-パトカータクシーパタトクカシーー&#34;&gt;02. 「パトカー」＋「タクシー」＝「パタトクカシーー」&lt;/h3&gt;
-&lt;p&gt;2年前は&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L30&#34;&gt;2つのIteratorを&lt;code&gt;loop&lt;/code&gt;で回して頑張って結合してました&lt;/a&gt;。
-ではなく、&lt;a href=&#34;https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.zip&#34;&gt;&lt;code&gt;zip()&lt;/code&gt;&lt;/a&gt;を使って、2つのイテレータを組み合わせる方法に替えてみました。
+<code>iter</code>を使わないでそのまま<code>String::from_iter</code>の引数に渡すことも可能ですね。</p>
+<h3 id="02-パトカータクシーパタトクカシーー">02. 「パトカー」＋「タクシー」＝「パタトクカシーー」</h3>
+<p>2年前は<a href="https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs#L30">2つのIteratorを<code>loop</code>で回して頑張って結合してました</a>。
+ではなく、<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.zip"><code>zip()</code></a>を使って、2つのイテレータを組み合わせる方法に替えてみました。
 このとき、2つの文字列が違う文字数の場合の処理として、長い方から取り出した文字をあとに結合する処理を追加で記述しました。
-ちょっとスマートな感じになりましたかね?&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;zip&lt;/code&gt;したあとに出てきたタプルの文字列を結合するのに&lt;code&gt;format!&lt;/code&gt;マクロを使いましたが、他にいい方法有るかなぁ?&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;とりあえず最初の3つをリファクタリングしてみました。
-残りもやりつつ、準備運動以降もがんばるぞと。&lt;/p&gt;
+ちょっとスマートな感じになりましたかね?</p>
+<p><code>zip</code>したあとに出てきたタプルの文字列を結合するのに<code>format!</code>マクロを使いましたが、他にいい方法有るかなぁ?</p>
+<h2 id="まとめ">まとめ</h2>
+<p>とりあえず最初の3つをリファクタリングしてみました。
+残りもやりつつ、準備運動以降もがんばるぞと。</p>
 </content:encoded>
     </item>
     
@@ -794,41 +794,41 @@ Rustっぽく、&lt;code&gt;return&lt;/code&gt;を省略してみました。
       
       <guid>https://blog.johtani.info/blog/2018/03/20/nlp100-ch01-05to06/</guid>
       <description>Rustで言語処理100本ノックの続きで、05と06です。 05. n-gram 問題はこちら。 みんな大好きn-gramです。単語と文字があるので、それぞれ別関</description>
-      <content:encoded>&lt;p&gt;Rustで言語処理100本ノックの続きで、05と06です。&lt;/p&gt;
-&lt;!-- more --&gt;
-&lt;h3 id=&#34;05-n-gram&#34;&gt;05. n-gram&lt;/h3&gt;
-&lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec05&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;みんな大好きn-gramです。単語と文字があるので、それぞれ別関数として実装しました。問題はbi-gramと&lt;code&gt;n=2&lt;/code&gt;だったのですが、一応、&lt;code&gt;n&lt;/code&gt;を引数に取る形にして実装しました。&lt;/p&gt;
-&lt;p&gt;まずは、単語です。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139&#34;&gt;&lt;/script&gt;
-&lt;p&gt;前に実装した時は、自分で頑張って、先頭から数えたりしてたんですが、Rustには&lt;a href=&#34;https://rust-lang-ja.github.io/the-rust-programming-language-ja/1.6/std/primitive.slice.html#method.windows&#34;&gt;windows(n)&lt;/a&gt;という便利なメソッドがsliceにあり、これを利用したらこんな簡単になりました。
+      <content:encoded><p>Rustで言語処理100本ノックの続きで、05と06です。</p>
+<!-- more -->
+<h3 id="05-n-gram">05. n-gram</h3>
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec05">こちら</a>。</p>
+<p>みんな大好きn-gramです。単語と文字があるので、それぞれ別関数として実装しました。問題はbi-gramと<code>n=2</code>だったのですが、一応、<code>n</code>を引数に取る形にして実装しました。</p>
+<p>まずは、単語です。</p>
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139"></script>
+<p>前に実装した時は、自分で頑張って、先頭から数えたりしてたんですが、Rustには<a href="https://rust-lang-ja.github.io/the-rust-programming-language-ja/1.6/std/primitive.slice.html#method.windows">windows(n)</a>という便利なメソッドがsliceにあり、これを利用したらこんな簡単になりました。
 sliceは特定のシーケンス（配列）に対してある特定のサイズのViewを作ってくれます（説明あってる？）。
-ということで、文字列から、単語の配列（スペース区切りで単語にしている）を作り出して、&lt;code&gt;windows(n)&lt;/code&gt;メソッドを通すと、
-&lt;code&gt;n&lt;/code&gt;で指定した数字の個数だけの単語の配列を先頭から、1単語ずつずらして作ってくれます。まさに、n-gram!
+ということで、文字列から、単語の配列（スペース区切りで単語にしている）を作り出して、<code>windows(n)</code>メソッドを通すと、
+<code>n</code>で指定した数字の個数だけの単語の配列を先頭から、1単語ずつずらして作ってくれます。まさに、n-gram!
 戻り値は配列の配列です。
-1点だけ疑問点があるのは、「空白で区切ったものが単語」という考え方で良いかどうか？という点です。特に問題文にはそれが明示されていなかったので、このような前提を置いてあります。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;invalid_n(text, n)&lt;/code&gt;は&lt;code&gt;n&lt;/code&gt;の値や入力された文字列をチェックする関数です。入力チェックですね。&lt;code&gt;n&lt;/code&gt;が1よりも小さい場合、入力文字列が空文字の場合は、warningでメッセージを出して、空の配列を返す仕組みになっています。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=115:126&#34;&gt;&lt;/script&gt;
-&lt;p&gt;次は、文字です。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139&#34;&gt;&lt;/script&gt;
-&lt;p&gt;単語とほぼ一緒ですが、入力文字列を、1文字ずつの配列にしているところが異なります。
-また、&lt;code&gt;windows&lt;/code&gt;メソッドで取り出された、1文字ずつの&lt;code&gt;n&lt;/code&gt;個の配列を文字列に修正してから、結果の配列に入れています。
+1点だけ疑問点があるのは、「空白で区切ったものが単語」という考え方で良いかどうか？という点です。特に問題文にはそれが明示されていなかったので、このような前提を置いてあります。</p>
+<p><code>invalid_n(text, n)</code>は<code>n</code>の値や入力された文字列をチェックする関数です。入力チェックですね。<code>n</code>が1よりも小さい場合、入力文字列が空文字の場合は、warningでメッセージを出して、空の配列を返す仕組みになっています。</p>
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=115:126"></script>
+<p>次は、文字です。</p>
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=128:139"></script>
+<p>単語とほぼ一緒ですが、入力文字列を、1文字ずつの配列にしているところが異なります。
+また、<code>windows</code>メソッドで取り出された、1文字ずつの<code>n</code>個の配列を文字列に修正してから、結果の配列に入れています。
 ここでも疑問は空白をどう扱うか？になります。
 現時点では、空白も1文字とカウントして扱うことにしてあります。
-どっちがいいのかなぁ？&lt;/p&gt;
-&lt;h3 id=&#34;06-集合&#34;&gt;06. 集合&lt;/h3&gt;
-&lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec06&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;まずは、文字n-gramで出てきた文字列をSetに入れる関数から。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=159:174&#34;&gt;&lt;/script&gt;
-&lt;p&gt;n-gramの問題で実装した文字n-gramの関数の戻り値を配列ではなく、BTreeSetに変えたものになります。比較などがしやすいように？と思い、BTreeSetを利用していますが、実装としてはHashSetでも問題ないかと。
-この関数の集合（Set）を元に、和集合、積集合、差集合を求める関数を実装しました。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=176:187&#34;&gt;&lt;/script&gt;
-&lt;p&gt;Setのメソッドとして、それぞれ、&lt;code&gt;union&lt;/code&gt;＝和集合、&lt;code&gt;intersection&lt;/code&gt;＝積集合、&lt;code&gt;difference&lt;/code&gt;＝差集合のメソッドが用意されているので、特に困ることはなかったです。
-差集合については、1-2と2-1で結果が異なるはずなので、それぞれをテストケース、main.rsで出力するようにしてあります。&lt;/p&gt;
-&lt;h3 id=&#34;所感&#34;&gt;所感&lt;/h3&gt;
-&lt;p&gt;今回は、Rustがすでに実装してくれているメソッドがあったので楽ができました。
+どっちがいいのかなぁ？</p>
+<h3 id="06-集合">06. 集合</h3>
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec06">こちら</a>。</p>
+<p>まずは、文字n-gramで出てきた文字列をSetに入れる関数から。</p>
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=159:174"></script>
+<p>n-gramの問題で実装した文字n-gramの関数の戻り値を配列ではなく、BTreeSetに変えたものになります。比較などがしやすいように？と思い、BTreeSetを利用していますが、実装としてはHashSetでも問題ないかと。
+この関数の集合（Set）を元に、和集合、積集合、差集合を求める関数を実装しました。</p>
+<script src="http://gist-it.appspot.com/https://github.com/johtani/nlp100-rust/blob/5439f96e8521bffe34689c23aa076eb3a2fe817b/src/chapter01/answer.rs?slice=176:187"></script>
+<p>Setのメソッドとして、それぞれ、<code>union</code>＝和集合、<code>intersection</code>＝積集合、<code>difference</code>＝差集合のメソッドが用意されているので、特に困ることはなかったです。
+差集合については、1-2と2-1で結果が異なるはずなので、それぞれをテストケース、main.rsで出力するようにしてあります。</p>
+<h3 id="所感">所感</h3>
+<p>今回は、Rustがすでに実装してくれているメソッドがあったので楽ができました。
 やりたいことに相当するメソッドがあるかどうかを調べるためにリファレンスを探さないといけないのがちょっと苦労しましたが。。。
-ということで、今日はこの辺りまで。&lt;/p&gt;
+ということで、今日はこの辺りまで。</p>
 </content:encoded>
     </item>
     
@@ -839,36 +839,36 @@ sliceは特定のシーケンス（配列）に対してある特定のサイズ
       
       <guid>https://blog.johtani.info/blog/2018/02/19/nlp100-ch01-03to04/</guid>
       <description>Rustで言語処理100本ノックの続きで、03と04です。 03. 円周率 問題はこちら。 入力文字列を.split_whitespace()で分割して</description>
-      <content:encoded>&lt;p&gt;Rustで言語処理100本ノックの続きで、03と04です。&lt;/p&gt;
-&lt;!-- more --&gt;
-&lt;h3 id=&#34;03-円周率&#34;&gt;03. 円周率&lt;/h3&gt;
-&lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec03&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/8ca508cc16fbc7a11ac04bbc43687dfec4f25483/src/chapter01/answer/mod.rs?slice=60:71&#34;&gt;&lt;/script&gt;
-&lt;p&gt;入力文字列を&lt;code&gt;.split_whitespace()&lt;/code&gt;で分割しておいて、単語ごとのベクタを作り出し、そこに対して文字を数えました。「アルファベットの」という注意書きがあるので&amp;rdquo;,&amp;ldquo;や&amp;rdquo;.&amp;ldquo;は含めずに数えるのかなということで、
-charの&lt;code&gt;.is_alphabetic()&lt;/code&gt;で&lt;code&gt;A-z&lt;/code&gt;までの判定をしつつ、文字のベクタを作ってから、そのベクタの長さを詰め込むという感じでやりました。&lt;/p&gt;
-&lt;p&gt;これ、ひょっとして、collectでベクタにしなくても、i32とかの変数でカウントするとベクタ作らなくてもいいなじゃにか？というのに書きながら気づいた。。。
-必要じゃないオブジェクトを作ってるよなぁ。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;.filter().map&lt;/code&gt;とかかな？この辺りの操作がイマイチ苦手。Javaでもまだ馴染めてないところなんだよなぁ。頭固すぎ。&lt;/p&gt;
-&lt;h3 id=&#34;04-元素記号&#34;&gt;04. 元素記号&lt;/h3&gt;
-&lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec04&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/8ca508cc16fbc7a11ac04bbc43687dfec4f25483/src/chapter01/answer/mod.rs?slice=73:112&#34;&gt;&lt;/script&gt;
-&lt;p&gt;大作ですね。何だろう、大作。。。
+      <content:encoded><p>Rustで言語処理100本ノックの続きで、03と04です。</p>
+<!-- more -->
+<h3 id="03-円周率">03. 円周率</h3>
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec03">こちら</a>。</p>
+<script src="http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/8ca508cc16fbc7a11ac04bbc43687dfec4f25483/src/chapter01/answer/mod.rs?slice=60:71"></script>
+<p>入力文字列を<code>.split_whitespace()</code>で分割しておいて、単語ごとのベクタを作り出し、そこに対して文字を数えました。「アルファベットの」という注意書きがあるので&rdquo;,&ldquo;や&rdquo;.&ldquo;は含めずに数えるのかなということで、
+charの<code>.is_alphabetic()</code>で<code>A-z</code>までの判定をしつつ、文字のベクタを作ってから、そのベクタの長さを詰め込むという感じでやりました。</p>
+<p>これ、ひょっとして、collectでベクタにしなくても、i32とかの変数でカウントするとベクタ作らなくてもいいなじゃにか？というのに書きながら気づいた。。。
+必要じゃないオブジェクトを作ってるよなぁ。</p>
+<p><code>.filter().map</code>とかかな？この辺りの操作がイマイチ苦手。Javaでもまだ馴染めてないところなんだよなぁ。頭固すぎ。</p>
+<h3 id="04-元素記号">04. 元素記号</h3>
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec04">こちら</a>。</p>
+<script src="http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/8ca508cc16fbc7a11ac04bbc43687dfec4f25483/src/chapter01/answer/mod.rs?slice=73:112"></script>
+<p>大作ですね。何だろう、大作。。。
 最終的に連想配列（辞書型もしくはマップ型）」ということだったので、BTreeMapに詰め込んでます。
-HashMapでもいいんですが、文字列で出力した時にキーが並んで見やすいからという理由で、BTreeMap使いました。それ以上の理由はないです。普通にやるなら、HashMapかな？&lt;/p&gt;
-&lt;p&gt;入力として、1文字だけの出力をする場所（インデックス番号）の配列を受け取ってます。1点だけ、チェックしていない、けど入力値の想定をしていて、&lt;code&gt;idx_one_symbols&lt;/code&gt;がソートされていて、小さいものから順番に出てくるものとしてます。関数作って、チェックすべきかな？&lt;/p&gt;
-&lt;p&gt;で、指定された場所の最後のものが入力文字列よりも大きいかどうかというチェックもしています。（あー、テストケース書いてないな）この辺りのせいでちょっと長めになってます。&lt;/p&gt;
-&lt;p&gt;単語の配列を作るのは03の時と同じやり方です。
-回しかたがちょっと違って、&lt;code&gt;.iter().enumerate()&lt;/code&gt;で回して、添字と値をタプル？でとりだしてます。添字を見ながら1文字取り出すのか、2文字取り出すのかの判断が必要だからです。あとは一緒ですね。1文字取り出すときは、&lt;code&gt;.first()&lt;/code&gt;を使って見ました。
-実は、2文字取り出す時と、1文字の時と同じロジック使った方が共通化できて、短くなった？？？&lt;/p&gt;
-&lt;p&gt;ということで、こんな感じでした。いつものようにツッコミお待ちしてます。&lt;/p&gt;
-&lt;h3 id=&#34;所感&#34;&gt;所感&lt;/h3&gt;
-&lt;p&gt;問題それぞれについてではなく、
+HashMapでもいいんですが、文字列で出力した時にキーが並んで見やすいからという理由で、BTreeMap使いました。それ以上の理由はないです。普通にやるなら、HashMapかな？</p>
+<p>入力として、1文字だけの出力をする場所（インデックス番号）の配列を受け取ってます。1点だけ、チェックしていない、けど入力値の想定をしていて、<code>idx_one_symbols</code>がソートされていて、小さいものから順番に出てくるものとしてます。関数作って、チェックすべきかな？</p>
+<p>で、指定された場所の最後のものが入力文字列よりも大きいかどうかというチェックもしています。（あー、テストケース書いてないな）この辺りのせいでちょっと長めになってます。</p>
+<p>単語の配列を作るのは03の時と同じやり方です。
+回しかたがちょっと違って、<code>.iter().enumerate()</code>で回して、添字と値をタプル？でとりだしてます。添字を見ながら1文字取り出すのか、2文字取り出すのかの判断が必要だからです。あとは一緒ですね。1文字取り出すときは、<code>.first()</code>を使って見ました。
+実は、2文字取り出す時と、1文字の時と同じロジック使った方が共通化できて、短くなった？？？</p>
+<p>ということで、こんな感じでした。いつものようにツッコミお待ちしてます。</p>
+<h3 id="所感">所感</h3>
+<p>問題それぞれについてではなく、
 やってて思ったのですが、問題に対して想定される結果が記載されていると嬉しいなと思いました。
 ロジックについては、各自実装者に寄ったり、言語によって違いが出たりするし、議論するベースになっていいかなと思うんですが、
 問題で想定されている結果（出力）があると、自分の実装にケアが足りないところがないのか？とか、ケアしなくていい点とかがわかるのかもなぁと。
-ユニットテスト相当のものがあると楽かなぁと。&lt;/p&gt;
-&lt;p&gt;このケースどうするんだろ？みたいなのが、ところどころコメントに残ったりしてます。
-出題の意図としては、その部分も議論の対象ということなのかな？&lt;/p&gt;
+ユニットテスト相当のものがあると楽かなぁと。</p>
+<p>このケースどうするんだろ？みたいなのが、ところどころコメントに残ったりしてます。
+出題の意図としては、その部分も議論の対象ということなのかな？</p>
 </content:encoded>
     </item>
     
@@ -879,34 +879,34 @@ HashMapでもいいんですが、文字列で出力した時にキーが並ん�
       
       <guid>https://blog.johtani.info/blog/2018/02/15/nlp100-ch01-00to02/</guid>
       <description>「鉄は熱いうちに打て」ということで、言語処理100本ノックの第1章の00から02を実装してみました。 さて、これが効率がいいのかどうかはさてお</description>
-      <content:encoded>&lt;p&gt;「鉄は熱いうちに打て」ということで、言語処理100本ノックの第1章の00から02を実装してみました。&lt;/p&gt;
-&lt;!-- more --&gt;
-&lt;p&gt;さて、これが効率がいいのかどうかはさておき。&lt;/p&gt;
-&lt;h3 id=&#34;00-文字列の逆順&#34;&gt;00. 文字列の逆順&lt;/h3&gt;
-&lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec00&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;最初、&lt;a href=&#34;https://github.com/johtani/nlp100-rust/blob/48567d107511541d0401af4ef58c6abb98a6083b/src/chapter01/answer.rs&#34;&gt;Vecのreverse()で逆順にして0からlen()まで回してた&lt;/a&gt;んですが、pop()がいい感じに後ろから取れることがわかったんで、切り替えました。
-シンプルかな？&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=2:12&#34;&gt;&lt;/script&gt;
-&lt;h3 id=&#34;01-パタトクカシーー&#34;&gt;01. 「パタトクカシーー」&lt;/h3&gt;
-&lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec01&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=14:24&#34;&gt;&lt;/script&gt;
-&lt;p&gt;1文字ずつ取り出して、インデックスの番号が2で割ってあまりが0なら文字列に追加していくってのでやってみました。
-（ブログ書いてるところで、&lt;code&gt;i in 0..char_array.len()&lt;/code&gt;じゃなくて、&lt;code&gt;(i, x) in char_array.iter().enumerate()&lt;/code&gt;に切り替えました。）
-matchとか使って綺麗に書けたりするのかなぁ？&lt;/p&gt;
-&lt;h3 id=&#34;02-パトカータクシーパタトクカシーー&#34;&gt;02. 「パトカー」＋「タクシー」＝「パタトクカシーー」&lt;/h3&gt;
-&lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec02&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
-&lt;script src=&#34;http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=26:56&#34;&gt;&lt;/script&gt;
-&lt;p&gt;だいぶ思考錯誤してる感じがソースに現れてます。
+      <content:encoded><p>「鉄は熱いうちに打て」ということで、言語処理100本ノックの第1章の00から02を実装してみました。</p>
+<!-- more -->
+<p>さて、これが効率がいいのかどうかはさておき。</p>
+<h3 id="00-文字列の逆順">00. 文字列の逆順</h3>
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec00">こちら</a>。</p>
+<p>最初、<a href="https://github.com/johtani/nlp100-rust/blob/48567d107511541d0401af4ef58c6abb98a6083b/src/chapter01/answer.rs">Vecのreverse()で逆順にして0からlen()まで回してた</a>んですが、pop()がいい感じに後ろから取れることがわかったんで、切り替えました。
+シンプルかな？</p>
+<script src="http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=2:12"></script>
+<h3 id="01-パタトクカシーー">01. 「パタトクカシーー」</h3>
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec01">こちら</a>。</p>
+<script src="http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=14:24"></script>
+<p>1文字ずつ取り出して、インデックスの番号が2で割ってあまりが0なら文字列に追加していくってのでやってみました。
+（ブログ書いてるところで、<code>i in 0..char_array.len()</code>じゃなくて、<code>(i, x) in char_array.iter().enumerate()</code>に切り替えました。）
+matchとか使って綺麗に書けたりするのかなぁ？</p>
+<h3 id="02-パトカータクシーパタトクカシーー">02. 「パトカー」＋「タクシー」＝「パタトクカシーー」</h3>
+<p>問題は<a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec02">こちら</a>。</p>
+<script src="http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/ccbdf272adbb5aa738dc73e78e3667e4300a49c1/src/chapter01/answer.rs?slice=26:56"></script>
+<p>だいぶ思考錯誤してる感じがソースに現れてます。
 とりあえず、両方の文字列をcharsの配列にして個々のイテレータを回しながら、next()の戻り値があれば追加していく感じにして、
 終了条件が両方Noneを通ったらにしてるけど、、、
 なんか、もっと綺麗にできないのかなぁ。。。
-next()のタプル返す関数作って、とかでなんかできたりするかなぁ？&lt;/p&gt;
-&lt;h3 id=&#34;gist-it&#34;&gt;gist-it&lt;/h3&gt;
-&lt;p&gt;関係ないですが、GitHubのコードを貼り付けるのに便利なサービスがあるみたいです。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;http://gist-it.appspot.com&#34;&gt;http://gist-it.appspot.com&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;これほんと便利だな。行数指定もできるし。
-説明するのが簡単だ。&lt;/p&gt;
-&lt;p&gt;とりあえず、今日はこの辺まで。なんか、いい知恵あれば教えてください！&lt;/p&gt;
+next()のタプル返す関数作って、とかでなんかできたりするかなぁ？</p>
+<h3 id="gist-it">gist-it</h3>
+<p>関係ないですが、GitHubのコードを貼り付けるのに便利なサービスがあるみたいです。</p>
+<p><a href="http://gist-it.appspot.com">http://gist-it.appspot.com</a></p>
+<p>これほんと便利だな。行数指定もできるし。
+説明するのが簡単だ。</p>
+<p>とりあえず、今日はこの辺まで。なんか、いい知恵あれば教えてください！</p>
 </content:encoded>
     </item>
     
@@ -917,19 +917,19 @@ next()のタプル返す関数作って、とかでなんかできたりする�
       
       <guid>https://blog.johtani.info/blog/2018/02/14/start-nlp100-with-rust/</guid>
       <description>ども。新しいもの始めないと頭が退化する。。。ということで、こちら（ happy new year and new language - katsyoshiのめもみたいなもの）のブログに触発されて、</description>
-      <content:encoded>&lt;p&gt;ども。新しいもの始めないと頭が退化する。。。ということで、こちら（
-&lt;a href=&#34;http://blog.katsyoshi.org/blog/2018/01/16/happy-new-year-and-new-language/&#34;&gt;happy new year and new language - katsyoshiのめもみたいなもの&lt;/a&gt;）のブログに触発されて、言語処理100本ノックをはじめてみました。&lt;/p&gt;
-&lt;!-- more --&gt;
-&lt;p&gt;&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#ch1&#34;&gt;言語処理100本ノック&lt;/a&gt;とは、自然言語処理になるのかな、東北大学の研究室の先生が公開している言語処理に関する実践的な課題をベースにプログラミングなどのスキルを学んでいくための問題集です。
+      <content:encoded><p>ども。新しいもの始めないと頭が退化する。。。ということで、こちら（
+<a href="http://blog.katsyoshi.org/blog/2018/01/16/happy-new-year-and-new-language/">happy new year and new language - katsyoshiのめもみたいなもの</a>）のブログに触発されて、言語処理100本ノックをはじめてみました。</p>
+<!-- more -->
+<p><a href="http://www.cl.ecei.tohoku.ac.jp/nlp100/#ch1">言語処理100本ノック</a>とは、自然言語処理になるのかな、東北大学の研究室の先生が公開している言語処理に関する実践的な課題をベースにプログラミングなどのスキルを学んでいくための問題集です。
 元々はPythonを対象とされているようですが、Rustでやってみようかと。
 まぁ、先ほどあげたブログの二番煎じです。。。
-ちなみに、インスパイアされた元のブログの方はRust book 2nd editionを読み終えたらしいですが、私はかじった程度です（ダメかも？）。&lt;/p&gt;
-&lt;p&gt;NLPもRustもかじった程度なので、苦戦しそうですが、ちょっとずつやっていこうかなと。
+ちなみに、インスパイアされた元のブログの方はRust book 2nd editionを読み終えたらしいですが、私はかじった程度です（ダメかも？）。</p>
+<p>NLPもRustもかじった程度なので、苦戦しそうですが、ちょっとずつやっていこうかなと。
 ということで、準備運動の第1章から始めようかと。
 GitHubにちょっとずつあげていく予定です。
-&lt;a href=&#34;https://github.com/johtani/nlp100-rust&#34;&gt;https://github.com/johtani/nlp100-rust&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;まぁ、まずは宣言のブログを書いてみただけです。
-続いてなかったら、叱咤激励してください。叱咤だけかも？&lt;/p&gt;
+<a href="https://github.com/johtani/nlp100-rust">https://github.com/johtani/nlp100-rust</a></p>
+<p>まぁ、まずは宣言のブログを書いてみただけです。
+続いてなかったら、叱咤激励してください。叱咤だけかも？</p>
 </content:encoded>
     </item>
     

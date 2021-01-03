@@ -14,58 +14,58 @@
       
       <guid>https://blog.johtani.info/blog/2012/06/16/zipkin%E3%81%AEreadme%E8%AA%AD%E3%82%93%E3%81%A7%E3%82%8B%E3%81%9D%E3%81%AE%EF%BC%92%E6%AE%8B%E3%82%8A/</guid>
       <description>「鉄は熱いうちに打て」ということで、残りも勢いでメモ。 まだ、見直しとかしてない状態なのでおかしいところとかありますが。。。 図とか入れるのはま</description>
-      <content:encoded>&lt;p&gt;「鉄は熱いうちに打て」ということで、残りも勢いでメモ。
+      <content:encoded><p>「鉄は熱いうちに打て」ということで、残りも勢いでメモ。
 まだ、見直しとかしてない状態なのでおかしいところとかありますが。。。
-図とか入れるのはまた今度。&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;　Transport（転送）&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+図とか入れるのはまた今度。</p>
+<p><b>　Transport（転送）</b></p>
+<pre><code>
 　ZipkinとHadoopに異なるサービスからのトレースを送信するのにScribeを利用します。
 　ScribeはFacebookにより開発されました。
 　システムの各サーバで実行できるデーモンとして作成されています。
 　ログメッセージをListenし、カテゴリごとのcorrectレシーバーに配送します。
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Zipkin collector daemon&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>　Zipkin collector daemon</b></p>
+<pre><code>
 　トレースデータがZipkinコレクターデーモンに配送されたらvalidかどうかをチェックしてから保管し、インデックスを作成します。
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Storage&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>　Storage</b></p>
+<pre><code>
 　ストレージにはCassandraを選びました。
 　スケーラブルで、柔軟なスキーマをもっており、Twitter内部で大変使われています。
 　このコンポーネントをプラガブルにしようと試みましたが、困難なため、ここでは公開しません。
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Zipkin query daemon&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>　Zipkin query daemon</b></p>
+<pre><code>
 　保存、インデックスされたデータを探す方法が必要です。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;　クエリーデーモンはユーザに対して簡単なThriftAPIを公開しており、トレースを探すことが可能です。&lt;a href=&#34;https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift&#34;&gt;Thrift file&lt;/a&gt;を見て下さい。&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;　UI&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p>　クエリーデーモンはユーザに対して簡単なThriftAPIを公開しており、トレースを探すことが可能です。<a href="https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinQuery.thrift">Thrift file</a>を見て下さい。</p>
+<p><b>　UI</b></p>
+<pre><code>
 　多くのユーザはUI経由でデータにアクセスします。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;　Visualizeに&lt;a href=&#34;http://d3js.org/&#34;&gt;D3&lt;/a&gt;を利用したRailsアプリケーションです。
-　UIの認証は実装していないことに注意してください。&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;モジュール&lt;/b&gt;
-　&lt;a href=&#34;https://github.com/twitter/zipkin/raw/master/doc/modules.png&#34;&gt;Zipkin内部のモジュール関連図&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;##インストール___
-&lt;b&gt;　&lt;a href=&#34;http://cassandra.apache.org/&#34;&gt;Cassandra&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p>　Visualizeに<a href="http://d3js.org/">D3</a>を利用したRailsアプリケーションです。
+　UIの認証は実装していないことに注意してください。</p>
+<p><b>モジュール</b>
+　<a href="https://github.com/twitter/zipkin/raw/master/doc/modules.png">Zipkin内部のモジュール関連図</a></p>
+<p>##インストール___
+<b>　<a href="http://cassandra.apache.org/">Cassandra</a></b></p>
+<pre><code>
 　ZipkinはCassandraをストレージにしています。Cassandraクラスタが必要になります。
 　1. Cassandraサイトを参考にしてクラスタを構築してください。
 　2. Zipkin Cassandraスキーマを利用します。つぎのコマンドでスキーマが作成できます。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
 bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassandra-schema.txt
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　&lt;a href=&#34;http://zookeeper.apache.org/&#34;&gt;Zookeeper&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>　<a href="http://zookeeper.apache.org/">Zookeeper</a></b></p>
+<pre><code>
 　Zipkinは協調のためにZooKeeperを利用します。
 　これは、保存すべきサーバをサンプルレートで決定し、サーバを登録します。？
 　1. ZooKeeperのサイトを参考にインストールしてください。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　&lt;a href=&#34;https://github.com/facebook/scribe&#34;&gt;Scribe&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>　<a href="https://github.com/facebook/scribe">Scribe</a></b></p>
+<pre><code>
 　Scribeはトレースデータを配送するのに利用するロギングフレームワークです。
 　ネットワーク保存先としてZipkinコレクターデーモンを指定する必要があります。
 
 　Scribeの設定は次のようにします。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
-&amp;lt;store&amp;amp;gt;
+</code></pre><pre><code>
+&lt;store&amp;gt;
   category=zipkin
   type=network
   remote_host=zk://zookeeper-hostname:2181/scribe/zipkin
@@ -74,83 +74,83 @@ bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassand
   default_max_msg_before_reconnect=50000
   allowable_delta_before_reconnect=12500
   must_succeed=no
-&amp;lt;/store&amp;amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+&lt;/store&amp;gt;
+</code></pre><pre><code>
 　注意：上記設定は、カテゴリーにより送信ホストを見つけるためにZooKeeperを利用するサポートのScribeのTwitterバージョンを使用する方法です。
 　コレクターのためのDNSエントリーを利用したりもできます。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Zipkinサーバ&lt;/b&gt;
-　Zipkinサーバは&lt;a href=&#34;http://www.scala-lang.org/downloads&#34;&gt;Scala 2.9.1&lt;/a&gt;、&lt;a href=&#34;http://www.scala-sbt.org/download.html&#34;&gt;SBT 0.11.2&lt;/a&gt;そしてJDK6で開発しました。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>　Zipkinサーバ</b>
+　Zipkinサーバは<a href="http://www.scala-lang.org/downloads">Scala 2.9.1</a>、<a href="http://www.scala-sbt.org/download.html">SBT 0.11.2</a>そしてJDK6で開発しました。</p>
+<pre><code>
  1. git clone https://github.com/twitter/zipkin.git
  2. cd zipkin
  3. cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala
  4. cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala
  5. Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.
- 6. bin/sbt update package-dist (This downloads SBT 0.11.2 if it doesn&#39;t already exist)
+ 6. bin/sbt update package-dist (This downloads SBT 0.11.2 if it doesn't already exist)
  7. scp dist/zipkin*.zip [server]
  8. ssh [server]
  9. unzip zipkin*.zip
 10. mkdir -p /var/log/zipkin
 11. zipkin-scribe/scripts/collector.sh -f zipkin-scribe/config/collector-prod.scala
 12. zipkin-server/scripts/query.sh -f zipkin-server/config/query-prod.scala
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
 　SBTでコレクターとクエリサービスを起動します。
 　Scribeコレクターサービスの起動方法は次の通り。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
-bin/sbt &#39;project zipkin-scribe&#39; &#39;run -f zipkin-scribe/config/collector-dev.scala&#39;
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
+bin/sbt 'project zipkin-scribe' 'run -f zipkin-scribe/config/collector-dev.scala'
+</code></pre><pre><code>
 　クエリサービスは次の通り
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
-bin/sbt &#39;project zipkin-server&#39; &#39;run -f zipkin-server/config/query-dev.scala&#39;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Zipkin UI&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
+bin/sbt 'project zipkin-server' 'run -f zipkin-server/config/query-dev.scala'
+</code></pre><p><b>　Zipkin UI</b></p>
+<pre><code>
 　UIはRails3アプリです。
 　1. 設定をZooKeeperサーバでアップデートします。これはクエリデーモンを見つけるのに利用します。
 　2. Rails3アプリケーションサーバにデプロイします。テストの場合は次のようにすることもできます。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
-bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　zipkin-tracer gem&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
+bundle install &amp;amp;&amp;amp; bundle exec rails server.
+</code></pre><p><b>　zipkin-tracer gem</b></p>
+<pre><code>
 　zipkin-tracer gemをトレースしたいRailsアプリケーションにRack Handlerで追加します。
 　config.ruにつぎの記載をします。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
   use ZipkinTracer::RackHandler
-  run &amp;lt;YOUR_APPLICATION&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+  run &lt;YOUR_APPLICATION&gt;
+</code></pre><pre><code>
 　もし、アプリケーションのstatic assetsがRailsで提供されれば、リクエストがトレースされます。
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;##　Running a Hadoop job&lt;hr&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p>##　Running a Hadoop job<hr></p>
+<pre><code>
 　ScribeからHadoopにログを保存する設定をすることも可能です。
 　これをすると、Zipkin自身でオンザフライで簡単に作れないデータから様々なレポートが作成可能です。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;　ScalaでHadoopのジョブをかける&lt;a href=&#34;https://github.com/twitter/scalding&#34;&gt;Scalding&lt;/a&gt;というライブラリを利用します。&lt;/p&gt;
-&lt;div style=&#34; margin-left: 2em;&#34;&gt;
+</code></pre><p>　ScalaでHadoopのジョブをかける<a href="https://github.com/twitter/scalding">Scalding</a>というライブラリを利用します。</p>
+<div style=" margin-left: 2em;">
 ```
-&lt;p&gt;　1. Hadoopジョブを実行するためのfatなjarを作成します。
+<p>　1. Hadoopジョブを実行するためのfatなjarを作成します。
 　2. scald.rbをjarをコピーしたいホスト名とjobを実行するホスト名に書き換えます。
 　3. 必要なら、scald.rbのjarファイルのバージョンを更新します。
-　4. scald.rbスクリプトを利用してジョブを実行できます。&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&#34;language-&lt;/div&gt;&#34; data-lang=&#34;&lt;/div&gt;&#34;&gt;&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;./scald.rb &amp;ndash;hdfs com.twitter.zipkin.hadoop.[classname] &amp;ndash;date yyyy-mm-ddThh:mm yyyy-mm-ddThh:mm &amp;ndash;output [dir]&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
-##計測ライブラリの利用方法&amp;lt;hr&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;　計測のためのライブラリとプロトコルがちょっとだけあります。
+　4. scald.rbスクリプトを利用してジョブを実行できます。</p>
+<pre><code class="language-</div>" data-lang="</div>"></code></pre><p>./scald.rb &ndash;hdfs com.twitter.zipkin.hadoop.[classname] &ndash;date yyyy-mm-ddThh:mm yyyy-mm-ddThh:mm &ndash;output [dir]</p>
+<pre><code>
+##計測ライブラリの利用方法&lt;hr&gt;
+</code></pre><p>　計測のためのライブラリとプロトコルがちょっとだけあります。
 　しかし、もっと計測するための役に立つものを望んでいます。
-　開始する前にトレースデータがどんな構造なのかを知る必要があります。&lt;/p&gt;
-&lt;p&gt;　　・Annotation - 値、タイムスタンプ、ホストを含みます。
+　開始する前にトレースデータがどんな構造なのかを知る必要があります。</p>
+<p>　　・Annotation - 値、タイムスタンプ、ホストを含みます。
 　　・Span - 特定のRPCに相当するAnnotationの集合
-　　・Trace - あるルートSpanにぶら下がるSpanの集合&lt;/p&gt;
-&lt;p&gt;　Zipkinに送信するトレースデータです。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;　これらの詳細な記述は[こちら](https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinCore.thrift)を見て下さい。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;　その他にトレースデータの重要なものは、トレースされたサービス間でやり取りされる情報である、軽量なヘッダーです。
-　トレースヘッダは次のものから構成されます。&lt;/p&gt;
-&lt;p&gt;　・Trace Id - トレース全体のID
+　　・Trace - あるルートSpanにぶら下がるSpanの集合</p>
+<p>　Zipkinに送信するトレースデータです。</p>
+<pre><code>　これらの詳細な記述は[こちら](https://github.com/twitter/zipkin/blob/master/zipkin-thrift/src/main/thrift/zipkinCore.thrift)を見て下さい。
+</code></pre><p>　その他にトレースデータの重要なものは、トレースされたサービス間でやり取りされる情報である、軽量なヘッダーです。
+　トレースヘッダは次のものから構成されます。</p>
+<p>　・Trace Id - トレース全体のID
 　・Span Id - 個々のリクエストのID
 　・Optional Parent Span Id - このリクエストが他のリクエストの一部として生成されたら付与される
-　・Sampled boolean - トレースすべきかどうかを表すフラグ&lt;/p&gt;
-&lt;p&gt;　データタイプについて、理解したので、どのように計測が行われるかを順をおってみてみましょう
+　・Sampled boolean - トレースすべきかどうかを表すフラグ</p>
+<p>　データタイプについて、理解したので、どのように計測が行われるかを順をおってみてみましょう
 　例はFinagleのHTTPがどのようにトレースされるかを示しています。
-　他のライブラリやプロトコルはもちろん、異なりますが、基本的な部分は一緒です。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;&amp;lt;b&amp;gt;　サーバサイド&amp;lt;/b&amp;gt;
+　他のライブラリやプロトコルはもちろん、異なりますが、基本的な部分は一緒です。</p>
+<pre><code>&lt;b&gt;　サーバサイド&lt;/b&gt;
 　1. 到達したリクエストのトレースヘッダー存在するかどうかを調べます。存在すれば、なら、このリクエストに対して関連するIDとします。トレースヘッダーがなければ、サンプリング対象かどうかを決めて、新しいTrace Id、Span Idを生成します。参考には[HttpSererTracingFilter](https://github.com/twitter/finagle/blob/master/finagle-http/src/main/scala/com/twitter/finagle/http/Codec.scala)を見て下さい。
 
 　2. もし、現在のリクエストがサンプリングされる場合、サービス名、ホスト名、スパン名（例えば、http get/put）、その他のAnnotationのような情報を集めます。
@@ -161,10 +161,10 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
 　　デバッグのためのConsoleTracerが例としてありますが、ZipkinTracerになります。
 　　トレースデータを[ZipkinTracer](https://github.com/twitter/finagle/tree/master/finagle-zipkin)が受け取った時、Span Idにより集約されます。
 
-　4. ZipkinTracerが&amp;quot;end of span&amp;quot;イベント（&amp;quot;server received&amp;quot;アノテーションやタイムアウトのような）を受け取ると、Thrift構造としてデータを集約してScribeに送ります。もし、そのようなイベントが発生しない場合、ZipkinTracerはいつかそのデータを送信します？？？おかしい？。データ送信のための他の方法も追加します。
+　4. ZipkinTracerが&quot;end of span&quot;イベント（&quot;server received&quot;アノテーションやタイムアウトのような）を受け取ると、Thrift構造としてデータを集約してScribeに送ります。もし、そのようなイベントが発生しない場合、ZipkinTracerはいつかそのデータを送信します？？？おかしい？。データ送信のための他の方法も追加します。
 　ThriftやScribeのようなものですが、JSONやHttpかもしれません？
 
-&amp;lt;b&amp;gt;　クライアントサイド&amp;lt;/b&amp;gt;
+&lt;b&gt;　クライアントサイド&lt;/b&gt;
 　1. リクエストを送る前にそれがトレースの一部かどうかをチェックします。
 　　サーバで利用されているとします。　
 　　サーバは、リクエストを処理してすでに付与されているトレースIDを割り当てます。
@@ -178,7 +178,7 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
 
 　4. サーバサイドと同様に、データがZipkinにデータを送るZipkinTracerに到達します。
 
-&lt;/code&gt;&lt;/pre&gt;</content:encoded>
+</code></pre></content:encoded>
     </item>
     
     <item>
@@ -188,27 +188,27 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
       
       <guid>https://blog.johtani.info/blog/2012/06/15/zipkin%E3%81%AEreadme%E3%82%92%E8%AA%AD%E3%82%93%E3%81%A7%E3%82%8B%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E5%91%A8%E3%82%8A%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/</guid>
       <description>ZipkinのGithubにあるReadmeを読んでます。 せっかくというか、頭が悪いので読みながら内容をメモ。 まずは、アーキテクチャとトレー</description>
-      <content:encoded>&lt;p&gt;ZipkinのGithubにあるReadmeを読んでます。
+      <content:encoded><p>ZipkinのGithubにあるReadmeを読んでます。
 せっかくというか、頭が悪いので読みながら内容をメモ。
 まずは、アーキテクチャとトレースデータ送信のためのクライアント側あたりです。
 （誤訳とかおかしいだろというツッコミ大歓迎です。）
-あとで、リンク貼ったり絵を入れたりするかもしれませんが、とりあえず。&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;◯アーキテクチャ（&lt;a href=&#34;https://github.com/twitter/zipkin/raw/master/doc/architecture-0.png&#34;&gt;図はこちら&lt;/a&gt;）&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+あとで、リンク貼ったり絵を入れたりするかもしれませんが、とりあえず。</p>
+<p><b>◯アーキテクチャ（<a href="https://github.com/twitter/zipkin/raw/master/doc/architecture-0.png">図はこちら</a>）</b></p>
+<pre><code>
 　・対象とするサービスからScribeでデータを収集し、ZipkinのCollectorに投げる
 　・CollectorはCassandraにデータを格納
 　・WebUIからはQueryでCassandraに問い合わせを行なってデータ取得
 　・Scripe、CollectorはZookeeperと連携している（妄想）
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;◯計測用ライブラリ（&lt;a href=&#34;https://github.com/twitter/zipkin/raw/master/doc/architecture-1.png&#34;&gt;図はこちら。&lt;/a&gt;図のSと書かれた青い箱）&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>◯計測用ライブラリ（<a href="https://github.com/twitter/zipkin/raw/master/doc/architecture-1.png">図はこちら。</a>図のSと書かれた青い箱）</b></p>
+<pre><code>
 　・各ホストの計測用ライブラリがトレースデータを集めてZipkinに送信する。
 　・ホストは他のサービスへリクエストを飛ばすときに、リクエストにトレース用のIDを付与してます
 　　こうすることで、データをあとで、束ねることが可能となります。
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;◯計測ライブラリの利用方法&lt;/b&gt;
-&lt;b&gt;　・&lt;a href=&#34;https://github.com/twitter/finagle&#34;&gt;Finagle&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>◯計測ライブラリの利用方法</b>
+<b>　・<a href="https://github.com/twitter/finagle">Finagle</a></b></p>
+<pre><code>
 　　JVMのための非同期ネットワークスタックである。
 　　それは、JVMベース言語（JavaやScalaなど）で非同期RPCのクライアント・サーバを構築するのに利用できる。
 　
@@ -216,53 +216,53 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
 　現時点で（Finagleは）ThriftやHTTP、Memcache、Redisのクライアント・サーバサポートも持っています。
 
 　ScalaでFinagleサーバをセットアップするのはつぎのようなコードになります。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;　トレースを追加するには、&lt;a href=&#34;https://github.com/twitter/finagle/tree/master/finagle-zipkin&#34;&gt;finagle-zipkin&lt;/a&gt;を追加して、ServerBuilderのtraceFactory関数を呼ぶだけです。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p>　トレースを追加するには、<a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a>を追加して、ServerBuilderのtraceFactory関数を呼ぶだけです。</p>
+<pre><code>
 ServerBuilder()
   .codec(ThriftServerFramedCodec())
   .bindTo(serverAddr)
-  .name(&amp;quot;servicename&amp;quot;)
+  .name(&quot;servicename&quot;)
   .tracerFactory(ZipkinTracer())
   .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
 　クライアント側も同様です。
 　上記のようにサンプリングしたリクエストにZipkinトレーサーを指定することで
 　自動的にトレースできるようになります。
 　サービスやホストでのリクエストの開始と終了を記録できます。
 
 　さらに付加的な情報を記録したい場合は、つぎのようなコードを追加します。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
-Trace.record(&amp;quot;starting that extremely expensive computation&amp;quot;)
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
+Trace.record(&quot;starting that extremely expensive computation&quot;)
+</code></pre><pre><code>
 
 　上記コードは、上記コードが実行された時間に文字列を付加できます。
 　キーバリュー情報を付加したい場合は次のようになります。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
-Trace.recordBinary(&amp;quot;http.response.code&amp;quot;, &amp;quot;500&amp;quot;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Ruby Thrift&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
+Trace.recordBinary(&quot;http.response.code&quot;, &quot;500&quot;)
+</code></pre><p><b>　Ruby Thrift</b></p>
+<pre><code>
 　リクエストのトレースに利用できるgemもあります。
 　リクエストに対してトレースIDを生成し、リクエストに付与し、トレーサーにプッシュするのにRackHandlerのgemを利用できます。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;　トレーサをトレースするサンプルは&lt;a href=&#34;https://github.com/twitter/zipkin/blob/master/zipkin-web/config/application.rb&#34;&gt;zipkin-web&lt;/a&gt;を参照。&lt;/p&gt;
-&lt;p&gt;　Rubyからトレースクライアントをコールするのに、&lt;a href=&#34;https://github.com/twitter/thrift_client&#34;&gt;Twitter Ruby Thrift client&lt;/a&gt;を使います。
-　つぎのようなコードを書きます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
-client = ThriftClient.new(SomeService::Client, &#39;127.0.0.1:1234&#39;)
-client_id = FinagleThrift::ClientId.new(:name =&amp;gt; &amp;quot;service_example.sample_environment&amp;quot;)
-FinagleThrift.enable_tracing!(client, client_id), &amp;quot;service_name&amp;quot;)
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　&lt;a href=&#34;https://github.com/twitter/querulous?PHPSESSID=2fb5ece17b7c5b72b57b7aed4a21ae1f&#34;&gt;Querulous&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p>　トレーサをトレースするサンプルは<a href="https://github.com/twitter/zipkin/blob/master/zipkin-web/config/application.rb">zipkin-web</a>を参照。</p>
+<p>　Rubyからトレースクライアントをコールするのに、<a href="https://github.com/twitter/thrift_client">Twitter Ruby Thrift client</a>を使います。
+　つぎのようなコードを書きます。</p>
+<pre><code>
+client = ThriftClient.new(SomeService::Client, '127.0.0.1:1234')
+client_id = FinagleThrift::ClientId.new(:name =&gt; &quot;service_example.sample_environment&quot;)
+FinagleThrift.enable_tracing!(client, client_id), &quot;service_name&quot;)
+</code></pre><p><b>　<a href="https://github.com/twitter/querulous?PHPSESSID=2fb5ece17b7c5b72b57b7aed4a21ae1f">Querulous</a></b></p>
+<pre><code>
 　QuerulousはScala用のSQLデータベースのインタフェースライブラリです。
 　SQLクエリの実行のタイミング情報をトレースに追加できます。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　&lt;a href=&#34;https://github.com/twitter/cassie?PHPSESSID=2fb5ece17b7c5b72b57b7aed4a21ae1f&#34;&gt;Cassie&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p><b>　<a href="https://github.com/twitter/cassie?PHPSESSID=2fb5ece17b7c5b72b57b7aed4a21ae1f">Cassie</a></b></p>
+<pre><code>
 　CassieはFinagleベースのCassandraクライアントライブラリです。
 　CassieのトレーサーはFinagleの例とほぼ一緒ですが、
 　CassieではKeyspaceBuilderに設定します。
-&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;
+</code></pre><pre><code>
 cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;とりあえず、ここまで。___
-&lt;span style=&#34;color:#FF0000&#34;&gt;2012/06/22 リンクを貼って体裁を修正&lt;/span&gt;&lt;/p&gt;
+</code></pre><p>とりあえず、ここまで。___
+<span style="color:#FF0000">2012/06/22 リンクを貼って体裁を修正</span></p>
 </content:encoded>
     </item>
     

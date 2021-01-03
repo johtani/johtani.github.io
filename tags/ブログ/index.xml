@@ -14,70 +14,70 @@
       
       <guid>https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/</guid>
       <description>ブログ移行日記(その5)です。前回まではこちら ブログ移行日記(その1) ブログ移行日記(その2) ブログ移行日記(その3) ブログ移行日記(その4</description>
-      <content:encoded>&lt;p&gt;ブログ移行日記(その5)です。前回まではこちら&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;ブログ移行日記(その1)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/&#34;&gt;ブログ移行日記(その2)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/24/setting-hugo/&#34;&gt;ブログ移行日記(その3)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/introduce-algolia/&#34;&gt;ブログ移行日記(その4)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;今回はこれまでとは異なる特殊な話です。&lt;/p&gt;
-&lt;p&gt;最初にブログを書き始めたときに利用していたのが&lt;a href=&#34;http://johtani.jugem.jp/&#34;&gt;Jugem&lt;/a&gt;のブログでした。
-その後、Octopressに移行して、今年、Hugoに移行したという流れです。&lt;/p&gt;
-&lt;p&gt;で、よくよく考えると、Jugemのブログも移行できるんじゃないか?となりました。
+      <content:encoded><p>ブログ移行日記(その5)です。前回まではこちら</p>
+<ul>
+<li><a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記(その1)</a></li>
+<li><a href="/blog/2020/01/23/convert-md-from-octopress-to-hugo/">ブログ移行日記(その2)</a></li>
+<li><a href="/blog/2020/01/24/setting-hugo/">ブログ移行日記(その3)</a></li>
+<li><a href="/blog/2020/01/28/introduce-algolia/">ブログ移行日記(その4)</a></li>
+</ul>
+<p>今回はこれまでとは異なる特殊な話です。</p>
+<p>最初にブログを書き始めたときに利用していたのが<a href="http://johtani.jugem.jp/">Jugem</a>のブログでした。
+その後、Octopressに移行して、今年、Hugoに移行したという流れです。</p>
+<p>で、よくよく考えると、Jugemのブログも移行できるんじゃないか?となりました。
 じゃあ、やってみるかと。なので、今回のブログは自分の備忘録です(興味のない人が大多数じゃないかな)。
-一応、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py&#34;&gt;Pythonで書いたプログラムはGitHubに上がっています&lt;/a&gt;。文字列置換と正規表現のオンパレードです。&lt;/p&gt;
-&lt;h2 id=&#34;jugemからexport&#34;&gt;JugemからExport&lt;/h2&gt;
-&lt;p&gt;まずは、移行元のデータが取り出せるかどうかを調べたところ、&lt;a href=&#34;https://support.jugem.jp/hc/ja/articles/222313727-%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F%E8%A8%98%E4%BA%8B%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%AF%E5%87%BA%E6%9D%A5%E3%81%BE%E3%81%99%E3%81%8B-&#34;&gt;text形式もしくはXML形式でエクスポートが可能でした&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;変換処理が必要なはずなので、XMLでダウンロードします。
-独自のXMLですが、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L239&#34;&gt;記事ごとにXMLのタグ(&lt;code&gt;&amp;lt;entry&amp;gt;&lt;/code&gt;)でまとめられている&lt;/a&gt;ので、処理が楽です。&lt;/p&gt;
-&lt;h2 id=&#34;xmlをmarkdownに&#34;&gt;XMLをMarkdownに&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;&amp;lt;entry&amp;gt;&lt;/code&gt;タグの下に次のような項目が入っているので、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204&#34;&gt;抜き出します&lt;/a&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;ヘッダ部&#34;&gt;ヘッダ部&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;title - 記事タイトル&lt;/li&gt;
-&lt;li&gt;author - 著者&lt;/li&gt;
-&lt;li&gt;category - タグ&lt;/li&gt;
-&lt;li&gt;date - 投稿日付&lt;/li&gt;
-&lt;li&gt;description : 本文(先頭部分)&lt;/li&gt;
-&lt;li&gt;sequel : 本文(つづき)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;titleからdateまでをHugoのMarkdownの&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204&#34;&gt;ヘッダ部分として出力します&lt;/a&gt;。
-&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L38&#34;&gt;日付は形式が違うので合わせるように変換&lt;/a&gt;し、
-titleは&lt;code&gt;(Jugemより移植)&lt;/code&gt;という文字列を追加しました。&lt;/p&gt;
-&lt;p&gt;また、Hugoの個別のコンテンツにするためにそれぞれをMarkdownのファイルに変換しています。
-ファイル名は変換後の&lt;code&gt;date&lt;/code&gt;の先頭10文字(&lt;code&gt;yyyy-MM-dd&lt;/code&gt;)に&lt;code&gt;-&lt;/code&gt;を付け加えて、
-タイトルを追加しました。&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L18&#34;&gt;ホントは英語のファイル名にしたかったんですが、ちょっと手抜き&lt;/a&gt;。ファイル名に使用できないような文字は&lt;code&gt;-&lt;/code&gt;に置換しています。&lt;/p&gt;
-&lt;h3 id=&#34;本文&#34;&gt;本文&lt;/h3&gt;
-&lt;p&gt;本文部分はもう少し複雑です。
-まずは、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L228&#34;&gt;descriptionとsequelから抜き出した文字列を結合&lt;/a&gt;します。&lt;/p&gt;
-&lt;p&gt;で、内部の文字列に次のようなものがあるので、それぞれMarkdownに変換したりという処理を書いてます。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L60&#34;&gt;HTMLのheadingタグをMarkdown形式に&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L66&#34;&gt;br、hr、del、strongなどのタグもMarkdown形式に&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L112&#34;&gt;aタグの処理&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L93&#34;&gt;Amazonのアフィリエイトタグの処理&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L161&#34;&gt;ul、olタグの処理&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;などです。
+一応、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py">Pythonで書いたプログラムはGitHubに上がっています</a>。文字列置換と正規表現のオンパレードです。</p>
+<h2 id="jugemからexport">JugemからExport</h2>
+<p>まずは、移行元のデータが取り出せるかどうかを調べたところ、<a href="https://support.jugem.jp/hc/ja/articles/222313727-%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F%E8%A8%98%E4%BA%8B%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%AF%E5%87%BA%E6%9D%A5%E3%81%BE%E3%81%99%E3%81%8B-">text形式もしくはXML形式でエクスポートが可能でした</a>。</p>
+<p>変換処理が必要なはずなので、XMLでダウンロードします。
+独自のXMLですが、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L239">記事ごとにXMLのタグ(<code>&lt;entry&gt;</code>)でまとめられている</a>ので、処理が楽です。</p>
+<h2 id="xmlをmarkdownに">XMLをMarkdownに</h2>
+<p><code>&lt;entry&gt;</code>タグの下に次のような項目が入っているので、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204">抜き出します</a>。</p>
+<h3 id="ヘッダ部">ヘッダ部</h3>
+<ul>
+<li>title - 記事タイトル</li>
+<li>author - 著者</li>
+<li>category - タグ</li>
+<li>date - 投稿日付</li>
+<li>description : 本文(先頭部分)</li>
+<li>sequel : 本文(つづき)</li>
+</ul>
+<p>titleからdateまでをHugoのMarkdownの<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204">ヘッダ部分として出力します</a>。
+<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L38">日付は形式が違うので合わせるように変換</a>し、
+titleは<code>(Jugemより移植)</code>という文字列を追加しました。</p>
+<p>また、Hugoの個別のコンテンツにするためにそれぞれをMarkdownのファイルに変換しています。
+ファイル名は変換後の<code>date</code>の先頭10文字(<code>yyyy-MM-dd</code>)に<code>-</code>を付け加えて、
+タイトルを追加しました。<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L18">ホントは英語のファイル名にしたかったんですが、ちょっと手抜き</a>。ファイル名に使用できないような文字は<code>-</code>に置換しています。</p>
+<h3 id="本文">本文</h3>
+<p>本文部分はもう少し複雑です。
+まずは、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L228">descriptionとsequelから抜き出した文字列を結合</a>します。</p>
+<p>で、内部の文字列に次のようなものがあるので、それぞれMarkdownに変換したりという処理を書いてます。</p>
+<ul>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L60">HTMLのheadingタグをMarkdown形式に</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L66">br、hr、del、strongなどのタグもMarkdown形式に</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L112">aタグの処理</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L93">Amazonのアフィリエイトタグの処理</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L161">ul、olタグの処理</a></li>
+</ul>
+<p>などです。
 アフィリエイトタグは、数行に渡るの複数のHTMLタグで記述されているので、
-&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L146&#34;&gt;ASINと商品タイトルだけを抜き出しています&lt;/a&gt;。
-Hugoでアフィリエイトのリンクを作るために、&lt;a href=&#34;https://github.com/ikemo3/hugo-amazon-jp&#34;&gt;hugo-amazon-jp&lt;/a&gt;という公開されているshortcodeを元に、カスタマイズしたものを使っています。
-これ用に、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L104&#34;&gt;必要なASINとタイトルを別ファイルに出力&lt;/a&gt;したりしています。&lt;/p&gt;
-&lt;p&gt;また、いくつか画像を使っている記事があったのですが、これが曲者でした。
+<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L146">ASINと商品タイトルだけを抜き出しています</a>。
+Hugoでアフィリエイトのリンクを作るために、<a href="https://github.com/ikemo3/hugo-amazon-jp">hugo-amazon-jp</a>という公開されているshortcodeを元に、カスタマイズしたものを使っています。
+これ用に、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L104">必要なASINとタイトルを別ファイルに出力</a>したりしています。</p>
+<p>また、いくつか画像を使っている記事があったのですが、これが曲者でした。
 XMLに入っているimgタグに画像へのURLがあるのですが、アクセスしても存在しないURL担っています。。。
-&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L130&#34;&gt;ブログで公開している画像のファイル名に似たものがXMLに入っていたので、URLを組み直して、ダウンロードするという処理も書いています&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;あとは、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L81&#34;&gt;昔ちょっと凝った書き方(spanタグで章みたいなことやってた)をしていた部分の処理&lt;/a&gt;を加えて完成です。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;元のXMLを見たり、抜き出したファイルを見ながら、トライアンドエラーでプログラムを書きました。
+<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L130">ブログで公開している画像のファイル名に似たものがXMLに入っていたので、URLを組み直して、ダウンロードするという処理も書いています</a>。</p>
+<p>あとは、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L81">昔ちょっと凝った書き方(spanタグで章みたいなことやってた)をしていた部分の処理</a>を加えて完成です。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>元のXMLを見たり、抜き出したファイルを見ながら、トライアンドエラーでプログラムを書きました。
 なんとなく変換できたなかっていうところで、取り込んで公開しました。
 まだ、全部の記事をチェックしてないですが、なんとなく移植できたので一旦これでいいかなと。
-昔の記事を見たときにおかしい場所があったら手で治すつもりでいます。&lt;/p&gt;
-&lt;p&gt;なんか、もうちょっとうまくプログラムかけた気もしますが、書き捨てのプログラムだと思うのでこんなもんかな。&lt;/p&gt;
-&lt;p&gt;1点気になっているところは、コメントの部分です。
-ブログにコメントをいただいていたのですが、その部分は移植できてないです。&lt;/p&gt;
-&lt;p&gt;Octopresに移植していこうは、&lt;a href=&#34;https://disqus.com/&#34;&gt;Disqus&lt;/a&gt;のサービスでコメント部分を提供しています。ここに移植するのも変な話だなぁと思っているので、本文にコメントを取り込む感じかなぁ？&lt;/p&gt;
-&lt;p&gt;もともとのJugemのサイトもそのまままだ残してあるので、そのうち気が向いたらで。&lt;/p&gt;
+昔の記事を見たときにおかしい場所があったら手で治すつもりでいます。</p>
+<p>なんか、もうちょっとうまくプログラムかけた気もしますが、書き捨てのプログラムだと思うのでこんなもんかな。</p>
+<p>1点気になっているところは、コメントの部分です。
+ブログにコメントをいただいていたのですが、その部分は移植できてないです。</p>
+<p>Octopresに移植していこうは、<a href="https://disqus.com/">Disqus</a>のサービスでコメント部分を提供しています。ここに移植するのも変な話だなぁと思っているので、本文にコメントを取り込む感じかなぁ？</p>
+<p>もともとのJugemのサイトもそのまままだ残してあるので、そのうち気が向いたらで。</p>
 </content:encoded>
     </item>
     
@@ -88,170 +88,170 @@ XMLに入っているimgタグに画像へのURLがあるのですが、アク�
       
       <guid>https://blog.johtani.info/blog/2020/01/28/troduce-algolia/</guid>
       <description>ブログ移行日記(その4)です。その他の記事はこちら。 ブログ移行日記(その1) ブログ移行日記(その2) ブログ移行日記(その3) ブログ移行日記(</description>
-      <content:encoded>&lt;p&gt;ブログ移行日記(その4)です。その他の記事はこちら。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;ブログ移行日記(その1)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/&#34;&gt;ブログ移行日記(その2)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/24/setting-hugo/&#34;&gt;ブログ移行日記(その3)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/&#34;&gt;ブログ移行日記(その5)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;前回までで、なんとなく移行は終わってます。
-今回はテーマで使えるようになっているブログの検索機能の導入の話です。&lt;/p&gt;
-&lt;p&gt;検索サービスは&lt;a href=&#34;https://www.algolia.com/&#34;&gt;Algolia&lt;/a&gt;を利用します。
-OctopressのころはElastic社のサービスである&lt;a href=&#34;https://www.elastic.co/jp/site-search&#34;&gt;Elastic Site Search&lt;/a&gt;の機能を利用して、クローリングしてから検索できるようにしていましたが、Hugoで導入できるモジュール?があったので、今回からこちらに移行しました。&lt;/p&gt;
-&lt;h2 id=&#34;参考記事&#34;&gt;参考記事&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia&#34;&gt;Clean White ThemeのREADME(Algoliaの設定方法)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;参考ブログ:&lt;a href=&#34;https://blog.uni-3.app/2019/01/02/hugo-algolia-search/&#34;&gt;hugoで作ったblogにalgoliaで全文検索機能を追加する&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;algoliaとは&#34;&gt;Algoliaとは?&lt;/h2&gt;
-&lt;p&gt;検索のas-a-serviceをやっている会社です。&lt;a href=&#34;https://en.wikipedia.org/wiki/Algolia&#34;&gt;Wikipediaによると本社はサンフランシスコにあるみたいですね&lt;/a&gt;(フランスの会社のイメージでした。起業された方がフランス出身だからかなぁ?)。
-クラウドで検索インデックスを保持でき、API経由で検索したり登録したりできる感じのサービスです。内部で使われているのはOSSではない独自の検索エンジンです。&lt;/p&gt;
-&lt;p&gt;クラウドで提供されているサービスなのでサクッと検索を使い始めることができるのがいい点ですね。
-また、&lt;a href=&#34;https://www.algolia.com/pricing/&#34;&gt;小さな非商用のプロジェクトにフリーで利用できるプラン&lt;/a&gt;も提供されているようです(2020年1月現在)。&lt;/p&gt;
-&lt;h2 id=&#34;algoliaのサービス登録からインデックス作成&#34;&gt;Algoliaのサービス登録からインデックス作成&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia&#34;&gt;私が利用しているテーマで設定する方法&lt;/a&gt;の記載があったので手順の通りにやってみました。
-大きく2つの作業(Algolia側とHugo側)が必要です。まずは、Algoliaで必要な作業から。作業の流れだけ記載しておきます。&lt;a href=&#34;https://forestry.io/blog/search-with-algolia-in-hugo/#3-create-your-index-in-algolia&#34;&gt;詳細は「Static site search with Hugo + Algolia」の3)&lt;/a&gt;を確認してください。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Algoliaのサインアップ(すでにアカウントがあれば不要)&lt;/li&gt;
-&lt;li&gt;New Applicationの作成(名前とプランの指定)&lt;/li&gt;
-&lt;li&gt;リージョンの指定&lt;/li&gt;
-&lt;li&gt;インデックス名の指定&lt;/li&gt;
-&lt;li&gt;APIキーを確認&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;です。これで、Algolia側の準備は完了です。&lt;/p&gt;
-&lt;p&gt;今回は関係ないですが、Algoliaの管理画面で、利用状況(データ登録などの操作回数、クエリの回数、インデックスに保存されているレコード数)の確認が可能です。
-ほかにも有料プランを利用すると&lt;a href=&#34;https://www.algolia.com/doc/guides/getting-insights-and-analytics/search-analytics/out-of-the-box-analytics/&#34;&gt;Analytics&lt;/a&gt;などもできるようです。&lt;/p&gt;
-&lt;h2 id=&#34;hugo側で必要な設定&#34;&gt;Hugo側で必要な設定&lt;/h2&gt;
-&lt;p&gt;今度はHugo側です。Hugoのサイトのディレクトリに移動してからの作業です。&lt;/p&gt;
-&lt;p&gt;仕組みとしては、&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Hugoのoutput機能でAlgolia向けのJSONファイルを生成する&lt;/li&gt;
-&lt;li&gt;Node.jsのライブラリを使用してAlgoliaに1.で生成したJSONを登録、更新する&lt;/li&gt;
-&lt;li&gt;検索画面の作成&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;という流れになります。
-ですので、作業としては以下のとおりです。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Output出力の設定(すでにテーマ側で設定されているので、特に作業は必要なし)&lt;/li&gt;
-&lt;li&gt;npm環境の構築(Hugoのconfig.tomlと同じディレクトリ階層)
-&lt;ol&gt;
-&lt;li&gt;Node.jsのインストール(必要であれば)&lt;/li&gt;
-&lt;li&gt;npm環境の初期化&lt;/li&gt;
-&lt;li&gt;npmでatomic-algoliaのインストール&lt;/li&gt;
-&lt;li&gt;atomic-algolia向けの設定(登録のためのAPI関連の設定)&lt;/li&gt;
-&lt;li&gt;Algolia向けJSONの出力設定&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/li&gt;
-&lt;li&gt;検索関連の設定
-&lt;ol&gt;
-&lt;li&gt;content/search/placeholder.mdの作成&lt;/li&gt;
-&lt;li&gt;検索用のAPIキーなどを設定&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h3 id=&#34;npm関連の作業&#34;&gt;npm関連の作業&lt;/h3&gt;
-&lt;p&gt;以下、npm関連の作業です。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Node.jsのインストール(必要であれば)
-&lt;ul&gt;
-&lt;li&gt;割愛します。環境に合わせてインストールしてください。私はnvm経由でインストールしています。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;npm環境の初期化
-&lt;ul&gt;
-&lt;li&gt;Hugoのディレクトリで&lt;code&gt;nvm init&lt;/code&gt;を実行&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;npmでatomic-algoliaのインストール
-&lt;ul&gt;
-&lt;li&gt;Hugoのディレクトリで&lt;code&gt;npm install atomic-algolia --save&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;atomic-algolia向けの設定(登録のためのAPI関連の設定)
-&lt;ul&gt;
-&lt;li&gt;Hugoのディレクトリに&lt;code&gt;.env&lt;/code&gt;ファイルを作成し、以下を設定します。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;Algolia向けJSONの出力設定
-&lt;ul&gt;
-&lt;li&gt;特に変更なし(&lt;code&gt;config.toml&lt;/code&gt;に少し設定があります)。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;ALGOLIA_APP_ID&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;AlgoliaのApplication ID
-ALGOLIA_ADMIN_KEY&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;AlgoliaのAdmin API Key
-ALGOLIA_INDEX_NAME&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;先程作ったインデックス名
-ALGOLIA_INDEX_FILE&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;public/algolia.json
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;最後の&lt;code&gt;ALGOLIA_INDEX_FILE&lt;/code&gt;は固定文字列でいいと思います。
-&lt;code&gt;hugo&lt;/code&gt;コマンドを実行すると&lt;code&gt;public&lt;/code&gt;ディレクトリ配下に&lt;code&gt;algolia.json&lt;/code&gt;というファイルが生成され、Algolia登録用のJSONが出力されています。&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;余談 : algolia.jsonの出力の設定は、config.tomlに記載があります。また、JSONファイルのテンプレート自体は&lt;code&gt;themes/hugo-theme-cleanwhite/layouts/_default/list.algolia.json&lt;/code&gt;にあります。Algoliaに登録するデータの構造など変更をする場合はこのテンプレートをカスタマイズすれば良さそうです。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;h3 id=&#34;検索関連の設定&#34;&gt;検索関連の設定&lt;/h3&gt;
-&lt;p&gt;実際に検索の画面を表示するために、検索用の画面と、検索用のAPIの設定が必要です。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;content/search/placeholder.mdの作成
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;/search/&lt;/code&gt;が検索用のページになります。空のファイルです。実際にはJavaScriptが検索用の窓を表示したりしてくれます(これが必要な理由がまだ不明だなぁ)。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;検索用のAPIキーなどを設定
-&lt;ul&gt;
-&lt;li&gt;検索のためのAPIキーなどの設定が必要となります。&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/exampleSite/config.toml#L32&#34;&gt;テーマ作者の方のサンプルの&lt;code&gt;config.toml&lt;/code&gt;にパラメータは用意されています&lt;/a&gt;。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;以下の値を設定します。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;algolia_search&lt;/span&gt; = &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
-  &lt;span style=&#34;color:#a6e22e&#34;&gt;algolia_appId&lt;/span&gt; = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;AlgoliaのApplication ID&amp;#34;&lt;/span&gt;
-  &lt;span style=&#34;color:#a6e22e&#34;&gt;algolia_indexName&lt;/span&gt; = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;作成したインデックス名&amp;#34;&lt;/span&gt;
-  &lt;span style=&#34;color:#a6e22e&#34;&gt;algolia_apiKey&lt;/span&gt; = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;AlgoliaのSearch-Only API Key&amp;#34;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以上でAlgolia関連の設定などの作業が終了です。&lt;/p&gt;
-&lt;h2 id=&#34;algoliaへのデータ登録方法&#34;&gt;Algoliaへのデータ登録方法&lt;/h2&gt;
-&lt;p&gt;最後に、実際にデータを登録する必要があります。
-手順は、以下のとおりです。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;&lt;code&gt;hugo&lt;/code&gt;コマンドの実行(htmlと一緒に登録データの&lt;code&gt;algolia.json&lt;/code&gt;を生成)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;npm run algolia&lt;/code&gt;コマンドの実行(atomic-algoliaを利用してAlgoliaにデータを登録)&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;設定などが問題なければ、Algoliaの管理画面で登録ができているはずです。
-実際にブログのデプロイには&lt;code&gt;deploy.sh&lt;/code&gt;というファイルをこちらを元に作成して使っています。このなかで、&lt;code&gt;hugo&lt;/code&gt;コマンド実行後に&lt;code&gt;npm run algolia&lt;/code&gt;を実行するようにしいます。&lt;/p&gt;
-&lt;h2 id=&#34;今後の課題&#34;&gt;今後の課題&lt;/h2&gt;
-&lt;p&gt;Hugoで生成された記事はそれぞれのブログポスト以外に、タグごとのページも生成されています。
-こちらも実はAlgoliaのインデックスに登録されていて、タグを入力すると、タグ名のリンクが出てきます。&lt;/p&gt;
-&lt;p&gt;こちらは&lt;code&gt;elasticsearch&lt;/code&gt;で検索したときの検索結果です。1件目はタグページです。&lt;/p&gt;
+      <content:encoded><p>ブログ移行日記(その4)です。その他の記事はこちら。</p>
+<ul>
+<li><a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記(その1)</a></li>
+<li><a href="/blog/2020/01/23/convert-md-from-octopress-to-hugo/">ブログ移行日記(その2)</a></li>
+<li><a href="/blog/2020/01/24/setting-hugo/">ブログ移行日記(その3)</a></li>
+<li><a href="/blog/2020/02/21/import-jugem-posts/">ブログ移行日記(その5)</a></li>
+</ul>
+<p>前回までで、なんとなく移行は終わってます。
+今回はテーマで使えるようになっているブログの検索機能の導入の話です。</p>
+<p>検索サービスは<a href="https://www.algolia.com/">Algolia</a>を利用します。
+OctopressのころはElastic社のサービスである<a href="https://www.elastic.co/jp/site-search">Elastic Site Search</a>の機能を利用して、クローリングしてから検索できるようにしていましたが、Hugoで導入できるモジュール?があったので、今回からこちらに移行しました。</p>
+<h2 id="参考記事">参考記事</h2>
+<ul>
+<li><a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia">Clean White ThemeのREADME(Algoliaの設定方法)</a></li>
+<li>参考ブログ:<a href="https://blog.uni-3.app/2019/01/02/hugo-algolia-search/">hugoで作ったblogにalgoliaで全文検索機能を追加する</a></li>
+</ul>
+<h2 id="algoliaとは">Algoliaとは?</h2>
+<p>検索のas-a-serviceをやっている会社です。<a href="https://en.wikipedia.org/wiki/Algolia">Wikipediaによると本社はサンフランシスコにあるみたいですね</a>(フランスの会社のイメージでした。起業された方がフランス出身だからかなぁ?)。
+クラウドで検索インデックスを保持でき、API経由で検索したり登録したりできる感じのサービスです。内部で使われているのはOSSではない独自の検索エンジンです。</p>
+<p>クラウドで提供されているサービスなのでサクッと検索を使い始めることができるのがいい点ですね。
+また、<a href="https://www.algolia.com/pricing/">小さな非商用のプロジェクトにフリーで利用できるプラン</a>も提供されているようです(2020年1月現在)。</p>
+<h2 id="algoliaのサービス登録からインデックス作成">Algoliaのサービス登録からインデックス作成</h2>
+<p><a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia">私が利用しているテーマで設定する方法</a>の記載があったので手順の通りにやってみました。
+大きく2つの作業(Algolia側とHugo側)が必要です。まずは、Algoliaで必要な作業から。作業の流れだけ記載しておきます。<a href="https://forestry.io/blog/search-with-algolia-in-hugo/#3-create-your-index-in-algolia">詳細は「Static site search with Hugo + Algolia」の3)</a>を確認してください。</p>
+<ol>
+<li>Algoliaのサインアップ(すでにアカウントがあれば不要)</li>
+<li>New Applicationの作成(名前とプランの指定)</li>
+<li>リージョンの指定</li>
+<li>インデックス名の指定</li>
+<li>APIキーを確認</li>
+</ol>
+<p>です。これで、Algolia側の準備は完了です。</p>
+<p>今回は関係ないですが、Algoliaの管理画面で、利用状況(データ登録などの操作回数、クエリの回数、インデックスに保存されているレコード数)の確認が可能です。
+ほかにも有料プランを利用すると<a href="https://www.algolia.com/doc/guides/getting-insights-and-analytics/search-analytics/out-of-the-box-analytics/">Analytics</a>などもできるようです。</p>
+<h2 id="hugo側で必要な設定">Hugo側で必要な設定</h2>
+<p>今度はHugo側です。Hugoのサイトのディレクトリに移動してからの作業です。</p>
+<p>仕組みとしては、</p>
+<ol>
+<li>Hugoのoutput機能でAlgolia向けのJSONファイルを生成する</li>
+<li>Node.jsのライブラリを使用してAlgoliaに1.で生成したJSONを登録、更新する</li>
+<li>検索画面の作成</li>
+</ol>
+<p>という流れになります。
+ですので、作業としては以下のとおりです。</p>
+<ol>
+<li>Output出力の設定(すでにテーマ側で設定されているので、特に作業は必要なし)</li>
+<li>npm環境の構築(Hugoのconfig.tomlと同じディレクトリ階層)
+<ol>
+<li>Node.jsのインストール(必要であれば)</li>
+<li>npm環境の初期化</li>
+<li>npmでatomic-algoliaのインストール</li>
+<li>atomic-algolia向けの設定(登録のためのAPI関連の設定)</li>
+<li>Algolia向けJSONの出力設定</li>
+</ol>
+</li>
+<li>検索関連の設定
+<ol>
+<li>content/search/placeholder.mdの作成</li>
+<li>検索用のAPIキーなどを設定</li>
+</ol>
+</li>
+</ol>
+<h3 id="npm関連の作業">npm関連の作業</h3>
+<p>以下、npm関連の作業です。</p>
+<ol>
+<li>Node.jsのインストール(必要であれば)
+<ul>
+<li>割愛します。環境に合わせてインストールしてください。私はnvm経由でインストールしています。</li>
+</ul>
+</li>
+<li>npm環境の初期化
+<ul>
+<li>Hugoのディレクトリで<code>nvm init</code>を実行</li>
+</ul>
+</li>
+<li>npmでatomic-algoliaのインストール
+<ul>
+<li>Hugoのディレクトリで<code>npm install atomic-algolia --save</code></li>
+</ul>
+</li>
+<li>atomic-algolia向けの設定(登録のためのAPI関連の設定)
+<ul>
+<li>Hugoのディレクトリに<code>.env</code>ファイルを作成し、以下を設定します。</li>
+</ul>
+</li>
+<li>Algolia向けJSONの出力設定
+<ul>
+<li>特に変更なし(<code>config.toml</code>に少し設定があります)。</li>
+</ul>
+</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">ALGOLIA_APP_ID<span style="color:#f92672">=</span>AlgoliaのApplication ID
+ALGOLIA_ADMIN_KEY<span style="color:#f92672">=</span>AlgoliaのAdmin API Key
+ALGOLIA_INDEX_NAME<span style="color:#f92672">=</span>先程作ったインデックス名
+ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
+</code></pre></div><p>最後の<code>ALGOLIA_INDEX_FILE</code>は固定文字列でいいと思います。
+<code>hugo</code>コマンドを実行すると<code>public</code>ディレクトリ配下に<code>algolia.json</code>というファイルが生成され、Algolia登録用のJSONが出力されています。</p>
+<blockquote>
+<p>余談 : algolia.jsonの出力の設定は、config.tomlに記載があります。また、JSONファイルのテンプレート自体は<code>themes/hugo-theme-cleanwhite/layouts/_default/list.algolia.json</code>にあります。Algoliaに登録するデータの構造など変更をする場合はこのテンプレートをカスタマイズすれば良さそうです。</p>
+</blockquote>
+<h3 id="検索関連の設定">検索関連の設定</h3>
+<p>実際に検索の画面を表示するために、検索用の画面と、検索用のAPIの設定が必要です。</p>
+<ol>
+<li>content/search/placeholder.mdの作成
+<ul>
+<li><code>/search/</code>が検索用のページになります。空のファイルです。実際にはJavaScriptが検索用の窓を表示したりしてくれます(これが必要な理由がまだ不明だなぁ)。</li>
+</ul>
+</li>
+<li>検索用のAPIキーなどを設定
+<ul>
+<li>検索のためのAPIキーなどの設定が必要となります。<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/exampleSite/config.toml#L32">テーマ作者の方のサンプルの<code>config.toml</code>にパラメータは用意されています</a>。</li>
+</ul>
+</li>
+</ol>
+<p>以下の値を設定します。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml">  <span style="color:#a6e22e">algolia_search</span> = <span style="color:#66d9ef">true</span>
+  <span style="color:#a6e22e">algolia_appId</span> = <span style="color:#e6db74">&#34;AlgoliaのApplication ID&#34;</span>
+  <span style="color:#a6e22e">algolia_indexName</span> = <span style="color:#e6db74">&#34;作成したインデックス名&#34;</span>
+  <span style="color:#a6e22e">algolia_apiKey</span> = <span style="color:#e6db74">&#34;AlgoliaのSearch-Only API Key&#34;</span>
+</code></pre></div><p>以上でAlgolia関連の設定などの作業が終了です。</p>
+<h2 id="algoliaへのデータ登録方法">Algoliaへのデータ登録方法</h2>
+<p>最後に、実際にデータを登録する必要があります。
+手順は、以下のとおりです。</p>
+<ol>
+<li><code>hugo</code>コマンドの実行(htmlと一緒に登録データの<code>algolia.json</code>を生成)</li>
+<li><code>npm run algolia</code>コマンドの実行(atomic-algoliaを利用してAlgoliaにデータを登録)</li>
+</ol>
+<p>設定などが問題なければ、Algoliaの管理画面で登録ができているはずです。
+実際にブログのデプロイには<code>deploy.sh</code>というファイルをこちらを元に作成して使っています。このなかで、<code>hugo</code>コマンド実行後に<code>npm run algolia</code>を実行するようにしいます。</p>
+<h2 id="今後の課題">今後の課題</h2>
+<p>Hugoで生成された記事はそれぞれのブログポスト以外に、タグごとのページも生成されています。
+こちらも実はAlgoliaのインデックスに登録されていて、タグを入力すると、タグ名のリンクが出てきます。</p>
+<p>こちらは<code>elasticsearch</code>で検索したときの検索結果です。1件目はタグページです。</p>
 
-&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
-&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
-  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
-    &lt;div class=&#34;img&#34;&gt;
-      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200128/tag.png&#34; /&gt;
-    &lt;/div&gt;
-    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200128/tag.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
-  &lt;/figure&gt;
-&lt;/div&gt;
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200128/tag.png" />
+    </div>
+    <a href="/images/entries/20200128/tag.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
 
-&lt;p&gt;これらのページはAlgoliaに登録しないようにするのが良さそうかな?と考えているところです(考えてるだけ)。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;2020/01/29更新&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;list.algolia.json&lt;/code&gt;を編集して、記事だけをインデックスするように修正しました。
-テーマに存在する&lt;code&gt;layouts/_default/list.algolia.json&lt;/code&gt;を、自分のところにコピーし、次のように変更しました。if文を1行追加して、&lt;code&gt;post&lt;/code&gt;という種類のものだけを出力するようにしました。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;{{/* Generates a valid Algolia search index */}}
-{{- $.Scratch.Add &amp;quot;index&amp;quot; slice -}}
-{{- $section := $.Site.GetPage &amp;quot;section&amp;quot; .Section }}
+<p>これらのページはAlgoliaに登録しないようにするのが良さそうかな?と考えているところです(考えてるだけ)。</p>
+<p><strong>2020/01/29更新</strong></p>
+<p><code>list.algolia.json</code>を編集して、記事だけをインデックスするように修正しました。
+テーマに存在する<code>layouts/_default/list.algolia.json</code>を、自分のところにコピーし、次のように変更しました。if文を1行追加して、<code>post</code>という種類のものだけを出力するようにしました。</p>
+<pre><code>{{/* Generates a valid Algolia search index */}}
+{{- $.Scratch.Add &quot;index&quot; slice -}}
+{{- $section := $.Site.GetPage &quot;section&quot; .Section }}
 {{- range .Site.AllPages -}}
   {{- if or (and (.IsDescendant $section) (and (not .Draft) (not .Params.private))) $section.IsHome -}}
-    {{- if (and (eq .Section &amp;quot;post&amp;quot;) (ne .URL &amp;quot;/post/&amp;quot;)) -}}
-      {{- $.Scratch.Add &amp;quot;index&amp;quot; (dict &amp;quot;objectID&amp;quot; .UniqueID &amp;quot;date&amp;quot; .Date.UTC.Unix &amp;quot;description&amp;quot; .Description &amp;quot;dir&amp;quot; .Dir &amp;quot;expirydate&amp;quot; .ExpiryDate.UTC.Unix &amp;quot;fuzzywordcount&amp;quot; .FuzzyWordCount &amp;quot;keywords&amp;quot; .Keywords &amp;quot;kind&amp;quot; .Kind &amp;quot;lang&amp;quot; .Lang &amp;quot;lastmod&amp;quot; .Lastmod.UTC.Unix &amp;quot;permalink&amp;quot; .Permalink &amp;quot;publishdate&amp;quot; .PublishDate &amp;quot;readingtime&amp;quot; .ReadingTime &amp;quot;relpermalink&amp;quot; .RelPermalink &amp;quot;html&amp;quot; .Params.Description &amp;quot;title&amp;quot; .Title &amp;quot;type&amp;quot; .Type &amp;quot;url&amp;quot; .URL &amp;quot;weight&amp;quot; .Weight &amp;quot;wordcount&amp;quot; .WordCount &amp;quot;section&amp;quot; .Section &amp;quot;tags&amp;quot; .Params.Tags &amp;quot;categories&amp;quot; .Params.Categories &amp;quot;author&amp;quot; .Params.authors &amp;quot;content&amp;quot; .Params.Description &amp;quot;excerpt_html&amp;quot; .Params.Description &amp;quot;excerpt_text&amp;quot; .Params.Description &amp;quot;summary&amp;quot; .Summary)}}
+    {{- if (and (eq .Section &quot;post&quot;) (ne .URL &quot;/post/&quot;)) -}}
+      {{- $.Scratch.Add &quot;index&quot; (dict &quot;objectID&quot; .UniqueID &quot;date&quot; .Date.UTC.Unix &quot;description&quot; .Description &quot;dir&quot; .Dir &quot;expirydate&quot; .ExpiryDate.UTC.Unix &quot;fuzzywordcount&quot; .FuzzyWordCount &quot;keywords&quot; .Keywords &quot;kind&quot; .Kind &quot;lang&quot; .Lang &quot;lastmod&quot; .Lastmod.UTC.Unix &quot;permalink&quot; .Permalink &quot;publishdate&quot; .PublishDate &quot;readingtime&quot; .ReadingTime &quot;relpermalink&quot; .RelPermalink &quot;html&quot; .Params.Description &quot;title&quot; .Title &quot;type&quot; .Type &quot;url&quot; .URL &quot;weight&quot; .Weight &quot;wordcount&quot; .WordCount &quot;section&quot; .Section &quot;tags&quot; .Params.Tags &quot;categories&quot; .Params.Categories &quot;author&quot; .Params.authors &quot;content&quot; .Params.Description &quot;excerpt_html&quot; .Params.Description &quot;excerpt_text&quot; .Params.Description &quot;summary&quot; .Summary)}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $.Scratch.Get &amp;quot;index&amp;quot; | jsonify -}}
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;これで、ブログ内記事検索ができるようになります。
+{{- $.Scratch.Get &quot;index&quot; | jsonify -}}
+</code></pre><h2 id="まとめ">まとめ</h2>
+<p>これで、ブログ内記事検索ができるようになります。
 Algoliaは個人の非商用利用の場合、フリープランが用意されているのがありがたいですね。
-まだ、Hugoと連携しただけで、Algolia自体でどんな機能があって、どんなことができそうかといったところは調べていませんが、簡単に利用できるのはとても助かります。&lt;/p&gt;
-&lt;p&gt;まぁ、個人ブログの検索機能ってそんなに使う人はいないんですが、自分としては便利かなぁと。&lt;/p&gt;
+まだ、Hugoと連携しただけで、Algolia自体でどんな機能があって、どんなことができそうかといったところは調べていませんが、簡単に利用できるのはとても助かります。</p>
+<p>まぁ、個人ブログの検索機能ってそんなに使う人はいないんですが、自分としては便利かなぁと。</p>
 </content:encoded>
     </item>
     
@@ -262,145 +262,145 @@ Algoliaは個人の非商用利用の場合、フリープランが用意され�
       
       <guid>https://blog.johtani.info/blog/2020/01/24/setting-hugo/</guid>
       <description>ブログ移行日記(その3)です。その他の記事はこちら。 ブログ移行日記(その1) ブログ移行日記(その2) ブログ移行日記(その4) ブログ移行日記(</description>
-      <content:encoded>&lt;p&gt;ブログ移行日記(その3)です。その他の記事はこちら。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;ブログ移行日記(その1)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/&#34;&gt;ブログ移行日記(その2)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/introduce-algolia/&#34;&gt;ブログ移行日記(その4)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/&#34;&gt;ブログ移行日記(その5)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;今回は、Hugoの設定とテーマの一部変更した点について記載します。&lt;/p&gt;
-&lt;h2 id=&#34;設定ファイルconfigtoml&#34;&gt;設定ファイル(config.toml)&lt;/h2&gt;
-&lt;p&gt;Hugoの設定ファイルは&lt;code&gt;config.toml&lt;/code&gt;になります。&lt;code&gt;hogo new site&lt;/code&gt;コマンドで生成したディレクトリの中にデフォルトで含まれていますが、こちらではなく、テーマの作者が用意してくれた&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/exampleSite/config.toml&#34;&gt;&lt;code&gt;config.toml&lt;/code&gt;&lt;/a&gt;を元に変更を加えました。&lt;/p&gt;
-&lt;p&gt;ちなみにテーマの作者の方が&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/tree/master/exampleSite&#34;&gt;設定とコンテンツを含めたサンプル&lt;/a&gt;も公開してくれています。設定やディレクトリの構成はこちらを参考にしました。&lt;/p&gt;
-&lt;p&gt;設定ファイルで変更した項目は以下のとおりです。&lt;/p&gt;
-&lt;h3 id=&#34;サイトのタイトルや説明など&#34;&gt;サイトのタイトルや説明など&lt;/h3&gt;
-&lt;p&gt;特記することはありません。好きなように変えました。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;baseurl&lt;/li&gt;
-&lt;li&gt;title&lt;/li&gt;
-&lt;li&gt;SEOTitle&lt;/li&gt;
-&lt;li&gt;description&lt;/li&gt;
-&lt;li&gt;keyword&lt;/li&gt;
-&lt;li&gt;slogan&lt;/li&gt;
-&lt;li&gt;sidebar_about_descrption&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;画像関連ヘッダーや著者近影&#34;&gt;画像関連(ヘッダーや著者近影)&lt;/h3&gt;
-&lt;p&gt;画像の置き場は&lt;code&gt;static/images/&lt;/code&gt;ディレクトリですが、設定ファイルには
-&lt;code&gt;images/&lt;/code&gt;から設定します。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;header_image : ブログのヘッダー背景&lt;/li&gt;
-&lt;li&gt;sidebar_avatar : 著者近影&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;言語周り特に多言語対応する予定は無いのですが&#34;&gt;言語周り(特に多言語対応する予定は無いのですが)&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;languageCode = &amp;ldquo;ja&amp;rdquo;&lt;/li&gt;
-&lt;li&gt;defaultContentLanguage = &amp;ldquo;ja&amp;rdquo;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;オフにした機能削除した項目&#34;&gt;オフにした機能、削除した項目&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;freands = false&lt;/li&gt;
-&lt;li&gt;bookmarks = false&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;上記の設定変更以外に、&lt;code&gt;[[params.bookmark_link]]&lt;/code&gt;や&lt;code&gt;[[params.friend_link]]&lt;/code&gt;も削除。&lt;/p&gt;
-&lt;p&gt;中国のサービスや、特化した設定など。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Baidu Analytics関連&lt;/li&gt;
-&lt;li&gt;Disqus proxy関連&lt;/li&gt;
-&lt;li&gt;Reward(wechat pay &amp;amp; alipay関連)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;paramssocial関連&#34;&gt;params.social関連&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;rss = true&lt;/li&gt;
-&lt;li&gt;twitter&lt;/li&gt;
-&lt;li&gt;linkedin&lt;/li&gt;
-&lt;li&gt;github&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;ほかはすべてコメントアウト。&lt;/p&gt;
-&lt;h3 id=&#34;外部サービス関連&#34;&gt;外部サービス関連&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;disqusShortname : Disqusのショートネーム&lt;/li&gt;
-&lt;li&gt;googleAnalytics : Gooogle AnalyticsのトラッキングID&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://www.algolia.com/&#34;&gt;algolia関連&lt;/a&gt; : &lt;em&gt;別のブログ記事として、設定方法などを書きます。&lt;/em&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;追加した設定昨日のブログで説明済みhttpsblogjohtaniinfoblog20200123convert-md-from-octopress-to-hugo&#34;&gt;追加した設定(&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/&#34;&gt;昨日のブログで説明済み&lt;/a&gt;)&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;Octopressと同じ形のパーマリンク&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;[&lt;span style=&#34;color:#a6e22e&#34;&gt;permalinks&lt;/span&gt;]
-  &lt;span style=&#34;color:#a6e22e&#34;&gt;post&lt;/span&gt; = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/blog/:year/:month/:day/:slug&amp;#34;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
-&lt;li&gt;Markdownファイル中のHTMLタグ表示&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;[&lt;span style=&#34;color:#a6e22e&#34;&gt;markup&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;goldmark&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;renderer&lt;/span&gt;]
-  &lt;span style=&#34;color:#a6e22e&#34;&gt;unsafe&lt;/span&gt; = &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以上が設定ファイル関連です。&lt;/p&gt;
-&lt;h2 id=&#34;テーマの変更点&#34;&gt;テーマの変更点&lt;/h2&gt;
-&lt;p&gt;テーマそのままでは問題があったり、独自に変更したいという点があったので、いくつか変更をしています。&lt;/p&gt;
-&lt;h3 id=&#34;フォントの変更&#34;&gt;フォントの変更&lt;/h3&gt;
-&lt;p&gt;そのままテーマを適用するだけでうまく行けばよかったのですが、フォントの問題が発生しました。テーマの作者の方が中国の方だから?かどうかはわかりませんが、デフォルトのままだと中華フォントになってしまいました。&lt;/p&gt;
-&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;あー、中華フォントだな。 &lt;a href=&#34;https://t.co/OvHpY4LSp1&#34;&gt;pic.twitter.com/OvHpY4LSp1&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1217703951522353152?ref_src=twsrc%5Etfw&#34;&gt;January 16, 2020&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+      <content:encoded><p>ブログ移行日記(その3)です。その他の記事はこちら。</p>
+<ul>
+<li><a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記(その1)</a></li>
+<li><a href="/blog/2020/01/23/convert-md-from-octopress-to-hugo/">ブログ移行日記(その2)</a></li>
+<li><a href="/blog/2020/01/28/introduce-algolia/">ブログ移行日記(その4)</a></li>
+<li><a href="/blog/2020/02/21/import-jugem-posts/">ブログ移行日記(その5)</a></li>
+</ul>
+<p>今回は、Hugoの設定とテーマの一部変更した点について記載します。</p>
+<h2 id="設定ファイルconfigtoml">設定ファイル(config.toml)</h2>
+<p>Hugoの設定ファイルは<code>config.toml</code>になります。<code>hogo new site</code>コマンドで生成したディレクトリの中にデフォルトで含まれていますが、こちらではなく、テーマの作者が用意してくれた<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/exampleSite/config.toml"><code>config.toml</code></a>を元に変更を加えました。</p>
+<p>ちなみにテーマの作者の方が<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/tree/master/exampleSite">設定とコンテンツを含めたサンプル</a>も公開してくれています。設定やディレクトリの構成はこちらを参考にしました。</p>
+<p>設定ファイルで変更した項目は以下のとおりです。</p>
+<h3 id="サイトのタイトルや説明など">サイトのタイトルや説明など</h3>
+<p>特記することはありません。好きなように変えました。</p>
+<ul>
+<li>baseurl</li>
+<li>title</li>
+<li>SEOTitle</li>
+<li>description</li>
+<li>keyword</li>
+<li>slogan</li>
+<li>sidebar_about_descrption</li>
+</ul>
+<h3 id="画像関連ヘッダーや著者近影">画像関連(ヘッダーや著者近影)</h3>
+<p>画像の置き場は<code>static/images/</code>ディレクトリですが、設定ファイルには
+<code>images/</code>から設定します。</p>
+<ul>
+<li>header_image : ブログのヘッダー背景</li>
+<li>sidebar_avatar : 著者近影</li>
+</ul>
+<h3 id="言語周り特に多言語対応する予定は無いのですが">言語周り(特に多言語対応する予定は無いのですが)</h3>
+<ul>
+<li>languageCode = &ldquo;ja&rdquo;</li>
+<li>defaultContentLanguage = &ldquo;ja&rdquo;</li>
+</ul>
+<h3 id="オフにした機能削除した項目">オフにした機能、削除した項目</h3>
+<ul>
+<li>freands = false</li>
+<li>bookmarks = false</li>
+</ul>
+<p>上記の設定変更以外に、<code>[[params.bookmark_link]]</code>や<code>[[params.friend_link]]</code>も削除。</p>
+<p>中国のサービスや、特化した設定など。</p>
+<ul>
+<li>Baidu Analytics関連</li>
+<li>Disqus proxy関連</li>
+<li>Reward(wechat pay &amp; alipay関連)</li>
+</ul>
+<h3 id="paramssocial関連">params.social関連</h3>
+<ul>
+<li>rss = true</li>
+<li>twitter</li>
+<li>linkedin</li>
+<li>github</li>
+</ul>
+<p>ほかはすべてコメントアウト。</p>
+<h3 id="外部サービス関連">外部サービス関連</h3>
+<ul>
+<li>disqusShortname : Disqusのショートネーム</li>
+<li>googleAnalytics : Gooogle AnalyticsのトラッキングID</li>
+<li><a href="https://www.algolia.com/">algolia関連</a> : <em>別のブログ記事として、設定方法などを書きます。</em></li>
+</ul>
+<h3 id="追加した設定昨日のブログで説明済みhttpsblogjohtaniinfoblog20200123convert-md-from-octopress-to-hugo">追加した設定(<a href="https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/">昨日のブログで説明済み</a>)</h3>
+<ul>
+<li>Octopressと同じ形のパーマリンク</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml">[<span style="color:#a6e22e">permalinks</span>]
+  <span style="color:#a6e22e">post</span> = <span style="color:#e6db74">&#34;/blog/:year/:month/:day/:slug&#34;</span>
+</code></pre></div><ul>
+<li>Markdownファイル中のHTMLタグ表示</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml">[<span style="color:#a6e22e">markup</span>.<span style="color:#a6e22e">goldmark</span>.<span style="color:#a6e22e">renderer</span>]
+  <span style="color:#a6e22e">unsafe</span> = <span style="color:#66d9ef">true</span>
+</code></pre></div><p>以上が設定ファイル関連です。</p>
+<h2 id="テーマの変更点">テーマの変更点</h2>
+<p>テーマそのままでは問題があったり、独自に変更したいという点があったので、いくつか変更をしています。</p>
+<h3 id="フォントの変更">フォントの変更</h3>
+<p>そのままテーマを適用するだけでうまく行けばよかったのですが、フォントの問題が発生しました。テーマの作者の方が中国の方だから?かどうかはわかりませんが、デフォルトのままだと中華フォントになってしまいました。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">あー、中華フォントだな。 <a href="https://t.co/OvHpY4LSp1">pic.twitter.com/OvHpY4LSp1</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1217703951522353152?ref_src=twsrc%5Etfw">January 16, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-&lt;p&gt;&lt;code&gt;config.toml&lt;/code&gt;に&lt;code&gt;custom_css&lt;/code&gt;という設定があり、こちらで指定したCSSのファイルがテーマの&lt;code&gt;layouts/partials/head.html&lt;/code&gt;から読み込まれる仕組みがあるようなので、フォントに関するCSSをこの機能を使用して指定するようにしました。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;config.toml&lt;/code&gt;の設定は次のとおりです(リスト)になっているので、複数のファイルに分割して、読み込ませることも可能なのかな?。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;custom_css&lt;/span&gt; = [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;css/custom-font.css&amp;#34;&lt;/span&gt;]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;cssファイルについては、&lt;code&gt;static/css/custom-font.css&lt;/code&gt;というファイルを作成し、次のような記載になっています。
-フォントの指定と右側サイドバーの自己紹介の部分の文字色を変更するためのものです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-css&#34; data-lang=&#34;css&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;body&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;h1&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;h2&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;h3&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;h4&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;h5&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;h6&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; .&lt;span style=&#34;color:#a6e22e&#34;&gt;navbar-custom&lt;/span&gt; { 
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;font-family&lt;/span&gt;: Helvetica,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Sawarabi Gothic&amp;#34;&lt;/span&gt;,Meiryo,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;メイリオ&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Hiragino Kaku Gothic ProN&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ヒラギノ角ゴ ProN&amp;#34;&lt;/span&gt;,YuGothic,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;游ゴシック&amp;#34;&lt;/span&gt;,Arial,&lt;span style=&#34;color:#66d9ef&#34;&gt;sans-serif&lt;/span&gt;; 
+<p><code>config.toml</code>に<code>custom_css</code>という設定があり、こちらで指定したCSSのファイルがテーマの<code>layouts/partials/head.html</code>から読み込まれる仕組みがあるようなので、フォントに関するCSSをこの機能を使用して指定するようにしました。</p>
+<p><code>config.toml</code>の設定は次のとおりです(リスト)になっているので、複数のファイルに分割して、読み込ませることも可能なのかな?。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml"><span style="color:#a6e22e">custom_css</span> = [<span style="color:#e6db74">&#34;css/custom-font.css&#34;</span>]
+</code></pre></div><p>cssファイルについては、<code>static/css/custom-font.css</code>というファイルを作成し、次のような記載になっています。
+フォントの指定と右側サイドバーの自己紹介の部分の文字色を変更するためのものです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-css" data-lang="css"><span style="color:#f92672">body</span><span style="color:#f92672">,</span> <span style="color:#f92672">h1</span><span style="color:#f92672">,</span> <span style="color:#f92672">h2</span><span style="color:#f92672">,</span> <span style="color:#f92672">h3</span><span style="color:#f92672">,</span> <span style="color:#f92672">h4</span><span style="color:#f92672">,</span> <span style="color:#f92672">h5</span><span style="color:#f92672">,</span> <span style="color:#f92672">h6</span><span style="color:#f92672">,</span> .<span style="color:#a6e22e">navbar-custom</span> { 
+    <span style="color:#66d9ef">font-family</span>: Helvetica,<span style="color:#e6db74">&#34;Sawarabi Gothic&#34;</span>,Meiryo,<span style="color:#e6db74">&#34;メイリオ&#34;</span>,<span style="color:#e6db74">&#34;Hiragino Kaku Gothic ProN&#34;</span>, <span style="color:#e6db74">&#34;ヒラギノ角ゴ ProN&#34;</span>,YuGothic,<span style="color:#e6db74">&#34;游ゴシック&#34;</span>,Arial,<span style="color:#66d9ef">sans-serif</span>; 
 }
-.&lt;span style=&#34;color:#a6e22e&#34;&gt;sidebar-container&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;color&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;#404040&lt;/span&gt;;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;font-size&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;px&lt;/span&gt;;
+.<span style="color:#a6e22e">sidebar-container</span> {
+    <span style="color:#66d9ef">color</span>: <span style="color:#ae81ff">#404040</span>;
+    <span style="color:#66d9ef">font-size</span>: <span style="color:#ae81ff">14</span><span style="color:#66d9ef">px</span>;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;faviconの変更&#34;&gt;faviconの変更&lt;/h3&gt;
-&lt;p&gt;テーマに&lt;code&gt;favicon.ico&lt;/code&gt;が含まれていたのですが、せっかくなので独自のものに変えてみようかと。
-ただ、残念ながら、こちらはパスおよびファイル名が&lt;code&gt;layouts/partials/head.html&lt;/code&gt;に&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/c93ea6d2cfaf41f76bb49510c55643ea984e8990/layouts/partials/head.html#L46&#34;&gt;直書き&lt;/a&gt;されていました。&lt;/p&gt;
-&lt;p&gt;画像は&lt;code&gt;images&lt;/code&gt;配下にと思っていたのですが、このパスだけを変更するために&lt;code&gt;head.html&lt;/code&gt;を自分の配下にコピーしてカスタマイズするのもどうかと思った(テーマに変更やバグ修正が入るたびに手動でコピーするのはなぁと思った)ので、&lt;code&gt;static/img/favicon.ico&lt;/code&gt;ファイルを作成しました。&lt;/p&gt;
-&lt;p&gt;テーマよりもHugoのプロジェクトにあるファイルを優先するようなので、ファイルだけをプロジェクトに作成しました。&lt;/p&gt;
-&lt;h3 id=&#34;記事一覧のテンプレート&#34;&gt;記事一覧のテンプレート&lt;/h3&gt;
-&lt;p&gt;記事の一覧で表示される、作成者と作成日時が英語表記でかつ、冗長な感じがしたので、スッキリさせるために、&lt;code&gt;layouts/partials/post_list.html&lt;/code&gt;をテーマからコピーして、次のように変更しました。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;元の形式は : &lt;code&gt;Posted by author Monday, January 2, 2006&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;現在の形式 : &lt;code&gt;2006-01-02 by author&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;記事のテンプレート&#34;&gt;記事のテンプレート&lt;/h3&gt;
-&lt;p&gt;今回採用したテーマでは、記事の先頭に記事のセクションを元に目次を生成してくれるものでした。&lt;/p&gt;
-&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;目次をコンテンツから自動で作ってくれるの便利だな。 &lt;a href=&#34;https://t.co/9bU3sLnUrm&#34;&gt;pic.twitter.com/9bU3sLnUrm&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1217734384159117312?ref_src=twsrc%5Etfw&#34;&gt;January 16, 2020&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+</code></pre></div><h3 id="faviconの変更">faviconの変更</h3>
+<p>テーマに<code>favicon.ico</code>が含まれていたのですが、せっかくなので独自のものに変えてみようかと。
+ただ、残念ながら、こちらはパスおよびファイル名が<code>layouts/partials/head.html</code>に<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/c93ea6d2cfaf41f76bb49510c55643ea984e8990/layouts/partials/head.html#L46">直書き</a>されていました。</p>
+<p>画像は<code>images</code>配下にと思っていたのですが、このパスだけを変更するために<code>head.html</code>を自分の配下にコピーしてカスタマイズするのもどうかと思った(テーマに変更やバグ修正が入るたびに手動でコピーするのはなぁと思った)ので、<code>static/img/favicon.ico</code>ファイルを作成しました。</p>
+<p>テーマよりもHugoのプロジェクトにあるファイルを優先するようなので、ファイルだけをプロジェクトに作成しました。</p>
+<h3 id="記事一覧のテンプレート">記事一覧のテンプレート</h3>
+<p>記事の一覧で表示される、作成者と作成日時が英語表記でかつ、冗長な感じがしたので、スッキリさせるために、<code>layouts/partials/post_list.html</code>をテーマからコピーして、次のように変更しました。</p>
+<ul>
+<li>元の形式は : <code>Posted by author Monday, January 2, 2006</code></li>
+<li>現在の形式 : <code>2006-01-02 by author</code></li>
+</ul>
+<h3 id="記事のテンプレート">記事のテンプレート</h3>
+<p>今回採用したテーマでは、記事の先頭に記事のセクションを元に目次を生成してくれるものでした。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">目次をコンテンツから自動で作ってくれるの便利だな。 <a href="https://t.co/9bU3sLnUrm">pic.twitter.com/9bU3sLnUrm</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1217734384159117312?ref_src=twsrc%5Etfw">January 16, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-&lt;p&gt;とても便利です。ただ、表示が「TOC」なんです。
-英語でしかも「ToC」という表記ならまだ気にならなかったかもですが、&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/c93ea6d2cfaf41f76bb49510c55643ea984e8990/layouts/_default/single.html#L60&#34;&gt;大文字だと&lt;/a&gt;流石に気になったので、プロジェクトの&lt;code&gt;layouts/_default/single.html&lt;/code&gt;にコピーして「目次」という日本語に書き換えました。
-このHTMLにテーマで修正が入った場合はどうしようかなぁ。。。というのが目下の悩みです。。。&lt;/p&gt;
-&lt;h3 id=&#34;archetypeテンプレートの追加&#34;&gt;Archetypeテンプレートの追加&lt;/h3&gt;
-&lt;p&gt;最後は新規記事を書くときに生成されるMarkdownのメタデータの追加です。
-Hugoには&lt;a href=&#34;https://gohugo.io/content-management/archetypes/#what-are-archetypes&#34;&gt;Archetypes&lt;/a&gt;というのが存在します。&lt;/p&gt;
-&lt;p&gt;Hugoでは&lt;code&gt;hugo new 記事&lt;/code&gt;としたときに、記事の種類(&lt;code&gt;content/ディレクトリ名=記事のタイプ&lt;/code&gt;)によって、作成するmarkdownファイルをテンプレートから生成する機能があります。この生成時に使われるのが&lt;code&gt;archetypes&lt;/code&gt;というディレクトリにあるファイルです。&lt;/p&gt;
-&lt;p&gt;私のブログサイトでは、今のところ&lt;code&gt;content/post&lt;/code&gt;というブログの記事だけを書く予定ですので、&lt;code&gt;archetypes/post.md&lt;/code&gt;というファイルを作って以下のようなメタデータを&lt;code&gt;hugo new&lt;/code&gt;したときに自動で生成するようにしました(&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/c93ea6d2cfaf41f76bb49510c55643ea984e8990/archetypes/post.md&#34;&gt;テーマにあった&lt;code&gt;post.md&lt;/code&gt;ファイル&lt;/a&gt;の代わり)。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;---
+<p>とても便利です。ただ、表示が「TOC」なんです。
+英語でしかも「ToC」という表記ならまだ気にならなかったかもですが、<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/c93ea6d2cfaf41f76bb49510c55643ea984e8990/layouts/_default/single.html#L60">大文字だと</a>流石に気になったので、プロジェクトの<code>layouts/_default/single.html</code>にコピーして「目次」という日本語に書き換えました。
+このHTMLにテーマで修正が入った場合はどうしようかなぁ。。。というのが目下の悩みです。。。</p>
+<h3 id="archetypeテンプレートの追加">Archetypeテンプレートの追加</h3>
+<p>最後は新規記事を書くときに生成されるMarkdownのメタデータの追加です。
+Hugoには<a href="https://gohugo.io/content-management/archetypes/#what-are-archetypes">Archetypes</a>というのが存在します。</p>
+<p>Hugoでは<code>hugo new 記事</code>としたときに、記事の種類(<code>content/ディレクトリ名=記事のタイプ</code>)によって、作成するmarkdownファイルをテンプレートから生成する機能があります。この生成時に使われるのが<code>archetypes</code>というディレクトリにあるファイルです。</p>
+<p>私のブログサイトでは、今のところ<code>content/post</code>というブログの記事だけを書く予定ですので、<code>archetypes/post.md</code>というファイルを作って以下のようなメタデータを<code>hugo new</code>したときに自動で生成するようにしました(<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/c93ea6d2cfaf41f76bb49510c55643ea984e8990/archetypes/post.md">テーマにあった<code>post.md</code>ファイル</a>の代わり)。</p>
+<pre><code>---
 layout: post
-title: &amp;quot;{{ replace .Name &amp;quot;-&amp;quot; &amp;quot; &amp;quot; | title }}&amp;quot;
-slug: &amp;quot;{{ substr .Name 11 }}&amp;quot;
+title: &quot;{{ replace .Name &quot;-&quot; &quot; &quot; | title }}&quot;
+slug: &quot;{{ substr .Name 11 }}&quot;
 author: johtani
 date: {{ .Date }}
 comments: true
 tags: []
 draft: true
 ---
-&lt;/code&gt;&lt;/pre&gt;&lt;ol&gt;
-&lt;li&gt;タイトルはファイル名のハイフンを空白に変換したもの(実際にはファイル名は英語にしているので、使いませんが。。。)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;slug&lt;/code&gt;はファイル名の先頭から&lt;code&gt;YYYY-MM-DD-&lt;/code&gt;という11文字を除いたもの。これは、OctopressのURLに合わせるために使用するURLの一部の文字列です。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;author: johtani&lt;/code&gt; : 著者は私だけだから固定文字列&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;comments: true&lt;/code&gt; : ブログ記事にはDisqusのコメント機能を利用&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;tags: []&lt;/code&gt; : 各内容によってタグを付けるが、生成時には空&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;draft: true&lt;/code&gt; : 明示的にこの行を消すまではドラフト記事としたいため&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;という感じです。ほかにどのよなメタデータがあるのかまではまだ調べていないので、今後また適宜変更していくと思います。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;Hugoの設定や、テーマそのままではなく独自の変更を加えた部分を思い出して書き出してみました。&lt;/p&gt;
-&lt;p&gt;これで、&lt;a href=&#34;https://www.algolia.com/&#34;&gt;Algolia&lt;/a&gt;に関する部分以外はだいたい思い出して書いたと思います。
-次は、Algoliaの使い方と設定について書き残す予定です。&lt;/p&gt;
+</code></pre><ol>
+<li>タイトルはファイル名のハイフンを空白に変換したもの(実際にはファイル名は英語にしているので、使いませんが。。。)</li>
+<li><code>slug</code>はファイル名の先頭から<code>YYYY-MM-DD-</code>という11文字を除いたもの。これは、OctopressのURLに合わせるために使用するURLの一部の文字列です。</li>
+<li><code>author: johtani</code> : 著者は私だけだから固定文字列</li>
+<li><code>comments: true</code> : ブログ記事にはDisqusのコメント機能を利用</li>
+<li><code>tags: []</code> : 各内容によってタグを付けるが、生成時には空</li>
+<li><code>draft: true</code> : 明示的にこの行を消すまではドラフト記事としたいため</li>
+</ol>
+<p>という感じです。ほかにどのよなメタデータがあるのかまではまだ調べていないので、今後また適宜変更していくと思います。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>Hugoの設定や、テーマそのままではなく独自の変更を加えた部分を思い出して書き出してみました。</p>
+<p>これで、<a href="https://www.algolia.com/">Algolia</a>に関する部分以外はだいたい思い出して書いたと思います。
+次は、Algoliaの使い方と設定について書き残す予定です。</p>
 </content:encoded>
     </item>
     
@@ -411,68 +411,68 @@ draft: true
       
       <guid>https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/</guid>
       <description>その他の記事はこちら ブログ移行日記(その1) ブログ移行日記(その3) ブログ移行日記(その4) ブログ移行日記(その5) ブログ移行日記(その2)</description>
-      <content:encoded>&lt;p&gt;その他の記事はこちら&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;ブログ移行日記(その1)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/24/setting-hugo/&#34;&gt;ブログ移行日記(その3)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/introduce-algolia/&#34;&gt;ブログ移行日記(その4)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/&#34;&gt;ブログ移行日記(その5)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;ブログ移行日記(その2)です。&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;前回&lt;/a&gt;はHugoとは?というのと、自分が選んだテーマについて記載しました。
-本家の手順などを参考にすると、Hugoにテーマを適用し、でHTMLを生成して、表示するところまでできるはずです。&lt;/p&gt;
-&lt;p&gt;今回は、OctopressのmarkdownファイルをHugo用に変換する方法について紹介します。お手製ですが、Pythonスクリプトを作ったので、そちらも合わせて簡単に紹介する予定です。&lt;/p&gt;
-&lt;h2 id=&#34;参考ブログ&#34;&gt;参考ブログ&lt;/h2&gt;
-&lt;p&gt;「Octopress Hugo 移行」でググるといくつか出てきます。先人の知恵ありがたいですね。
-ということで、私はこちらの2つのブログを参考にさせていただきました。ありがとうございます。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/&#34;&gt;Octopress から Hugo へ移行した - iriya-ufo&amp;rsquo;s blog&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/&#34;&gt;OctopressからHugoへ移行する方法 | gam0022.net&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;画像のコピー&#34;&gt;画像のコピー&lt;/h2&gt;
-&lt;p&gt;画像はそのまま上記参考ブログを元に&lt;code&gt;source/images&lt;/code&gt;から&lt;code&gt;static/images&lt;/code&gt;にコピーしました。特にディレクトリ構造の変更とかもしませんでした。&lt;/p&gt;
-&lt;h2 id=&#34;コンテンツのコピー&#34;&gt;コンテンツのコピー&lt;/h2&gt;
-&lt;p&gt;こちらは、コピーのタイミングでいくつか変換などの処理を行いました。
-ファイルの変換には&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo&#34;&gt;Pythonのスクリプト&lt;/a&gt;を書きました。
-自分向けの移行ツールなんで、ディレクトリ名とか引数にすらしてないです。。。&lt;/p&gt;
-&lt;p&gt;参考ブログと同様の変換&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L65&#34;&gt;メタデータの日付変換&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L106&#34;&gt;categoriesをtagsに変換&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L83&#34;&gt;画像タグの変換&lt;/a&gt;
-&lt;ul&gt;
-&lt;li&gt;タイトル、画像のサイズなどに合わせていくつか分岐があります。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;参考ブログとは異なる変換、変更&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L110&#34;&gt;コードブロックは無変換&lt;/a&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://gohugo.io/content-management/syntax-highlighting/#highlighting-in-code-fences&#34;&gt;0.60.0からCode Fencesに対応&lt;/a&gt;したみたいなので不要でした。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L38&#34;&gt;ディレクトリ構造の変更&lt;/a&gt;
-&lt;ul&gt;
-&lt;li&gt;ファイルを年ごとのディレクトリに格納(これまでは、全てのファイルが同一ディレクトリにあった)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L38&#34;&gt;拡張子の変更 (&lt;code&gt;.markdown&lt;/code&gt; -&amp;gt; &lt;code&gt;.md&lt;/code&gt;)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L76&#34;&gt;メタデータに&lt;code&gt;author&lt;/code&gt;の追加(自分しか書かないんですけどね)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;urlをoctopressに合わせる&#34;&gt;URLをOctopressに合わせる&lt;/h2&gt;
-&lt;p&gt;Google検索からの流入もあり、これまでのURLに変更はかけたくないなと。
-こちらも参考ブログに記載があるので、&lt;a href=&#34;https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/#octopress%E3%81%A8%E5%90%8C%E4%B8%80%E3%81%AE%E3%83%91%E3%83%BC%E3%83%9E%E3%83%AA%E3%83%B3%E3%82%AF%E3%81%AB%E3%81%99%E3%82%8B-%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3&#34;&gt;そのまま参考に&lt;/a&gt;させていただきました。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;slug&lt;/code&gt;については、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L80&#34;&gt;移行ツール&lt;/a&gt;でファイル名を元に追加する処理を書きました。&lt;/p&gt;
-&lt;h2 id=&#34;htmlを含んだmarkdownの対応&#34;&gt;HTMLを含んだMarkdownの対応&lt;/h2&gt;
-&lt;p&gt;TweetやAmazonのアフィリエイトのリンクがHTMLタグでいくつかの記事に含まれており、デフォルトの設定だと表示されません。
-&lt;code&gt;config.toml&lt;/code&gt;ファイルに以下の設定を追記することで、出力されるようになりました。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;[&lt;span style=&#34;color:#a6e22e&#34;&gt;markup&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;goldmark&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;renderer&lt;/span&gt;]
-  &lt;span style=&#34;color:#a6e22e&#34;&gt;unsafe&lt;/span&gt; = &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;名前が&lt;code&gt;unsafe&lt;/code&gt;なので、ちょっと気になりますが。。。
-すべての記事を表示してチェックしてみたわけではないので、おかしな記事を見つけた方は連絡をいただけると助かります。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;OctopressのファイルをHugo用にコピーや変換した方法を思い出しながら書いてみました。基本的には参考ブログに上げた2つのブログを真似したものになります。&lt;/p&gt;
-&lt;p&gt;次は、利用したテーマのサンプル設定を元に、自分用に変更した点などについて書き残しておこうかな?&lt;/p&gt;
+      <content:encoded><p>その他の記事はこちら</p>
+<ul>
+<li><a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記(その1)</a></li>
+<li><a href="/blog/2020/01/24/setting-hugo/">ブログ移行日記(その3)</a></li>
+<li><a href="/blog/2020/01/28/introduce-algolia/">ブログ移行日記(その4)</a></li>
+<li><a href="/blog/2020/02/21/import-jugem-posts/">ブログ移行日記(その5)</a></li>
+</ul>
+<p>ブログ移行日記(その2)です。<a href="https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/">前回</a>はHugoとは?というのと、自分が選んだテーマについて記載しました。
+本家の手順などを参考にすると、Hugoにテーマを適用し、でHTMLを生成して、表示するところまでできるはずです。</p>
+<p>今回は、OctopressのmarkdownファイルをHugo用に変換する方法について紹介します。お手製ですが、Pythonスクリプトを作ったので、そちらも合わせて簡単に紹介する予定です。</p>
+<h2 id="参考ブログ">参考ブログ</h2>
+<p>「Octopress Hugo 移行」でググるといくつか出てきます。先人の知恵ありがたいですね。
+ということで、私はこちらの2つのブログを参考にさせていただきました。ありがとうございます。</p>
+<ul>
+<li><a href="https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/">Octopress から Hugo へ移行した - iriya-ufo&rsquo;s blog</a></li>
+<li><a href="https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/">OctopressからHugoへ移行する方法 | gam0022.net</a></li>
+</ul>
+<h2 id="画像のコピー">画像のコピー</h2>
+<p>画像はそのまま上記参考ブログを元に<code>source/images</code>から<code>static/images</code>にコピーしました。特にディレクトリ構造の変更とかもしませんでした。</p>
+<h2 id="コンテンツのコピー">コンテンツのコピー</h2>
+<p>こちらは、コピーのタイミングでいくつか変換などの処理を行いました。
+ファイルの変換には<a href="https://github.com/johtani/from-octopress-to-hugo">Pythonのスクリプト</a>を書きました。
+自分向けの移行ツールなんで、ディレクトリ名とか引数にすらしてないです。。。</p>
+<p>参考ブログと同様の変換</p>
+<ul>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L65">メタデータの日付変換</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L106">categoriesをtagsに変換</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L83">画像タグの変換</a>
+<ul>
+<li>タイトル、画像のサイズなどに合わせていくつか分岐があります。</li>
+</ul>
+</li>
+</ul>
+<p>参考ブログとは異なる変換、変更</p>
+<ul>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L110">コードブロックは無変換</a>
+<ul>
+<li><a href="https://gohugo.io/content-management/syntax-highlighting/#highlighting-in-code-fences">0.60.0からCode Fencesに対応</a>したみたいなので不要でした。</li>
+</ul>
+</li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L38">ディレクトリ構造の変更</a>
+<ul>
+<li>ファイルを年ごとのディレクトリに格納(これまでは、全てのファイルが同一ディレクトリにあった)</li>
+</ul>
+</li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L38">拡張子の変更 (<code>.markdown</code> -&gt; <code>.md</code>)</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L76">メタデータに<code>author</code>の追加(自分しか書かないんですけどね)</a></li>
+</ul>
+<h2 id="urlをoctopressに合わせる">URLをOctopressに合わせる</h2>
+<p>Google検索からの流入もあり、これまでのURLに変更はかけたくないなと。
+こちらも参考ブログに記載があるので、<a href="https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/#octopress%E3%81%A8%E5%90%8C%E4%B8%80%E3%81%AE%E3%83%91%E3%83%BC%E3%83%9E%E3%83%AA%E3%83%B3%E3%82%AF%E3%81%AB%E3%81%99%E3%82%8B-%E3%82%AA%E3%83%97%E3%82%B7%E3%83%A7%E3%83%B3">そのまま参考に</a>させていただきました。</p>
+<p><code>slug</code>については、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/fileconverter.py#L80">移行ツール</a>でファイル名を元に追加する処理を書きました。</p>
+<h2 id="htmlを含んだmarkdownの対応">HTMLを含んだMarkdownの対応</h2>
+<p>TweetやAmazonのアフィリエイトのリンクがHTMLタグでいくつかの記事に含まれており、デフォルトの設定だと表示されません。
+<code>config.toml</code>ファイルに以下の設定を追記することで、出力されるようになりました。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml">[<span style="color:#a6e22e">markup</span>.<span style="color:#a6e22e">goldmark</span>.<span style="color:#a6e22e">renderer</span>]
+  <span style="color:#a6e22e">unsafe</span> = <span style="color:#66d9ef">true</span>
+</code></pre></div><p>名前が<code>unsafe</code>なので、ちょっと気になりますが。。。
+すべての記事を表示してチェックしてみたわけではないので、おかしな記事を見つけた方は連絡をいただけると助かります。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>OctopressのファイルをHugo用にコピーや変換した方法を思い出しながら書いてみました。基本的には参考ブログに上げた2つのブログを真似したものになります。</p>
+<p>次は、利用したテーマのサンプル設定を元に、自分用に変更した点などについて書き残しておこうかな?</p>
 </content:encoded>
     </item>
     
@@ -483,78 +483,78 @@ draft: true
       
       <guid>https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/</guid>
       <description>その他の記事はこちら ブログ移行日記(その2) ブログ移行日記(その3) ブログ移行日記(その4) ブログ移行日記(その5) 起因 いつものツイートから</description>
-      <content:encoded>&lt;p&gt;その他の記事はこちら&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/&#34;&gt;ブログ移行日記(その2)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/24/setting-hugo/&#34;&gt;ブログ移行日記(その3)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/introduce-algolia/&#34;&gt;ブログ移行日記(その4)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/&#34;&gt;ブログ移行日記(その5)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;起因&#34;&gt;起因&lt;/h2&gt;
-&lt;p&gt;いつものツイートから始まる私の行動です。&lt;/p&gt;
-&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;(もしかしたら前に一度おすすめしたかもですが) Goのtemplate構文に拒絶反応がなければHugo割と良いですよ〜。&lt;/p&gt;&amp;mdash; Nobuyuki Kubota (@nobu_k) &lt;a href=&#34;https://twitter.com/nobu_k/status/1182345041051701248?ref_src=twsrc%5Etfw&#34;&gt;October 10, 2019&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+      <content:encoded><p>その他の記事はこちら</p>
+<ul>
+<li><a href="/blog/2020/01/23/convert-md-from-octopress-to-hugo/">ブログ移行日記(その2)</a></li>
+<li><a href="/blog/2020/01/24/setting-hugo/">ブログ移行日記(その3)</a></li>
+<li><a href="/blog/2020/01/28/introduce-algolia/">ブログ移行日記(その4)</a></li>
+<li><a href="/blog/2020/02/21/import-jugem-posts/">ブログ移行日記(その5)</a></li>
+</ul>
+<h2 id="起因">起因</h2>
+<p>いつものツイートから始まる私の行動です。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">(もしかしたら前に一度おすすめしたかもですが) Goのtemplate構文に拒絶反応がなければHugo割と良いですよ〜。</p>&mdash; Nobuyuki Kubota (@nobu_k) <a href="https://twitter.com/nobu_k/status/1182345041051701248?ref_src=twsrc%5Etfw">October 10, 2019</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-&lt;p&gt;ってことで、Hugo勧められたし、テーマが豊富だしということで、乗り換えた次第です。&lt;/p&gt;
-&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;(元)同僚に教えてもらった記事を見てる。Gatsbyも気になるんだけど、デザインセンスないし、テーマが豊富なのがいいなぁ。/ Comparison of Gatsby vs Jekyll vs Hugo | GatsbyJS - &lt;a href=&#34;https://t.co/yUbKiBmtMS&#34;&gt;https://t.co/yUbKiBmtMS&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1215141907967311872?ref_src=twsrc%5Etfw&#34;&gt;January 9, 2020&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+<p>ってことで、Hugo勧められたし、テーマが豊富だしということで、乗り換えた次第です。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">(元)同僚に教えてもらった記事を見てる。Gatsbyも気になるんだけど、デザインセンスないし、テーマが豊富なのがいいなぁ。/ Comparison of Gatsby vs Jekyll vs Hugo | GatsbyJS - <a href="https://t.co/yUbKiBmtMS">https://t.co/yUbKiBmtMS</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1215141907967311872?ref_src=twsrc%5Etfw">January 9, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-&lt;p&gt;一応Gatsbyのサイトにあった比較も見たのですが、テーマの豊富さが勝ちました。デザインを自分でやれるほどではないので。&lt;/p&gt;
-&lt;h2 id=&#34;理由&#34;&gt;理由&lt;/h2&gt;
-&lt;p&gt;乗り換えるに至ったのは主に2つの理由です。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Octopressが更新されていない&lt;/li&gt;
-&lt;li&gt;ページが増えてきてサイトの生成に時間がかかる&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;前に使っていた&lt;a href=&#34;http://octopress.org/&#34;&gt;Octopress&lt;/a&gt;も&lt;a href=&#34;https://github.com/jekyll/jekyll&#34;&gt;Jekyll&lt;/a&gt;というものがベースになっていました。
+<p>一応Gatsbyのサイトにあった比較も見たのですが、テーマの豊富さが勝ちました。デザインを自分でやれるほどではないので。</p>
+<h2 id="理由">理由</h2>
+<p>乗り換えるに至ったのは主に2つの理由です。</p>
+<ol>
+<li>Octopressが更新されていない</li>
+<li>ページが増えてきてサイトの生成に時間がかかる</li>
+</ol>
+<p>前に使っていた<a href="http://octopress.org/">Octopress</a>も<a href="https://github.com/jekyll/jekyll">Jekyll</a>というものがベースになっていました。
 Jekyllは今でも更新があるのですが、Octopressが更新されなくなってしまったのと、Rubyがベースになっているため?なのかはわかりませんが、
-ブログのページ数が増えてきて、サイトのビルドに時間がかかってくるようになりました。&lt;/p&gt;
-&lt;h2 id=&#34;結果&#34;&gt;結果&lt;/h2&gt;
-&lt;p&gt;まだ、改良点があるかもですが、とりあえず公開できる感じになったと思ったんで切り替えました。&lt;/p&gt;
-&lt;p&gt;前のブログはこんな感じで、&lt;/p&gt;
+ブログのページ数が増えてきて、サイトのビルドに時間がかかってくるようになりました。</p>
+<h2 id="結果">結果</h2>
+<p>まだ、改良点があるかもですが、とりあえず公開できる感じになったと思ったんで切り替えました。</p>
+<p>前のブログはこんな感じで、</p>
 
-&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
-&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
-  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
-    &lt;div class=&#34;img&#34;&gt;
-      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200122/octopress.png&#34; /&gt;
-    &lt;/div&gt;
-    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200122/octopress.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
-  &lt;/figure&gt;
-&lt;/div&gt;
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200122/octopress.png" />
+    </div>
+    <a href="/images/entries/20200122/octopress.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
 
-&lt;p&gt;移行後はこんな感じです。&lt;/p&gt;
+<p>移行後はこんな感じです。</p>
 
 
-&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
-  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
-    &lt;div class=&#34;img&#34;&gt;
-      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200122/hugo.png&#34; /&gt;
-    &lt;/div&gt;
-    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200122/hugo.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
-  &lt;/figure&gt;
-&lt;/div&gt;
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200122/hugo.png" />
+    </div>
+    <a href="/images/entries/20200122/hugo.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
 
-&lt;h2 id=&#34;hugoとは&#34;&gt;Hugoとは?&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://gohugo.io/&#34;&gt;公式サイト&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;こちらにあるように、Go言語で実装されているウェブサイト構築フレームワークです。
+<h2 id="hugoとは">Hugoとは?</h2>
+<ul>
+<li><a href="https://gohugo.io/">公式サイト</a></li>
+</ul>
+<p>こちらにあるように、Go言語で実装されているウェブサイト構築フレームワークです。
 Go言語で実装されているのもあり、インストールが簡単でした。
-Macを使っていますが、&lt;a href=&#34;https://gohugo.io/getting-started/installing/#macos&#34;&gt;Homebrewでインストール&lt;/a&gt;ができてしまいます。
-他の方法もあるようでしたが、Emacsをインストールするのにbrewを入れているので、brewでインストールしました。&lt;/p&gt;
-&lt;p&gt;使い方は色んな人が書いてるし、公式ドキュメントを見ていただけばいいかな。&lt;/p&gt;
-&lt;h2 id=&#34;テーマとは&#34;&gt;テーマとは?&lt;/h2&gt;
-&lt;p&gt;Hugoのサイトに&lt;a href=&#34;https://themes.gohugo.io/&#34;&gt;テーマの一覧&lt;/a&gt;があります。
+Macを使っていますが、<a href="https://gohugo.io/getting-started/installing/#macos">Homebrewでインストール</a>ができてしまいます。
+他の方法もあるようでしたが、Emacsをインストールするのにbrewを入れているので、brewでインストールしました。</p>
+<p>使い方は色んな人が書いてるし、公式ドキュメントを見ていただけばいいかな。</p>
+<h2 id="テーマとは">テーマとは?</h2>
+<p>Hugoのサイトに<a href="https://themes.gohugo.io/">テーマの一覧</a>があります。
 一応、個人のブログなので、それなりにデザインを入れつつ、他の人と違う感じにしたいなと。
-テーマ一覧をざっと眺めて良さそうなのをピックアップしたら、最終的にこちらのテーマになりました。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite&#34;&gt;Clean White&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;それなりに更新されてますし、DisqusとSearch(Algolia)が使えるのでこのテーマに決めました。
-テーマのインストール方法などは&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite&#34;&gt;GitHubのREADMEの「Quick Start」&lt;/a&gt;に記載があります。&lt;/p&gt;
-&lt;p&gt;私は、Hugo自体の設定などをGitHubで管理したかったので、&lt;code&gt;git submodule&lt;/code&gt;を利用して、次のような構成になりました。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;hugo - main repository
+テーマ一覧をざっと眺めて良さそうなのをピックアップしたら、最終的にこちらのテーマになりました。</p>
+<ul>
+<li><a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite">Clean White</a></li>
+</ul>
+<p>それなりに更新されてますし、DisqusとSearch(Algolia)が使えるのでこのテーマに決めました。
+テーマのインストール方法などは<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite">GitHubのREADMEの「Quick Start」</a>に記載があります。</p>
+<p>私は、Hugo自体の設定などをGitHubで管理したかったので、<code>git submodule</code>を利用して、次のような構成になりました。</p>
+<pre><code>hugo - main repository
 ├── archetypes
 ├── content
 ├── data
@@ -564,16 +564,16 @@ Macを使っていますが、&lt;a href=&#34;https://gohugo.io/getting-started/
 ├── static
 └── themes
     └── hugo-theme-cleanwhite - github.com/zhaohuabing/hugo-theme-cleanwhite.git
-&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;hugo&lt;/code&gt; : &lt;code&gt;hugo new site&lt;/code&gt;コマンドで作成されたディレクトリです。このディレクトリでまず&lt;code&gt;git init&lt;/code&gt;しました(このリポジトリはプライベートで管理してます)。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;themes/hugo-theme-cleanwhite&lt;/code&gt; : テーマのQuick Startにある&lt;code&gt;git submodule add&lt;/code&gt;コマンドでサブモジュールとしてテーマをインストールしました。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;public&lt;/code&gt; : hugoが生成するHTMLのトップのディレクトリがこちらです。私はGitHub pagesを利用してブログを公開しているので、&lt;code&gt;git submodule add&lt;/code&gt;で&lt;code&gt;johtani.github.io&lt;/code&gt;をサブモジュールにしました。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Hugoで生成したHTMLなどをGitHub pagesで公開するときの手順などは&lt;a href=&#34;https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages&#34;&gt;Hugoのドキュメント&lt;/a&gt;に記載がありました。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;Hugoに移行した理由や、Hugoとテーマの簡単な紹介でした。
+</code></pre><ul>
+<li><code>hugo</code> : <code>hugo new site</code>コマンドで作成されたディレクトリです。このディレクトリでまず<code>git init</code>しました(このリポジトリはプライベートで管理してます)。</li>
+<li><code>themes/hugo-theme-cleanwhite</code> : テーマのQuick Startにある<code>git submodule add</code>コマンドでサブモジュールとしてテーマをインストールしました。</li>
+<li><code>public</code> : hugoが生成するHTMLのトップのディレクトリがこちらです。私はGitHub pagesを利用してブログを公開しているので、<code>git submodule add</code>で<code>johtani.github.io</code>をサブモジュールにしました。</li>
+</ul>
+<p>Hugoで生成したHTMLなどをGitHub pagesで公開するときの手順などは<a href="https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages">Hugoのドキュメント</a>に記載がありました。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>Hugoに移行した理由や、Hugoとテーマの簡単な紹介でした。
 テーマが豊富なのはデザイン力(りょく)がない身としてはありがたいですよね。
-次はOctopressのmarkdownファイルをHugo用に変換したり、それに関する設定周りの話を書く予定です。&lt;/p&gt;
+次はOctopressのmarkdownファイルをHugo用に変換したり、それに関する設定周りの話を書く予定です。</p>
 </content:encoded>
     </item>
     
@@ -584,54 +584,54 @@ Macを使っていますが、&lt;a href=&#34;https://gohugo.io/getting-started/
       
       <guid>https://blog.johtani.info/blog/2020/01/16/moving-to-hugo/</guid>
       <description>5年くらい、Octopressを使用していましたが、更新されなくなっているのと、コンテンツの生成に時間がかかることもあり、 ほかのプラットフォ</description>
-      <content:encoded>&lt;p&gt;5年くらい、Octopressを使用していましたが、更新されなくなっているのと、コンテンツの生成に時間がかかることもあり、
-ほかのプラットフォームを使用するように変更しました。&lt;/p&gt;
-&lt;p&gt;とりあえず、今回の移行で参考にした記事とかURLをリストアップしてみました。
-詳細についてはまた明日以降で。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;参考記事
-&lt;ul&gt;
-&lt;li&gt;移行関連 : &lt;a href=&#34;https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-&#34;&gt;https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;移行関連 : &lt;a href=&#34;https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/&#34;&gt;https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Hugo自体の日本語紹介記事 : &lt;a href=&#34;https://knowledge.sakura.ad.jp/22908/&#34;&gt;https://knowledge.sakura.ad.jp/22908/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;Hugo概要
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://gohugo.io/&#34;&gt;https://gohugo.io/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;テーマ
-&lt;ul&gt;
-&lt;li&gt;一覧 : &lt;a href=&#34;https://themes.gohugo.io/&#34;&gt;https://themes.gohugo.io/&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;利用したテーマ : &lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite&#34;&gt;https://github.com/zhaohuabing/hugo-theme-cleanwhite&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;データ移行
-&lt;ul&gt;
-&lt;li&gt;作ったスクリプト : &lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo&#34;&gt;https://github.com/johtani/from-octopress-to-hugo&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;favicon
-&lt;ul&gt;
-&lt;li&gt;作ったサイト : &lt;a href=&#34;http://emblemmatic.org/markmaker/#/&#34;&gt;http://emblemmatic.org/markmaker/#/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;Algoliaセッティング
-&lt;ul&gt;
-&lt;li&gt;参考 : &lt;a href=&#34;https://blog.uni-3.app/2019/01/02/hugo-algolia-search/&#34;&gt;https://blog.uni-3.app/2019/01/02/hugo-algolia-search/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;GitHub Pagesでの運用
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages&#34;&gt;https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;残タスク&#34;&gt;残タスク&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;Amazonのアフィリンクをきれいに表示するlayoutか何かを用意する?　&lt;/li&gt;
-&lt;/ul&gt;
+      <content:encoded><p>5年くらい、Octopressを使用していましたが、更新されなくなっているのと、コンテンツの生成に時間がかかることもあり、
+ほかのプラットフォームを使用するように変更しました。</p>
+<p>とりあえず、今回の移行で参考にした記事とかURLをリストアップしてみました。
+詳細についてはまた明日以降で。</p>
+<ul>
+<li>参考記事
+<ul>
+<li>移行関連 : <a href="https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-">https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-</a></li>
+<li>移行関連 : <a href="https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/">https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/</a></li>
+<li>Hugo自体の日本語紹介記事 : <a href="https://knowledge.sakura.ad.jp/22908/">https://knowledge.sakura.ad.jp/22908/</a></li>
+</ul>
+</li>
+<li>Hugo概要
+<ul>
+<li><a href="https://gohugo.io/">https://gohugo.io/</a></li>
+</ul>
+</li>
+<li>テーマ
+<ul>
+<li>一覧 : <a href="https://themes.gohugo.io/">https://themes.gohugo.io/</a></li>
+<li>利用したテーマ : <a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite">https://github.com/zhaohuabing/hugo-theme-cleanwhite</a></li>
+</ul>
+</li>
+<li>データ移行
+<ul>
+<li>作ったスクリプト : <a href="https://github.com/johtani/from-octopress-to-hugo">https://github.com/johtani/from-octopress-to-hugo</a></li>
+</ul>
+</li>
+<li>favicon
+<ul>
+<li>作ったサイト : <a href="http://emblemmatic.org/markmaker/#/">http://emblemmatic.org/markmaker/#/</a></li>
+</ul>
+</li>
+<li>Algoliaセッティング
+<ul>
+<li>参考 : <a href="https://blog.uni-3.app/2019/01/02/hugo-algolia-search/">https://blog.uni-3.app/2019/01/02/hugo-algolia-search/</a></li>
+</ul>
+</li>
+<li>GitHub Pagesでの運用
+<ul>
+<li><a href="https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages">https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="残タスク">残タスク</h2>
+<ul>
+<li>Amazonのアフィリンクをきれいに表示するlayoutか何かを用意する?　</li>
+</ul>
 </content:encoded>
     </item>
     

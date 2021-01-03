@@ -14,88 +14,88 @@
       
       <guid>https://blog.johtani.info/blog/2013/04/22/jira%E3%81%AE%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92s3%E3%81%B8%E3%83%90%E3%83%83%E3%82%AF%E3%82%A2%E3%83%83%E3%83%97/</guid>
       <description>だいぶ、ブログを書くペースが落ちてきてて、危機感を感じている今日このごろです。。。 今回は、個人的に利用しているJIRAのバックアップについて</description>
-      <content:encoded>&lt;p&gt;だいぶ、ブログを書くペースが落ちてきてて、危機感を感じている今日このごろです。。。
-今回は、個人的に利用しているJIRAのバックアップについて、ブログに残しておこうかと。&lt;/p&gt;
-&lt;p&gt;さくらVPSのサーバを借りてJIRAを運用しています。
+      <content:encoded><p>だいぶ、ブログを書くペースが落ちてきてて、危機感を感じている今日このごろです。。。
+今回は、個人的に利用しているJIRAのバックアップについて、ブログに残しておこうかと。</p>
+<p>さくらVPSのサーバを借りてJIRAを運用しています。
 運用といっても、自分の備忘録のためというのが大半の理由です。
-タスクを忘れないように管理するのと合わせて、その作業を行ったときのメモも残したいなと。&lt;/p&gt;
-&lt;p&gt;バックアップといっても、同じサーバ内に保存しても意味がない＋AWSを触ると言いつつ1年以上経ってしまったので、
+タスクを忘れないように管理するのと合わせて、その作業を行ったときのメモも残したいなと。</p>
+<p>バックアップといっても、同じサーバ内に保存しても意味がない＋AWSを触ると言いつつ1年以上経ってしまったので、
 このへんで本腰を入れるという意味も込めてAWSのS3（ゆくゆくはGlacier）にバックアップを取る仕組みを作りました。
 「作りました」というと凄そうですが、Cronとシェルだけで終わりました、なんて便利な世の中。
-ということで、以下は作業の備忘録です。&lt;/p&gt;
-&lt;h2 id=&#34;1awsのアカウント作成&#34;&gt;1.AWSのアカウント作成&lt;/h2&gt;
-&lt;hr&gt;
-&lt;p&gt;アカウントを作ってください。ここは特に説明しなくてもいいかと。。。クレジットカードの登録が必要なのが注意点でしょうか。
-アカウント作成後の1年間は&lt;a href=&#34;http://aws.amazon.com/jp/free/&#34;&gt;無料枠&lt;/a&gt;と呼ばれる仕組みが用意されており、いろんなことが無料で行えます。
-（まだ、S3しか使ってないので、他にももっと使わないと。。。）&lt;/p&gt;
-&lt;h2 id=&#34;2s3のバケット作成&#34;&gt;2.S3のバケット作成&lt;/h2&gt;
-&lt;hr&gt;
-&lt;p&gt;AWSのアカウントが作成できたら、&lt;a href=&#34;http://aws.amazon.com/jp/s3/&#34;&gt;Amazon S3（Simple Storage Service）&lt;/a&gt;のバケットと呼ばれる、データの保存先を作成します。
-作成手順はこちらの&lt;a href=&#34;http://docs.aws.amazon.com/AmazonS3/latest/gsg/GetStartedWithS3.html?r=8046&#34;&gt;公式入門ドキュメント（英語）&lt;/a&gt;をそのまま行いました。
-簡単な手順はこちら&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;AWS Management Consoleと呼ばれるところから、S3のコンソールにアクセス&lt;/li&gt;
-&lt;li&gt;「Create Bucket」ボタンをクリック&lt;/li&gt;
-&lt;li&gt;「Bucket Name」を入力し、リージョンを選択したら「Create」ボタンをクリック&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;以上でバケットが作成されました。これだけです。WebのConsoleからファイルをアップロードすることも可能です。
-ただ、今回はさくらVPSから定期的にバックアップしたいのでシェルでアクセスできるようにします。&lt;/p&gt;
-&lt;h2 id=&#34;3awsのアクセスキーとシークレットアクセスキーの取得&#34;&gt;3.AWSのアクセスキーとシークレットアクセスキーの取得&lt;/h2&gt;
-&lt;hr&gt;
-&lt;p&gt;次に紹介するs3cmdというツールを利用するのに、AWSのアクセスキーとシークレットキーが必要になります。
-取得方法は&lt;a href=&#34;http://www.atmarkit.co.jp/fwin2k/operation/aec2s3_1/aec2s3_1_04.html&#34;&gt;こちら&lt;/a&gt;を参考にしましたが、今は日本語のページが用意されています。
+ということで、以下は作業の備忘録です。</p>
+<h2 id="1awsのアカウント作成">1.AWSのアカウント作成</h2>
+<hr>
+<p>アカウントを作ってください。ここは特に説明しなくてもいいかと。。。クレジットカードの登録が必要なのが注意点でしょうか。
+アカウント作成後の1年間は<a href="http://aws.amazon.com/jp/free/">無料枠</a>と呼ばれる仕組みが用意されており、いろんなことが無料で行えます。
+（まだ、S3しか使ってないので、他にももっと使わないと。。。）</p>
+<h2 id="2s3のバケット作成">2.S3のバケット作成</h2>
+<hr>
+<p>AWSのアカウントが作成できたら、<a href="http://aws.amazon.com/jp/s3/">Amazon S3（Simple Storage Service）</a>のバケットと呼ばれる、データの保存先を作成します。
+作成手順はこちらの<a href="http://docs.aws.amazon.com/AmazonS3/latest/gsg/GetStartedWithS3.html?r=8046">公式入門ドキュメント（英語）</a>をそのまま行いました。
+簡単な手順はこちら</p>
+<ol>
+<li>AWS Management Consoleと呼ばれるところから、S3のコンソールにアクセス</li>
+<li>「Create Bucket」ボタンをクリック</li>
+<li>「Bucket Name」を入力し、リージョンを選択したら「Create」ボタンをクリック</li>
+</ol>
+<p>以上でバケットが作成されました。これだけです。WebのConsoleからファイルをアップロードすることも可能です。
+ただ、今回はさくらVPSから定期的にバックアップしたいのでシェルでアクセスできるようにします。</p>
+<h2 id="3awsのアクセスキーとシークレットアクセスキーの取得">3.AWSのアクセスキーとシークレットアクセスキーの取得</h2>
+<hr>
+<p>次に紹介するs3cmdというツールを利用するのに、AWSのアクセスキーとシークレットキーが必要になります。
+取得方法は<a href="http://www.atmarkit.co.jp/fwin2k/operation/aec2s3_1/aec2s3_1_04.html">こちら</a>を参考にしましたが、今は日本語のページが用意されています。
 セキュリティ証明書（Security Credentials）のページで、「アクセス証明書」というタブで、「新しいアクセスキーを作成する」リンクをクリックしてください。
-アクセスキーIDが新しく表示されます。このアクセスキーIDとシークレットアクセスキー（表示リンククリック後に表示される）をメモしておきます。&lt;/p&gt;
-&lt;h2 id=&#34;4s3cmdのインストール&#34;&gt;4.s3cmdのインストール&lt;/h2&gt;
-&lt;hr&gt;
-&lt;p&gt;世の中には便利なものを作ってくれる方がいるもので。
-&lt;a href=&#34;http://s3tools.org/s3cmd&#34;&gt;s3cmd&lt;/a&gt;と呼ばれるS3へアクセスできるコマンドラインツールが存在します。
-ということで、こちらをインストール。これまた、便利なもので&lt;a href=&#34;http://understeer.hatenablog.com/entry/2012/07/23/124402&#34;&gt;インストール手順を書いてくれれてるブログ&lt;/a&gt;もありました。（あれ、なんか、見たことある名前がURLにはいってるなぁ）
-インストールはこちら。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+アクセスキーIDが新しく表示されます。このアクセスキーIDとシークレットアクセスキー（表示リンククリック後に表示される）をメモしておきます。</p>
+<h2 id="4s3cmdのインストール">4.s3cmdのインストール</h2>
+<hr>
+<p>世の中には便利なものを作ってくれる方がいるもので。
+<a href="http://s3tools.org/s3cmd">s3cmd</a>と呼ばれるS3へアクセスできるコマンドラインツールが存在します。
+ということで、こちらをインストール。これまた、便利なもので<a href="http://understeer.hatenablog.com/entry/2012/07/23/124402">インストール手順を書いてくれれてるブログ</a>もありました。（あれ、なんか、見たことある名前がURLにはいってるなぁ）
+インストールはこちら。</p>
+<pre><code>
 # yum -y --enablerepo epel install s3cmd
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;インストール後に、先ほど取得したアクセスキーIDを設定します。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre><p>インストール後に、先ほど取得したアクセスキーIDを設定します。</p>
+<pre><code>
 $ s3cmd --configure
 Access Key: xxxx
 Secret Key: xxxx
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;以上で、s3cmdが使えるようになりました。&lt;/p&gt;
-&lt;h2 id=&#34;5バックアップスクリプトの作成&#34;&gt;5.バックアップスクリプトの作成&lt;/h2&gt;
-&lt;hr&gt;
-&lt;p&gt;つぎは、本題のJIRAのバックアップです。
-バックアップ方法は&lt;a href=&#34;http://doc.go2group.jp/pages/viewpage.action?pageId=34865916&#34;&gt;こちら&lt;/a&gt;を参考にしました。ちょっと古いみたいですが。
+</code></pre><p>以上で、s3cmdが使えるようになりました。</p>
+<h2 id="5バックアップスクリプトの作成">5.バックアップスクリプトの作成</h2>
+<hr>
+<p>つぎは、本題のJIRAのバックアップです。
+バックアップ方法は<a href="http://doc.go2group.jp/pages/viewpage.action?pageId=34865916">こちら</a>を参考にしました。ちょっと古いみたいですが。
 おもなデータは「JIRAのXMLバックアップユーティリティ」にてバックアップするか、「データベースのバックアップツール」を利用する方法があります。
 推奨は「データベースのバックアップツール」のようなので、私の場合は「pg_dump」にてJIRAのデータベースをまるごとバックアップすることにしています。
 また、データベースには添付ファイルが保存されていないようなので、別途「/var/atlassian/application-data/jira/data」というディレクトリをtarコマンドで圧縮して保存すようにしました。
 あとは、pg_dumpの結果と添付ファイルの保存先の圧縮したデータをまとめてディレクトリに保存して圧縮します。
 さいごは、S3にアップロードすればおしまいです。
 一応、ファイルが連綿と残り続けるのは嫌だなぁということで、ファイル数で世代管理することにもしました。
-これまた、ググって見つけてきた&lt;a href=&#34;http://d.hatena.ne.jp/nigogonigo/20121003/1349272523&#34;&gt;サイトを参考&lt;/a&gt;にしただけですが。。。
-ということで、こんなかんじのスクリプトを日時でcronに設定して動かしてます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+これまた、ググって見つけてきた<a href="http://d.hatena.ne.jp/nigogonigo/20121003/1349272523">サイトを参考</a>にしただけですが。。。
+ということで、こんなかんじのスクリプトを日時でcronに設定して動かしてます。</p>
+<pre><code>
 #!/bin/sh
 TODAY=`date +%Y%m%d`
-BACKUP_HOME=&amp;quot;/var/atlassian/backups&amp;quot;
-S3SYNC_DIR=&amp;quot;/var/atlassian/backups/s3sync&amp;quot;
+BACKUP_HOME=&quot;/var/atlassian/backups&quot;
+S3SYNC_DIR=&quot;/var/atlassian/backups/s3sync&quot;
 AGE=7
 
 mkdir -p ${BACKUP_HOME}/${TODAY}/
-/usr/bin/pg_dump -U postgres -Fc jiradb &amp;gt; ${BACKUP_HOME}/${TODAY}/jiradb_backup.dump
+/usr/bin/pg_dump -U postgres -Fc jiradb &gt; ${BACKUP_HOME}/${TODAY}/jiradb_backup.dump
 tar zcvf ${BACKUP_HOME}/${TODAY}/attachment.tgz /var/atlassian/application-data/jira/data
 tar zcvf ${S3SYNC_DIR}/jira_backup_${TODAY}.tgz ${BACKUP_HOME}/${TODAY}
 rm -rf ${BACKUP_HOME}/${TODAY}
 NUM=`ls ${S3SYNC_DIR} | wc -l`
 while [ ${NUM} -ge ${AGE} ]
 do
-  DEL_FILE=`ls -lt ${S3SYNC_DIR} | tail -1 | awk &#39;{print $9}&#39;`
+  DEL_FILE=`ls -lt ${S3SYNC_DIR} | tail -1 | awk '{print $9}'`
   rm -r ${S3SYNC_DIR}/${DEL_FILE}
   NUM=`ls ${S3SYNC_DIR} | wc -l`
 done
 
 s3cmd sync --delete-removed ${S3SYNC_DIR}/* s3://my_jira_backup/s3sync/
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;そこへんだよとかあれば、ツッコミを。
+</code></pre><p>そこへんだよとかあれば、ツッコミを。
 今のところ、S3へのsyncだけなので、このあとは、月1くらいでGlacierに落とすとかの仕組みも考えるかなぁ。これまた何かあるんだろうけど。
-あとは、この応用で家のNASに溜まっている写真をS3経由もしくは直接Glacierにバックアップする仕組みを考える予定です。&lt;/p&gt;
+あとは、この応用で家のNASに溜まっている写真をS3経由もしくは直接Glacierにバックアップする仕組みを考える予定です。</p>
 </content:encoded>
     </item>
     
@@ -106,53 +106,53 @@ s3cmd sync --delete-removed ${S3SYNC_DIR}/* s3://my_jira_backup/s3sync/
       
       <guid>https://blog.johtani.info/blog/2013/02/13/xperia-z%E8%B2%B7%E3%81%84%E3%81%BE%E3%81%97%E3%81%9F/</guid>
       <description>技術ブログから離れていってますが。。。 Xperia Zを購入しました。 前に使っていたのはXperia arcになります。 もうすぐ２年だったのですが、容量不</description>
-      <content:encoded>&lt;p&gt;技術ブログから離れていってますが。。。
-Xperia Zを購入しました。&lt;/p&gt;
-&lt;p&gt;前に使っていたのはXperia arcになります。
+      <content:encoded><p>技術ブログから離れていってますが。。。
+Xperia Zを購入しました。</p>
+<p>前に使っていたのはXperia arcになります。
 もうすぐ２年だったのですが、容量不足に悩まされていたため＋芸の肥やし（仕事の足し）という名目で
 Xperia Zの購入に踏み切りました。
-予約しての購入です。&lt;/p&gt;
-&lt;p&gt;いくつか戸惑いなどを感じているので備忘録としてブログに残しておきます。
-&lt;strong&gt;サイズが大きい&lt;/strong&gt;___
+予約しての購入です。</p>
+<p>いくつか戸惑いなどを感じているので備忘録としてブログに残しておきます。
+<strong>サイズが大きい</strong>___
 まぁ、わかっていたことですが、5インチと大きいです。
 ステータスバーを表示するのがちょっときついくらいです。
 私は手が大きい方なのですがそれでもキツイので、普通の人は両手じゃないと厳しいんじゃないかと。。。
 一応、ステータスバーを表示するためのアプリなんかもあるようなので、その辺を検討するのもいいかなぁと（まだインストールもしてませんが。）
-また、Angry Birdを演ってびっくりしたのですが、解像度が大きいため、startボタンなどが小さくて押しづらいですｗ&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;移行がめんどくさい&lt;/strong&gt;___
+また、Angry Birdを演ってびっくりしたのですが、解像度が大きいため、startボタンなどが小さくて押しづらいですｗ</p>
+<p><strong>移行がめんどくさい</strong>___
 iPadも持っていて、ソレと比較するとひどくめんどくさかったです。
 実は方法を知らないだけかもしれないんですが。。。
 iPadだと、初期化したりしてもiTunesにインストールしたアプリなども覚えていてくれます。
 ですので、すぐに同じ環境が出来上がります。
 Xperiaに関しては、arcでインストールしてたアプリをインストール履歴を元に一つずつインストールして、
 それぞれのアプリやアカウントを設定して行きました。
-これが結構面倒で、まだ完全にはアプリがインストールできてないかも（他にも新しいものを入れたいなぁと思いつつ、探す手間を惜しんでます。。。おすすめアプリお待ちしてます。）&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Zite、Angry Bird star warsがインストールできない&lt;/strong&gt;___
+これが結構面倒で、まだ完全にはアプリがインストールできてないかも（他にも新しいものを入れたいなぁと思いつつ、探す手間を惜しんでます。。。おすすめアプリお待ちしてます。）</p>
+<p><strong>Zite、Angry Bird star warsがインストールできない</strong>___
 Ziteは英語の勉強も兼ねて入れていたのですが、対応していないバージョンですと言われます。
 AngryBirdもいっしょですね。
-starwarsじゃない奴はインストールできたのですが、肝心のやってみたいstar warsがインストールできなくて。。。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;ドコモアプリがいっぱい&lt;/strong&gt;___
+starwarsじゃない奴はインストールできたのですが、肝心のやってみたいstar warsがインストールできなくて。。。</p>
+<p><strong>ドコモアプリがいっぱい</strong>___
 ドコモのアプリやプリインストールアプリがいっぱいあったので、どうしようか悩んでいます。
 いくつかはアンインストールしました。HotpepperBeautyとか間違いなく使わないし
-SFA-QRというよくわからないアプリも入っていたのでこれまたアンインストールしました。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;通知に出さないアプリとか選択できない？&lt;/strong&gt;___
+SFA-QRというよくわからないアプリも入っていたのでこれまたアンインストールしました。</p>
+<p><strong>通知に出さないアプリとか選択できない？</strong>___
 容量不足だったのも有り、TwitterクライアントにはTwiccaのみをインストールしていたのですが、今回はTwitter純正のクライアントもインストールしました。
 お気に入り登録されたりといった状況も見れるので重宝するのですが、基本的にはtwiccaを使うつもりです。
-ですが、通知バー（ステータスバー）に@ツイートが届いたなどといった通知は見なくてもいいと思っているんですが、なにか方法あるんでしょうか。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;dビデオが危険&lt;/strong&gt;___
+ですが、通知バー（ステータスバー）に@ツイートが届いたなどといった通知は見なくてもいいと思っているんですが、なにか方法あるんでしょうか。</p>
+<p><strong>dビデオが危険</strong>___
 いわゆる携帯ショップで機種変更したため、いくつかのサービスに登録しないといけませんでした。
 で、dビデオ（月額525円で映画とか見放題）に登録したので、せっかくだからと映画をダウンロードしてみたのですが、危険です。。。
 ただでさえ、本読むのが遅かったり、コーディングしてないのにビデオ見ると更に時間ががが。。。
-けど、面白くて。。。危険です。（スターシップ・トゥルーパーズ見ちゃいました。。）&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;クレードルがもう一つほしい&lt;/strong&gt;___
+けど、面白くて。。。危険です。（スターシップ・トゥルーパーズ見ちゃいました。。）</p>
+<p><strong>クレードルがもう一つほしい</strong>___
 防水なので、あまりキャップを開けたくないんです。
 そして、dビデオとか見てるとやっぱり電池の減りがはやいんです。（ディスプレイが大きいのもあるのかなぁ。要らないサービス切るとかしないと）
 結局、出先でも充電をしないといけなくて。
 ただ、純正のクレードルが2100円と結構な値段でして。。。
 あと、イヤホンを指すところもキャップがあるので、Bluetoothレシーバーも気になってたりします。
-こちらも結構な値段でして。。。&lt;/p&gt;
-&lt;p&gt;とまぁ、新しいものを手に入れて、色々悩んでますが、楽しいですね。購入したての色々と悩む時間がｗ
-おすすめアプリとかあったらコメントください&lt;/p&gt;
+こちらも結構な値段でして。。。</p>
+<p>とまぁ、新しいものを手に入れて、色々悩んでますが、楽しいですね。購入したての色々と悩む時間がｗ
+おすすめアプリとかあったらコメントください</p>
 </content:encoded>
     </item>
     
@@ -163,94 +163,94 @@ SFA-QRというよくわからないアプリも入っていたのでこれま�
       
       <guid>https://blog.johtani.info/blog/2012/12/31/%E4%BB%8A%E5%B9%B4%E3%81%AE%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A%E3%81%A8%E6%9D%A5%E5%B9%B4%E3%81%AE%E6%8A%B1%E8%B2%A02012/</guid>
       <description>書こうと思いながら、気づいたら大晦日。 よくないですね、思いついた時に書かないと。 昨年も書いたので、昨年書いた抱負から振り返りをと。 Mongo</description>
-      <content:encoded>&lt;p&gt;書こうと思いながら、気づいたら大晦日。
-よくないですね、思いついた時に書かないと。&lt;/p&gt;
-&lt;p&gt;昨年も書いたので、昨年書いた抱負から振り返りをと。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;del&gt;MongoDB触ってみる&lt;/del&gt;&lt;/li&gt;
-&lt;li&gt;Scala触ってみる&lt;/li&gt;
-&lt;li&gt;&lt;del&gt;なんかWebサービス作ってみる（Amazonとかで）&lt;/del&gt;&lt;/li&gt;
-&lt;li&gt;elasticsearch、IndexTankを調べてみる&lt;/li&gt;
-&lt;li&gt;&lt;del&gt;NewSolrCloudDesignを読み込んで自分なりにまとめる&lt;/del&gt;&lt;/li&gt;
-&lt;li&gt;&lt;del&gt;Junsaiに参加する&lt;/del&gt;&lt;/li&gt;
-&lt;li&gt;&lt;del&gt;「7つの言語7つの世界」の続き&lt;/del&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;えーと。。。できてないことばかりですねｗ
+      <content:encoded><p>書こうと思いながら、気づいたら大晦日。
+よくないですね、思いついた時に書かないと。</p>
+<p>昨年も書いたので、昨年書いた抱負から振り返りをと。</p>
+<ul>
+<li><del>MongoDB触ってみる</del></li>
+<li>Scala触ってみる</li>
+<li><del>なんかWebサービス作ってみる（Amazonとかで）</del></li>
+<li>elasticsearch、IndexTankを調べてみる</li>
+<li><del>NewSolrCloudDesignを読み込んで自分なりにまとめる</del></li>
+<li><del>Junsaiに参加する</del></li>
+<li><del>「7つの言語7つの世界」の続き</del></li>
+</ul>
+<p>えーと。。。できてないことばかりですねｗ
 MongoDBはインストールすらしてないですし、Webサービスも作ってないです。（さくらVPSは借りたんですが）
 Junsaiは参加したけど何もできてないし。7つの言語もそのままですね。。。
 SolrCloudDesignはまとめられてないですしね。
 Scalaは少しだけ触りました。結局Javaみたいな記述をしてしまうという良くないくせが出てしまうので、
 見送ってしまいましたが。。。
-elasticsearchは少しだけやりました。#pyfesで話をさせて貰える機会があったので。&lt;/p&gt;
-&lt;p&gt;興味がコロコロ変わってしまうのが問題点かもしれないです。少しは地に足をつけてなんかやったほうがいいのになぁ&lt;/p&gt;
-&lt;p&gt;###今年の振り返り
-今年はこんなかんじでしょうか。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;いろんな勉強会に出没&lt;/li&gt;
-&lt;li&gt;#pyfesでelasticsearchのさわりを紹介&lt;/li&gt;
-&lt;li&gt;個人的にJIRA導入&lt;/li&gt;
-&lt;li&gt;MIR輪読会開始&lt;/li&gt;
-&lt;li&gt;Solr勉強会の主催を引き継ぐ&lt;/li&gt;
-&lt;li&gt;Kindle paperwhite当たった&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;相変わらずいろんな勉強会に出てました。最近は勉強しに行くのもありますが、人に会いに行ってるような気がします。
-勉強会から帰ってきて復習したりしないとすぐ忘れちゃうんですよね。。。&lt;/p&gt;
-&lt;p&gt;#pyfesではelasticsearchの入門中という話をしてきました。
+elasticsearchは少しだけやりました。#pyfesで話をさせて貰える機会があったので。</p>
+<p>興味がコロコロ変わってしまうのが問題点かもしれないです。少しは地に足をつけてなんかやったほうがいいのになぁ</p>
+<p>###今年の振り返り
+今年はこんなかんじでしょうか。</p>
+<ul>
+<li>いろんな勉強会に出没</li>
+<li>#pyfesでelasticsearchのさわりを紹介</li>
+<li>個人的にJIRA導入</li>
+<li>MIR輪読会開始</li>
+<li>Solr勉強会の主催を引き継ぐ</li>
+<li>Kindle paperwhite当たった</li>
+</ul>
+<p>相変わらずいろんな勉強会に出てました。最近は勉強しに行くのもありますが、人に会いに行ってるような気がします。
+勉強会から帰ってきて復習したりしないとすぐ忘れちゃうんですよね。。。</p>
+<p>#pyfesではelasticsearchの入門中という話をしてきました。
 人の多さに緊張しまくりでよくわかりにくい発表になってしまったのが反省点かと。。。
-もっと話をする機会を増やすとなれるのでしょうか。&lt;/p&gt;
-&lt;p&gt;JIRAの導入はパラで仕事をしているとタスク管理がおろそかになってくるので導入しました。
+もっと話をする機会を増やすとなれるのでしょうか。</p>
+<p>JIRAの導入はパラで仕事をしているとタスク管理がおろそかになってくるので導入しました。
 フリーのredmineを考えていたのですが、インストールが簡単なJIRAを導入しました。
-有料ですが、1-10人までなら、ダウンロード版が$10ですし。いろんな時間を買ったと考えると安いかと&lt;/p&gt;
-&lt;p&gt;検索に関してもまだまだ初心者に近いということでModern Information Retrievalという英語の本の輪読を主催しました。
+有料ですが、1-10人までなら、ダウンロード版が$10ですし。いろんな時間を買ったと考えると安いかと</p>
+<p>検索に関してもまだまだ初心者に近いということでModern Information Retrievalという英語の本の輪読を主催しました。
 Twitterでの呼びかけに答えてくれた方々に感謝です。
-まだ、半分も行ってないですが、何周かしたいと思っています。&lt;/p&gt;
-&lt;p&gt;Solr勉強会の主催者も引き継ぎました。Atnd立てるの手伝おうか？って言ったら主催者になってましたｗ
-来年も開催するので、喋りたい方、こんな話を聞きたいなどTwitterやブログでコンタクトいただければと。&lt;/p&gt;
-&lt;p&gt;あと、会社の忘年会で思いがけずKindle paperwhiteが当たりました！（やったー！）
+まだ、半分も行ってないですが、何周かしたいと思っています。</p>
+<p>Solr勉強会の主催者も引き継ぎました。Atnd立てるの手伝おうか？って言ったら主催者になってましたｗ
+来年も開催するので、喋りたい方、こんな話を聞きたいなどTwitterやブログでコンタクトいただければと。</p>
+<p>あと、会社の忘年会で思いがけずKindle paperwhiteが当たりました！（やったー！）
 iPadを持っていることもあり、完全に購入する気も無かったのですが。。。
 使ってみると結構いいです。画面のギラツキがないのと、他のソフトがないのがいいです。
-読書に没頭できます。通常はKindleを持ち歩くことになるかと。（没頭できるけど、読むスピードが遅い＋すぐ忘れるのが難点。。。）&lt;/p&gt;
-&lt;p&gt;###来年の抱負
+読書に没頭できます。通常はKindleを持ち歩くことになるかと。（没頭できるけど、読むスピードが遅い＋すぐ忘れるのが難点。。。）</p>
+<p>###来年の抱負
 来年の抱負も書いておきます。
 昨年の前科があるのでどこまでできるかわかりませんが。
-すぐに興味が変わってしまうのもありますし&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;IntelliJ IDEAをメインに使う&lt;/li&gt;
-&lt;li&gt;JIRAを継続して活用&lt;/li&gt;
-&lt;li&gt;ブログの継続&lt;/li&gt;
-&lt;li&gt;elasticsearch&lt;/li&gt;
-&lt;li&gt;Luceneのソースコードリーディング&lt;/li&gt;
-&lt;li&gt;何かOSSのソースを読む&lt;/li&gt;
-&lt;li&gt;Macでもっと開発&lt;/li&gt;
-&lt;li&gt;読書と英語を継続&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;IDEA（アイデア）は11をインストールしてたのですが、使えていませんでした。
+すぐに興味が変わってしまうのもありますし</p>
+<ul>
+<li>IntelliJ IDEAをメインに使う</li>
+<li>JIRAを継続して活用</li>
+<li>ブログの継続</li>
+<li>elasticsearch</li>
+<li>Luceneのソースコードリーディング</li>
+<li>何かOSSのソースを読む</li>
+<li>Macでもっと開発</li>
+<li>読書と英語を継続</li>
+</ul>
+<p>IDEA（アイデア）は11をインストールしてたのですが、使えていませんでした。
 イメケンが主催したJetBrainsユーザー会で洗脳されて＋タイミング良い75%オフセールにやられて購入しました。
 普段はEclipseを使っているのですが、これを機にチャレンジしようかと。
-少し変化をしてかないとすぐ取り残されちゃうので。。。&lt;/p&gt;
-&lt;p&gt;JIRAはまだタスクを登録してクローズするという初歩段階の使い方しかできてないので、少しずつ研究してフィールド追加したり、ワークフローを変更してみたりと研究したいです。&lt;/p&gt;
-&lt;p&gt;ブログは、今年後半が勉強会参加ブログしかないのを反省して来年は、もう少しSolrやLucene、lucene-gosenについて書いて行きたいです。
-（すくなくとも、4.0で動かす話を書かないと。。。）&lt;/p&gt;
-&lt;p&gt;elasticsearchはまぁ触れる環境を維持しようという話です。
+少し変化をしてかないとすぐ取り残されちゃうので。。。</p>
+<p>JIRAはまだタスクを登録してクローズするという初歩段階の使い方しかできてないので、少しずつ研究してフィールド追加したり、ワークフローを変更してみたりと研究したいです。</p>
+<p>ブログは、今年後半が勉強会参加ブログしかないのを反省して来年は、もう少しSolrやLucene、lucene-gosenについて書いて行きたいです。
+（すくなくとも、4.0で動かす話を書かないと。。。）</p>
+<p>elasticsearchはまぁ触れる環境を維持しようという話です。
 どこかで導入できればいいんでしょうが、なかなか。
-（勉強会開いてみるのも面白いかな？）&lt;/p&gt;
-&lt;p&gt;Luceneソースコードリーディングは誘われてるのに、ちゃんと返事をしていなかったので。
-来年2月のどこかの土日を候補日にする予定です。&lt;/p&gt;
-&lt;p&gt;何かOSSのソースも読もうと思ってます。
+（勉強会開いてみるのも面白いかな？）</p>
+<p>Luceneソースコードリーディングは誘われてるのに、ちゃんと返事をしていなかったので。
+来年2月のどこかの土日を候補日にする予定です。</p>
+<p>何かOSSのソースも読もうと思ってます。
 「何か」はまだ決めてないですが、人のソースを実はあまり読んでないなぁと。
 Vさんと話をした時に人のソースを読むのがいいですよという話になったので。
-真似をするためにもなんか読みたいなぁと。Javaになるのかなぁ。&lt;/p&gt;
-&lt;p&gt;とある事情で週4はWindowsで開発してます。
+真似をするためにもなんか読みたいなぁと。Javaになるのかなぁ。</p>
+<p>とある事情で週4はWindowsで開発してます。
 Macはちょっとしか触ってないのでMacの環境が成長していないのが難点です。
 できれば、Macで開発を継続できる環境を作りたいなぁと。Kobitoとか入れてるけど触ってないし。。。
-IntelliJも入れたのでMacで開発したいものです。&lt;/p&gt;
-&lt;p&gt;最後は毎年のことですが、本を読むスピードが買うスピードに追いついてないと。。。
+IntelliJも入れたのでMacで開発したいものです。</p>
+<p>最後は毎年のことですが、本を読むスピードが買うスピードに追いついてないと。。。
 英語の本もかってるんですが、これまた読むスピードが。。。
 ということで、ざっくり目を通す読書をもっとやりたいなぁと。
-買うのはいいのですが、必要にならないと呼んだ内容を忘れてしまうので、読んだあとに実践する機会も設けたいと思ってます（思ってるだけかもしれないですが）&lt;/p&gt;
-&lt;p&gt;あと、来年もいろんな人に会うためにいろんな勉強会に出没すると思いますので、声をかけていただければと
+買うのはいいのですが、必要にならないと呼んだ内容を忘れてしまうので、読んだあとに実践する機会も設けたいと思ってます（思ってるだけかもしれないですが）</p>
+<p>あと、来年もいろんな人に会うためにいろんな勉強会に出没すると思いますので、声をかけていただければと
 また、不抜けているのを見かけたらカツを入れてください。（技術内容のブログ書けとか、本読んだ感想をブログにかけとか）
-来年もTwitterなどで絡みまくると思いますが、よろしくです。&lt;/p&gt;
+来年もTwitterなどで絡みまくると思いますが、よろしくです。</p>
 </content:encoded>
     </item>
     
@@ -261,11 +261,11 @@ IntelliJも入れたのでMacで開発したいものです。&lt;/p&gt;
       
       <guid>https://blog.johtani.info/blog/2012/09/03/%E3%83%A1%E3%82%A4%E3%83%B3mba%E3%82%92mountain-lion%E3%81%AB%E3%82%A2%E3%83%83%E3%83%97%E3%83%87%E3%83%BC%E3%83%88%E3%81%84%E3%82%8D%E3%81%84%E3%82%8D%E7%A2%BA%E8%AA%8D%E4%B8%AD/</guid>
       <description>友人にお値打価格で購入したMac miniはMountain Lionにアップデートしてたのですが、手元のAirはまだアップデートしていませんで</description>
-      <content:encoded>&lt;p&gt;友人にお値打価格で購入したMac miniはMountain Lionにアップデートしてたのですが、手元のAirはまだアップデートしていませんでした。&lt;/p&gt;
-&lt;p&gt;夏休み中にバックアップ＋アップデートをしてしまおうと思いMountain Lionにアップデートはしていたのですが、
+      <content:encoded><p>友人にお値打価格で購入したMac miniはMountain Lionにアップデートしてたのですが、手元のAirはまだアップデートしていませんでした。</p>
+<p>夏休み中にバックアップ＋アップデートをしてしまおうと思いMountain Lionにアップデートはしていたのですが、
 本格的に触り始めると色々と動かないものがあったので、備忘録としてブログを書いておきます。
-（まだ途中ですが。）&lt;/p&gt;
-&lt;div&gt;
+（まだ途中ですが。）</p>
+<div>
 ###1.Eclipseが起動しない
 Java6が未インストール状態になったみたいで、Eclipseを起動すると、Java6をインストールしなさいと言われました。
 で、私の記憶が確かなら、前はJavaコマンドを実行するとインストールされたんですが、ターミナルでjavaコマンドを実行するとjavaはすでにインストールされてる模様。。。
@@ -274,13 +274,13 @@ Java6が未インストール状態になったみたいで、Eclipseを起動�
 さて、どーする？ということで、ツイートしたりぐぐってみて、「Java Preferences」なる設定用のアプリ？が有ることに気づき、とりあえず開いてみたらJava6ないからインストールしたら？と言われました。
 結果オーライということで、インストール開始。
 無事、インストールも終了。Eclipseも起動しました。（ただし、今度はMercurialのプラグインがPythonのライブラリが無いとエラーを出すことに）
-&lt;/div&gt;
-&lt;div&gt;
+</div>
+<div>
 ###2.Xcodeが起動しない。
 使ってはいないんですが、Javaの件を調べるのに、起動したらLionじゃないと駄目だよと。
 ということで、Xcodeもインストールしなおし。
-&lt;/div&gt;
-&lt;div&gt;
+</div>
+<div>
 ###3. homebrewが動かない
 1.で書いた方法で、Eclipse自体は起動したんですが、Mercurialのプラグインがエラーを吐き始めました。
 で、見てみると、hgコマンドを実行しようとしてなんか、壊れていると。
@@ -300,9 +300,9 @@ AppleのDeveloperに登録したからなのか、Xcodeのプロジェクトを�
 で、やっと「homebrew」を入れようかなぁと。
 一応その前に「sudo brew update」ってやってみたらどうなる？と挑戦したら今度は動きました。
 homebrewが何を判断してinstallでしょ？って言ってたのかもわかっていませんが、updateで良かったみたいです。
-&lt;p&gt;ついでに、upgradeもしときました。（こっちは後からインストールしたもののバージョンが上がってるものがあったら更新してくれるコマンドかなぁ？）&lt;/p&gt;
-&lt;/div&gt;
-&lt;div&gt;
+<p>ついでに、upgradeもしときました。（こっちは後からインストールしたもののバージョンが上がってるものがあったら更新してくれるコマンドかなぁ？）</p>
+</div>
+<div>
 ###4. pipの更新
 ただ、brewをupdateしても相変わらず、EclipseのMercurialのPluginはエラーを出してました。
 で、ターミナルからhgコマンドを実行してみたら同じエラーが。まぁ、そうですよね。
@@ -312,7 +312,7 @@ homebrewが何を判断してinstallでしょ？って言ってたのかもわ�
 そういえば、過去のMBAセットアップのメモを残してたなぁと思い出して「johtani mercurial」でググってみるとちゃんと[書いてある](http://johtani.jugem.jp/?eid=34)じゃないですかー（偉いぞ、自分）
 ということで、「sudo easy_install pip」でpipを更新してから「sudo pip install Mercurial」で無事、hgコマンドもインストールし直せました。
 Eclipseを起動してもエラーが出ない。（まだbitbucketに接続確認まではできてないですが。。。眠さに勝てず寝てしまいました。）
-&lt;/div&gt;
+</div>
 </content:encoded>
     </item>
     
@@ -323,26 +323,26 @@ Eclipseを起動してもエラーが出ない。（まだbitbucketに接続確�
       
       <guid>https://blog.johtani.info/blog/2012/05/16/playframework-2-0-java%E3%81%AE%E6%96%B9-%E3%82%92%E8%A7%A6%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%A6%E3%82%8B/</guid>
       <description>PlayFramework2.0を触ってみてます。 ちょっとコーディングしたくなったのと、最近のアプリの作成の調査も兼ねて。 まぁ、せっかくなの</description>
-      <content:encoded>&lt;p&gt;PlayFramework2.0を触ってみてます。
+      <content:encoded><p>PlayFramework2.0を触ってみてます。
 ちょっとコーディングしたくなったのと、最近のアプリの作成の調査も兼ねて。
 まぁ、せっかくなので、Solr検索のアプリでも作ってみようかと言うことで触ってます。
-ただ、Solr検索アプリでしかなく、今のところDBを使わないので、実はPlay Frameworkじゃなくてもいいのではないかという疑問も。。。&lt;/p&gt;
-&lt;p&gt;まだ、触り始めたばかりなので、なんともですが。感想を。
+ただ、Solr検索アプリでしかなく、今のところDBを使わないので、実はPlay Frameworkじゃなくてもいいのではないかという疑問も。。。</p>
+<p>まだ、触り始めたばかりなので、なんともですが。感想を。
 たぶん、Ruby on Railsに似ているのかなと。
-RoRは仕事で少し関わったので、なんとなく知っていますが、アプリの作成手順や、ディレクトリ構成などが似ている気がします。&lt;/p&gt;
-&lt;p&gt;コントローラーの生成のタイミングとか、内部でオブジェクトをSingletonで保持する方法とかのイメージがまだ良くつかめていない状態で、まずは、Solr検索部分（Palyにあんまり関係ないところ）を実装しているところです。&lt;/p&gt;
-&lt;p&gt;現状で一番の疑問点は、Eclipseプロジェクト化した時の参照ライブラリのパスに関するところでしょうか。
-Play Frameworkは「play new ほげほげ」コマンドを実行するとアプリの&lt;a href=&#34;http://www.playframework.org/documentation/2.0.1/Anatomy&#34;&gt;ディレクトリ構成が作成&lt;/a&gt;されます。
+RoRは仕事で少し関わったので、なんとなく知っていますが、アプリの作成手順や、ディレクトリ構成などが似ている気がします。</p>
+<p>コントローラーの生成のタイミングとか、内部でオブジェクトをSingletonで保持する方法とかのイメージがまだ良くつかめていない状態で、まずは、Solr検索部分（Palyにあんまり関係ないところ）を実装しているところです。</p>
+<p>現状で一番の疑問点は、Eclipseプロジェクト化した時の参照ライブラリのパスに関するところでしょうか。
+Play Frameworkは「play new ほげほげ」コマンドを実行するとアプリの<a href="http://www.playframework.org/documentation/2.0.1/Anatomy">ディレクトリ構成が作成</a>されます。
 このあとに、eclipsfyというplayのコマンドを実行すると、Ecilpseのプロジェクトファイルが作成されます。
-この時、PlayFrameworkが利用するjarファイルたちが参照ライブラリとしてクラスパスに設定されます。&lt;/p&gt;
-&lt;p&gt;このパスには、PlayFrameworkのインストールディレクトリが含まれた絶対パスが記述されるのですが、
+この時、PlayFrameworkが利用するjarファイルたちが参照ライブラリとしてクラスパスに設定されます。</p>
+<p>このパスには、PlayFrameworkのインストールディレクトリが含まれた絶対パスが記述されるのですが、
 複数人で開発するときにはどうしているのかなぁと。
 あと、BitbucketやGitHubにアップするときもどうするのかなぁと。
 以前、この疑問ツイートして、頂いた回答としては、環境変数として定義して、各自で設定してもらうというものでした。
 私も同じ事を考えていたので、腑に落ちたのですが、他にもっといい方法があったりするんでしょうか？
 クラスパスやEclipseプロジェクトのファイルをアップしないというのもあると思いますが、それもちょっとなぁと。
-なにか、オススメとかあれば、教えていただけると嬉しいです。&lt;/p&gt;
-&lt;p&gt;最近、ブログ更新してなかったのもあったので、まずは、導入編でした。&lt;/p&gt;
+なにか、オススメとかあれば、教えていただけると嬉しいです。</p>
+<p>最近、ブログ更新してなかったのもあったので、まずは、導入編でした。</p>
 </content:encoded>
     </item>
     
@@ -353,22 +353,22 @@ Play Frameworkは「play new ほげほげ」コマンドを実行するとアプ
       
       <guid>https://blog.johtani.info/blog/2012/04/12/%E3%83%A1%E3%83%A2amazon-cloudsearch%E3%81%8C%E5%87%BA%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F%E3%82%88/</guid>
       <description>Twitterでこのブログ流れてきて、気になったので、流し読みして簡単にメモ。 Amazonのサービスでスケールする検索サービスみたい。 主に、</description>
-      <content:encoded>&lt;p&gt;Twitterで&lt;a href=&#34;http://aws.typepad.com/aws/2012/04/amazon-cloudsearch-start-searching-in-one-hour.html/?PHPSESSID=fdfe9b1cde84fd75f396f6121de595d6&#34;&gt;このブログ&lt;/a&gt;流れてきて、気になったので、流し読みして簡単にメモ。
-Amazonのサービスでスケールする検索サービスみたい。&lt;/p&gt;
-&lt;p&gt;主に、機能面です。価格とかはみてないです。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;データと検索トラフィックに対して自動でスケール（※automaticってのがどういう感じかは調べてないです）&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://aws.amazon.com/jp/documentation/cloudsearch/&#34;&gt;CloudSearch APIs&lt;/a&gt;でアクセス可能。AWS管理コンソールからオペレーションできる。コマンドツールもある&lt;/li&gt;
-&lt;li&gt;データ登録にHTTPSも使えますよ。データ形式はJSON、XML、SDF（Search Document Format）と呼ばれるものに準拠したもの&lt;/li&gt;
-&lt;li&gt;near real-timeで検索可能になる。RAMにインデックスを保持して更新処理が早くなる（Lucene/Solrと一緒か？）&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;ステミングとかストップワードの設定変えたらre-index&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;ファセット、フィールド指定検索が可能。（ファセットはファセットクエリみたいなのもできるのかな？）&lt;/li&gt;
-&lt;li&gt;データ量が増えたら、サーチインスタンスを追加するか、インスタンスタイプを大きくしてスケールする？&lt;/li&gt;
-&lt;li&gt;トラフィックが増えたら新しいインスタンスにデータをレプリケートしてインスタンスを追加する&lt;/li&gt;
-&lt;li&gt;簡単に実現できるよ。ファセット検索、全文検索、And/OR検索式、ランキングのカスタマイズ、フィールド指定ソート、フィールド指定検索、テキスト処理オプション（ストップワード、類義語、ステミングのような）&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;a href=&#34;http://aws.amazon.com/jp/documentation/cloudsearch/&#34;&gt;ここ&lt;/a&gt;から詳細のドキュメントが見れるみたいなので、また、見てみます。&lt;/p&gt;
-&lt;p&gt;あと、WikipediaをCloudSearchで動かしてる&lt;a href=&#34;http://wikipedia.searchtechnologies.com/&#34;&gt;デモ&lt;/a&gt;と&lt;a href=&#34;http://www.searchtechnologies.com/wikipedia-cloudsearch.html&#34;&gt;それに関する記事&lt;/a&gt;もあるみたいです。これも暇を見つけて眺めてみます。&lt;/p&gt;
+      <content:encoded><p>Twitterで<a href="http://aws.typepad.com/aws/2012/04/amazon-cloudsearch-start-searching-in-one-hour.html/?PHPSESSID=fdfe9b1cde84fd75f396f6121de595d6">このブログ</a>流れてきて、気になったので、流し読みして簡単にメモ。
+Amazonのサービスでスケールする検索サービスみたい。</p>
+<p>主に、機能面です。価格とかはみてないです。</p>
+<ul>
+<li>データと検索トラフィックに対して自動でスケール（※automaticってのがどういう感じかは調べてないです）</li>
+<li><a href="http://aws.amazon.com/jp/documentation/cloudsearch/">CloudSearch APIs</a>でアクセス可能。AWS管理コンソールからオペレーションできる。コマンドツールもある</li>
+<li>データ登録にHTTPSも使えますよ。データ形式はJSON、XML、SDF（Search Document Format）と呼ばれるものに準拠したもの</li>
+<li>near real-timeで検索可能になる。RAMにインデックスを保持して更新処理が早くなる（Lucene/Solrと一緒か？）</lI></li>
+<li>ステミングとかストップワードの設定変えたらre-index</lI></li>
+<li>ファセット、フィールド指定検索が可能。（ファセットはファセットクエリみたいなのもできるのかな？）</li>
+<li>データ量が増えたら、サーチインスタンスを追加するか、インスタンスタイプを大きくしてスケールする？</li>
+<li>トラフィックが増えたら新しいインスタンスにデータをレプリケートしてインスタンスを追加する</li>
+<li>簡単に実現できるよ。ファセット検索、全文検索、And/OR検索式、ランキングのカスタマイズ、フィールド指定ソート、フィールド指定検索、テキスト処理オプション（ストップワード、類義語、ステミングのような）</li>
+</ul>
+<p><a href="http://aws.amazon.com/jp/documentation/cloudsearch/">ここ</a>から詳細のドキュメントが見れるみたいなので、また、見てみます。</p>
+<p>あと、WikipediaをCloudSearchで動かしてる<a href="http://wikipedia.searchtechnologies.com/">デモ</a>と<a href="http://www.searchtechnologies.com/wikipedia-cloudsearch.html">それに関する記事</a>もあるみたいです。これも暇を見つけて眺めてみます。</p>
 </content:encoded>
     </item>
     
@@ -379,36 +379,36 @@ Amazonのサービスでスケールする検索サービスみたい。&lt;/p&g
       
       <guid>https://blog.johtani.info/blog/2012/03/25/%E4%B9%85%E3%80%85%E3%81%ABmac-mini%E3%81%AE%E3%81%93%E3%81%A8%E3%81%A7%E3%82%82/</guid>
       <description>子供の寝かしつけしてたら、寝かしつけされてしまって、２時に目が覚めてしまいました。 TSUTAYAでCD借りてきてウォークマンに入れようと思っ</description>
-      <content:encoded>&lt;p&gt;子供の寝かしつけしてたら、寝かしつけされてしまって、２時に目が覚めてしまいました。
+      <content:encoded><p>子供の寝かしつけしてたら、寝かしつけされてしまって、２時に目が覚めてしまいました。
 TSUTAYAでCD借りてきてウォークマンに入れようと思っていたのに。。。
-ということで、今作業してます。&lt;/p&gt;
-&lt;p&gt;MBAを買う前から使っている、もう９年目のWindows自作デスクトップで基本的にはCDの取り込みをしています。
-&lt;a href=&#34;http://buffalo.jp/products/catalog/storage/hs-dhtgl_r5/?PHPSESSID=1c389a9c0b58221d0102b4b1e8498e2e&#34;&gt;ファイルサーバ（BuffaloのTeraStation）&lt;/a&gt;がLionから接続できないというのと、
+ということで、今作業してます。</p>
+<p>MBAを買う前から使っている、もう９年目のWindows自作デスクトップで基本的にはCDの取り込みをしています。
+<a href="http://buffalo.jp/products/catalog/storage/hs-dhtgl_r5/?PHPSESSID=1c389a9c0b58221d0102b4b1e8498e2e">ファイルサーバ（BuffaloのTeraStation）</a>がLionから接続できないというのと、
 X-アプリで曲管理していたのでという理由です。
-あと、ウォークマンなのでMac用のソフトがなかったりというのも理由です。&lt;/p&gt;
-&lt;p&gt;で、眠い目をこすりながらWindowsマシンを起動すると、ネットワークにつながらないじゃないですか。。。
-再起動してもダメでした。&lt;/p&gt;
-&lt;p&gt;となってしまったので、せっかく、譲ってもらったMac miniも活用しないといけないなと思い、iTunesでアルバムを取り込んでみています。
-ここ数年はWAV形式でデータを取り込んでいたので、WAVでの取り込みを設定して、iTunesで取り込みました。&lt;/p&gt;
-&lt;p&gt;とまぁ、ここまでやってから、件のWindows機を再度、再起動したらネットワークに繋がってしまいました。。。
+あと、ウォークマンなのでMac用のソフトがなかったりというのも理由です。</p>
+<p>で、眠い目をこすりながらWindowsマシンを起動すると、ネットワークにつながらないじゃないですか。。。
+再起動してもダメでした。</p>
+<p>となってしまったので、せっかく、譲ってもらったMac miniも活用しないといけないなと思い、iTunesでアルバムを取り込んでみています。
+ここ数年はWAV形式でデータを取り込んでいたので、WAVでの取り込みを設定して、iTunesで取り込みました。</p>
+<p>とまぁ、ここまでやってから、件のWindows機を再度、再起動したらネットワークに繋がってしまいました。。。
 なので、残りのCDはWindows機で取り込みしてます。
 けど、そろそろこのPCも危なそうなので、データをサルベージして、Mac miniで作業できるようにしないとなぁ。
 Macでウォークマンを運用している人はどうやってるんだろう？
-ちなみに私が利用しているウォークマンは&lt;a href=&#34;http://www.sony.jp/walkman/products/NW-A847_V/index.html&#34;&gt;NW-A847&lt;/a&gt;です。
+ちなみに私が利用しているウォークマンは<a href="http://www.sony.jp/walkman/products/NW-A847_V/index.html">NW-A847</a>です。
 エンコードはWAV形式で取り込んで、X-アプリでウォークマンに入れています。
 iTunes使ってる人は、アップルのロスレスエンコードをつかってるのかなぁ？
-ということで、調査・検討したい項目はこんなところですか。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;調査：TeraStationにMacからつなぐ方法（Lionで利用できそうなソフトなにかないかな？）&lt;/li&gt;
-&lt;li&gt;調査：iTunesでウォークマンに曲転送（やってみればすぐわかるだろう。。。）&lt;/li&gt;
-&lt;li&gt;調査：iTunesの曲をCDに焼く方法（車で曲聞くのにCDだから）&lt;/li&gt;
-&lt;li&gt;検討：ファイルサーバのリプレース対象となる機種（ファイルサーバは導入してまだ５年だから余裕がないと買い換えない）&lt;/li&gt;
-&lt;li&gt;検討：iPodに鞍替え（Sony好きだし、ウォークマン好きだし、買ったばっかりだからまず無い選択肢）&lt;/li&gt;
-&lt;li&gt;検討：Mac miniにVirtualBox入れて、WindowsからX-アプリ使うとか。（ファイルサーバが見えるようになるかな？）&lt;/li&gt;
-&lt;li&gt;検討：Mac miniをWindowsとして運用（もったいなさすぎる気がする）&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;とまぁ、まだ悩んでるだけで、取り留めもない事を書いて、しかも結論が出ないままですが、ご容赦ください。
-ご意見、提案を大募集してます！！&lt;/p&gt;
+ということで、調査・検討したい項目はこんなところですか。</p>
+<ul>
+<li>調査：TeraStationにMacからつなぐ方法（Lionで利用できそうなソフトなにかないかな？）</li>
+<li>調査：iTunesでウォークマンに曲転送（やってみればすぐわかるだろう。。。）</li>
+<li>調査：iTunesの曲をCDに焼く方法（車で曲聞くのにCDだから）</li>
+<li>検討：ファイルサーバのリプレース対象となる機種（ファイルサーバは導入してまだ５年だから余裕がないと買い換えない）</li>
+<li>検討：iPodに鞍替え（Sony好きだし、ウォークマン好きだし、買ったばっかりだからまず無い選択肢）</li>
+<li>検討：Mac miniにVirtualBox入れて、WindowsからX-アプリ使うとか。（ファイルサーバが見えるようになるかな？）</li>
+<li>検討：Mac miniをWindowsとして運用（もったいなさすぎる気がする）</li>
+</ul>
+<p>とまぁ、まだ悩んでるだけで、取り留めもない事を書いて、しかも結論が出ないままですが、ご容赦ください。
+ご意見、提案を大募集してます！！</p>
 </content:encoded>
     </item>
     
@@ -419,34 +419,34 @@ iTunes使ってる人は、アップルのロスレスエンコードをつか�
       
       <guid>https://blog.johtani.info/blog/2012/01/27/%E4%BB%8A%E8%88%88%E5%91%B3%E3%81%8C%E3%81%82%E3%82%8B%E3%81%93%E3%81%A8/</guid>
       <description>昨年末に今年の抱負について書いたのですが、 他にも興味あるものが増えたので備忘録＆公約？を兼ねてブログに書いておきます。 （興味あるものがあれば</description>
-      <content:encoded>&lt;p&gt;&lt;a href=&#34;http://johtani.jugem.jp/?eid=53&#34;&gt;昨年末に今年の抱負について書いた&lt;/a&gt;のですが、
+      <content:encoded><p><a href="http://johtani.jugem.jp/?eid=53">昨年末に今年の抱負について書いた</a>のですが、
 他にも興味あるものが増えたので備忘録＆公約？を兼ねてブログに書いておきます。
-（興味あるものがあれば、シェアしたりできると楽しいので、ツイート、コメント待ってます。）&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;ZooKeeper&lt;/li&gt;
-&lt;li&gt;SolrCloud&lt;/li&gt;
-&lt;li&gt;SenseiDB&lt;/li&gt;
-&lt;li&gt;Lucene&lt;/li&gt;
-&lt;li&gt;検索システムのアジャイル開発？&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;まずは、ZooKeeper。このなんとも言えない&lt;a href=&#34;http://zookeeper.apache.org/images/zookeeper_small.gif&#34;&gt;アイコン&lt;/a&gt;でお馴染みのヤツです。
+（興味あるものがあれば、シェアしたりできると楽しいので、ツイート、コメント待ってます。）</p>
+<ul>
+<li>ZooKeeper</li>
+<li>SolrCloud</li>
+<li>SenseiDB</li>
+<li>Lucene</li>
+<li>検索システムのアジャイル開発？</li>
+</ul>
+<p>まずは、ZooKeeper。このなんとも言えない<a href="http://zookeeper.apache.org/images/zookeeper_small.gif">アイコン</a>でお馴染みのヤツです。
 こんな顔してますが（顔関係ない。。。）、いろんな所に出没します。
 Katta、Lilly、SolrCloudにも出てくるんです。SenseiDBにも出てくるんです。分散処理にことごとく絡んできます。
-で、これは、知っとかないとまずそうだと。&lt;/p&gt;
-&lt;p&gt;SolrCloud。まぁ、妥当です。一応、Solrな人なんで。
+で、これは、知っとかないとまずそうだと。</p>
+<p>SolrCloud。まぁ、妥当です。一応、Solrな人なんで。
 昨年、NewSolrDesignを訳してみてもいます。訳しただけでほったらかし。。。
 elasticsearchとかSenseiDBとかSolrに似たLuceneを利用している検索サーバがチラホラ話題になってます。
 できれば、このあたりの分散の仕組みを比較しながら調べたいなと思ってみたり。
-すべてをカバーするのはキツイので、SolrCloudかSenseiDBあたりを調べていきたいなぁと。&lt;/p&gt;
-&lt;p&gt;で、SenseiDBです。先日、Publickeyで&lt;a href=&#34;http://www.publickey1.jp/blog/12/senseidblinkedin.html&#34;&gt;記事&lt;/a&gt;が出て飛びつきました。
+すべてをカバーするのはキツイので、SolrCloudかSenseiDBあたりを調べていきたいなぁと。</p>
+<p>で、SenseiDBです。先日、Publickeyで<a href="http://www.publickey1.jp/blog/12/senseidblinkedin.html">記事</a>が出て飛びつきました。
 Zookeeper使ってるし、分散だし、全文インデックスにLucene使ってるし。
-なんだか興味あること、全部入りな感じです。&lt;/p&gt;
-&lt;p&gt;Luceneも興味津津です。
+なんだか興味あること、全部入りな感じです。</p>
+<p>Luceneも興味津津です。
 Solrがコアとして使ってますし、昨年、Solrと同時にリリースされるようになりました。
 Luceneも奥が深く、時々、Solr調べててLuceneのソースも見るのですが、本格的に全体像を把握したりは残念ながらできていません。
 そのくせ、Zookeeper同様、いろんな所に出没するんです、これが。
-ということで、足元を固めるためにもLuceneに入門しないとなぁと。&lt;/p&gt;
-&lt;p&gt;で、最後に検索システムのアジャイル開発です。
+ということで、足元を固めるためにもLuceneに入門しないとなぁと。</p>
+<p>で、最後に検索システムのアジャイル開発です。
 lucene-gosenのコミッターをやらせてもらってたり、Solrに絡んだ仕事もしてますが、長期にわたってフィードバックをもらいながら検索システムを育てていくというのが最近興味が出てきてることです。
 検索システムは作ったらおしまいとは行かないのが厄介なところです。
 データは増加しますし、検索されるキーワードも変わってきます。
@@ -456,10 +456,10 @@ lucene-gosenのコミッターをやらせてもらってたり、Solrに絡ん�
 今日、クックパッドの方の話しを聞いて思い出した次第です。（前に、Solr勉強会でも同じ話しをされて、同じ思いに至ったのですが、いかんせん忘れやすくてｗ）
 また、ログ解析の話などをTwitterで見てることもあり、検索という側面でのログ解析ってのも重要だよなぁと。
 いくつか思いつくこともあるのですが、実践出来る場も限られてます。
-色々と話しをする場を設けるのも面白いかもなぁと妄想してる次第です。&lt;/p&gt;
-&lt;p&gt;取り留めもなく、現時点で気になってることを書きだして見ました。
+色々と話しをする場を設けるのも面白いかもなぁと妄想してる次第です。</p>
+<p>取り留めもなく、現時点で気になってることを書きだして見ました。
 また、数ヶ月したら気が変わってるかもしれないですが、とりあえず書き残してみます。
-興味がある方がいらっしゃったら声をかけてもらえるとうれしいですね。&lt;/p&gt;
+興味がある方がいらっしゃったら声をかけてもらえるとうれしいですね。</p>
 </content:encoded>
     </item>
     
@@ -470,17 +470,17 @@ lucene-gosenのコミッターをやらせてもらってたり、Solrに絡ん�
       
       <guid>https://blog.johtani.info/blog/2011/12/01/mba%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97%E5%82%99%E5%BF%98%E9%8C%B2%E3%81%9D%E3%81%AE%EF%BC%95%E3%81%A8mac-mini2009late%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97%E3%81%A8%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%8F%E3%81%A0%E3%82%89%E3%81%AA%E3%81%84%E8%A9%B1/</guid>
       <description>ひさびさに、MBAのお話です。 セットアップといっても、物理的な方ですね。 以前、ケース（カバー）について記載しました。 この記事にも書いてあった</description>
-      <content:encoded>&lt;p&gt;ひさびさに、MBAのお話です。
+      <content:encoded><p>ひさびさに、MBAのお話です。
 セットアップといっても、物理的な方ですね。
-&lt;a href=&#34;http://johtani.jugem.jp/?eid=34&#34;&gt;以前、ケース（カバー）について記載しました。&lt;/a&gt;
+<a href="http://johtani.jugem.jp/?eid=34">以前、ケース（カバー）について記載しました。</a>
 この記事にも書いてあったのですが、付属の滑り止めが簡易なシールで、カバンの中から出し入れすると剥がれるは、作業をしてるとずれるわで、悩んでいました。
 今日、たまたま、東急ハンズに行くことがあったので、店員さんに相談してすべり止め対策のグッズを購入しました。
 相談した所、カバーは傷がつきにくくなるような素材ですから、シールもつきにくいとのこと。（言われてみればそりゃそうか。）
 対策としては紙ヤスリで傷つけたところに薄手のシールゴムをつければはがれにくくなりますよとのこと。
 ということで、やってみました。まぁ、ゴムにホコリはつくかもしれませんが、今のところ滑らず快適！
 いやぁ、ハンズの店員さんすごいですわ。
-MBAについてはこんなとこです。最近また、出先に行っていてMBA使えないので、ブログを書くかメールにしか使ってないです。。。&lt;/p&gt;
-&lt;p&gt;で、もう一つはMac Mini（2009 late：Core2Duo 2.26GHz、メモリ4G、HDD250G）です。
+MBAについてはこんなとこです。最近また、出先に行っていてMBA使えないので、ブログを書くかメールにしか使ってないです。。。</p>
+<p>で、もう一つはMac Mini（2009 late：Core2Duo 2.26GHz、メモリ4G、HDD250G）です。
 前職の同期から安く譲ってもらいました。音声が出力されないという問題点があるとFacebookでつぶやいているのをみて、興味を持ったらゲット出来ましたｗ
 で、セットアップをしたのです。
 大変でした。まずつまずいたのが、キーボードとマウスでした。
@@ -497,8 +497,8 @@ Snow Leopardでソフトウェアアップデートしたところでようや�
 とりあえず、Lionの設定のウィンドウ復元機能やアニメーションをオフにするなど対策してます。
 HDDのSSD化とかメモリ増設とか考えないとダメかなぁ。
 あと、ついでにBootcampも興味があるので、せっかくだから実験する予定です。
-Windowsが前のデスクトップより快適に使えるようになるなら、Windowsマシンとするのもありかなぁと。。。&lt;/p&gt;
-&lt;p&gt;セットアップ系はこのへんで。
+Windowsが前のデスクトップより快適に使えるようになるなら、Windowsマシンとするのもありかなぁと。。。</p>
+<p>セットアップ系はこのへんで。
 あとは、最近興味が有ること2点です。（技術系ではありません）
 1つ目は最近発売されたゼルダ。夜な夜なやってます。
 もともとゲーム好きでゼルダも欠かさずやってきてますが、ゼルダらしさを残しつつ新しい要素やアクションも取り入れとなかなか楽しいです。
@@ -515,20 +515,20 @@ Windowsが前のデスクトップより快適に使えるようになるなら�
 はぁ、こまった。（そもそもそんなにスペックいらないんじゃないかというのもあるからなぁ。メインはPDF読むことだから。）
 
 
-&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
-  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
-    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B002C1ARK8/?tag=johtani-22&#34;&gt;
-      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B002C1ARK8&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
-    &lt;/a&gt;
-  &lt;/div&gt;
-  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
-    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
-      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B002C1ARK8/?tag=johtani-22&#34;&gt;
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B002C1ARK8/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B002C1ARK8&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B002C1ARK8/?tag=johtani-22">
       ゼルダの伝説 スカイウォードソード (期間限定生産 スペシャルCD同梱)
-      &lt;/a&gt;
-    &lt;/p&gt;
-  &lt;/div&gt;
-&lt;/div&gt;&lt;/p&gt;
+      </a>
+    </p>
+  </div>
+</div></p>
 </content:encoded>
     </item>
     
@@ -539,13 +539,13 @@ Windowsが前のデスクトップより快適に使えるようになるなら�
       
       <guid>https://blog.johtani.info/blog/2011/10/18/jjug-ccc-2011-fall%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/</guid>
       <description>JJUG CCC 2011 Fallに参加してきました。 個人的にはかなり久々のJavaのカンファレンスです。（※あくまで「Javaの」という話で。SolrやHad</description>
-      <content:encoded>&lt;p&gt;JJUG CCC 2011 Fallに参加してきました。
-個人的にはかなり久々のJavaのカンファレンスです。（※あくまで「Javaの」という話で。SolrやHadoopとは別という意味です。）&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;http://www.java-users.jp/contents/events/ccc2011fall/&#34;&gt;概要やタイムテーブルはこちら&lt;/a&gt;。
+      <content:encoded><p>JJUG CCC 2011 Fallに参加してきました。
+個人的にはかなり久々のJavaのカンファレンスです。（※あくまで「Javaの」という話で。SolrやHadoopとは別という意味です。）</p>
+<p><a href="http://www.java-users.jp/contents/events/ccc2011fall/">概要やタイムテーブルはこちら</a>。
 予定があったので、残念ながら最後の２つのセッション（Scala、Twitter）しか参加できませんでした。
 Hadoopの話も聞きたかったのですが、しょうがないかと。
-いつものごとく、メモを個人的に取ったので。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+いつものごとく、メモを個人的に取ったので。</p>
+<pre><code>
 ★楽々Scalaプログラミング
 　浅海
 
@@ -682,22 +682,22 @@ Hadoopの話も聞きたかったのですが、しょうがないかと。
 　　　　コンシューマから取りに行くというのが特徴
 　　memcachedプロトコルの拡張２
 　　　リライアブルフェッチ
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ということで感想。&lt;/p&gt;
-&lt;p&gt;Scalaは前から気になっていて、本までかってるのになかなか手を付けられていない始末でした。
+</code></pre><p>ということで感想。</p>
+<p>Scalaは前から気になっていて、本までかってるのになかなか手を付けられていない始末でした。
 そんな時にこのJJUGの話があったので、ちょうどいいと聞きに。
 関数型やScalaのぼんやりしたイメージのみを持って聴いていたのですが、思った以上にキーワードが多くてついていくのがやっとというイメージ。
 で、いつものごとく、Twitterでつぶやいていた所、色々な反応が。（わからずにつぶやいたのもあり、波紋を呼んだ模様）
 お陰で、Scala関連の方たちをフォローできたので結果オーライでした。
 話の内容自体はサラっとながす感じだったので、再度資料を見る＋Scalaをもっと勉強しないと理解出来ないなぁという印象でした。
-ちなみに、&lt;a href=&#34;http://www.slideshare.net/asami224/scala-9728001&#34;&gt;資料はこちら&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;次は、最近Twitterの中の人になった山本さん（&lt;a href=&#34;http://twitter.com/yusukey&#34;&gt;@yusukey&lt;/a&gt;）の話しを聞きました。
+ちなみに、<a href="http://www.slideshare.net/asami224/scala-9728001">資料はこちら</a>。</p>
+<p>次は、最近Twitterの中の人になった山本さん（<a href="http://twitter.com/yusukey">@yusukey</a>）の話しを聞きました。
 Twitter4Jの話と、TwitterのOSSへの関わりの話。あとは、実際にTwitterが作成しているOSSのひとつKestrelについて。
 TwitterはRubyベースで色々と作ってきていたのだが、Java（JVM上で動く言語（Scalaなど））に徐々にシフトしているというのが一番の印象です。あとは、Lucene、Hadoopなど私の興味のあるOSSも利用しているなど。
 Kestrelについてはデモを交えながら、実際の動きを説明されていたのでとてもわかり易かったです。
 プレゼン中もTweetを表示しながらという、さすがTwitterの中の人という印象でした。
 Twitterでは少し前から知り合いだったのですが、実際にお会いできた（イケメンでしたよ！）のも収穫でした。
-次はStormの話も聞きたいかなぁ&lt;/p&gt;
-&lt;p&gt;で、２セッション（山本さんの話のあとにLT大会にも参加）だけですが、全体の感想を。
+次はStormの話も聞きたいかなぁ</p>
+<p>で、２セッション（山本さんの話のあとにLT大会にも参加）だけですが、全体の感想を。
 「クロスコミュニティカンファレンス」というだけあり、Java以外の話題（CouchDBとか名前がありました）もちらほらあったようです。
 ただ、最近の他の勉強会やカンファレンスに比べると人が少ない印象でした。
 私が参加したセッションは比較的大きな部屋だったせいもあり、40～50人くらい入っていたと思うのですが、ガラガラな印象でした。良い意味で、Javaも安定してきているため、参加者が少なかったのかなぁと
@@ -705,7 +705,7 @@ Twitterでは少し前から知り合いだったのですが、実際にお会�
 午前中から参加していると違った印象だったかもしれないですが。。。
 あと、初めて行った会場で、しかも大きめの施設でした。午後の途中から行ったせいもあるかもしれないですが、
 案内が出ていなくて若干迷子に。。。
-ただ、セッションの部屋自体は各席に机があり、電源も比較的多めにあったので、PC持ち込みでメモを取るには最適でした。&lt;/p&gt;
+ただ、セッションの部屋自体は各席に机があり、電源も比較的多めにあったので、PC持ち込みでメモを取るには最適でした。</p>
 </content:encoded>
     </item>
     
@@ -716,51 +716,51 @@ Twitterでは少し前から知り合いだったのですが、実際にお会�
       
       <guid>https://blog.johtani.info/blog/2011/10/07/mba%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97%E5%82%99%E5%BF%98%E9%8C%B2%E3%81%9D%E3%81%AE%EF%BC%94/</guid>
       <description>久々に、MBAの備忘録です。 あれから色々入れました。 なので、入れたソフトの一覧を追加。 AIR：TweetDeckをインストールするのに必要だ</description>
-      <content:encoded>&lt;p&gt;久々に、MBAの備忘録です。
+      <content:encoded><p>久々に、MBAの備忘録です。
 あれから色々入れました。
-なので、入れたソフトの一覧を追加。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;AIR：TweetDeckをインストールするのに必要だったため&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;TweetDeck（AIR版）：TwitterとFacebookを同じ画面で見ることができるため。&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;TextWrangler：テキストエディタ（まだあんまり使ってない）&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;Skitch：Evernoteに買収されて無料に。先日のSolr管理画面の説明書きにもちょっと使用&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;ClamXav：フリーのセキュリティソフト。&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;SourceTree：Twitterで知ったMac用のgit、mercurialのクライアントソフト。&lt;a href=&#34;http://blogs.atlassian.jp/2011/10/sourcetree-git-hg-client-by-atlassian-j.html&#34;&gt;AtlassianがSourceTreeを買収したのを機に一時的に無料公開されていたので。&lt;/a&gt;&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;Firefox：基本はSafariを使ってます。WindowsではChromeを使ってます。ただ、Webページを表示されていない部分もまるごとキャプチャするのにChromeのプラグインだとダメだったので入れました。今のところキャプチャ用のブラウザです。&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;Full Screen enable for Eclipse on Lion：Eclipseをフルスクリーン対応するためのプラグイン&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;MercurialEclipse：bitbucketにアカウントをもっているので。&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;mercurial：pipを使ってインストール。MercurialEclipseでコマンドが必要だから。「sudo pip install Mercurial」&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;pip：mercurialをインストールするためにインストール。「sudo easy_install pip」でインストール&lt;/lI&gt;&lt;/li&gt;
-&lt;li&gt;iStat pro（ウィジェット）：&lt;a href=&#34;http://www.apple.com/jp/downloads/dashboard/status/istatpro.html&#34;&gt;CPUなどの情報を表示するウィジェット&lt;/a&gt;。ウィジェットがアップルのサイト（AppStoreではない）から検索できるというのを人から聞いた。ウィジェットってあんまり使われないのか？&lt;/li&gt;
-&lt;li&gt;Mac Blu-ray Player：現時点で有料ソフトはこれだけ。&lt;a href=&#34;http://jp.macblurayplayer.com/index.htm&#34;&gt;こちら。&lt;/a&gt;もともとNASのデータのバックアップ用にBlu-rayのドライブ買ったんですが、せっかくだからMacにも使ってみようと思い、MacでBlu-rayを見るために購入しました。所用で長距離移動もあったので、新幹線で映画見てました。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;このくらいです。
-ほんとはリンクを貼ればいいのですが、そこまでの元気がないので、ご勘弁を。&lt;/p&gt;
-&lt;p&gt;Skitchがおすすめです。簡単に画像編集＋説明書きが入れられて、矢印などがよくある画像編集の野暮ったさがないので、画面キャプチャに説明書くのに今後活躍する予定です。&lt;/p&gt;
-&lt;p&gt;あと、ソフトではなく、サービスなのですが、&lt;a href=&#34;https://cacoo.com/&#34;&gt;Cacoo&lt;/a&gt;というサービスが便利です。
+なので、入れたソフトの一覧を追加。</p>
+<ul>
+<li>AIR：TweetDeckをインストールするのに必要だったため</lI></li>
+<li>TweetDeck（AIR版）：TwitterとFacebookを同じ画面で見ることができるため。</lI></li>
+<li>TextWrangler：テキストエディタ（まだあんまり使ってない）</lI></li>
+<li>Skitch：Evernoteに買収されて無料に。先日のSolr管理画面の説明書きにもちょっと使用</lI></li>
+<li>ClamXav：フリーのセキュリティソフト。</lI></li>
+<li>SourceTree：Twitterで知ったMac用のgit、mercurialのクライアントソフト。<a href="http://blogs.atlassian.jp/2011/10/sourcetree-git-hg-client-by-atlassian-j.html">AtlassianがSourceTreeを買収したのを機に一時的に無料公開されていたので。</a></lI></li>
+<li>Firefox：基本はSafariを使ってます。WindowsではChromeを使ってます。ただ、Webページを表示されていない部分もまるごとキャプチャするのにChromeのプラグインだとダメだったので入れました。今のところキャプチャ用のブラウザです。</lI></li>
+<li>Full Screen enable for Eclipse on Lion：Eclipseをフルスクリーン対応するためのプラグイン</lI></li>
+<li>MercurialEclipse：bitbucketにアカウントをもっているので。</lI></li>
+<li>mercurial：pipを使ってインストール。MercurialEclipseでコマンドが必要だから。「sudo pip install Mercurial」</lI></li>
+<li>pip：mercurialをインストールするためにインストール。「sudo easy_install pip」でインストール</lI></li>
+<li>iStat pro（ウィジェット）：<a href="http://www.apple.com/jp/downloads/dashboard/status/istatpro.html">CPUなどの情報を表示するウィジェット</a>。ウィジェットがアップルのサイト（AppStoreではない）から検索できるというのを人から聞いた。ウィジェットってあんまり使われないのか？</li>
+<li>Mac Blu-ray Player：現時点で有料ソフトはこれだけ。<a href="http://jp.macblurayplayer.com/index.htm">こちら。</a>もともとNASのデータのバックアップ用にBlu-rayのドライブ買ったんですが、せっかくだからMacにも使ってみようと思い、MacでBlu-rayを見るために購入しました。所用で長距離移動もあったので、新幹線で映画見てました。</li>
+</ul>
+<p>このくらいです。
+ほんとはリンクを貼ればいいのですが、そこまでの元気がないので、ご勘弁を。</p>
+<p>Skitchがおすすめです。簡単に画像編集＋説明書きが入れられて、矢印などがよくある画像編集の野暮ったさがないので、画面キャプチャに説明書くのに今後活躍する予定です。</p>
+<p>あと、ソフトではなく、サービスなのですが、<a href="https://cacoo.com/">Cacoo</a>というサービスが便利です。
 ここ最近、ちょっとした作図にはこのサービスを使うようにしています。オンラインで利用できるので、いろんな場所で編集できます。
 また、図の作成もさることながら、図を共有することが可能です。
 先日は、lucene-gosenが思ったように動かないという相談を受けて、このCacooでanalysis画面や設定をを貼ってもらったりしながら使いました。結構便利ですね。
-ただ、付属のチャットを使ったのですが、このチャットの内容がテキスト形式でコピー出来なかったのが残念でした。今後の改修に期待ということで。&lt;/p&gt;
-&lt;p&gt;あと、セットアップとは少し違いますが、ジャケット買ってつけました。
+ただ、付属のチャットを使ったのですが、このチャットの内容がテキスト形式でコピー出来なかったのが残念でした。今後の改修に期待ということで。</p>
+<p>あと、セットアップとは少し違いますが、ジャケット買ってつけました。
 ステッカーを直接貼るのがちょっと気になったので、ジャケットつけてステッカーを貼ってます。
 ただ、ステッカーは思ったよりチープな感じが。。。ジャケットの中に貼らないとダメだったかも。まぁ、それが嫌でジャケット買ったんですが。。。
 
 
-&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
-  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
-    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B0057BZK8Y/?tag=johtani-22&#34;&gt;
-      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B0057BZK8Y&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
-    &lt;/a&gt;
-  &lt;/div&gt;
-  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
-    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
-      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B0057BZK8Y/?tag=johtani-22&#34;&gt;
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B0057BZK8Y/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B0057BZK8Y&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B0057BZK8Y/?tag=johtani-22">
       エアージャケットセット for Macbook Air 13inch(クリア)PMC-81
-      &lt;/a&gt;
-    &lt;/p&gt;
-  &lt;/div&gt;
-&lt;/div&gt;&lt;/p&gt;
+      </a>
+    </p>
+  </div>
+</div></p>
 </content:encoded>
     </item>
     
@@ -771,36 +771,36 @@ Twitterでは少し前から知り合いだったのですが、実際にお会�
       
       <guid>https://blog.johtani.info/blog/2011/09/07/mba%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97%E5%82%99%E5%BF%98%E9%8C%B2%E3%81%9D%E3%81%AE%EF%BC%93/</guid>
       <description>現在の出先でMBAを使えないので、なかなか進んでいないMBAのセットアップです。。。 とりあえず、Eclipse、homebrewをインストー</description>
-      <content:encoded>&lt;p&gt;現在の出先でMBAを使えないので、なかなか進んでいないMBAのセットアップです。。。&lt;/p&gt;
-&lt;p&gt;とりあえず、Eclipse、homebrewをインストールしたので、lucene-gosenの開発やビルドには支障がない程度になってきました。（肝心のSolrがまだ動く状況になかった。。。）&lt;/p&gt;
-&lt;p&gt;あとは、Windowsで使用頻度の高いソフトを列挙して、対応するMacのアプリを探そうかと。
-まずは、Windowsでよく利用するソフトのリストアップ&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Eclipse&lt;/li&gt;
-&lt;li&gt;Cygwin&lt;/li&gt;
-&lt;li&gt;TeraTerm&lt;/li&gt;
-&lt;li&gt;WinSCP&lt;/li&gt;
-&lt;li&gt;meadow&lt;/li&gt;
-&lt;li&gt;サクラエディタ&lt;/li&gt;
-&lt;li&gt;WinMerge&lt;/li&gt;
-&lt;li&gt;PDF-XChange Viewer&lt;/li&gt;
-&lt;li&gt;Evernote&lt;/li&gt;
-&lt;li&gt;FreeMind&lt;/li&gt;
-&lt;li&gt;VMWare&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;こんなところかな。
+      <content:encoded><p>現在の出先でMBAを使えないので、なかなか進んでいないMBAのセットアップです。。。</p>
+<p>とりあえず、Eclipse、homebrewをインストールしたので、lucene-gosenの開発やビルドには支障がない程度になってきました。（肝心のSolrがまだ動く状況になかった。。。）</p>
+<p>あとは、Windowsで使用頻度の高いソフトを列挙して、対応するMacのアプリを探そうかと。
+まずは、Windowsでよく利用するソフトのリストアップ</p>
+<ol>
+<li>Eclipse</li>
+<li>Cygwin</li>
+<li>TeraTerm</li>
+<li>WinSCP</li>
+<li>meadow</li>
+<li>サクラエディタ</li>
+<li>WinMerge</li>
+<li>PDF-XChange Viewer</li>
+<li>Evernote</li>
+<li>FreeMind</li>
+<li>VMWare</li>
+</ol>
+<p>こんなところかな。
 a.～e.についてはMacOS特に問題なし。Eclipseは入れたし、その他は標準で入ってるものでまかなえると。
 f.についてもEmacsで当面対応する予定。ただ、OmmWriter やCotEditorがおすすめらしいと聞いてます。
 g.についてはFileMergeなるものがあるらしいので、試してみようかと。
 h.は現状Adobe Readerです。ほかにいいのあるのかしら。PDF-XChange Viewerはちなみに、Solr入門を書くときに編集の方から教えてもらったPDFのビューワです。コメントとかハイライトできるのが便利でした。
 i.はMacOS版をインストールして、すでに活用中。
 j.については一時期活用していたのですが、最近利用していないです。なので、保留
-k.についてはVirtualBoxをインストールしてみました。フリーだったので。WindowsではVMWareだったのですが。。。&lt;/p&gt;
-&lt;p&gt;ほんとにこれくらいで大丈夫かどうかはもう少し使ってみてからかなぁと。
+k.についてはVirtualBoxをインストールしてみました。フリーだったので。WindowsではVMWareだったのですが。。。</p>
+<p>ほんとにこれくらいで大丈夫かどうかはもう少し使ってみてからかなぁと。
 その他におすすめ、これがあるとかなり便利などあれば、教えてもらえると助かります。
-まだ、MacOSに触り始めたところなので、細かな部分のカスタマイズなどができていないので、その辺りもオイオイ考えていこうかと。&lt;/p&gt;
-&lt;p&gt;※余談ですが、現在「７つの言語　７つの世界」を読み始めました。いろいろな言語の特徴について学べる本のようでかなり楽しく感じています。どうしてもJavaで仕事優先だとコーディングする速度優先でJavaばかり使ってしまうので。
-いい頭の体操にもなりそうなのでオススメです。（といってもまだ、最初の言語Rubyなのですが。。。）&lt;/p&gt;
+まだ、MacOSに触り始めたところなので、細かな部分のカスタマイズなどができていないので、その辺りもオイオイ考えていこうかと。</p>
+<p>※余談ですが、現在「７つの言語　７つの世界」を読み始めました。いろいろな言語の特徴について学べる本のようでかなり楽しく感じています。どうしてもJavaで仕事優先だとコーディングする速度優先でJavaばかり使ってしまうので。
+いい頭の体操にもなりそうなのでオススメです。（といってもまだ、最初の言語Rubyなのですが。。。）</p>
 </content:encoded>
     </item>
     
@@ -811,51 +811,51 @@ k.についてはVirtualBoxをインストールしてみました。フリー�
       
       <guid>https://blog.johtani.info/blog/2011/08/15/mba%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97%E5%82%99%E5%BF%98%E9%8C%B2%E3%81%9D%E3%81%AE%EF%BC%92/</guid>
       <description>すみません、また、MBA関連の記事になってしまいました。 ということで、備忘録その２です。 前回からいくつかインストールや環境の設定をしたので、</description>
-      <content:encoded>&lt;p&gt;すみません、また、MBA関連の記事になってしまいました。
-ということで、備忘録その２です。&lt;/p&gt;
-&lt;p&gt;前回からいくつかインストールや環境の設定をしたので、リストアップ。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;VirtualBoxとWindowsのインストール&lt;/li&gt;
-&lt;li&gt;homebrewのインストール&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://pqrs.org/macosx/keyremap4macbook/index.html.ja&#34;&gt;KeyRemap4MacBook&lt;/a&gt;のインストール&lt;/li&gt;
-&lt;li&gt;Growlのインストール&lt;/li&gt;
-&lt;li&gt;Time Machine用HDDの購入と設定&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;VirtualBoxのインストールとWindowsXPのセットアップ。会社関連でどうしてもWindowsが必要なので、
+      <content:encoded><p>すみません、また、MBA関連の記事になってしまいました。
+ということで、備忘録その２です。</p>
+<p>前回からいくつかインストールや環境の設定をしたので、リストアップ。</p>
+<ul>
+<li>VirtualBoxとWindowsのインストール</li>
+<li>homebrewのインストール</li>
+<li><a href="http://pqrs.org/macosx/keyremap4macbook/index.html.ja">KeyRemap4MacBook</a>のインストール</li>
+<li>Growlのインストール</li>
+<li>Time Machine用HDDの購入と設定</li>
+</ul>
+<p>VirtualBoxのインストールとWindowsXPのセットアップ。会社関連でどうしてもWindowsが必要なので、
 とりあえず、VirtualBoxとWIndowsを入れました。これまでのWindows環境ではVMWareを利用してたのですが、
 Macだと有償ということで、無償版が存在するVirtualBoxを選択。
 MBAにはDVDのドライブがなく、また、ケチって購入しなかったので、ちょっと手間取りました。
 自宅のデスクトップでXPのイメージをisoにして、MBAにコピーしてからインストールと。。。
-ただ、MBAのSSDの効果なのか、XPの起動がすごく速くてびっくりです。&lt;/p&gt;
-&lt;p&gt;homebrewのインストールは、まだインストールしただけの状態。。。
+ただ、MBAのSSDの効果なのか、XPの起動がすごく速くてびっくりです。</p>
+<p>homebrewのインストールは、まだインストールしただけの状態。。。
 MacPortsってのがあるというのは知っていたのですが、最近はこちらがいいとのこと。
-ちなみに、MacPortsにはSolrがあるらしいです。デフォルトのため、lucene-gosenとか入れる必要がありますが。&lt;/p&gt;
-&lt;p&gt;KeyRemap4MacBookのインストール。入れた方がいいですよと言われてたのだが、きちんと調査してなく、
+ちなみに、MacPortsにはSolrがあるらしいです。デフォルトのため、lucene-gosenとか入れる必要がありますが。</p>
+<p>KeyRemap4MacBookのインストール。入れた方がいいですよと言われてたのだが、きちんと調査してなく、
 キーの入れ替えができる程度だと思ってました。昨日、EmacsModeなるものが存在するというのをKeyRemap4MacBookのドキュメントを読んでいて発見し即インストール。
-とりあえず、Ctrl-x,Ctrl-cでEvernoteが終了できて喜んでるところです。&lt;/p&gt;
-&lt;p&gt;Growlのインストール。KeyRemap4MacBookのCtrl-xを通知してくれます。ほかにも使い方があるかは調査が必要。&lt;/p&gt;
-&lt;p&gt;あとは、昨日、ビックカメラでWDの2TBのHDDを購入してTimeMachineの設定をしてバックアップをとりました。
-まだバックアップをとっただけで、差分を見たりはしていないです。帰ってからやってみようかと。&lt;/p&gt;
-&lt;p&gt;最後に、ケースを買いました。封筒とかいろいろ考えたのですが、やはり機能重視ということで、以下のケースです。
+とりあえず、Ctrl-x,Ctrl-cでEvernoteが終了できて喜んでるところです。</p>
+<p>Growlのインストール。KeyRemap4MacBookのCtrl-xを通知してくれます。ほかにも使い方があるかは調査が必要。</p>
+<p>あとは、昨日、ビックカメラでWDの2TBのHDDを購入してTimeMachineの設定をしてバックアップをとりました。
+まだバックアップをとっただけで、差分を見たりはしていないです。帰ってからやってみようかと。</p>
+<p>最後に、ケースを買いました。封筒とかいろいろ考えたのですが、やはり機能重視ということで、以下のケースです。
 できれば、ファスナーが２つついていて、両方からあけられるとよかったのですが。リュックとショルダーバッグを使い分けるので、横でも縦でも取り出しが楽なものがよかったので、このケースを買いました。
-一応、がんばれば縦でも出せるので。あとは、PCだけもって移動することもあるため、取っ手があるのが便利かと。&lt;/p&gt;
-&lt;p&gt;とまぁ、お盆なので、このエントリーで許してください。次回は技術的なことを書きますので。。。
+一応、がんばれば縦でも出せるので。あとは、PCだけもって移動することもあるため、取っ手があるのが便利かと。</p>
+<p>とまぁ、お盆なので、このエントリーで許してください。次回は技術的なことを書きますので。。。
 
 
-&lt;div class=&#34;amazon-shortcode-box&#34;&gt;
-  &lt;div class=&#34;amazon-shortcode-image&#34;&gt;
-    &lt;a style=&#34;display: inline-block;&#34; target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B003WU4FQU/?tag=johtani-22&#34;&gt;
-      &lt;img border=&#34;0&#34; src=&#34;//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&amp;MarketPlace=JP&amp;ASIN=B003WU4FQU&amp;ServiceVersion=20070822&amp;ID=AsinImage&amp;WS=1&amp;Format=_SL160_&amp;tag=johtani-22&#34; &gt;
-    &lt;/a&gt;
-  &lt;/div&gt;
-  &lt;div class=&#34;amazon-shortcode-info&#34;&gt;
-    &lt;p class=&#34;amazon-shortcode-title&#34;&gt;
-      &lt;a target=&#34;_blank&#34; href=&#34;https://www.amazon.co.jp/gp/product/B003WU4FQU/?tag=johtani-22&#34;&gt;
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B003WU4FQU/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B003WU4FQU&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B003WU4FQU/?tag=johtani-22">
       CaseLogic 機能的なモバイルコンピュータケース(13~14.1インチPC対応)、MacBookやMacBook Proにも対応 ダークグレー UNS-114J-DG
-      &lt;/a&gt;
-    &lt;/p&gt;
-  &lt;/div&gt;
-&lt;/div&gt;&lt;/p&gt;
+      </a>
+    </p>
+  </div>
+</div></p>
 </content:encoded>
     </item>
     
@@ -866,54 +866,54 @@ MacPortsってのがあるというのは知っていたのですが、最近は
       
       <guid>https://blog.johtani.info/blog/2011/08/10/mba%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97%E5%82%99%E5%BF%98%E9%8C%B2/</guid>
       <description>Mac Book Airのセットアップ関連の備忘録 （今回は備忘録なので、文体も変かも） インストールしたもの（順不同）だいたい、このサイトを参考にした。 Evernote Dropbox</description>
-      <content:encoded>&lt;p&gt;Mac Book Airのセットアップ関連の備忘録&lt;/p&gt;
-&lt;p&gt;（今回は備忘録なので、文体も変かも）&lt;/p&gt;
-&lt;p&gt;インストールしたもの（順不同）だいたい、この&lt;a href=&#34;http://d.hatena.ne.jp/tomoya/touch/20110806/1312613527&#34;&gt;サイト&lt;/a&gt;を参考にした。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Evernote&lt;/li&gt;
-&lt;li&gt;Dropbox&lt;/li&gt;
-&lt;li&gt;XCode&lt;/li&gt;
-&lt;li&gt;Twitter&lt;/li&gt;
-&lt;li&gt;YoruFukurou&lt;/li&gt;
-&lt;li&gt;GNU Emacs For Mac OS X&lt;/li&gt;
-&lt;li&gt;Java&lt;/li&gt;
-&lt;li&gt;Office for mac&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;現状はこんなところ。&lt;/p&gt;
-&lt;p&gt;まだ、キーボードの配列とショートカット、ウィンドウの切り替えなどがすぐにできないので、かなりおぼつかない状態。&lt;/p&gt;
-&lt;p&gt;Ctrl+aなどの操作は快適なのだが、ウインドウを閉じたりする場合のcommandキーの扱いがまだなれない。キー配置を切り替えたりした方がいいのか悩み中。
-Windowsでは長年XKeymacsを使ってきたため、通常のOfficeなどもCtrl+x　Ctrl+sなどで閉じていたので、command＋qなどがすんなり出てこない。。。&lt;/p&gt;
-&lt;p&gt;あとは、VirtualBoxにWindowsを入れて、Eclipseを入れればなんとか、WindowsPCからMBAへの切り替えができそう。&lt;/p&gt;
-&lt;p&gt;残っている課題は以下の通り。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Time Machine環境の整備USB接続のHDDの導入（ミラーリング対応にするか悩み中）※ちなみにうちで使ってるNASは古い＋NFSマウントできない機種だった。。。　対応可能だったらScientific Linux＋Netatalk環境などを用意するのも考えたんだが。&lt;/li&gt;
-&lt;li&gt;homebrewのインストール&lt;/li&gt;
-&lt;li&gt;日本語入力（GoogleIME？SKK？）&lt;/li&gt;
-&lt;li&gt;ウォークマン、Xperia arcの運用方法まぁ、今まで使ってたPCで対応かな&lt;/li&gt;
-&lt;li&gt;キーの配置Emacsのショートカットに変更できたりするか調査したい&lt;/li&gt;
-&lt;li&gt;データの移行Windowsに入ってるデータのうち移行するものしないものの選別Macでは利用できないデータやファイルもあると思う。&lt;/li&gt;
-&lt;li&gt;解凍ツールの選別？いるのかな？&lt;/li&gt;
-&lt;li&gt;ブラウザのインストールchrome、Firefoxはいれるかな。&lt;/li&gt;
-&lt;li&gt;メーラーのインストールWindwosではBecky!を使ってたのだが、どうするか。デフォルトメーラで様子見？&lt;/li&gt;
-&lt;li&gt;ウイルス対策ソフトの導入Macってどんなソフトがあるかがわからない。。。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;あと、１週間触っての感想&lt;/p&gt;
-&lt;p&gt;まずは、良かった点。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;いろんなUIがよくできてるセットアップなどきれいな画面で説明が進むのが新鮮だった。あと、フォントのきれいさも新鮮。これは、今までのPCが古いからかもしれないが。&lt;/li&gt;
-&lt;li&gt;トラックパッドがいいまだなれてないけど、スイスイ動くのでストレスなく作業できる。スワイプとかも画面の移動が楽でいい。&lt;/li&gt;
-&lt;li&gt;静かで速いSSDのため、静かだし起動がすごく速い。会社で支給されてるPCもSSD（３年くらい前のもの）だけど、こんなに起動などがはやくない。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;あとは、気になった点。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;AppStoreでページ間のスワイプができない。かなり使いづらい。Safariと同じイメージでいるので。&lt;/li&gt;
-&lt;li&gt;手首がいたい手前のエッジ部分が手首に当たってちょっといたい。&lt;/li&gt;
-&lt;li&gt;アプリインストール時にファンがうるさい動画などはまだ見てないが、Office、XCodeのインストール時にファンの排気音がうるさくなり、結構な熱を発していた&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;ファーストインプレッションはこんな感じ。&lt;/p&gt;
-&lt;p&gt;ただ、前回も書いたようにうらやましかったのもあり、かなり満足している。
-もっと触る時間が欲しいのだが、なかなかとれないのが歯がゆい。。。&lt;/p&gt;
-&lt;p&gt;持ち歩くようになったらとりあえず、「７つの言語　７つの世界」を読み進め＋写経をやる予定。&lt;/p&gt;
+      <content:encoded><p>Mac Book Airのセットアップ関連の備忘録</p>
+<p>（今回は備忘録なので、文体も変かも）</p>
+<p>インストールしたもの（順不同）だいたい、この<a href="http://d.hatena.ne.jp/tomoya/touch/20110806/1312613527">サイト</a>を参考にした。</p>
+<ul>
+<li>Evernote</li>
+<li>Dropbox</li>
+<li>XCode</li>
+<li>Twitter</li>
+<li>YoruFukurou</li>
+<li>GNU Emacs For Mac OS X</li>
+<li>Java</li>
+<li>Office for mac</li>
+</ul>
+<p>現状はこんなところ。</p>
+<p>まだ、キーボードの配列とショートカット、ウィンドウの切り替えなどがすぐにできないので、かなりおぼつかない状態。</p>
+<p>Ctrl+aなどの操作は快適なのだが、ウインドウを閉じたりする場合のcommandキーの扱いがまだなれない。キー配置を切り替えたりした方がいいのか悩み中。
+Windowsでは長年XKeymacsを使ってきたため、通常のOfficeなどもCtrl+x　Ctrl+sなどで閉じていたので、command＋qなどがすんなり出てこない。。。</p>
+<p>あとは、VirtualBoxにWindowsを入れて、Eclipseを入れればなんとか、WindowsPCからMBAへの切り替えができそう。</p>
+<p>残っている課題は以下の通り。</p>
+<ul>
+<li>Time Machine環境の整備USB接続のHDDの導入（ミラーリング対応にするか悩み中）※ちなみにうちで使ってるNASは古い＋NFSマウントできない機種だった。。。　対応可能だったらScientific Linux＋Netatalk環境などを用意するのも考えたんだが。</li>
+<li>homebrewのインストール</li>
+<li>日本語入力（GoogleIME？SKK？）</li>
+<li>ウォークマン、Xperia arcの運用方法まぁ、今まで使ってたPCで対応かな</li>
+<li>キーの配置Emacsのショートカットに変更できたりするか調査したい</li>
+<li>データの移行Windowsに入ってるデータのうち移行するものしないものの選別Macでは利用できないデータやファイルもあると思う。</li>
+<li>解凍ツールの選別？いるのかな？</li>
+<li>ブラウザのインストールchrome、Firefoxはいれるかな。</li>
+<li>メーラーのインストールWindwosではBecky!を使ってたのだが、どうするか。デフォルトメーラで様子見？</li>
+<li>ウイルス対策ソフトの導入Macってどんなソフトがあるかがわからない。。。</li>
+</ul>
+<p>あと、１週間触っての感想</p>
+<p>まずは、良かった点。</p>
+<ul>
+<li>いろんなUIがよくできてるセットアップなどきれいな画面で説明が進むのが新鮮だった。あと、フォントのきれいさも新鮮。これは、今までのPCが古いからかもしれないが。</li>
+<li>トラックパッドがいいまだなれてないけど、スイスイ動くのでストレスなく作業できる。スワイプとかも画面の移動が楽でいい。</li>
+<li>静かで速いSSDのため、静かだし起動がすごく速い。会社で支給されてるPCもSSD（３年くらい前のもの）だけど、こんなに起動などがはやくない。</li>
+</ul>
+<p>あとは、気になった点。</p>
+<ul>
+<li>AppStoreでページ間のスワイプができない。かなり使いづらい。Safariと同じイメージでいるので。</li>
+<li>手首がいたい手前のエッジ部分が手首に当たってちょっといたい。</li>
+<li>アプリインストール時にファンがうるさい動画などはまだ見てないが、Office、XCodeのインストール時にファンの排気音がうるさくなり、結構な熱を発していた</li>
+</ul>
+<p>ファーストインプレッションはこんな感じ。</p>
+<p>ただ、前回も書いたようにうらやましかったのもあり、かなり満足している。
+もっと触る時間が欲しいのだが、なかなかとれないのが歯がゆい。。。</p>
+<p>持ち歩くようになったらとりあえず、「７つの言語　７つの世界」を読み進め＋写経をやる予定。</p>
 </content:encoded>
     </item>
     
@@ -924,63 +924,63 @@ Windowsでは長年XKeymacsを使ってきたため、通常のOfficeなどもCt
       
       <guid>https://blog.johtani.info/blog/2011/08/04/apple%E6%95%99%E3%81%AB%E5%85%A5%E4%BF%A1%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F/</guid>
       <description>個人用のPCを８年ぶりに新調しました。 前回購入した家のデスクトップPCがもう８年ものになりつつあるということで、 さすがに今年はPCを買おうと</description>
-      <content:encoded>&lt;p&gt;個人用のPCを８年ぶりに新調しました。&lt;br /&gt;
-前回購入した家のデスクトップPCがもう８年ものになりつつあるということで、&lt;br /&gt;
-さすがに今年はPCを買おうと思い、年初からいろいろと調べていました。&lt;br /&gt;
-&lt;br /&gt;
-当初は次もデスクトップPCを購入する予定でした。ただ、次のような状況ということもあり&lt;br /&gt;
-デスクトップは見送ることにし、代わりにノートPCにすることに。&lt;br /&gt;
-&lt;br /&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;通勤時間が１時間を超えること&lt;br /&gt;&lt;/li&gt;
-&lt;li&gt;基本、客先に出向いての仕事&lt;br /&gt;&lt;/li&gt;
-&lt;li&gt;家でPCに触る時間が少ない（家族サービスのため。）&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-で、ここ数週間悩んでいたのですが、Mac Book Air 13インチを購入しました。（そのMBAから初投稿です。）&lt;br /&gt;
-実は、Apple製品はこれが初の購入となります。&lt;br /&gt;
-&lt;br /&gt;
-対抗馬としてあがっていたのはSonyのVAIO Type Zでした。&lt;br /&gt;
-元々ソニスト（ソニー大好き）であり、携帯（Xperia arc）、ウォークマン（Sony）、PSP go、ハンディカムなど、&lt;br /&gt;
-ソニー製品に囲まれており、デザインもType Zのほうが好みなのですが、MBAを購入しました。&lt;br /&gt;
-&lt;br /&gt;
-この理由なのですが、私が大学時代にさかのぼります。&lt;br /&gt;
-情報系の大学の出身で、はじめてきちんと触ったマシンがSunOS4.1（最後の数年はSolaris2.6）でした。&lt;br /&gt;
-その後、大学６年間は基本的にEmacsでメールをみて、Emacsで文章を書いていました。&lt;br /&gt;
-そのため、社会人になってからもEmacsのキーバインドから抜け出せない日々を送っていました。&lt;br /&gt;
-社会人ではやはりWindowsでしたが、XKeymacsというフリーソフトのおかげ（せい？）でEmacsの&lt;br /&gt;
-ショートカットからは抜け出せないまま。（家のPCはXPで、XKeymacsがインストールされてます。）&lt;br /&gt;
-&lt;br /&gt;
-今までの流れだと、何も考えずにWindows7+XKeymacsの流れだったのですが。。。&lt;br /&gt;
-職場でWindows7のPCを使う機会があり、XKeymacsを入れてみたのですが、これまでとことなり、&lt;br /&gt;
-うまく機能しないことこの上なし（例：chromeのアドレスバーでCtrl+Kとかできないなど）。&lt;br /&gt;
-さらに、64bit版の場合、XKeymacsを32bit、64bitの２つインストールしないといけないことに。（32bit用アプリのために32bitを入れないといけない）&lt;br /&gt;
-で、数ヶ月使っているのですが、ちょっとずつストレスがたまっている始末。。。&lt;br /&gt;
-&lt;br /&gt;
-今までは、「Mac？今更恥ずかしくてかえない」「Mac？おしゃれすぎて無理」「Apple？MSにかわって独占してるの気に食わん」と公言していたのですが。。。&lt;br /&gt;
-&lt;br /&gt;
-やはりUnixベースであり、Ctrl+aやCtrl+kが意識せずに利用できるということでコーディングなどを行う場合のストレスよりも保守的な思考を変える方が今後のためにも良さそうだということで、心機一転MBAを購入しました。&lt;br /&gt;
-ということで、ついにApple教へ入信です。&lt;br /&gt;
-&lt;br /&gt;
-まだ、１時間も触ってないですが、すでに洗脳されつつあります。。。&lt;br /&gt;
-新しいものに触れるのって楽しいですよね。当分は何をインストールするかなど楽しい悩みでいっぱいになれそうです。（次回はちゃんとした技術的な記事書きたいと、書けるかな、書くぞ、たぶん。。。）&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-とまぁ、いろいろと理由を書いてみましたが、要は（オシャレさに）憧れてて、あまのじゃくになって思ってもないこと言ってたんです！&lt;br /&gt;
-理由が欲しかったんです！！&lt;br /&gt;
-Macかっこえーわーw&lt;br /&gt;
-Mac miniとかiMacとかもほしーわー&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;
-&lt;br /&gt;&lt;/li&gt;
-&lt;/ul&gt;
+      <content:encoded><p>個人用のPCを８年ぶりに新調しました。<br />
+前回購入した家のデスクトップPCがもう８年ものになりつつあるということで、<br />
+さすがに今年はPCを買おうと思い、年初からいろいろと調べていました。<br />
+<br />
+当初は次もデスクトップPCを購入する予定でした。ただ、次のような状況ということもあり<br />
+デスクトップは見送ることにし、代わりにノートPCにすることに。<br />
+<br /></p>
+<ul>
+<li>通勤時間が１時間を超えること<br /></li>
+<li>基本、客先に出向いての仕事<br /></li>
+<li>家でPCに触る時間が少ない（家族サービスのため。）<br />
+<br />
+<br />
+<br />
+で、ここ数週間悩んでいたのですが、Mac Book Air 13インチを購入しました。（そのMBAから初投稿です。）<br />
+実は、Apple製品はこれが初の購入となります。<br />
+<br />
+対抗馬としてあがっていたのはSonyのVAIO Type Zでした。<br />
+元々ソニスト（ソニー大好き）であり、携帯（Xperia arc）、ウォークマン（Sony）、PSP go、ハンディカムなど、<br />
+ソニー製品に囲まれており、デザインもType Zのほうが好みなのですが、MBAを購入しました。<br />
+<br />
+この理由なのですが、私が大学時代にさかのぼります。<br />
+情報系の大学の出身で、はじめてきちんと触ったマシンがSunOS4.1（最後の数年はSolaris2.6）でした。<br />
+その後、大学６年間は基本的にEmacsでメールをみて、Emacsで文章を書いていました。<br />
+そのため、社会人になってからもEmacsのキーバインドから抜け出せない日々を送っていました。<br />
+社会人ではやはりWindowsでしたが、XKeymacsというフリーソフトのおかげ（せい？）でEmacsの<br />
+ショートカットからは抜け出せないまま。（家のPCはXPで、XKeymacsがインストールされてます。）<br />
+<br />
+今までの流れだと、何も考えずにWindows7+XKeymacsの流れだったのですが。。。<br />
+職場でWindows7のPCを使う機会があり、XKeymacsを入れてみたのですが、これまでとことなり、<br />
+うまく機能しないことこの上なし（例：chromeのアドレスバーでCtrl+Kとかできないなど）。<br />
+さらに、64bit版の場合、XKeymacsを32bit、64bitの２つインストールしないといけないことに。（32bit用アプリのために32bitを入れないといけない）<br />
+で、数ヶ月使っているのですが、ちょっとずつストレスがたまっている始末。。。<br />
+<br />
+今までは、「Mac？今更恥ずかしくてかえない」「Mac？おしゃれすぎて無理」「Apple？MSにかわって独占してるの気に食わん」と公言していたのですが。。。<br />
+<br />
+やはりUnixベースであり、Ctrl+aやCtrl+kが意識せずに利用できるということでコーディングなどを行う場合のストレスよりも保守的な思考を変える方が今後のためにも良さそうだということで、心機一転MBAを購入しました。<br />
+ということで、ついにApple教へ入信です。<br />
+<br />
+まだ、１時間も触ってないですが、すでに洗脳されつつあります。。。<br />
+新しいものに触れるのって楽しいですよね。当分は何をインストールするかなど楽しい悩みでいっぱいになれそうです。（次回はちゃんとした技術的な記事書きたいと、書けるかな、書くぞ、たぶん。。。）<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+とまぁ、いろいろと理由を書いてみましたが、要は（オシャレさに）憧れてて、あまのじゃくになって思ってもないこと言ってたんです！<br />
+理由が欲しかったんです！！<br />
+Macかっこえーわーw<br />
+Mac miniとかiMacとかもほしーわー<br />
+<br />
+<br />
+<br /></li>
+</ul>
 </content:encoded>
     </item>
     

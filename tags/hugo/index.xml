@@ -14,70 +14,70 @@
       
       <guid>https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/</guid>
       <description>ブログ移行日記(その5)です。前回まではこちら ブログ移行日記(その1) ブログ移行日記(その2) ブログ移行日記(その3) ブログ移行日記(その4</description>
-      <content:encoded>&lt;p&gt;ブログ移行日記(その5)です。前回まではこちら&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;ブログ移行日記(その1)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/23/convert-md-from-octopress-to-hugo/&#34;&gt;ブログ移行日記(その2)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/24/setting-hugo/&#34;&gt;ブログ移行日記(その3)&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/introduce-algolia/&#34;&gt;ブログ移行日記(その4)&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;今回はこれまでとは異なる特殊な話です。&lt;/p&gt;
-&lt;p&gt;最初にブログを書き始めたときに利用していたのが&lt;a href=&#34;http://johtani.jugem.jp/&#34;&gt;Jugem&lt;/a&gt;のブログでした。
-その後、Octopressに移行して、今年、Hugoに移行したという流れです。&lt;/p&gt;
-&lt;p&gt;で、よくよく考えると、Jugemのブログも移行できるんじゃないか?となりました。
+      <content:encoded><p>ブログ移行日記(その5)です。前回まではこちら</p>
+<ul>
+<li><a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記(その1)</a></li>
+<li><a href="/blog/2020/01/23/convert-md-from-octopress-to-hugo/">ブログ移行日記(その2)</a></li>
+<li><a href="/blog/2020/01/24/setting-hugo/">ブログ移行日記(その3)</a></li>
+<li><a href="/blog/2020/01/28/introduce-algolia/">ブログ移行日記(その4)</a></li>
+</ul>
+<p>今回はこれまでとは異なる特殊な話です。</p>
+<p>最初にブログを書き始めたときに利用していたのが<a href="http://johtani.jugem.jp/">Jugem</a>のブログでした。
+その後、Octopressに移行して、今年、Hugoに移行したという流れです。</p>
+<p>で、よくよく考えると、Jugemのブログも移行できるんじゃないか?となりました。
 じゃあ、やってみるかと。なので、今回のブログは自分の備忘録です(興味のない人が大多数じゃないかな)。
-一応、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py&#34;&gt;Pythonで書いたプログラムはGitHubに上がっています&lt;/a&gt;。文字列置換と正規表現のオンパレードです。&lt;/p&gt;
-&lt;h2 id=&#34;jugemからexport&#34;&gt;JugemからExport&lt;/h2&gt;
-&lt;p&gt;まずは、移行元のデータが取り出せるかどうかを調べたところ、&lt;a href=&#34;https://support.jugem.jp/hc/ja/articles/222313727-%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F%E8%A8%98%E4%BA%8B%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%AF%E5%87%BA%E6%9D%A5%E3%81%BE%E3%81%99%E3%81%8B-&#34;&gt;text形式もしくはXML形式でエクスポートが可能でした&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;変換処理が必要なはずなので、XMLでダウンロードします。
-独自のXMLですが、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L239&#34;&gt;記事ごとにXMLのタグ(&lt;code&gt;&amp;lt;entry&amp;gt;&lt;/code&gt;)でまとめられている&lt;/a&gt;ので、処理が楽です。&lt;/p&gt;
-&lt;h2 id=&#34;xmlをmarkdownに&#34;&gt;XMLをMarkdownに&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;&amp;lt;entry&amp;gt;&lt;/code&gt;タグの下に次のような項目が入っているので、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204&#34;&gt;抜き出します&lt;/a&gt;。&lt;/p&gt;
-&lt;h3 id=&#34;ヘッダ部&#34;&gt;ヘッダ部&lt;/h3&gt;
-&lt;ul&gt;
-&lt;li&gt;title - 記事タイトル&lt;/li&gt;
-&lt;li&gt;author - 著者&lt;/li&gt;
-&lt;li&gt;category - タグ&lt;/li&gt;
-&lt;li&gt;date - 投稿日付&lt;/li&gt;
-&lt;li&gt;description : 本文(先頭部分)&lt;/li&gt;
-&lt;li&gt;sequel : 本文(つづき)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;titleからdateまでをHugoのMarkdownの&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204&#34;&gt;ヘッダ部分として出力します&lt;/a&gt;。
-&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L38&#34;&gt;日付は形式が違うので合わせるように変換&lt;/a&gt;し、
-titleは&lt;code&gt;(Jugemより移植)&lt;/code&gt;という文字列を追加しました。&lt;/p&gt;
-&lt;p&gt;また、Hugoの個別のコンテンツにするためにそれぞれをMarkdownのファイルに変換しています。
-ファイル名は変換後の&lt;code&gt;date&lt;/code&gt;の先頭10文字(&lt;code&gt;yyyy-MM-dd&lt;/code&gt;)に&lt;code&gt;-&lt;/code&gt;を付け加えて、
-タイトルを追加しました。&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L18&#34;&gt;ホントは英語のファイル名にしたかったんですが、ちょっと手抜き&lt;/a&gt;。ファイル名に使用できないような文字は&lt;code&gt;-&lt;/code&gt;に置換しています。&lt;/p&gt;
-&lt;h3 id=&#34;本文&#34;&gt;本文&lt;/h3&gt;
-&lt;p&gt;本文部分はもう少し複雑です。
-まずは、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L228&#34;&gt;descriptionとsequelから抜き出した文字列を結合&lt;/a&gt;します。&lt;/p&gt;
-&lt;p&gt;で、内部の文字列に次のようなものがあるので、それぞれMarkdownに変換したりという処理を書いてます。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L60&#34;&gt;HTMLのheadingタグをMarkdown形式に&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L66&#34;&gt;br、hr、del、strongなどのタグもMarkdown形式に&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L112&#34;&gt;aタグの処理&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L93&#34;&gt;Amazonのアフィリエイトタグの処理&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L161&#34;&gt;ul、olタグの処理&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;などです。
+一応、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py">Pythonで書いたプログラムはGitHubに上がっています</a>。文字列置換と正規表現のオンパレードです。</p>
+<h2 id="jugemからexport">JugemからExport</h2>
+<p>まずは、移行元のデータが取り出せるかどうかを調べたところ、<a href="https://support.jugem.jp/hc/ja/articles/222313727-%E4%BD%9C%E6%88%90%E3%81%97%E3%81%9F%E8%A8%98%E4%BA%8B%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%AF%E5%87%BA%E6%9D%A5%E3%81%BE%E3%81%99%E3%81%8B-">text形式もしくはXML形式でエクスポートが可能でした</a>。</p>
+<p>変換処理が必要なはずなので、XMLでダウンロードします。
+独自のXMLですが、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L239">記事ごとにXMLのタグ(<code>&lt;entry&gt;</code>)でまとめられている</a>ので、処理が楽です。</p>
+<h2 id="xmlをmarkdownに">XMLをMarkdownに</h2>
+<p><code>&lt;entry&gt;</code>タグの下に次のような項目が入っているので、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204">抜き出します</a>。</p>
+<h3 id="ヘッダ部">ヘッダ部</h3>
+<ul>
+<li>title - 記事タイトル</li>
+<li>author - 著者</li>
+<li>category - タグ</li>
+<li>date - 投稿日付</li>
+<li>description : 本文(先頭部分)</li>
+<li>sequel : 本文(つづき)</li>
+</ul>
+<p>titleからdateまでをHugoのMarkdownの<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L204">ヘッダ部分として出力します</a>。
+<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L38">日付は形式が違うので合わせるように変換</a>し、
+titleは<code>(Jugemより移植)</code>という文字列を追加しました。</p>
+<p>また、Hugoの個別のコンテンツにするためにそれぞれをMarkdownのファイルに変換しています。
+ファイル名は変換後の<code>date</code>の先頭10文字(<code>yyyy-MM-dd</code>)に<code>-</code>を付け加えて、
+タイトルを追加しました。<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L18">ホントは英語のファイル名にしたかったんですが、ちょっと手抜き</a>。ファイル名に使用できないような文字は<code>-</code>に置換しています。</p>
+<h3 id="本文">本文</h3>
+<p>本文部分はもう少し複雑です。
+まずは、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/master/from_jugem_to_hugo.py#L228">descriptionとsequelから抜き出した文字列を結合</a>します。</p>
+<p>で、内部の文字列に次のようなものがあるので、それぞれMarkdownに変換したりという処理を書いてます。</p>
+<ul>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L60">HTMLのheadingタグをMarkdown形式に</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L66">br、hr、del、strongなどのタグもMarkdown形式に</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L112">aタグの処理</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L93">Amazonのアフィリエイトタグの処理</a></li>
+<li><a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L161">ul、olタグの処理</a></li>
+</ul>
+<p>などです。
 アフィリエイトタグは、数行に渡るの複数のHTMLタグで記述されているので、
-&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L146&#34;&gt;ASINと商品タイトルだけを抜き出しています&lt;/a&gt;。
-Hugoでアフィリエイトのリンクを作るために、&lt;a href=&#34;https://github.com/ikemo3/hugo-amazon-jp&#34;&gt;hugo-amazon-jp&lt;/a&gt;という公開されているshortcodeを元に、カスタマイズしたものを使っています。
-これ用に、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L104&#34;&gt;必要なASINとタイトルを別ファイルに出力&lt;/a&gt;したりしています。&lt;/p&gt;
-&lt;p&gt;また、いくつか画像を使っている記事があったのですが、これが曲者でした。
+<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L146">ASINと商品タイトルだけを抜き出しています</a>。
+Hugoでアフィリエイトのリンクを作るために、<a href="https://github.com/ikemo3/hugo-amazon-jp">hugo-amazon-jp</a>という公開されているshortcodeを元に、カスタマイズしたものを使っています。
+これ用に、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L104">必要なASINとタイトルを別ファイルに出力</a>したりしています。</p>
+<p>また、いくつか画像を使っている記事があったのですが、これが曲者でした。
 XMLに入っているimgタグに画像へのURLがあるのですが、アクセスしても存在しないURL担っています。。。
-&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L130&#34;&gt;ブログで公開している画像のファイル名に似たものがXMLに入っていたので、URLを組み直して、ダウンロードするという処理も書いています&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;あとは、&lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L81&#34;&gt;昔ちょっと凝った書き方(spanタグで章みたいなことやってた)をしていた部分の処理&lt;/a&gt;を加えて完成です。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;元のXMLを見たり、抜き出したファイルを見ながら、トライアンドエラーでプログラムを書きました。
+<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L130">ブログで公開している画像のファイル名に似たものがXMLに入っていたので、URLを組み直して、ダウンロードするという処理も書いています</a>。</p>
+<p>あとは、<a href="https://github.com/johtani/from-octopress-to-hugo/blob/65e29cc7e613495e0d2c75e3f617c6f778085b61/from_jugem_to_hugo.py#L81">昔ちょっと凝った書き方(spanタグで章みたいなことやってた)をしていた部分の処理</a>を加えて完成です。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>元のXMLを見たり、抜き出したファイルを見ながら、トライアンドエラーでプログラムを書きました。
 なんとなく変換できたなかっていうところで、取り込んで公開しました。
 まだ、全部の記事をチェックしてないですが、なんとなく移植できたので一旦これでいいかなと。
-昔の記事を見たときにおかしい場所があったら手で治すつもりでいます。&lt;/p&gt;
-&lt;p&gt;なんか、もうちょっとうまくプログラムかけた気もしますが、書き捨てのプログラムだと思うのでこんなもんかな。&lt;/p&gt;
-&lt;p&gt;1点気になっているところは、コメントの部分です。
-ブログにコメントをいただいていたのですが、その部分は移植できてないです。&lt;/p&gt;
-&lt;p&gt;Octopresに移植していこうは、&lt;a href=&#34;https://disqus.com/&#34;&gt;Disqus&lt;/a&gt;のサービスでコメント部分を提供しています。ここに移植するのも変な話だなぁと思っているので、本文にコメントを取り込む感じかなぁ？&lt;/p&gt;
-&lt;p&gt;もともとのJugemのサイトもそのまままだ残してあるので、そのうち気が向いたらで。&lt;/p&gt;
+昔の記事を見たときにおかしい場所があったら手で治すつもりでいます。</p>
+<p>なんか、もうちょっとうまくプログラムかけた気もしますが、書き捨てのプログラムだと思うのでこんなもんかな。</p>
+<p>1点気になっているところは、コメントの部分です。
+ブログにコメントをいただいていたのですが、その部分は移植できてないです。</p>
+<p>Octopresに移植していこうは、<a href="https://disqus.com/">Disqus</a>のサービスでコメント部分を提供しています。ここに移植するのも変な話だなぁと思っているので、本文にコメントを取り込む感じかなぁ？</p>
+<p>もともとのJugemのサイトもそのまままだ残してあるので、そのうち気が向いたらで。</p>
 </content:encoded>
     </item>
     
@@ -88,54 +88,54 @@ XMLに入っているimgタグに画像へのURLがあるのですが、アク�
       
       <guid>https://blog.johtani.info/blog/2020/01/16/moving-to-hugo/</guid>
       <description>5年くらい、Octopressを使用していましたが、更新されなくなっているのと、コンテンツの生成に時間がかかることもあり、 ほかのプラットフォ</description>
-      <content:encoded>&lt;p&gt;5年くらい、Octopressを使用していましたが、更新されなくなっているのと、コンテンツの生成に時間がかかることもあり、
-ほかのプラットフォームを使用するように変更しました。&lt;/p&gt;
-&lt;p&gt;とりあえず、今回の移行で参考にした記事とかURLをリストアップしてみました。
-詳細についてはまた明日以降で。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;参考記事
-&lt;ul&gt;
-&lt;li&gt;移行関連 : &lt;a href=&#34;https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-&#34;&gt;https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;移行関連 : &lt;a href=&#34;https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/&#34;&gt;https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Hugo自体の日本語紹介記事 : &lt;a href=&#34;https://knowledge.sakura.ad.jp/22908/&#34;&gt;https://knowledge.sakura.ad.jp/22908/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;Hugo概要
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://gohugo.io/&#34;&gt;https://gohugo.io/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;テーマ
-&lt;ul&gt;
-&lt;li&gt;一覧 : &lt;a href=&#34;https://themes.gohugo.io/&#34;&gt;https://themes.gohugo.io/&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;利用したテーマ : &lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite&#34;&gt;https://github.com/zhaohuabing/hugo-theme-cleanwhite&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;データ移行
-&lt;ul&gt;
-&lt;li&gt;作ったスクリプト : &lt;a href=&#34;https://github.com/johtani/from-octopress-to-hugo&#34;&gt;https://github.com/johtani/from-octopress-to-hugo&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;favicon
-&lt;ul&gt;
-&lt;li&gt;作ったサイト : &lt;a href=&#34;http://emblemmatic.org/markmaker/#/&#34;&gt;http://emblemmatic.org/markmaker/#/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;Algoliaセッティング
-&lt;ul&gt;
-&lt;li&gt;参考 : &lt;a href=&#34;https://blog.uni-3.app/2019/01/02/hugo-algolia-search/&#34;&gt;https://blog.uni-3.app/2019/01/02/hugo-algolia-search/&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;GitHub Pagesでの運用
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages&#34;&gt;https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;残タスク&#34;&gt;残タスク&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;Amazonのアフィリンクをきれいに表示するlayoutか何かを用意する?　&lt;/li&gt;
-&lt;/ul&gt;
+      <content:encoded><p>5年くらい、Octopressを使用していましたが、更新されなくなっているのと、コンテンツの生成に時間がかかることもあり、
+ほかのプラットフォームを使用するように変更しました。</p>
+<p>とりあえず、今回の移行で参考にした記事とかURLをリストアップしてみました。
+詳細についてはまた明日以降で。</p>
+<ul>
+<li>参考記事
+<ul>
+<li>移行関連 : <a href="https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-">https://iriya-ufo.net/blog/2018/12/27/octopress-to-hugo/#github-pages-</a></li>
+<li>移行関連 : <a href="https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/">https://gam0022.net/blog/2016/09/25/migrated-from-octopress-to-hugo/</a></li>
+<li>Hugo自体の日本語紹介記事 : <a href="https://knowledge.sakura.ad.jp/22908/">https://knowledge.sakura.ad.jp/22908/</a></li>
+</ul>
+</li>
+<li>Hugo概要
+<ul>
+<li><a href="https://gohugo.io/">https://gohugo.io/</a></li>
+</ul>
+</li>
+<li>テーマ
+<ul>
+<li>一覧 : <a href="https://themes.gohugo.io/">https://themes.gohugo.io/</a></li>
+<li>利用したテーマ : <a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite">https://github.com/zhaohuabing/hugo-theme-cleanwhite</a></li>
+</ul>
+</li>
+<li>データ移行
+<ul>
+<li>作ったスクリプト : <a href="https://github.com/johtani/from-octopress-to-hugo">https://github.com/johtani/from-octopress-to-hugo</a></li>
+</ul>
+</li>
+<li>favicon
+<ul>
+<li>作ったサイト : <a href="http://emblemmatic.org/markmaker/#/">http://emblemmatic.org/markmaker/#/</a></li>
+</ul>
+</li>
+<li>Algoliaセッティング
+<ul>
+<li>参考 : <a href="https://blog.uni-3.app/2019/01/02/hugo-algolia-search/">https://blog.uni-3.app/2019/01/02/hugo-algolia-search/</a></li>
+</ul>
+</li>
+<li>GitHub Pagesでの運用
+<ul>
+<li><a href="https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages">https://gohugo.io/hosting-and-deployment/hosting-on-github/#types-of-github-pages</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="残タスク">残タスク</h2>
+<ul>
+<li>Amazonのアフィリンクをきれいに表示するlayoutか何かを用意する?　</li>
+</ul>
 </content:encoded>
     </item>
     

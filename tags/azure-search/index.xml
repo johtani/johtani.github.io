@@ -14,91 +14,91 @@
       
       <guid>https://blog.johtani.info/blog/2020/08/18/azure-search-with-terraform/</guid>
       <description>負荷を計測するために、数回、Azure Cognitive Searchのクラスターを起動したり、停止したりしてました。 これは、Terraformでやると楽でき</description>
-      <content:encoded>&lt;p&gt;負荷を計測するために、数回、Azure Cognitive Searchのクラスターを起動したり、停止したりしてました。
-これは、&lt;a href=&#34;https://www.terraform.io/&#34;&gt;Terraform&lt;/a&gt;でやると楽できるのでは?と思ったので、やってみました。
-1パーティションのクラスターなので、全然大したことはないのですが、メモを残しておくためにブログに書いておきます。&lt;/p&gt;
-&lt;p&gt;基本的には&lt;a href=&#34;https://www.terraform.io/docs/providers/azurerm/r/search_service.html&#34;&gt;Terraformの公式ドキュメント&lt;/a&gt;にあったものを自分用に変数を抽出しただけです。&lt;/p&gt;
-&lt;h2 id=&#34;ファイルたち&#34;&gt;ファイルたち&lt;/h2&gt;
-&lt;p&gt;単にクラスターを起動するためだけなので、2種類のファイルだけ作成しました(1個でもいいかも)。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;variables.tf&lt;/code&gt; - 変数用のファイル。いくつかの設定を変数として定義しました。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;terraform.tf&lt;/code&gt; - Terraform本体のファイル。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3 id=&#34;variablestf&#34;&gt;&lt;code&gt;variables.tf&lt;/code&gt;&lt;/h3&gt;
-&lt;p&gt;まずは&lt;code&gt;variables.tf&lt;/code&gt;です(ファイル内の並びは異なりますが。。。)。terraform.tfで利用する5つの変数です。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;resource_group - リソースグループ名。既存とは異なるリソースグループ名にしました(変に壊してもいいので)。&lt;/li&gt;
-&lt;li&gt;machine_type - 価格レベル(SKU)。&lt;a href=&#34;https://www.terraform.io/docs/providers/azurerm/r/search_service.html#sku&#34;&gt;公式ドキュメントに設定できる値の一覧&lt;/a&gt;があります。今回はWikipediaのデータを登録していたのでそれが入るサイズにしています。&lt;/li&gt;
-&lt;li&gt;region - 場所(リージョン)。リージョンの一覧はどこにあるんだろう?&lt;a href=&#34;https://azure.microsoft.com/en-us/global-infrastructure/geographies/#geographies&#34;&gt;これを参考&lt;/a&gt;にしましたが。&lt;/li&gt;
-&lt;li&gt;partition_size - パーティションのサイズ(=Elasticsearchでのシャードかな?)です。今回は1つでの性能を計測したかったので1にしてあります。&lt;/li&gt;
-&lt;li&gt;search_cluster_name - Azure Cognitive Searchのサービス名。&lt;code&gt;search.windows.net&lt;/code&gt;名前空間で一意である必要があったので、他の人が使わなそうな名前をつけています。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;variable &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;machine_type&amp;#34;&lt;/span&gt; {
-  default = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;standard&amp;#34;&lt;/span&gt;
+      <content:encoded><p>負荷を計測するために、数回、Azure Cognitive Searchのクラスターを起動したり、停止したりしてました。
+これは、<a href="https://www.terraform.io/">Terraform</a>でやると楽できるのでは?と思ったので、やってみました。
+1パーティションのクラスターなので、全然大したことはないのですが、メモを残しておくためにブログに書いておきます。</p>
+<p>基本的には<a href="https://www.terraform.io/docs/providers/azurerm/r/search_service.html">Terraformの公式ドキュメント</a>にあったものを自分用に変数を抽出しただけです。</p>
+<h2 id="ファイルたち">ファイルたち</h2>
+<p>単にクラスターを起動するためだけなので、2種類のファイルだけ作成しました(1個でもいいかも)。</p>
+<ul>
+<li><code>variables.tf</code> - 変数用のファイル。いくつかの設定を変数として定義しました。</li>
+<li><code>terraform.tf</code> - Terraform本体のファイル。</li>
+</ul>
+<h3 id="variablestf"><code>variables.tf</code></h3>
+<p>まずは<code>variables.tf</code>です(ファイル内の並びは異なりますが。。。)。terraform.tfで利用する5つの変数です。</p>
+<ul>
+<li>resource_group - リソースグループ名。既存とは異なるリソースグループ名にしました(変に壊してもいいので)。</li>
+<li>machine_type - 価格レベル(SKU)。<a href="https://www.terraform.io/docs/providers/azurerm/r/search_service.html#sku">公式ドキュメントに設定できる値の一覧</a>があります。今回はWikipediaのデータを登録していたのでそれが入るサイズにしています。</li>
+<li>region - 場所(リージョン)。リージョンの一覧はどこにあるんだろう?<a href="https://azure.microsoft.com/en-us/global-infrastructure/geographies/#geographies">これを参考</a>にしましたが。</li>
+<li>partition_size - パーティションのサイズ(=Elasticsearchでのシャードかな?)です。今回は1つでの性能を計測したかったので1にしてあります。</li>
+<li>search_cluster_name - Azure Cognitive Searchのサービス名。<code>search.windows.net</code>名前空間で一意である必要があったので、他の人が使わなそうな名前をつけています。</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">variable <span style="color:#e6db74">&#34;machine_type&#34;</span> {
+  default = <span style="color:#e6db74">&#34;standard&#34;</span>
 }
 
-variable &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;region&amp;#34;&lt;/span&gt; {
-  default = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;East Asia&amp;#34;&lt;/span&gt;
+variable <span style="color:#e6db74">&#34;region&#34;</span> {
+  default = <span style="color:#e6db74">&#34;East Asia&#34;</span>
 }
 
-variable &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;resource_group&amp;#34;&lt;/span&gt; {
-  default = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;johtani-wiki-test&amp;#34;&lt;/span&gt;
+variable <span style="color:#e6db74">&#34;resource_group&#34;</span> {
+  default = <span style="color:#e6db74">&#34;johtani-wiki-test&#34;</span>
 }
 
-variable &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search_cluster_name&amp;#34;&lt;/span&gt; {
-  default = &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;johtani-wikipedia&amp;#34;&lt;/span&gt;
+variable <span style="color:#e6db74">&#34;search_cluster_name&#34;</span> {
+  default = <span style="color:#e6db74">&#34;johtani-wikipedia&#34;</span>
 }
 
-variable &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;partition_size&amp;#34;&lt;/span&gt; {
-  default = &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+variable <span style="color:#e6db74">&#34;partition_size&#34;</span> {
+  default = <span style="color:#ae81ff">1</span>
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;terraformtf&#34;&gt;&lt;code&gt;terraform.tf&lt;/code&gt;&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;terraform.tf&lt;/code&gt;は以下の通り。&lt;a href=&#34;https://www.terraform.io/docs/providers/azurerm/r/search_service.html&#34;&gt;Terraformの公式ドキュメントにある例&lt;/a&gt;に&lt;code&gt;provider&lt;/code&gt;を追加しただけのものになります。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;provider - プロバイダーの設定。Azureを利用するという宣言です。&lt;code&gt;features {}&lt;/code&gt;がないとエラーになります。空でも必ず指定が必要です。認証周りについては、&lt;a href=&#34;https://www.terraform.io/docs/providers/azurerm/guides/azure_cli.html&#34;&gt;&lt;code&gt;azure-cli&lt;/code&gt;経由で認証する方式&lt;/a&gt;を採用しました。&lt;code&gt;azure-cli&lt;/code&gt;はHomebrewでインストールしています。&lt;/li&gt;
-&lt;li&gt;azurerm_resource_group - リソースグループの設定。&lt;code&gt;variables.tf&lt;/code&gt;の&lt;code&gt;resource_group&lt;/code&gt;と&lt;code&gt;region&lt;/code&gt;を利用しています。必須項目はこの2種類だけです。&lt;/li&gt;
-&lt;li&gt;azurerm_search_service - Azure Cognitive Searchの設定。&lt;code&gt;partition_count&lt;/code&gt;以外は必須項目です。&lt;code&gt;variables.tf&lt;/code&gt;と&lt;code&gt;azurerm_resource_group&lt;/code&gt;の設定を利用しています。今回は利用していませんが、レプリカ数なども指定できるようになっています。&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Azureのproviderを指定。&lt;/span&gt;
-provider &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;azurerm&amp;#34;&lt;/span&gt; {
+</code></pre></div><h3 id="terraformtf"><code>terraform.tf</code></h3>
+<p><code>terraform.tf</code>は以下の通り。<a href="https://www.terraform.io/docs/providers/azurerm/r/search_service.html">Terraformの公式ドキュメントにある例</a>に<code>provider</code>を追加しただけのものになります。</p>
+<ul>
+<li>provider - プロバイダーの設定。Azureを利用するという宣言です。<code>features {}</code>がないとエラーになります。空でも必ず指定が必要です。認証周りについては、<a href="https://www.terraform.io/docs/providers/azurerm/guides/azure_cli.html"><code>azure-cli</code>経由で認証する方式</a>を採用しました。<code>azure-cli</code>はHomebrewでインストールしています。</li>
+<li>azurerm_resource_group - リソースグループの設定。<code>variables.tf</code>の<code>resource_group</code>と<code>region</code>を利用しています。必須項目はこの2種類だけです。</li>
+<li>azurerm_search_service - Azure Cognitive Searchの設定。<code>partition_count</code>以外は必須項目です。<code>variables.tf</code>と<code>azurerm_resource_group</code>の設定を利用しています。今回は利用していませんが、レプリカ数なども指定できるようになっています。</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Azureのproviderを指定。</span>
+provider <span style="color:#e6db74">&#34;azurerm&#34;</span> {
   features {}
 }
 
-&lt;span style=&#34;color:#75715e&#34;&gt;# リソースグループの設定&lt;/span&gt;
-resource &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;azurerm_resource_group&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;wiki-test&amp;#34;&lt;/span&gt; {
+<span style="color:#75715e"># リソースグループの設定</span>
+resource <span style="color:#e6db74">&#34;azurerm_resource_group&#34;</span> <span style="color:#e6db74">&#34;wiki-test&#34;</span> {
   name     = var.resource_group
   location = var.region
 }
 
-&lt;span style=&#34;color:#75715e&#34;&gt;# Azure Cognitive Searchの設定&lt;/span&gt;
-resource &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;azurerm_search_service&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search_service&amp;#34;&lt;/span&gt; {
+<span style="color:#75715e"># Azure Cognitive Searchの設定</span>
+resource <span style="color:#e6db74">&#34;azurerm_search_service&#34;</span> <span style="color:#e6db74">&#34;search_service&#34;</span> {
   name                = var.search_cluster_name
   resource_group_name = azurerm_resource_group.wiki-test.name
   location            = azurerm_resource_group.wiki-test.location
   sku                 = var.machine_type
   partition_count     = var.partition_size
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以上がファイルです。ほぼ公式ドキュメントのサンプル通りですねw&lt;/p&gt;
-&lt;h2 id=&#34;デプロイとか&#34;&gt;デプロイとか&lt;/h2&gt;
-&lt;p&gt;ファイルの準備ができたら実際にデプロイします。
+</code></pre></div><p>以上がファイルです。ほぼ公式ドキュメントのサンプル通りですねw</p>
+<h2 id="デプロイとか">デプロイとか</h2>
+<p>ファイルの準備ができたら実際にデプロイします。
 Azureの環境への認証にはAzure CLIを利用して、事前にログインした状態にします。
-実際にデプロイするまでの手順は次のようになります。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;&lt;code&gt;az login&lt;/code&gt; - Azureの認証。ブラウザが起動してログイン画面が表示されます。無事認証がOKなら、&lt;code&gt;az&lt;/code&gt;コマンドでAzure Cloudの情報が取得できます。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;terraform init&lt;/code&gt; - 初回だけです。Terraformのワーキングディレクトリの初期化処理を実行します。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;terraform plan&lt;/code&gt; - Terraform &amp;lt; 0.12の場合は実行。最新版だともういらないみたいだ。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;terraform apply&lt;/code&gt; - 実際にAzure上にクラスターを起動します。Terraformが隠蔽してくれているので、実際にどんなことをやっているかはわかってないですが。&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;以上で、Azure Cognitive Searchのクラスターが起動します。
-すごく簡単です。Webコンソールでチェックすれば、起動していることも確認できます。&lt;/p&gt;
-&lt;p&gt;この状態では、クラスターが起動しただけなので、あとは必要に応じてデータをロードしたり、アプリから検索したりと行ったことが可能になります。
-そのへんの話はまた機会があれば。&lt;/p&gt;
-&lt;h2 id=&#34;destroy&#34;&gt;Destroy&lt;/h2&gt;
-&lt;p&gt;今回は負荷テスト用にクラスターを起動していましたので、必要なくなれば、クラスターを削除します。Terraformを導入したもう一つの理由がこの簡略化です。
-&lt;code&gt;terraform destroy&lt;/code&gt;を実行するだけで、Azure Cognitive Searchのクラスターおよび、リソースグループが削除されます。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;ということで、ほぼ公式ドキュメントのままですが、TerraformでAzure Cognitive Searchのクラスターを起動する方法の紹介でした。
-ブログを書いていて、1点気になったのは、ロケーション(リージョン)の一覧はどこにあるんだろう?という点です。azコマンドとかで出てくるのかなぁ?&lt;/p&gt;
+実際にデプロイするまでの手順は次のようになります。</p>
+<ol>
+<li><code>az login</code> - Azureの認証。ブラウザが起動してログイン画面が表示されます。無事認証がOKなら、<code>az</code>コマンドでAzure Cloudの情報が取得できます。</li>
+<li><code>terraform init</code> - 初回だけです。Terraformのワーキングディレクトリの初期化処理を実行します。</li>
+<li><code>terraform plan</code> - Terraform &lt; 0.12の場合は実行。最新版だともういらないみたいだ。</li>
+<li><code>terraform apply</code> - 実際にAzure上にクラスターを起動します。Terraformが隠蔽してくれているので、実際にどんなことをやっているかはわかってないですが。</li>
+</ol>
+<p>以上で、Azure Cognitive Searchのクラスターが起動します。
+すごく簡単です。Webコンソールでチェックすれば、起動していることも確認できます。</p>
+<p>この状態では、クラスターが起動しただけなので、あとは必要に応じてデータをロードしたり、アプリから検索したりと行ったことが可能になります。
+そのへんの話はまた機会があれば。</p>
+<h2 id="destroy">Destroy</h2>
+<p>今回は負荷テスト用にクラスターを起動していましたので、必要なくなれば、クラスターを削除します。Terraformを導入したもう一つの理由がこの簡略化です。
+<code>terraform destroy</code>を実行するだけで、Azure Cognitive Searchのクラスターおよび、リソースグループが削除されます。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、ほぼ公式ドキュメントのままですが、TerraformでAzure Cognitive Searchのクラスターを起動する方法の紹介でした。
+ブログを書いていて、1点気になったのは、ロケーション(リージョン)の一覧はどこにあるんだろう?という点です。azコマンドとかで出てくるのかなぁ?</p>
 </content:encoded>
     </item>
     
@@ -109,163 +109,163 @@ Azureの環境への認証にはAzure CLIを利用して、事前にログイン
       
       <guid>https://blog.johtani.info/blog/2020/06/09/difference-analyzers-in-azure-search/</guid>
       <description>Azure Cognitive Searchで日本語を扱うときに、形態素解析器を使いたい場合、2種類のAnalyzerが用意されています。今回はこれらの違いがどんなもの</description>
-      <content:encoded>&lt;p&gt;Azure Cognitive Searchで日本語を扱うときに、形態素解析器を使いたい場合、2種類のAnalyzerが用意されています。今回はこれらの違いがどんなものかを見ていくことにします。&lt;/p&gt;
-&lt;h2 id=&#34;analyzerとは&#34;&gt;Analyzerとは?&lt;/h2&gt;
-&lt;p&gt;まずは、その前にAnalyzerとは何者か?というのを少しだけ。
-Azure Cognitive Searchは&lt;a href=&#34;https://ja.wikipedia.org/wiki/%E8%BB%A2%E7%BD%AE%E3%82%A4%E3%83%B3%E3%83%87%E3%83%83%E3%82%AF%E3%82%B9&#34;&gt;転置インデックス&lt;/a&gt;を内部で作成して、検索を行っています。
-この、転置インデックスは、「単語」がどのドキュメントに入っているか?を素早く見つけることができるデータ構造となっています。&lt;/p&gt;
-&lt;p&gt;Azure Cognitive Searchは、この「単語」を入力された文章から生成するときに、Analyzerというものを利用します。
+      <content:encoded><p>Azure Cognitive Searchで日本語を扱うときに、形態素解析器を使いたい場合、2種類のAnalyzerが用意されています。今回はこれらの違いがどんなものかを見ていくことにします。</p>
+<h2 id="analyzerとは">Analyzerとは?</h2>
+<p>まずは、その前にAnalyzerとは何者か?というのを少しだけ。
+Azure Cognitive Searchは<a href="https://ja.wikipedia.org/wiki/%E8%BB%A2%E7%BD%AE%E3%82%A4%E3%83%B3%E3%83%87%E3%83%83%E3%82%AF%E3%82%B9">転置インデックス</a>を内部で作成して、検索を行っています。
+この、転置インデックスは、「単語」がどのドキュメントに入っているか?を素早く見つけることができるデータ構造となっています。</p>
+<p>Azure Cognitive Searchは、この「単語」を入力された文章から生成するときに、Analyzerというものを利用します。
 Analyzerは入力された文章をある規則に則って単語に分割する機能です。
 この「ある規則」が、各種言語や用途によって様々に用意されています。
-今回はこの中の&lt;code&gt;ja.lucene&lt;/code&gt;と&lt;code&gt;ja.microsoft&lt;/code&gt;という2種類のAnalyzerについて違いを見ていきます。&lt;/p&gt;
-&lt;h2 id=&#34;2種類のanalyzerの違いはどんなもの&#34;&gt;2種類のAnalyzerの違いはどんなもの?&lt;/h2&gt;
-&lt;p&gt;このAnalyzerの挙動を見るためのエンドポイントとして&lt;code&gt;analyze&lt;/code&gt;というAPIがあります(&lt;a href=&#34;https://blog.johtani.info/blog/2020/03/19/azure-search-analyze-plugin/&#34;&gt;詳細は昔のブログを参照&lt;/a&gt;)。&lt;/p&gt;
-&lt;p&gt;このAPIを利用して、Wikipediaのいくつかの文章を単語に区切って見て、
-&lt;code&gt;ja.microsoft&lt;/code&gt;がどんな動きをしているのか想像してみます(残念ながら&lt;code&gt;ja.microsoft&lt;/code&gt;の仕様?や挙動についてはページが見つからないため)。&lt;/p&gt;
-&lt;h3 id=&#34;もとの文章と解析結果一部抜粋&#34;&gt;もとの文章と解析結果(一部抜粋)&lt;/h3&gt;
-&lt;p&gt;文章は、手元のElasticsearchに登録したjawikiのデータからランダムに抽出しています。また、自前のツールで生成したWikipediaのデータなので、まだ一部、見苦しい文字列になっています(そっちもなおさないと)。&lt;/p&gt;
-&lt;h4 id=&#34;1-砂川熊本県&#34;&gt;1. 砂川（熊本県）&lt;/h4&gt;
-&lt;blockquote&gt;
-&lt;p&gt;thumb|250px|right|上砂川橋より上流方砂川（すながわ）は、熊本県宇城市・八代郡氷川町を流れる二級河川。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;この文字列から抽出された単語で特徴的なものを一部抜粋しました。&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;&lt;code&gt;ja.microsoft&lt;/code&gt;&lt;/th&gt;
-&lt;th&gt;&lt;code&gt;ja.lucene&lt;/code&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;250px&lt;/td&gt;
-&lt;td&gt;250&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;px&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;上砂&lt;/td&gt;
-&lt;td&gt;上, 上砂川&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;川橋&lt;/td&gt;
-&lt;td&gt;砂川&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;橋&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;宇城&lt;/td&gt;
-&lt;td&gt;宇&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;市&lt;/td&gt;
-&lt;td&gt;城市&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;二級&lt;/td&gt;
-&lt;td&gt;二&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;^&lt;/td&gt;
-&lt;td&gt;級&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;まず、最初の&lt;code&gt;250px&lt;/code&gt;ですが、&lt;code&gt;ja.microsoft&lt;/code&gt;では、&lt;code&gt;px&lt;/code&gt;が単位であると判定しているのか、数値と合わせた単語として抽出されています。この場合、&lt;code&gt;250&lt;/code&gt;で検索しても、この文字列はヒットしない形になるので、ノイズが減ることが考えられるかと。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;上砂川橋&lt;/code&gt;という文字は、分割の仕方が別れました。
-&lt;code&gt;ja.lucene&lt;/code&gt;では、&lt;code&gt;上砂川&lt;/code&gt;という単語が地名として辞書に存在するために、このような分割になっています。&lt;code&gt;ja.microsoft&lt;/code&gt;のデータは品詞の情報が取れないのですが、&lt;code&gt;上砂&lt;/code&gt;、&lt;code&gt;川橋&lt;/code&gt;ともに、名詞として辞書に存在しているのではないかなと。&lt;code&gt;ja.lucene&lt;/code&gt;には&lt;code&gt;川橋&lt;/code&gt;という単語は存在していないようでした。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;宇城市&lt;/code&gt;(うきし)については、2005年に合併でできた市のようで、&lt;code&gt;ja.lucene&lt;/code&gt;が利用している辞書には存在しない可能性があり、&lt;code&gt;宇城&lt;/code&gt;という文字が抽出できてないと思われます。&lt;/p&gt;
-&lt;p&gt;最後は&lt;code&gt;二級&lt;/code&gt;です。&lt;code&gt;ja.lucene&lt;/code&gt;では、数字と助数詞として分割されています。こちらも何かしらのロジックにより、&lt;code&gt;二級&lt;/code&gt;という1単語でヒットできるように数字と単位?が合わせた単語で出てくる仕組みが&lt;code&gt;ja.microsoft&lt;/code&gt;なのかなと。&lt;/p&gt;
-&lt;h4 id=&#34;2-uefa-u-18女子選手権2000&#34;&gt;2. UEFA U-18女子選手権2000&lt;/h4&gt;
-&lt;blockquote&gt;
-&lt;p&gt;UEFA U-18女子選手権2000は第3回目のUEFA U-18女子選手権である。決勝トーナメントは2000年7月27日から8月4日までフランスで行われ、ドイツが初優勝を果たした。&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;この文字列から抽出された単語で特徴的なものを一部抜粋しました。&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;&lt;code&gt;ja.microsoft&lt;/code&gt;&lt;/th&gt;
-&lt;th&gt;&lt;code&gt;ja.lucene&lt;/code&gt;&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;u-18, u&lt;/td&gt;
-&lt;td&gt;u&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;18, nn18&lt;/td&gt;
-&lt;td&gt;18&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;第3回目&lt;/td&gt;
-&lt;td&gt;第&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;3&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;回&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;目&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;トーナメント, トナメント&lt;/td&gt;
-&lt;td&gt;トーナメント&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;2000年&lt;/td&gt;
-&lt;td&gt;2000&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;年&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;7月&lt;/td&gt;
-&lt;td&gt;7&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;月&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;27日&lt;/td&gt;
-&lt;td&gt;27&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;td&gt;日&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;数字を含む単語&lt;code&gt;第3回目&lt;/code&gt;や&lt;code&gt;2000年&lt;/code&gt;、&lt;code&gt;7月&lt;/code&gt;などは、&lt;code&gt;ja.microsoft&lt;/code&gt;は先程と同様、数字と単位の組み合わせを1単語として出力しています。&lt;/p&gt;
-&lt;p&gt;また、&lt;code&gt;トーナメント&lt;/code&gt;という単語を&lt;code&gt;トナメント&lt;/code&gt;という形で、長音を除去した形で出力しています。
-今回の文字列ではないですが、この他に、&lt;code&gt;センター&lt;/code&gt;を&lt;code&gt;センター&lt;/code&gt;と&lt;code&gt;センタ&lt;/code&gt;の2パターンの単語で出力するといったことを行っています。
-&lt;code&gt;ja.lucene&lt;/code&gt;の場合、単語の最後に長音がある場合だけ&lt;code&gt;センタ&lt;/code&gt;として、長音を除去した単語が出力されます。
-これは、長音の表記ゆれに対応するためではないかなと。たとえば、&lt;code&gt;インターフェース&lt;/code&gt;と&lt;code&gt;インタフェース&lt;/code&gt;、&lt;code&gt;インターフェイス&lt;/code&gt;のように、人や文章によって、間にでてくる長音を使ったり使わなかったりという表記ゆれに対応するためだと思われます。
-その他にも、&lt;code&gt;イプロゥヴェト&lt;/code&gt;を&lt;code&gt;イプロゥベト&lt;/code&gt;に、&lt;code&gt;ネクスト&lt;/code&gt;を&lt;code&gt;ネキスト&lt;/code&gt;に、&lt;code&gt;バラエティ&lt;/code&gt;を&lt;code&gt;バラエチ&lt;/code&gt;にも変換するなどといった処理をしてくれるようです。カタカナの表記ゆれには強そうですね(これどうやってるんだろう?)。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;ja.microsoft&lt;/code&gt;では、&lt;code&gt;nn18&lt;/code&gt;というちょっと変わった単語も出てきていました。純粋な数字の場合は&lt;code&gt;nn&lt;/code&gt;と入力してくれるようで、数字だけで検索したい場合に利用できるのかな?これはドキュメントに書いておいてほしいかも?&lt;/p&gt;
-&lt;h3 id=&#34;共通点&#34;&gt;共通点&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;ja.lucene&lt;/code&gt;、&lt;code&gt;ja.microsoft&lt;/code&gt;ともに、共通している動作として、「てにをは」といった単語は除去されていました。違いがあるものとしては、「より」(助詞-格助詞-一般)、「されている」(動詞-自立、動詞-接尾、助詞-接続助詞、動詞-非自立)、「ある」(助動詞)といったものは&lt;code&gt;ja.microsoft&lt;/code&gt;では除去されずに出てきていました。
-ストップワード的に「てにをは」あたりを除去をしている感じでしょうか?&lt;/p&gt;
-&lt;p&gt;アルファベットで構成されている単語についても、基本はそのまま出力される挙動のようでした。&lt;/p&gt;
-&lt;h2 id=&#34;じゃあどっちがいいの&#34;&gt;じゃあどっちがいいの?&lt;/h2&gt;
-&lt;p&gt;残念ながらどちらがいいかは、一長一短かなぁと。
-&lt;code&gt;ja.lucene&lt;/code&gt;に関しては、Luceneの仕組みを利用しているので、Elasticsearchなどを使えば、個別の単語についてより詳細の情報を取得することが可能です(品詞、読みなど)。&lt;code&gt;ja.microsoft&lt;/code&gt;については、残念ながら手の入れようがないので、そういう動きのものだという割り切った使い方になるでしょうか?
-ただ、長音の除去による表記ゆれなどについては、便利な機能なので、そのあたりの問題に対応したい場合は、&lt;code&gt;ja.microsoft&lt;/code&gt;を活用するのも良いかと思います。&lt;/p&gt;
-&lt;p&gt;個人的には、より細かい単語としてインデックスに登録できるもののほうが、柔軟な検索には対応できるのではないかなぁと考えています(Kuromojiの辞書をUniDicにするとか?も考えますが、これはAzure Searchではできないですが)。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;Wikipediaのデータをいくつか使って、&lt;code&gt;ja.microsoft&lt;/code&gt;と&lt;code&gt;ja.lucene&lt;/code&gt;の違いについて、考察してみました。何かの役に立てばと。
-他に、これはどんな感じになるの?などありましたら、コメントいただければと。&lt;/p&gt;
+今回はこの中の<code>ja.lucene</code>と<code>ja.microsoft</code>という2種類のAnalyzerについて違いを見ていきます。</p>
+<h2 id="2種類のanalyzerの違いはどんなもの">2種類のAnalyzerの違いはどんなもの?</h2>
+<p>このAnalyzerの挙動を見るためのエンドポイントとして<code>analyze</code>というAPIがあります(<a href="https://blog.johtani.info/blog/2020/03/19/azure-search-analyze-plugin/">詳細は昔のブログを参照</a>)。</p>
+<p>このAPIを利用して、Wikipediaのいくつかの文章を単語に区切って見て、
+<code>ja.microsoft</code>がどんな動きをしているのか想像してみます(残念ながら<code>ja.microsoft</code>の仕様?や挙動についてはページが見つからないため)。</p>
+<h3 id="もとの文章と解析結果一部抜粋">もとの文章と解析結果(一部抜粋)</h3>
+<p>文章は、手元のElasticsearchに登録したjawikiのデータからランダムに抽出しています。また、自前のツールで生成したWikipediaのデータなので、まだ一部、見苦しい文字列になっています(そっちもなおさないと)。</p>
+<h4 id="1-砂川熊本県">1. 砂川（熊本県）</h4>
+<blockquote>
+<p>thumb|250px|right|上砂川橋より上流方砂川（すながわ）は、熊本県宇城市・八代郡氷川町を流れる二級河川。</p>
+</blockquote>
+<p>この文字列から抽出された単語で特徴的なものを一部抜粋しました。</p>
+<table>
+<thead>
+<tr>
+<th><code>ja.microsoft</code></th>
+<th><code>ja.lucene</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>250px</td>
+<td>250</td>
+</tr>
+<tr>
+<td></td>
+<td>px</td>
+</tr>
+<tr>
+<td>上砂</td>
+<td>上, 上砂川</td>
+</tr>
+<tr>
+<td>川橋</td>
+<td>砂川</td>
+</tr>
+<tr>
+<td></td>
+<td>橋</td>
+</tr>
+<tr>
+<td>宇城</td>
+<td>宇</td>
+</tr>
+<tr>
+<td>市</td>
+<td>城市</td>
+</tr>
+<tr>
+<td>二級</td>
+<td>二</td>
+</tr>
+<tr>
+<td>^</td>
+<td>級</td>
+</tr>
+</tbody>
+</table>
+<p>まず、最初の<code>250px</code>ですが、<code>ja.microsoft</code>では、<code>px</code>が単位であると判定しているのか、数値と合わせた単語として抽出されています。この場合、<code>250</code>で検索しても、この文字列はヒットしない形になるので、ノイズが減ることが考えられるかと。</p>
+<p><code>上砂川橋</code>という文字は、分割の仕方が別れました。
+<code>ja.lucene</code>では、<code>上砂川</code>という単語が地名として辞書に存在するために、このような分割になっています。<code>ja.microsoft</code>のデータは品詞の情報が取れないのですが、<code>上砂</code>、<code>川橋</code>ともに、名詞として辞書に存在しているのではないかなと。<code>ja.lucene</code>には<code>川橋</code>という単語は存在していないようでした。</p>
+<p><code>宇城市</code>(うきし)については、2005年に合併でできた市のようで、<code>ja.lucene</code>が利用している辞書には存在しない可能性があり、<code>宇城</code>という文字が抽出できてないと思われます。</p>
+<p>最後は<code>二級</code>です。<code>ja.lucene</code>では、数字と助数詞として分割されています。こちらも何かしらのロジックにより、<code>二級</code>という1単語でヒットできるように数字と単位?が合わせた単語で出てくる仕組みが<code>ja.microsoft</code>なのかなと。</p>
+<h4 id="2-uefa-u-18女子選手権2000">2. UEFA U-18女子選手権2000</h4>
+<blockquote>
+<p>UEFA U-18女子選手権2000は第3回目のUEFA U-18女子選手権である。決勝トーナメントは2000年7月27日から8月4日までフランスで行われ、ドイツが初優勝を果たした。</p>
+</blockquote>
+<p>この文字列から抽出された単語で特徴的なものを一部抜粋しました。</p>
+<table>
+<thead>
+<tr>
+<th><code>ja.microsoft</code></th>
+<th><code>ja.lucene</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>u-18, u</td>
+<td>u</td>
+</tr>
+<tr>
+<td>18, nn18</td>
+<td>18</td>
+</tr>
+<tr>
+<td>第3回目</td>
+<td>第</td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+</tr>
+<tr>
+<td></td>
+<td>回</td>
+</tr>
+<tr>
+<td></td>
+<td>目</td>
+</tr>
+<tr>
+<td>トーナメント, トナメント</td>
+<td>トーナメント</td>
+</tr>
+<tr>
+<td>2000年</td>
+<td>2000</td>
+</tr>
+<tr>
+<td></td>
+<td>年</td>
+</tr>
+<tr>
+<td>7月</td>
+<td>7</td>
+</tr>
+<tr>
+<td></td>
+<td>月</td>
+</tr>
+<tr>
+<td>27日</td>
+<td>27</td>
+</tr>
+<tr>
+<td></td>
+<td>日</td>
+</tr>
+</tbody>
+</table>
+<p>数字を含む単語<code>第3回目</code>や<code>2000年</code>、<code>7月</code>などは、<code>ja.microsoft</code>は先程と同様、数字と単位の組み合わせを1単語として出力しています。</p>
+<p>また、<code>トーナメント</code>という単語を<code>トナメント</code>という形で、長音を除去した形で出力しています。
+今回の文字列ではないですが、この他に、<code>センター</code>を<code>センター</code>と<code>センタ</code>の2パターンの単語で出力するといったことを行っています。
+<code>ja.lucene</code>の場合、単語の最後に長音がある場合だけ<code>センタ</code>として、長音を除去した単語が出力されます。
+これは、長音の表記ゆれに対応するためではないかなと。たとえば、<code>インターフェース</code>と<code>インタフェース</code>、<code>インターフェイス</code>のように、人や文章によって、間にでてくる長音を使ったり使わなかったりという表記ゆれに対応するためだと思われます。
+その他にも、<code>イプロゥヴェト</code>を<code>イプロゥベト</code>に、<code>ネクスト</code>を<code>ネキスト</code>に、<code>バラエティ</code>を<code>バラエチ</code>にも変換するなどといった処理をしてくれるようです。カタカナの表記ゆれには強そうですね(これどうやってるんだろう?)。</p>
+<p><code>ja.microsoft</code>では、<code>nn18</code>というちょっと変わった単語も出てきていました。純粋な数字の場合は<code>nn</code>と入力してくれるようで、数字だけで検索したい場合に利用できるのかな?これはドキュメントに書いておいてほしいかも?</p>
+<h3 id="共通点">共通点</h3>
+<p><code>ja.lucene</code>、<code>ja.microsoft</code>ともに、共通している動作として、「てにをは」といった単語は除去されていました。違いがあるものとしては、「より」(助詞-格助詞-一般)、「されている」(動詞-自立、動詞-接尾、助詞-接続助詞、動詞-非自立)、「ある」(助動詞)といったものは<code>ja.microsoft</code>では除去されずに出てきていました。
+ストップワード的に「てにをは」あたりを除去をしている感じでしょうか?</p>
+<p>アルファベットで構成されている単語についても、基本はそのまま出力される挙動のようでした。</p>
+<h2 id="じゃあどっちがいいの">じゃあどっちがいいの?</h2>
+<p>残念ながらどちらがいいかは、一長一短かなぁと。
+<code>ja.lucene</code>に関しては、Luceneの仕組みを利用しているので、Elasticsearchなどを使えば、個別の単語についてより詳細の情報を取得することが可能です(品詞、読みなど)。<code>ja.microsoft</code>については、残念ながら手の入れようがないので、そういう動きのものだという割り切った使い方になるでしょうか?
+ただ、長音の除去による表記ゆれなどについては、便利な機能なので、そのあたりの問題に対応したい場合は、<code>ja.microsoft</code>を活用するのも良いかと思います。</p>
+<p>個人的には、より細かい単語としてインデックスに登録できるもののほうが、柔軟な検索には対応できるのではないかなぁと考えています(Kuromojiの辞書をUniDicにするとか?も考えますが、これはAzure Searchではできないですが)。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>Wikipediaのデータをいくつか使って、<code>ja.microsoft</code>と<code>ja.lucene</code>の違いについて、考察してみました。何かの役に立てばと。
+他に、これはどんな感じになるの?などありましたら、コメントいただければと。</p>
 </content:encoded>
     </item>
     
@@ -276,156 +276,156 @@ Analyzerは入力された文章をある規則に則って単語に分割する
       
       <guid>https://blog.johtani.info/blog/2020/05/26/logging-azure-search-request/</guid>
       <description>今回はAzure Cognitive SearchのSDKを利用したアプリケーションが、実際にAzure Cognitive Searchに対して送信しているリクエストのパラメータ</description>
-      <content:encoded>&lt;p&gt;今回はAzure Cognitive SearchのSDKを利用したアプリケーションが、実際にAzure Cognitive Searchに対して送信しているリクエストのパラメータとボディをログに保存する方法について紹介します。&lt;/p&gt;
-&lt;h2 id=&#34;動機&#34;&gt;動機&lt;/h2&gt;
-&lt;p&gt;アプリケーションでリクエストを組み立てて、SDK経由で送信していると、最終的にAzure Cognitive Searchに対して送信されているリクエストのパラメータや検索条件などをひと目で見たいことがあります。
-アプリケーションでは、ソート条件や、クエリ文字列の組み立てなどの処理は異なる場所で行われたりしますので。&lt;/p&gt;
-&lt;p&gt;また、公式リファレンスでは、機能の説明はRest APIの使い方と組み合わせで説明されることが多いです。&lt;/p&gt;
-&lt;p&gt;ということで、SDKを利用しているアプリからAzure Searchへ送信されているリクエストをログに保存する方法を調べてみました。&lt;/p&gt;
-&lt;h2 id=&#34;方法&#34;&gt;方法&lt;/h2&gt;
-&lt;p&gt;調べてみるといくつかの手段を取ることができそうだとわかりました。実際に調べて実装する方法を4種類ほど試してみたのでブログに残しておきます。なお、2020年4月時点でのSDKとAzureの仕組みに基づいたブログになります。最新版ではお手軽な方法があるかもしれません。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;DelegatingHandlerを利用する&lt;/li&gt;
-&lt;li&gt;ServiceClientTracingの機能を利用する&lt;/li&gt;
-&lt;li&gt;Azure Application Insightsを活用する&lt;/li&gt;
-&lt;li&gt;Azure Cognitive Searchのコンソールにある診断情報の機能を利用する&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;1、2はAzure Cognitive SearchのSDKのリファレンスから当たりを付けて見つけた方法です。
+      <content:encoded><p>今回はAzure Cognitive SearchのSDKを利用したアプリケーションが、実際にAzure Cognitive Searchに対して送信しているリクエストのパラメータとボディをログに保存する方法について紹介します。</p>
+<h2 id="動機">動機</h2>
+<p>アプリケーションでリクエストを組み立てて、SDK経由で送信していると、最終的にAzure Cognitive Searchに対して送信されているリクエストのパラメータや検索条件などをひと目で見たいことがあります。
+アプリケーションでは、ソート条件や、クエリ文字列の組み立てなどの処理は異なる場所で行われたりしますので。</p>
+<p>また、公式リファレンスでは、機能の説明はRest APIの使い方と組み合わせで説明されることが多いです。</p>
+<p>ということで、SDKを利用しているアプリからAzure Searchへ送信されているリクエストをログに保存する方法を調べてみました。</p>
+<h2 id="方法">方法</h2>
+<p>調べてみるといくつかの手段を取ることができそうだとわかりました。実際に調べて実装する方法を4種類ほど試してみたのでブログに残しておきます。なお、2020年4月時点でのSDKとAzureの仕組みに基づいたブログになります。最新版ではお手軽な方法があるかもしれません。</p>
+<ol>
+<li>DelegatingHandlerを利用する</li>
+<li>ServiceClientTracingの機能を利用する</li>
+<li>Azure Application Insightsを活用する</li>
+<li>Azure Cognitive Searchのコンソールにある診断情報の機能を利用する</li>
+</ol>
+<p>1、2はAzure Cognitive SearchのSDKのリファレンスから当たりを付けて見つけた方法です。
 3はApplication Insights、4はAzure Cognitive Searchの機能になります。
-これらの方法について個別に説明していきます。&lt;/p&gt;
-&lt;h3 id=&#34;1-delegatinghandleを利用する&#34;&gt;1. DelegatingHandleを利用する&lt;/h3&gt;
-&lt;p&gt;まずは、SDKでロギングの機能がないかを調べて見つけた機能がこちらです。
-SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.searchserviceclient.-ctor?view=azure-dotnet#Microsoft_Azure_Search_SearchServiceClient__ctor_System_String_Microsoft_Azure_Search_SearchCredentials_System_Net_Http_HttpClientHandler_System_Net_Http_DelegatingHandler___&#34;&gt;SearchServiceClient&lt;/a&gt;のコンストラクタの引数に&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/system.net.http.delegatinghandler?view=netframework-4.8&#34;&gt;DelegatingHandler&lt;/a&gt;というものが渡せることを発見しました。&lt;/p&gt;
-&lt;p&gt;これは、.NET FrameworkのHttpのAPIに存在するクラスで、HTTPのクライアントがHTTPの送受信時に、処理を挟むことができる機能です。フレームワーク側で、&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.logging.logginghttpmessagehandler?view=dotnet-plat-ext-3.1&amp;amp;viewFallbackFrom=netframework-4.8&#34;&gt;LoggingHttpMessaggeHandler&lt;/a&gt;というクラスを用意してくれていましたが、残念ながらこちらは、リクエストとレスポンスのヘッダのみをロギングするクラスでした。
-ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには&lt;code&gt;Microsoft.Extensions.Logging&lt;/code&gt;の&lt;code&gt;ILogger&lt;/code&gt;を使用します。&lt;/p&gt;
-&lt;p&gt;また、Azure Cognitive SearchのSDK側に違う問題点もありました。&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method&#34;&gt;チュートリアルにあるように&lt;/a&gt;、検索するときには、SDKは次のような使い方を想定しています。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;// Create a service and index client.
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        _serviceClient = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchServiceClient(searchServiceName, &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchCredentials(queryApiKey));
-        _indexClient = _serviceClient.Indexes.GetClient(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hotels&amp;#34;&lt;/span&gt;);
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;インデックス用のクライアントを取得するために、&lt;code&gt;GetClient(インデックス名)&lt;/code&gt;というメソッドを使用します。この&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_&#34;&gt;&lt;code&gt;GetClient&lt;/code&gt;メソッドのバリエーション&lt;/a&gt;として、DelegatingHandlerを受け取るメソッドがないのです。。。&lt;/p&gt;
-&lt;p&gt;ということで、DelegationHandlerを活用する方法としては、以下の2つを実装する必要があります。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;CustomなLoggingHttpMessageHandlerクラスを実装&lt;/li&gt;
-&lt;li&gt;GetClientと同等の処理をDelegatingHandlerを引数にしたものを実装する&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;以上の2つを実装し、アプリケーション側から2で作成したGetClientを呼び出すことで、リクエストをボディも含めてログ出力することが可能になります。以下は実装例です。&lt;/p&gt;
-&lt;p&gt;CustomHttpMessageHandlerクラス。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Collections.Generic;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Diagnostics;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http.Headers;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Text;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Threading;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Threading.Tasks;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.Extensions.Logging;
+これらの方法について個別に説明していきます。</p>
+<h3 id="1-delegatinghandleを利用する">1. DelegatingHandleを利用する</h3>
+<p>まずは、SDKでロギングの機能がないかを調べて見つけた機能がこちらです。
+SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.searchserviceclient.-ctor?view=azure-dotnet#Microsoft_Azure_Search_SearchServiceClient__ctor_System_String_Microsoft_Azure_Search_SearchCredentials_System_Net_Http_HttpClientHandler_System_Net_Http_DelegatingHandler___">SearchServiceClient</a>のコンストラクタの引数に<a href="https://docs.microsoft.com/en-us/dotnet/api/system.net.http.delegatinghandler?view=netframework-4.8">DelegatingHandler</a>というものが渡せることを発見しました。</p>
+<p>これは、.NET FrameworkのHttpのAPIに存在するクラスで、HTTPのクライアントがHTTPの送受信時に、処理を挟むことができる機能です。フレームワーク側で、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.logging.logginghttpmessagehandler?view=dotnet-plat-ext-3.1&amp;viewFallbackFrom=netframework-4.8">LoggingHttpMessaggeHandler</a>というクラスを用意してくれていましたが、残念ながらこちらは、リクエストとレスポンスのヘッダのみをロギングするクラスでした。
+ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには<code>Microsoft.Extensions.Logging</code>の<code>ILogger</code>を使用します。</p>
+<p>また、Azure Cognitive SearchのSDK側に違う問題点もありました。<a href="https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method">チュートリアルにあるように</a>、検索するときには、SDKは次のような使い方を想定しています。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">        <span style="color:#75715e">// Create a service and index client.
+</span><span style="color:#75715e"></span>        _serviceClient = <span style="color:#66d9ef">new</span> SearchServiceClient(searchServiceName, <span style="color:#66d9ef">new</span> SearchCredentials(queryApiKey));
+        _indexClient = _serviceClient.Indexes.GetClient(<span style="color:#e6db74">&#34;hotels&#34;</span>);
+</code></pre></div><p>インデックス用のクライアントを取得するために、<code>GetClient(インデックス名)</code>というメソッドを使用します。この<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_"><code>GetClient</code>メソッドのバリエーション</a>として、DelegatingHandlerを受け取るメソッドがないのです。。。</p>
+<p>ということで、DelegationHandlerを活用する方法としては、以下の2つを実装する必要があります。</p>
+<ol>
+<li>CustomなLoggingHttpMessageHandlerクラスを実装</li>
+<li>GetClientと同等の処理をDelegatingHandlerを引数にしたものを実装する</li>
+</ol>
+<p>以上の2つを実装し、アプリケーション側から2で作成したGetClientを呼び出すことで、リクエストをボディも含めてログ出力することが可能になります。以下は実装例です。</p>
+<p>CustomHttpMessageHandlerクラス。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System;
+<span style="color:#66d9ef">using</span> System.Collections.Generic;
+<span style="color:#66d9ef">using</span> System.Diagnostics;
+<span style="color:#66d9ef">using</span> System.Net.Http;
+<span style="color:#66d9ef">using</span> System.Net.Http.Headers;
+<span style="color:#66d9ef">using</span> System.Text;
+<span style="color:#66d9ef">using</span> System.Threading;
+<span style="color:#66d9ef">using</span> System.Threading.Tasks;
+<span style="color:#66d9ef">using</span> Microsoft.Extensions.Logging;
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;namespace&lt;/span&gt; AzureSearchSample
+<span style="color:#66d9ef">namespace</span> AzureSearchSample
 {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;CustomLoggingHttpMessageHandler&lt;/span&gt; : DelegatingHandler
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CustomLoggingHttpMessageHandler</span> : DelegatingHandler
     {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; ILogger _logger;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; _logContent = &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;;
+        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> ILogger _logger;
+        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">bool</span> _logContent = <span style="color:#66d9ef">false</span>;
 
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; CustomLoggingHttpMessageHandler(ILogger logger, &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; logContent)
+        <span style="color:#66d9ef">public</span> CustomLoggingHttpMessageHandler(ILogger logger, <span style="color:#66d9ef">bool</span> logContent)
         {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logger == &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;)
+            <span style="color:#66d9ef">if</span> (logger == <span style="color:#66d9ef">null</span>)
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(logger));
+                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(logger));
             }
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger = logger;
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logContent = logContent;
+            <span style="color:#66d9ef">this</span>._logger = logger;
+            <span style="color:#66d9ef">this</span>._logContent = logContent;
         }
 
 
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;override&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task&amp;lt;HttpResponseMessage&amp;gt; SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">async</span> Task&lt;HttpResponseMessage&gt; SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (request == &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;)
+            <span style="color:#66d9ef">if</span> (request == <span style="color:#66d9ef">null</span>)
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(request));
+                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(request));
             } 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestStart(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger, request, &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logContent);
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; stopwatch = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Stopwatch();
-            HttpResponseMessage response = &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;base&lt;/span&gt;.SendAsync(request, cancellationToken).ConfigureAwait(&lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;);
+            <span style="color:#66d9ef">await</span> Log.RequestStart(<span style="color:#66d9ef">this</span>._logger, request, <span style="color:#66d9ef">this</span>._logContent);
+            <span style="color:#66d9ef">var</span> stopwatch = <span style="color:#66d9ef">new</span> Stopwatch();
+            HttpResponseMessage response = <span style="color:#66d9ef">await</span> <span style="color:#66d9ef">base</span>.SendAsync(request, cancellationToken).ConfigureAwait(<span style="color:#66d9ef">false</span>);
             stopwatch.Stop();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestEnd(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger, response, stopwatch.Elapsed);
+            <span style="color:#66d9ef">await</span> Log.RequestEnd(<span style="color:#66d9ef">this</span>._logger, response, stopwatch.Elapsed);
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; response;
+            <span style="color:#66d9ef">return</span> response;
         }
 
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Log&lt;/span&gt;
+        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Log</span>
         {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;EventIds&lt;/span&gt;
+            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EventIds</span>
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; EventId RequestStart = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; EventId(&lt;span style=&#34;color:#ae81ff&#34;&gt;100&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;RequestStart&amp;#34;&lt;/span&gt;);
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; EventId RequestEnd = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; EventId(&lt;span style=&#34;color:#ae81ff&#34;&gt;101&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;RequestEnd&amp;#34;&lt;/span&gt;);
+                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestStart = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">100</span>, <span style="color:#e6db74">&#34;RequestStart&#34;</span>);
+                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestEnd = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">101</span>, <span style="color:#e6db74">&#34;RequestEnd&#34;</span>);
             }
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task RequestStart(ILogger logger, HttpRequestMessage request, &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; logContent)
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestStart(ILogger logger, HttpRequestMessage request, <span style="color:#66d9ef">bool</span> logContent)
             {
-                StringBuilder message = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; StringBuilder();
-                message.AppendLine(&lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;Sending HTTP request {request.Method} {request.RequestUri}&amp;#34;&lt;/span&gt;);
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logger.IsEnabled(LogLevel.Trace))
+                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
+                message.AppendLine(<span style="color:#e6db74">$&#34;Sending HTTP request {request.Method} {request.RequestUri}&#34;</span>);
+                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
                 {
                     LogHttpHeaders(message, request.Headers);
-                    &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; LogHttpContent(message, request.Content, logContent);
+                    <span style="color:#66d9ef">await</span> LogHttpContent(message, request.Content, logContent);
                     logger.Log(
                         LogLevel.Trace,
                         EventIds.RequestStart,
                         message,
-                        &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;,
-                        (state, ex) =&amp;gt; state.ToString());
+                        <span style="color:#66d9ef">null</span>,
+                        (state, ex) =&gt; state.ToString());
                 }
             }
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task RequestEnd(ILogger logger, HttpResponseMessage response, TimeSpan duration)
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestEnd(ILogger logger, HttpResponseMessage response, TimeSpan duration)
             {
-                StringBuilder message = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; StringBuilder();
+                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
                 message.AppendLine(
-                    &lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;Recieving HTTP response after {duration.TotalMilliseconds}ms - {response.StatusCode}&amp;#34;&lt;/span&gt;);
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logger.IsEnabled(LogLevel.Trace))
+                    <span style="color:#e6db74">$&#34;Recieving HTTP response after {duration.TotalMilliseconds}ms - {response.StatusCode}&#34;</span>);
+                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
                 {
                     LogHttpHeaders(message, response.Headers);
-                    &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; LogHttpContent(message, response.Content, &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;);
+                    <span style="color:#66d9ef">await</span> LogHttpContent(message, response.Content, <span style="color:#66d9ef">false</span>);
                     logger.Log(
                         LogLevel.Trace,
                         EventIds.RequestEnd,
                         message,
-                        &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;,
-                        (state, ex) =&amp;gt; state.ToString()
+                        <span style="color:#66d9ef">null</span>,
+                        (state, ex) =&gt; state.ToString()
                         );
                 }
             }
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; LogHttpHeaders(StringBuilder message, HttpHeaders headers)
+            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> LogHttpHeaders(StringBuilder message, HttpHeaders headers)
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (headers == &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;) &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(headers));
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (KeyValuePair&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;, IEnumerable&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;&amp;gt;&amp;gt; header &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; headers)
+                <span style="color:#66d9ef">if</span> (headers == <span style="color:#66d9ef">null</span>) <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(headers));
+                <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>, IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> headers)
                 {
-                    &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; header.Value)
+                    <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
                     {
-                        message.AppendLine(&lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;{header.Key}: {value}&amp;#34;&lt;/span&gt;);
+                        message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
                     }
                 }
             }
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; Task LogHttpContent(StringBuilder message, HttpContent content,
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; logContent)
+            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task LogHttpContent(StringBuilder message, HttpContent content,
+                <span style="color:#66d9ef">bool</span> logContent)
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (content != &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;)
+                <span style="color:#66d9ef">if</span> (content != <span style="color:#66d9ef">null</span>)
                 {
-                    &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (KeyValuePair&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;,IEnumerable&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;&amp;gt;&amp;gt; header &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; content.Headers)
+                    <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> content.Headers)
                     {
-                        &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; header.Value)
+                        <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
                         {
-                            message.AppendLine(&lt;span style=&#34;color:#e6db74&#34;&gt;$&amp;#34;{header.Key}: {value}&amp;#34;&lt;/span&gt;);
+                            message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
                         }
                     }
 
-                    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (logContent)
+                    <span style="color:#66d9ef">if</span> (logContent)
                     {
-                        &lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; contentBody = &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; content.ReadAsStringAsync();
+                        <span style="color:#66d9ef">string</span> contentBody = <span style="color:#66d9ef">await</span> content.ReadAsStringAsync();
                         message.AppendLine(contentBody);
                     }
                 }
@@ -433,23 +433,23 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
         }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;GetClientの実装&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; ISearchIndexClient GetClient(&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; indexName, &lt;span style=&#34;color:#66d9ef&#34;&gt;params&lt;/span&gt; DelegatingHandler[] handlers)
+</code></pre></div><p>GetClientの実装</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">
+        <span style="color:#66d9ef">private</span> ISearchIndexClient GetClient(<span style="color:#66d9ef">string</span> indexName, <span style="color:#66d9ef">params</span> DelegatingHandler[] handlers)
         {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; rootHandler = _searchServiceClient.HttpMessageHandlers.OfType&amp;lt;HttpClientHandler&amp;gt;().SingleOrDefault();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; indexClient =
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchIndexClient(_searchServiceClient.SearchServiceName, indexName,
+            <span style="color:#66d9ef">var</span> rootHandler = _searchServiceClient.HttpMessageHandlers.OfType&lt;HttpClientHandler&gt;().SingleOrDefault();
+            <span style="color:#66d9ef">var</span> indexClient =
+                <span style="color:#66d9ef">new</span> SearchIndexClient(_searchServiceClient.SearchServiceName, indexName,
                     _searchServiceClient.SearchCredentials, rootHandler, handlers)
                 {
                     SearchDnsSuffix = _searchServiceClient.SearchDnsSuffix
                 };
 
             indexClient.HttpClient.Timeout = _searchServiceClient.HttpClient.Timeout;
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; indexClient;
+            <span style="color:#66d9ef">return</span> indexClient;
         }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力されるログ例&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06
+</code></pre></div><p>出力されるログ例</p>
+<pre><code>2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06
 client-request-id: be02140f-3a07-48cc-b018-d8aa5e819bc3
 Accept-Language: en-US
 Accept: application/json; odata.metadata=none
@@ -460,35 +460,35 @@ User-Agent: OSVersion/Darwin.19.4.0.Darwin.Kernel.Version.19.4.0.Wed.Mar.4.22.28
 User-Agent: Microsoft.Azure.Search.SearchIndexClient/10.100.19.52907
 Content-Type: application/json; charset=utf-8
 {
-  &amp;quot;count&amp;quot;: false,
-  &amp;quot;facets&amp;quot;: [],
-  &amp;quot;queryType&amp;quot;: &amp;quot;simple&amp;quot;,
-  &amp;quot;scoringParameters&amp;quot;: [],
-  &amp;quot;search&amp;quot;: &amp;quot;azure&amp;quot;,
-  &amp;quot;searchMode&amp;quot;: &amp;quot;any&amp;quot;
+  &quot;count&quot;: false,
+  &quot;facets&quot;: [],
+  &quot;queryType&quot;: &quot;simple&quot;,
+  &quot;scoringParameters&quot;: [],
+  &quot;search&quot;: &quot;azure&quot;,
+  &quot;searchMode&quot;: &quot;any&quot;
 }
  |AzureSearchSample.SearchService|EventId_Id=100, EventId_Name=RequestStart, EventId=RequestStart
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;メリットデメリット&#34;&gt;メリット、デメリット&lt;/h4&gt;
-&lt;p&gt;Azure Cognitive Searchの検索の処理だけを対象にリクエストのログを出力することが可能です。また、影響範囲はアプリケーションだけに閉じていますので、デバッグ目的などでログ出力したい場合に、自分だけの手元でログの確認が可能になります。&lt;/p&gt;
-&lt;p&gt;デメリットとしては、独自に実装しなければいけない範囲が広いことです。&lt;/p&gt;
-&lt;h3 id=&#34;2-serviceclienttracingの機能を利用する&#34;&gt;2. ServiceClientTracingの機能を利用する&lt;/h3&gt;
-&lt;p&gt;&lt;code&gt;Microsoft.Rest.ClientRuntime&lt;/code&gt;というライブラリをAzure Cognitive Searchは利用しています。
-このライブラリに&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.serviceclienttracing?view=azure-dotnet&#34;&gt;&lt;code&gt;ServiceClientTracing&lt;/code&gt;&lt;/a&gt;というクラスが存在します。
-なにやら、クライアントの処理のトレースができそうです。&lt;/p&gt;
-&lt;p&gt;Azure Cognitive SearchのSDKの実装がGitHubに公開されており、検索リクエストの処理を投げる直前に、このトレースの仕組がONになっていると、&lt;a href=&#34;https://github.com/Azure/azure-sdk-for-net/blob/a080ceda8df5e397aadd4b7c48c83431c5203b59/sdk/search/Microsoft.Azure.Search.Data/src/Generated/DocumentsOperations.cs#L798&#34;&gt;&lt;code&gt;ServiceClientTracing.SendRequest&lt;/code&gt;メソッドを呼び出していました&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;実際に&lt;code&gt;SendRequest&lt;/code&gt;メソッドに送られたものに対して何かしらの処理を行うのは、&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.iserviceclienttracinginterceptor?view=azure-dotnet&#34;&gt;&lt;code&gt;IServiceClientTracingIntercepter&lt;/code&gt;&lt;/a&gt;インターフェースを実装したクラスになります。
-このインターフェースの実装が&lt;a href=&#34;https://www.nuget.org/packages/Microsoft.Rest.ClientRuntime.Log4Net/&#34;&gt;Log4Net&lt;/a&gt;に存在します。Log4Netを利用している場合は、これを活用すれば楽ができます。&lt;/p&gt;
-&lt;p&gt;実際に&lt;code&gt;ServiceClientTracing&lt;/code&gt;を有効にするには、以下の2行を呼び出すだけです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;ServiceClientTracing.IsEnabled = &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;;
-ServiceClientTracing.AddTracingInterceptor(&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Log4NetTracingInterceptor());
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、Rest.ClientRuntimeがよしなにやってくれます。
-1とは異なり、トレースログなので、リクエストのボディについても出力してくれます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
+</code></pre><h4 id="メリットデメリット">メリット、デメリット</h4>
+<p>Azure Cognitive Searchの検索の処理だけを対象にリクエストのログを出力することが可能です。また、影響範囲はアプリケーションだけに閉じていますので、デバッグ目的などでログ出力したい場合に、自分だけの手元でログの確認が可能になります。</p>
+<p>デメリットとしては、独自に実装しなければいけない範囲が広いことです。</p>
+<h3 id="2-serviceclienttracingの機能を利用する">2. ServiceClientTracingの機能を利用する</h3>
+<p><code>Microsoft.Rest.ClientRuntime</code>というライブラリをAzure Cognitive Searchは利用しています。
+このライブラリに<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.serviceclienttracing?view=azure-dotnet"><code>ServiceClientTracing</code></a>というクラスが存在します。
+なにやら、クライアントの処理のトレースができそうです。</p>
+<p>Azure Cognitive SearchのSDKの実装がGitHubに公開されており、検索リクエストの処理を投げる直前に、このトレースの仕組がONになっていると、<a href="https://github.com/Azure/azure-sdk-for-net/blob/a080ceda8df5e397aadd4b7c48c83431c5203b59/sdk/search/Microsoft.Azure.Search.Data/src/Generated/DocumentsOperations.cs#L798"><code>ServiceClientTracing.SendRequest</code>メソッドを呼び出していました</a>。</p>
+<p>実際に<code>SendRequest</code>メソッドに送られたものに対して何かしらの処理を行うのは、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.iserviceclienttracinginterceptor?view=azure-dotnet"><code>IServiceClientTracingIntercepter</code></a>インターフェースを実装したクラスになります。
+このインターフェースの実装が<a href="https://www.nuget.org/packages/Microsoft.Rest.ClientRuntime.Log4Net/">Log4Net</a>に存在します。Log4Netを利用している場合は、これを活用すれば楽ができます。</p>
+<p>実際に<code>ServiceClientTracing</code>を有効にするには、以下の2行を呼び出すだけです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">ServiceClientTracing.IsEnabled = <span style="color:#66d9ef">true</span>;
+ServiceClientTracing.AddTracingInterceptor(<span style="color:#66d9ef">new</span> Log4NetTracingInterceptor());
+</code></pre></div><p>あとは、Rest.ClientRuntimeがよしなにやってくれます。
+1とは異なり、トレースログなので、リクエストのボディについても出力してくれます。</p>
+<pre><code>2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
 instance: Microsoft.Azure.Search.DocumentsProxyOperations
 method: SearchPost
 parameters: {searchRequest=Microsoft.Azure.Search.Models.SearchRequest,clientRequestId=,cancellationToken=System.Threading.CancellationToken}
 2020-05-26 19:09:04,164 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
-request: Method: POST, RequestUri: &#39;https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06&#39;, Version: 2.0, Content: System.Net.Http.StringContent, Headers:
+request: Method: POST, RequestUri: 'https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06', Version: 2.0, Content: System.Net.Http.StringContent, Headers:
 {
   client-request-id: 591cb14f-e5c2-4a85-977d-01d1f6431ddc
   Accept-Language: en-US
@@ -500,122 +500,122 @@ request: Method: POST, RequestUri: &#39;https://サービス名.search.windows.n
 Body:
 {
 {
-  &amp;quot;count&amp;quot;: false,
-  &amp;quot;facets&amp;quot;: [],
-  &amp;quot;queryType&amp;quot;: &amp;quot;simple&amp;quot;,
-  &amp;quot;scoringParameters&amp;quot;: [],
-  &amp;quot;search&amp;quot;: &amp;quot;azure&amp;quot;,
-  &amp;quot;searchMode&amp;quot;: &amp;quot;any&amp;quot;
+  &quot;count&quot;: false,
+  &quot;facets&quot;: [],
+  &quot;queryType&quot;: &quot;simple&quot;,
+  &quot;scoringParameters&quot;: [],
+  &quot;search&quot;: &quot;azure&quot;,
+  &quot;searchMode&quot;: &quot;any&quot;
 }
 }
 
 2020-05-26 19:09:04,459 [Thread Pool Worker] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
-response: StatusCode: 200, ReasonPhrase: &#39;OK&#39;, Version: 1.1, Content: System.Net.Http.StreamContent, Headers:
+response: StatusCode: 200, ReasonPhrase: 'OK', Version: 1.1, Content: System.Net.Http.StreamContent, Headers:
 {
   Cache-Control: no-cache
   Pragma: no-cache
   request-id: 591cb14f-e5c2-4a85-977d-01d1f6431ddc
   elapsed-time: 72
   OData-Version: 4.0
-  Preference-Applied: odata.include-annotations=&amp;quot;*&amp;quot;
+  Preference-Applied: odata.include-annotations=&quot;*&quot;
   Strict-Transport-Security: max-age=15724800; includeSubDomains
   Date: Tue, 26 May 2020 10:09:04 GMT
   Content-Type: application/json; odata.metadata=none
   Expires: -1
   Content-Length: 376
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;メリットデメリット-1&#34;&gt;メリット、デメリット&lt;/h4&gt;
-&lt;p&gt;Log4Netを利用しているアプリの場合、2行だけを追加することで実装が完了するのがお手軽な点です。&lt;/p&gt;
-&lt;p&gt;難点としては、Rest Client全てにたいしてトレース処理が入ってしまうので、Azure Cognitive Search以外にもRestクライアントを利用しているものが存在した場合、ログの量が増えてしまいます。また、検索以外の処理でもトレースされてしまうのもデメリットになります。&lt;/p&gt;
-&lt;p&gt;Log4Net以外のログ機構を使用している場合は、自分で&lt;code&gt;IServiceClientTracingInterceptor&lt;/code&gt;を実装する必要も出てきます(&lt;a href=&#34;https://stackoverflow.com/questions/46943669/microsoft-rest-serviceclienttracing-how-to-output-tracing-results-to-console-o&#34;&gt;参考:StackOverflow&lt;/a&gt;)。&lt;/p&gt;
-&lt;h3 id=&#34;3-azure-application-insightsを活用する&#34;&gt;3. Azure Application Insightsを活用する&lt;/h3&gt;
-&lt;p&gt;ここから紹介する3と4については、ログの出力先がAzure上になります。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/azure-monitor/app/app-insights-overview&#34;&gt;AzureのApplication Insights&lt;/a&gt;を利用する方法です。
-Azure?.NET?のアプリケーションパフォーマンスモニタリングのサービスです。&lt;/p&gt;
-&lt;p&gt;Application Insightsを自分のアプリケーションに設定することで、アプリケーションのパフォーマンス監視に関する情報がAzure上のApplication Insightsリソースに送信されるようになります。&lt;/p&gt;
-&lt;p&gt;ただ、Application Insightsのデフォルトの機能では、URL程度の情報だけが送信されます(&lt;a href=&#34;https://blog.shibayan.jp/entry/20190405/1554459340&#34;&gt;参考:しばやんさんのブログ&lt;/a&gt;)&lt;/p&gt;
-&lt;p&gt;こちらも拡張機能が用意されており、ITelemetryInitializerのインターフェースを実装したクラスを用意することで、独自の情報をApplication Insightsに出力することが可能となります。詳細については&lt;a href=&#34;https://blog.shibayan.jp/entry/20190405/1554459340&#34;&gt;しばやんさんのブログ&lt;/a&gt;を参考にしてもらうのが良いかと。&lt;/p&gt;
-&lt;p&gt;Httpリクエストを出力する実装例は次のとおりです。ただ、ちょっとうまく行かないパターンがあったので、コメントアウトとして残してあったりします(なんでだろう?)&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Collections.Generic;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http.Headers;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.ApplicationInsights.Channel;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.ApplicationInsights.DataContracts;
-&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.ApplicationInsights.Extensibility;
+</code></pre><h4 id="メリットデメリット-1">メリット、デメリット</h4>
+<p>Log4Netを利用しているアプリの場合、2行だけを追加することで実装が完了するのがお手軽な点です。</p>
+<p>難点としては、Rest Client全てにたいしてトレース処理が入ってしまうので、Azure Cognitive Search以外にもRestクライアントを利用しているものが存在した場合、ログの量が増えてしまいます。また、検索以外の処理でもトレースされてしまうのもデメリットになります。</p>
+<p>Log4Net以外のログ機構を使用している場合は、自分で<code>IServiceClientTracingInterceptor</code>を実装する必要も出てきます(<a href="https://stackoverflow.com/questions/46943669/microsoft-rest-serviceclienttracing-how-to-output-tracing-results-to-console-o">参考:StackOverflow</a>)。</p>
+<h3 id="3-azure-application-insightsを活用する">3. Azure Application Insightsを活用する</h3>
+<p>ここから紹介する3と4については、ログの出力先がAzure上になります。</p>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/azure-monitor/app/app-insights-overview">AzureのApplication Insights</a>を利用する方法です。
+Azure?.NET?のアプリケーションパフォーマンスモニタリングのサービスです。</p>
+<p>Application Insightsを自分のアプリケーションに設定することで、アプリケーションのパフォーマンス監視に関する情報がAzure上のApplication Insightsリソースに送信されるようになります。</p>
+<p>ただ、Application Insightsのデフォルトの機能では、URL程度の情報だけが送信されます(<a href="https://blog.shibayan.jp/entry/20190405/1554459340">参考:しばやんさんのブログ</a>)</p>
+<p>こちらも拡張機能が用意されており、ITelemetryInitializerのインターフェースを実装したクラスを用意することで、独自の情報をApplication Insightsに出力することが可能となります。詳細については<a href="https://blog.shibayan.jp/entry/20190405/1554459340">しばやんさんのブログ</a>を参考にしてもらうのが良いかと。</p>
+<p>Httpリクエストを出力する実装例は次のとおりです。ただ、ちょっとうまく行かないパターンがあったので、コメントアウトとして残してあったりします(なんでだろう?)</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System.Collections.Generic;
+<span style="color:#66d9ef">using</span> System.Net.Http;
+<span style="color:#66d9ef">using</span> System.Net.Http.Headers;
+<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Channel;
+<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.DataContracts;
+<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Extensibility;
 
-&lt;span style=&#34;color:#66d9ef&#34;&gt;namespace&lt;/span&gt; AzureSearchWebSample.ApplicationInsights
+<span style="color:#66d9ef">namespace</span> AzureSearchWebSample.ApplicationInsights
 {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;HttpRequestInitializer&lt;/span&gt; : ITelemetryInitializer
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">HttpRequestInitializer</span> : ITelemetryInitializer
     {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; Initialize(ITelemetry telemetry)
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Initialize(ITelemetry telemetry)
         {
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (!(telemetry &lt;span style=&#34;color:#66d9ef&#34;&gt;is&lt;/span&gt; DependencyTelemetry dependency))
+            <span style="color:#66d9ef">if</span> (!(telemetry <span style="color:#66d9ef">is</span> DependencyTelemetry dependency))
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;;
+                <span style="color:#66d9ef">return</span>;
             }
 
-            HttpRequestMessage requestMessage = &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;;
+            HttpRequestMessage requestMessage = <span style="color:#66d9ef">null</span>;
             HttpRequestHeaders requestHeaders;
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (dependency.TryGetOperationDetail(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;HttpRequest&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;out&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; details) &amp;amp;&amp;amp;
-                details &lt;span style=&#34;color:#66d9ef&#34;&gt;is&lt;/span&gt; HttpRequestMessage request)
+            <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequest&#34;</span>, <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">var</span> details) &amp;&amp;
+                details <span style="color:#66d9ef">is</span> HttpRequestMessage request)
             {
                 requestMessage = request;
                 requestHeaders = request.Headers;            
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (requestMessage.Method == HttpMethod.Post)
+                <span style="color:#66d9ef">if</span> (requestMessage.Method == HttpMethod.Post)
                 {
-                    &lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    dependency.Properties.Add(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;RequestBody&amp;#34;&lt;/span&gt;,contentBody);
+                    <span style="color:#66d9ef">string</span> contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                    dependency.Properties.Add(<span style="color:#e6db74">&#34;RequestBody&#34;</span>,contentBody);
                 }
             }
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; (dependency.TryGetOperationDetail(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;HttpRequestHeaders&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;out&lt;/span&gt; details) &amp;amp;&amp;amp;
-                     details &lt;span style=&#34;color:#66d9ef&#34;&gt;is&lt;/span&gt; HttpRequestHeaders headers)
+            <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequestHeaders&#34;</span>, <span style="color:#66d9ef">out</span> details) &amp;&amp;
+                     details <span style="color:#66d9ef">is</span> HttpRequestHeaders headers)
             {
                 requestHeaders = headers;
             }
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt;
+            <span style="color:#66d9ef">else</span>
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;;
+                <span style="color:#66d9ef">return</span>;
             }
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (KeyValuePair&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;,IEnumerable&amp;lt;&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;&amp;gt;&amp;gt; header &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; requestHeaders)
+            <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> requestHeaders)
             {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;foreach&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; header.Value)
+                <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
                 {
-                    dependency.Properties.Add(header.Key, &lt;span style=&#34;color:#66d9ef&#34;&gt;value&lt;/span&gt;);
+                    dependency.Properties.Add(header.Key, <span style="color:#66d9ef">value</span>);
                 }
             }
-            &lt;span style=&#34;color:#75715e&#34;&gt;//この実装の場合は出力されなかった。なぜ?
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;// if (requestMessage != null &amp;amp;&amp;amp; requestMessage.Method == HttpMethod.Post)
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;// {
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;//     string contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;//     dependency.Properties.Add(&amp;#34;RequestBody&amp;#34;,contentBody);
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;            &lt;span style=&#34;color:#75715e&#34;&gt;// }
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        }
+            <span style="color:#75715e">//この実装の場合は出力されなかった。なぜ?
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// if (requestMessage != null &amp;&amp; requestMessage.Method == HttpMethod.Post)
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// {
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">//     string contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">//     dependency.Properties.Add(&#34;RequestBody&#34;,contentBody);
+</span><span style="color:#75715e"></span>            <span style="color:#75715e">// }
+</span><span style="color:#75715e"></span>        }
     }
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;メリットデメリット-2&#34;&gt;メリット、デメリット&lt;/h4&gt;
-&lt;p&gt;すでにApplication Insightsを利用している場合はついでに情報が出力されるので便利です。かつ、常にリクエストログを見れるようにしておく場合はとても便利だと思います。&lt;/p&gt;
-&lt;p&gt;Application Insightsを利用していない場合は、そこから導入しなければならなくなるので、手間が増えるかもしれないです。&lt;/p&gt;
-&lt;h3 id=&#34;4-azure-cognitive-searchのコンソールにある診断情報の機能を利用する&#34;&gt;4. Azure Cognitive Searchのコンソールにある診断情報の機能を利用する。&lt;/h3&gt;
-&lt;p&gt;最後は&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs&#34;&gt;Azure Cognitive Searchの診断ログ&lt;/a&gt;を有効にする方法です。
-ここまで説明してきた方法の中で、一番お手軽な方法です。。。&lt;/p&gt;
-&lt;p&gt;これまでは、リクエストボディを出力する方法を考えていましたが、Azure Cognitive Search側の診断ログを有効にすると、リクエストボディで送信したものが、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#properties-schema&#34;&gt;Azure Cognitive Search側で、クエリパラーメータとして、診断ログに出力&lt;/a&gt;されます(診断ログの&lt;code&gt;Query_s&lt;/code&gt;)。&lt;/p&gt;
-&lt;p&gt;あとは、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#query-log-information&#34;&gt;Azureのコンソール&lt;/a&gt;で当該時間のログを見ればよいだけです。以下は出力されたログの一部です。Description_sにはURLのパスが記載されています。&lt;/p&gt;
-&lt;p&gt;診断ログ例(一部)&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Description_s      POST /indexes(&#39;multi-field-test&#39;)/docs/search.post.search
-Query_s            ?api-version=2019-05-06&amp;amp;searchMode=Any&amp;amp;search=azure&amp;amp;queryType=Simple&amp;amp;$count=false
-&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;メリットデメリット-3&#34;&gt;メリット、デメリット&lt;/h4&gt;
-&lt;p&gt;アプリケーション側に手を入れる必要がなのでお手軽です。
-一度設定しておけばコンソール側でログをいつでも見れるので便利です。&lt;/p&gt;
-&lt;p&gt;リクエスト量が多くなってしまうと、ログの量も多くなり、費用がかさむ恐れがあります。また、複数の人が触る環境の場合は自分で送信したリクエストがどれだったのか?といった状況に陥る可能性はあります。&lt;/p&gt;
-&lt;h2 id=&#34;その他は&#34;&gt;その他は?&lt;/h2&gt;
-&lt;p&gt;Azureに対してではないですが、昔似たようなことをやるときにやっていた方法として、ローカルにプロキシサーバーを起動し、そのプロキシサーバー経由でアプリケーションから、Azureに接続することで、リクエストを保存する方法もあります。
-ざんねんながら、未調査ですがアプリなどにはそれほど手を入れる必要はないかと思います。&lt;/p&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;ちょっと送信リクエストの内容が見てみたいという話でしたが、いろいろな手段が存在しました。
+</code></pre></div><h4 id="メリットデメリット-2">メリット、デメリット</h4>
+<p>すでにApplication Insightsを利用している場合はついでに情報が出力されるので便利です。かつ、常にリクエストログを見れるようにしておく場合はとても便利だと思います。</p>
+<p>Application Insightsを利用していない場合は、そこから導入しなければならなくなるので、手間が増えるかもしれないです。</p>
+<h3 id="4-azure-cognitive-searchのコンソールにある診断情報の機能を利用する">4. Azure Cognitive Searchのコンソールにある診断情報の機能を利用する。</h3>
+<p>最後は<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs">Azure Cognitive Searchの診断ログ</a>を有効にする方法です。
+ここまで説明してきた方法の中で、一番お手軽な方法です。。。</p>
+<p>これまでは、リクエストボディを出力する方法を考えていましたが、Azure Cognitive Search側の診断ログを有効にすると、リクエストボディで送信したものが、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#properties-schema">Azure Cognitive Search側で、クエリパラーメータとして、診断ログに出力</a>されます(診断ログの<code>Query_s</code>)。</p>
+<p>あとは、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#query-log-information">Azureのコンソール</a>で当該時間のログを見ればよいだけです。以下は出力されたログの一部です。Description_sにはURLのパスが記載されています。</p>
+<p>診断ログ例(一部)</p>
+<pre><code>Description_s      POST /indexes('multi-field-test')/docs/search.post.search
+Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&amp;queryType=Simple&amp;$count=false
+</code></pre><h4 id="メリットデメリット-3">メリット、デメリット</h4>
+<p>アプリケーション側に手を入れる必要がなのでお手軽です。
+一度設定しておけばコンソール側でログをいつでも見れるので便利です。</p>
+<p>リクエスト量が多くなってしまうと、ログの量も多くなり、費用がかさむ恐れがあります。また、複数の人が触る環境の場合は自分で送信したリクエストがどれだったのか?といった状況に陥る可能性はあります。</p>
+<h2 id="その他は">その他は?</h2>
+<p>Azureに対してではないですが、昔似たようなことをやるときにやっていた方法として、ローカルにプロキシサーバーを起動し、そのプロキシサーバー経由でアプリケーションから、Azureに接続することで、リクエストを保存する方法もあります。
+ざんねんながら、未調査ですがアプリなどにはそれほど手を入れる必要はないかと思います。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ちょっと送信リクエストの内容が見てみたいという話でしたが、いろいろな手段が存在しました。
 自分の状況、環境に合わせて手段を選択肢てみるのがいいかと思います。
-まずは、簡単な診断ログあたりからでしょうか?&lt;/p&gt;
+まずは、簡単な診断ログあたりからでしょうか?</p>
 </content:encoded>
     </item>
     
@@ -626,47 +626,47 @@ Query_s            ?api-version=2019-05-06&amp;amp;searchMode=Any&amp;amp;search
       
       <guid>https://blog.johtani.info/blog/2020/05/22/watching-azure-cognirive-search-session-at-ms-build/</guid>
       <description>Mircosoft Buildというイベントが今週ありました(MSの方やお客さんに教えてもらった)。 そこで、Azure Cognitive Searchのセッション(MyBuil</description>
-      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://mybuild.microsoft.com/&#34;&gt;Mircosoft Buildというイベント&lt;/a&gt;が今週ありました(MSの方やお客さんに教えてもらった)。&lt;/p&gt;
-&lt;p&gt;そこで、Azure Cognitive Searchのセッション(&lt;a href=&#34;https://mybuild.microsoft.com/sessions/391f3d09-50b4-476a-9acf-4fd2d4927a9e&#34;&gt;MyBuild - Cognitive Search： The pocket-knife for knowledge mining&lt;/a&gt;)があったので、見てみました。
+      <content:encoded><p><a href="https://mybuild.microsoft.com/">Mircosoft Buildというイベント</a>が今週ありました(MSの方やお客さんに教えてもらった)。</p>
+<p>そこで、Azure Cognitive Searchのセッション(<a href="https://mybuild.microsoft.com/sessions/391f3d09-50b4-476a-9acf-4fd2d4927a9e">MyBuild - Cognitive Search： The pocket-knife for knowledge mining</a>)があったので、見てみました。
 内容がどんなものかをメモっておきます。
-最初はCognitive Searchがどんなものよという説明でした。&lt;/p&gt;
-&lt;h2 id=&#34;ビルトインスキルの拡充の話&#34;&gt;ビルトインスキルの拡充の話&lt;/h2&gt;
-&lt;p&gt;データソースからデータを取り出し、エンリッチし、検索エンジンに保存するという、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-concept-intro&#34;&gt;パイプラインが組めるようになっています&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;このパイプラインで利用できる処理のことがスキルと呼ばれています。ここで利用できる&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-predefined-skills&#34;&gt;ビルトインスキル&lt;/a&gt;が拡充されますよという話でした。ちょっとだけ抜き出すと以下のとおりです。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Azure Machine Learning&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-skill-text-translation&#34;&gt;Text translation&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;Brand detection&lt;/li&gt;
-&lt;li&gt;Object detection&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-predefined-skills&#34;&gt;スキルのリファレンス&lt;/a&gt;には載ってるものと載ってないものがあるので、今後追加されてくのかな?
-Brand detectionがどんなものなんだろう?ってのがちょっと気になりました。どっかにデモとかあるかなぁ?&lt;/p&gt;
-&lt;h2 id=&#34;スキルセットのための新機能--debug-sessionのデモ&#34;&gt;スキルセットのための新機能 : Debug Sessionのデモ&lt;/h2&gt;
-&lt;p&gt;上記のスキルを組み合わせてパイプラインを組んで、データソースから取り出したデータをエンリッチしてから、検索エンジンに入れる処理をかけるのですが、その処理のデバッグ用に新しいGUIの機能が追加されてますよという紹介とデモでした。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/en-us/azure/search/cognitive-search-tutorial-debug-sessions#start-your-debug-session&#34;&gt;Tutorial： Use Debug sessions to diagnose, fix, and commit changes to your skillset - Azure Cognitive Search | Microsoft Docs&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;manage-identityの話&#34;&gt;Manage Identityの話&lt;/h2&gt;
-&lt;p&gt;Azure Cognitive Searchにデータを登録するパイプランの最初の段階で、各種データソースにアクセスが必要です。
-このアクセス時にコネクションの設定にアカウントキーなども含めてましたが、これをコネクション設定ではなく、専用の管理機能が用意されましたよという話でした。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/en-us/azure/search/search-howto-managed-identities-data-sources&#34;&gt;Set up a connection to a data source using a managed identity (preview) - Azure Cognitive Search | Microsoft Docs&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;qa&#34;&gt;QA&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;Similarityとかの話
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-similarity-and-scoring#similarity-ranking-algorithms&#34;&gt;BM25になってるよ&lt;/a&gt;とか&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;SDKの話とか&lt;/li&gt;
-&lt;li&gt;ほかにRelevancyの話
-&lt;ul&gt;
-&lt;li&gt;Analyzerをデフォルトのままじゃなくてちゃんと考えて使いましょう(例:&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-add-language-analyzers#language-analyzer-list&#34;&gt;各言語用のAnalyzerがいっぱいあるよ&lt;/a&gt;とか)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;こんな感じでした。&lt;/p&gt;
+最初はCognitive Searchがどんなものよという説明でした。</p>
+<h2 id="ビルトインスキルの拡充の話">ビルトインスキルの拡充の話</h2>
+<p>データソースからデータを取り出し、エンリッチし、検索エンジンに保存するという、<a href="https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-concept-intro">パイプラインが組めるようになっています</a>。</p>
+<p>このパイプラインで利用できる処理のことがスキルと呼ばれています。ここで利用できる<a href="https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-predefined-skills">ビルトインスキル</a>が拡充されますよという話でした。ちょっとだけ抜き出すと以下のとおりです。</p>
+<ul>
+<li>Azure Machine Learning</li>
+<li><a href="https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-skill-text-translation">Text translation</a></li>
+<li>Brand detection</li>
+<li>Object detection</li>
+</ul>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/search/cognitive-search-predefined-skills">スキルのリファレンス</a>には載ってるものと載ってないものがあるので、今後追加されてくのかな?
+Brand detectionがどんなものなんだろう?ってのがちょっと気になりました。どっかにデモとかあるかなぁ?</p>
+<h2 id="スキルセットのための新機能--debug-sessionのデモ">スキルセットのための新機能 : Debug Sessionのデモ</h2>
+<p>上記のスキルを組み合わせてパイプラインを組んで、データソースから取り出したデータをエンリッチしてから、検索エンジンに入れる処理をかけるのですが、その処理のデバッグ用に新しいGUIの機能が追加されてますよという紹介とデモでした。</p>
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/azure/search/cognitive-search-tutorial-debug-sessions#start-your-debug-session">Tutorial： Use Debug sessions to diagnose, fix, and commit changes to your skillset - Azure Cognitive Search | Microsoft Docs</a></li>
+</ul>
+<h2 id="manage-identityの話">Manage Identityの話</h2>
+<p>Azure Cognitive Searchにデータを登録するパイプランの最初の段階で、各種データソースにアクセスが必要です。
+このアクセス時にコネクションの設定にアカウントキーなども含めてましたが、これをコネクション設定ではなく、専用の管理機能が用意されましたよという話でした。</p>
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/azure/search/search-howto-managed-identities-data-sources">Set up a connection to a data source using a managed identity (preview) - Azure Cognitive Search | Microsoft Docs</a></li>
+</ul>
+<h2 id="qa">QA</h2>
+<ul>
+<li>Similarityとかの話
+<ul>
+<li><a href="https://docs.microsoft.com/ja-jp/azure/search/index-similarity-and-scoring#similarity-ranking-algorithms">BM25になってるよ</a>とか</li>
+</ul>
+</li>
+<li>SDKの話とか</li>
+<li>ほかにRelevancyの話
+<ul>
+<li>Analyzerをデフォルトのままじゃなくてちゃんと考えて使いましょう(例:<a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-language-analyzers#language-analyzer-list">各言語用のAnalyzerがいっぱいあるよ</a>とか)</li>
+</ul>
+</li>
+</ul>
+<p>こんな感じでした。</p>
 </content:encoded>
     </item>
     
@@ -677,105 +677,105 @@ Brand detectionがどんなものなんだろう?ってのがちょっと気に�
       
       <guid>https://blog.johtani.info/blog/2020/03/19/azure-search-analyze-plugin/</guid>
       <description>動機 Azure Cognitive Searchを検索エンジンに使っているお客さんを手伝っています。 そこで、検索の基本的な話をさせていただきました(もともとJJUGナイ</description>
-      <content:encoded>&lt;h2 id=&#34;動機&#34;&gt;動機&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-what-is-azure-search&#34;&gt;Azure Cognitive Search&lt;/a&gt;を検索エンジンに使っているお客さんを手伝っています。
-そこで、&lt;a href=&#34;https://noti.st/johtani/halVGM&#34;&gt;検索の基本的な話&lt;/a&gt;をさせていただきました(もともとJJUGナイトセミナーでしゃべる予定だったスライドがベース)。&lt;/p&gt;
-&lt;p&gt;で、Elasticsearchなどの転置インデックスを利用している検索エンジンで検索の基本的な動作がどうなっているかを理解するのに、
+      <content:encoded><h2 id="動機">動機</h2>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/search/search-what-is-azure-search">Azure Cognitive Search</a>を検索エンジンに使っているお客さんを手伝っています。
+そこで、<a href="https://noti.st/johtani/halVGM">検索の基本的な話</a>をさせていただきました(もともとJJUGナイトセミナーでしゃべる予定だったスライドがベース)。</p>
+<p>で、Elasticsearchなどの転置インデックスを利用している検索エンジンで検索の基本的な動作がどうなっているかを理解するのに、
 個人的には一番重要だと思っているのがAnalysis(Analyze)の機能です。
-転置インデックスの単語の切り出し方がどうなっているかによって、望んだ単語でうまく検索できているかいないかなどがわかります。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/rest/api/searchservice/test-analyzer&#34;&gt;Azure Cognitive SearchもAnalyze Text&lt;/a&gt;というAPIを提供してくれています(内部的にはElasticsearchだし)。
+転置インデックスの単語の切り出し方がどうなっているかによって、望んだ単語でうまく検索できているかいないかなどがわかります。</p>
+<p><a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/test-analyzer">Azure Cognitive SearchもAnalyze Text</a>というAPIを提供してくれています(内部的にはElasticsearchだし)。
 APIはあるのですが、返ってくる結果はJSONです。また、他のAnalyzerの設定との違いなどをみたくなったりもします。
-やはり、普段使っているツールなどで簡単にどういう単語が出てくるかがわかるとうれしんじゃないかなぁ?と。&lt;/p&gt;
-&lt;p&gt;ということで、最初はPythonでちょっとAPI呼び出して、カンマ区切りで出力するものを作ってみたのですが、GUIとかあると便利かなぁという話になりました。
+やはり、普段使っているツールなどで簡単にどういう単語が出てくるかがわかるとうれしんじゃないかなぁ?と。</p>
+<p>ということで、最初はPythonでちょっとAPI呼び出して、カンマ区切りで出力するものを作ってみたのですが、GUIとかあると便利かなぁという話になりました。
 最近、ブログ書いたりするのにVisual Studio Codeを使い始めているので、これなら使いやすいかなと。
-ということで、Visual Studio Codeの拡張機能(プラグイン?)としてインストールできる&lt;a href=&#34;https://github.com/johtani/azure-search-analyze-client&#34;&gt;ツール&lt;/a&gt;を作ってみました。
-Azure Cognitive Searchを使っている人向けなので、ニッチなツールですが。。。&lt;/p&gt;
-&lt;h3 id=&#34;余談&#34;&gt;余談&lt;/h3&gt;
-&lt;p&gt;Elastic Stack(Elasticsearch)向けにはKibanaのプラグインでAnalyze APIを可視化するツールを作ってます。
-&lt;a href=&#34;https://github.com/johtani/analyze-api-ui-plugin&#34;&gt;analyze-api-ui-plugin&lt;/a&gt;です。Elastic Stack、特にKibanaを必ず利用する方はこちらを使うと便利かもです。&lt;/p&gt;
-&lt;h2 id=&#34;概要と機能&#34;&gt;概要と機能&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/azure-search-analyze-client&#34;&gt;GitHub リポジトリ&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://marketplace.visualstudio.com/items?itemName=johtani.azure-search-analyze-client&amp;amp;ssr=false#overview&#34;&gt;Visual Studio Marketplaceのページ&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Marketplaceに公開しているので、&lt;code&gt;johtani&lt;/code&gt;や&lt;code&gt;Azure Search Analyze Client&lt;/code&gt;などで検索してもらえれば出てきてインストールができます。&lt;/p&gt;
-&lt;p&gt;機能としては、以下の2つです。&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;テンプレートから入力値設定用のドキュメントを作成(&lt;code&gt;Untitled-1&lt;/code&gt;というドキュメントをエディタに新しく開く)&lt;/li&gt;
-&lt;li&gt;Azure Cognitive SearchのAnalyze Text APIを呼び出して、結果をHTMLのテーブル形式で表示&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h3 id=&#34;入力値設定用のドキュメント作成&#34;&gt;入力値設定用のドキュメント作成&lt;/h3&gt;
-&lt;p&gt;APIの呼び出しに必要な情報を記入してもらうのに、いくつか案を考えました。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;プラグインの設定に記入してもらう&lt;/li&gt;
-&lt;li&gt;環境変数とかを読み出す&lt;/li&gt;
-&lt;li&gt;テキストとして保存したファイルを使う&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;設定や環境変数だと、異なる環境に接続したりするときに、わざわざ設定し直すのがめんどくさいかもと。
-で、愛用していた&lt;a href=&#34;https://marketplace.visualstudio.com/items?itemName=humao.rest-client&#34;&gt;REST API Client&lt;/a&gt;を真似するのが良いかもという結論になり、&lt;code&gt;.analyze&lt;/code&gt;という拡張子のファイルから必要な項目を読み出して、APIを呼び出す形にしてあります。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;Command Palette&lt;/code&gt;(左下の歯車マークもしくは、メニューのViewから開ける)から&lt;code&gt;Azure Search Analyze Client: Create Azure Search Analyze Request&lt;/code&gt;というコマンドを選びます。&lt;/p&gt;
+ということで、Visual Studio Codeの拡張機能(プラグイン?)としてインストールできる<a href="https://github.com/johtani/azure-search-analyze-client">ツール</a>を作ってみました。
+Azure Cognitive Searchを使っている人向けなので、ニッチなツールですが。。。</p>
+<h3 id="余談">余談</h3>
+<p>Elastic Stack(Elasticsearch)向けにはKibanaのプラグインでAnalyze APIを可視化するツールを作ってます。
+<a href="https://github.com/johtani/analyze-api-ui-plugin">analyze-api-ui-plugin</a>です。Elastic Stack、特にKibanaを必ず利用する方はこちらを使うと便利かもです。</p>
+<h2 id="概要と機能">概要と機能</h2>
+<ul>
+<li><a href="https://github.com/johtani/azure-search-analyze-client">GitHub リポジトリ</a></li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=johtani.azure-search-analyze-client&amp;ssr=false#overview">Visual Studio Marketplaceのページ</a></li>
+</ul>
+<p>Marketplaceに公開しているので、<code>johtani</code>や<code>Azure Search Analyze Client</code>などで検索してもらえれば出てきてインストールができます。</p>
+<p>機能としては、以下の2つです。</p>
+<ol>
+<li>テンプレートから入力値設定用のドキュメントを作成(<code>Untitled-1</code>というドキュメントをエディタに新しく開く)</li>
+<li>Azure Cognitive SearchのAnalyze Text APIを呼び出して、結果をHTMLのテーブル形式で表示</li>
+</ol>
+<h3 id="入力値設定用のドキュメント作成">入力値設定用のドキュメント作成</h3>
+<p>APIの呼び出しに必要な情報を記入してもらうのに、いくつか案を考えました。</p>
+<ul>
+<li>プラグインの設定に記入してもらう</li>
+<li>環境変数とかを読み出す</li>
+<li>テキストとして保存したファイルを使う</li>
+</ul>
+<p>設定や環境変数だと、異なる環境に接続したりするときに、わざわざ設定し直すのがめんどくさいかもと。
+で、愛用していた<a href="https://marketplace.visualstudio.com/items?itemName=humao.rest-client">REST API Client</a>を真似するのが良いかもという結論になり、<code>.analyze</code>という拡張子のファイルから必要な項目を読み出して、APIを呼び出す形にしてあります。</p>
+<p><code>Command Palette</code>(左下の歯車マークもしくは、メニューのViewから開ける)から<code>Azure Search Analyze Client: Create Azure Search Analyze Request</code>というコマンドを選びます。</p>
 
-&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
-&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
-  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
-    &lt;div class=&#34;img&#34;&gt;
-      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200319/command_palette.png&#34; /&gt;
-    &lt;/div&gt;
-    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200319/command_palette.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
-  &lt;/figure&gt;
-&lt;/div&gt;
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200319/command_palette.png" />
+    </div>
+    <a href="/images/entries/20200319/command_palette.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
 
-&lt;p&gt;すると、以下のようなファイルがエディタに開きます。&lt;/p&gt;
-
-
-&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
-  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
-    &lt;div class=&#34;img&#34;&gt;
-      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200319/input_template.png&#34; /&gt;
-    &lt;/div&gt;
-    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200319/input_template.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
-  &lt;/figure&gt;
-&lt;/div&gt;
-
-&lt;p&gt;これらの項目をまずは埋めていきます。
-それぞれの値がどういったものかは&lt;a href=&#34;https://github.com/johtani/azure-search-analyze-client&#34;&gt;GitHubのREADME&lt;/a&gt;を御覧ください。&lt;/p&gt;
-&lt;p&gt;入力値エラー(存在チェックしかしていない)がある場合は、ダイアログが表示されます。&lt;/p&gt;
-&lt;h3 id=&#34;結果表示&#34;&gt;結果表示&lt;/h3&gt;
-&lt;p&gt;値を入力したら、設定値と&lt;code&gt;###&lt;/code&gt;の間に表示されている&lt;code&gt;Analyze text with analyzers&lt;/code&gt;というグレーの文字をクリックします。すると、APIにリクエストを送信し、結果が返ってきて、別のパネルとして表示されます。&lt;/p&gt;
+<p>すると、以下のようなファイルがエディタに開きます。</p>
 
 
-&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
-  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
-    &lt;div class=&#34;img&#34;&gt;
-      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200319/response.png&#34; /&gt;
-    &lt;/div&gt;
-    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200319/response.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
-  &lt;/figure&gt;
-&lt;/div&gt;
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200319/input_template.png" />
+    </div>
+    <a href="/images/entries/20200319/input_template.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
 
-&lt;p&gt;複数のAnalyzerを入力値に設定すると、それぞれがどのような区切り方をするかがわかります。
-文字の下にある&lt;code&gt;[0:2]&lt;/code&gt;は、その単語がもとの文章の何文字目から何文字目までに出現しているかというオフセットの表示になります。&lt;/p&gt;
-&lt;p&gt;もし、Analyzer名の設定ミスなどで指定されたAnalyzerがない場合は、結果画面にエラーが表示されるようにしています。&lt;/p&gt;
-&lt;p&gt;以上が簡単な機能の説明です。
-簡単なと言いつつ、これだけしか機能がありませんが。&lt;/p&gt;
-&lt;h2 id=&#34;visual-studio-codeのプラグインの作り方&#34;&gt;Visual Studio Codeのプラグインの作り方&lt;/h2&gt;
-&lt;p&gt;プラグイン自体の作り方に関しては&lt;a href=&#34;https://code.visualstudio.com/api/get-started/your-first-extension&#34;&gt;Visual Studio CodeのGetting Started&lt;/a&gt;がわかりやすかったです。
-APIや機能が豊富なので、最初はちょっと戸惑いましたが、&lt;a href=&#34;https://github.com/microsoft/vscode-extension-samples&#34;&gt;サンプルもGitHubで多数公開&lt;/a&gt;されています。&lt;/p&gt;
-&lt;p&gt;あとは、&lt;a href=&#34;https://marketplace.visualstudio.com/items?itemName=humao.rest-client&#34;&gt;REST API Client&lt;/a&gt;を参考にさせていただきました。&lt;/p&gt;
-&lt;p&gt;Getting Startedを一通り読むことで、なんとなくプラグインの作成からMarketplaceへのリリースまでが完了できました。
-(TypeScriptに慣れていないのがあるので、プログラミング自体は手間取りましたが。。。)&lt;/p&gt;
-&lt;h2 id=&#34;今後の対応&#34;&gt;今後の対応?&lt;/h2&gt;
-&lt;p&gt;いまのところ、こんなところを考えていますが、こんな機能がほしい、バグが有るなどあれば、GitHubにIssueを上げていただければと(使う人すくないだろうけど)。&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;いろいろなエラーに関する対応&lt;/li&gt;
-&lt;li&gt;Readmeに画像をアップ&lt;/li&gt;
-&lt;li&gt;アイコン作成?&lt;/li&gt;
-&lt;li&gt;自動補完機能?&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
-&lt;p&gt;Visual Studio Codeの拡張機能を作ってみました。
+<p>これらの項目をまずは埋めていきます。
+それぞれの値がどういったものかは<a href="https://github.com/johtani/azure-search-analyze-client">GitHubのREADME</a>を御覧ください。</p>
+<p>入力値エラー(存在チェックしかしていない)がある場合は、ダイアログが表示されます。</p>
+<h3 id="結果表示">結果表示</h3>
+<p>値を入力したら、設定値と<code>###</code>の間に表示されている<code>Analyze text with analyzers</code>というグレーの文字をクリックします。すると、APIにリクエストを送信し、結果が返ってきて、別のパネルとして表示されます。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200319/response.png" />
+    </div>
+    <a href="/images/entries/20200319/response.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>複数のAnalyzerを入力値に設定すると、それぞれがどのような区切り方をするかがわかります。
+文字の下にある<code>[0:2]</code>は、その単語がもとの文章の何文字目から何文字目までに出現しているかというオフセットの表示になります。</p>
+<p>もし、Analyzer名の設定ミスなどで指定されたAnalyzerがない場合は、結果画面にエラーが表示されるようにしています。</p>
+<p>以上が簡単な機能の説明です。
+簡単なと言いつつ、これだけしか機能がありませんが。</p>
+<h2 id="visual-studio-codeのプラグインの作り方">Visual Studio Codeのプラグインの作り方</h2>
+<p>プラグイン自体の作り方に関しては<a href="https://code.visualstudio.com/api/get-started/your-first-extension">Visual Studio CodeのGetting Started</a>がわかりやすかったです。
+APIや機能が豊富なので、最初はちょっと戸惑いましたが、<a href="https://github.com/microsoft/vscode-extension-samples">サンプルもGitHubで多数公開</a>されています。</p>
+<p>あとは、<a href="https://marketplace.visualstudio.com/items?itemName=humao.rest-client">REST API Client</a>を参考にさせていただきました。</p>
+<p>Getting Startedを一通り読むことで、なんとなくプラグインの作成からMarketplaceへのリリースまでが完了できました。
+(TypeScriptに慣れていないのがあるので、プログラミング自体は手間取りましたが。。。)</p>
+<h2 id="今後の対応">今後の対応?</h2>
+<p>いまのところ、こんなところを考えていますが、こんな機能がほしい、バグが有るなどあれば、GitHubにIssueを上げていただければと(使う人すくないだろうけど)。</p>
+<ul>
+<li>いろいろなエラーに関する対応</li>
+<li>Readmeに画像をアップ</li>
+<li>アイコン作成?</li>
+<li>自動補完機能?</li>
+</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>Visual Studio Codeの拡張機能を作ってみました。
 Yeomanによるプロジェクトテンプレートが用意されているので、とりあえず、Hello worldを作るのは簡単でした。
-試行錯誤しつつTypeScriptを書いたので、TypeScriptっぽくないところなどもあるかもですが、誰かの役に立つツールになってくれれば良いなぁと。&lt;/p&gt;
+試行錯誤しつつTypeScriptを書いたので、TypeScriptっぽくないところなどもあるかもですが、誰かの役に立つツールになってくれれば良いなぁと。</p>
 </content:encoded>
     </item>
     
@@ -786,32 +786,32 @@ Yeomanによるプロジェクトテンプレートが用意されているの�
       
       <guid>https://blog.johtani.info/blog/2020/02/19/research-azure-cognitive-search/</guid>
       <description>お手伝いしているお客さんがAzure Cognitive Searchを利用してます。 検索周り=Azure Cognitive Searchに関する手伝いをする形で入っており、 いく</description>
-      <content:encoded>&lt;p&gt;お手伝いしているお客さんがAzure Cognitive Searchを利用してます。
+      <content:encoded><p>お手伝いしているお客さんがAzure Cognitive Searchを利用してます。
 検索周り=Azure Cognitive Searchに関する手伝いをする形で入っており、
-いくつか触った感触をブログにまとめてみようかと(お客さんからはOKいただいてます)。&lt;/p&gt;
-&lt;h2 id=&#34;azure-cognitive-searchとは&#34;&gt;Azure Cognitive Searchとは？&lt;/h2&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://azure.microsoft.com/ja-jp/services/search/&#34;&gt;公式サイト&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;「AIを活用した」クラウド検索サービスと紹介されています。&lt;/p&gt;
-&lt;p&gt;昔はAzure Searchと呼ばれていましたが、ここ最近はAzure Cognitive Searchと呼ばれているみたいです(&lt;a href=&#34;https://techcommunity.microsoft.com/t5/azure-ai/knowledge-mining-with-azure-cognitive-search/ba-p/1020774&#34;&gt;Microsoft Igniteで発表された話がまとまっているページもあります&lt;/a&gt;)。
-もともと、検索エンジンのSaaSサービス(キーワード検索、あいまい検索、オートサジェスト、スコアリングなどの機能)として作られていた部分に、データの登録パイプラインにCognitive Serviceの便利な機能を簡単に使えるようにしたものというイメージでしょうか。&lt;/p&gt;
-&lt;p&gt;バックエンドはElasticsearchのはずです。変わってなければ。
-昔、Elastic社主催のユーザーカンファレンスで&lt;a href=&#34;https://www.elastic.co/jp/elasticon/2015/sf/powering-real-time-search-at-microsoft&#34;&gt;MSの方が公演された資料&lt;/a&gt;が公開されていたりします。
-ちなみに質問が多いのでしょうか、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-faq-frequently-asked-questions#what-is-the-difference-between-azure-cognitive-search-and-elasticsearch&#34;&gt;Azure Cognitive SearchとElasticsearchの違いはなんですか?&lt;/a&gt;というページがよくある質問のページに用意されていました。参考までに。&lt;/p&gt;
-&lt;p&gt;今回はちょっとしたインデックスをつくって検索する部分を紹介してみようかと思います
-(Cognitiveなところは機会があればまた)。&lt;/p&gt;
-&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-create-service-portal&#34;&gt;普通の使い方&lt;/a&gt;については、Azureのドキュメントなどを読んで頂く形にします。
+いくつか触った感触をブログにまとめてみようかと(お客さんからはOKいただいてます)。</p>
+<h2 id="azure-cognitive-searchとは">Azure Cognitive Searchとは？</h2>
+<ul>
+<li><a href="https://azure.microsoft.com/ja-jp/services/search/">公式サイト</a></li>
+</ul>
+<p>「AIを活用した」クラウド検索サービスと紹介されています。</p>
+<p>昔はAzure Searchと呼ばれていましたが、ここ最近はAzure Cognitive Searchと呼ばれているみたいです(<a href="https://techcommunity.microsoft.com/t5/azure-ai/knowledge-mining-with-azure-cognitive-search/ba-p/1020774">Microsoft Igniteで発表された話がまとまっているページもあります</a>)。
+もともと、検索エンジンのSaaSサービス(キーワード検索、あいまい検索、オートサジェスト、スコアリングなどの機能)として作られていた部分に、データの登録パイプラインにCognitive Serviceの便利な機能を簡単に使えるようにしたものというイメージでしょうか。</p>
+<p>バックエンドはElasticsearchのはずです。変わってなければ。
+昔、Elastic社主催のユーザーカンファレンスで<a href="https://www.elastic.co/jp/elasticon/2015/sf/powering-real-time-search-at-microsoft">MSの方が公演された資料</a>が公開されていたりします。
+ちなみに質問が多いのでしょうか、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-faq-frequently-asked-questions#what-is-the-difference-between-azure-cognitive-search-and-elasticsearch">Azure Cognitive SearchとElasticsearchの違いはなんですか?</a>というページがよくある質問のページに用意されていました。参考までに。</p>
+<p>今回はちょっとしたインデックスをつくって検索する部分を紹介してみようかと思います
+(Cognitiveなところは機会があればまた)。</p>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/search/search-create-service-portal">普通の使い方</a>については、Azureのドキュメントなどを読んで頂く形にします。
 ポータルと呼ばれるブラウザ上でAzureのサービスを触ることができる画面が用意されています。
-ここで、簡単な操作(インデックス作成、フィールドの追加)&lt;/p&gt;
-&lt;p&gt;APIを使ってインデックス(特にAnalyzer)の設定をしたり、データをいれて、クエリしてみるというところをサクッと紹介しようと思います。&lt;/p&gt;
-&lt;h2 id=&#34;インデックスの作り方&#34;&gt;インデックスの作り方&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-what-is-an-index#recommended-workflow&#34;&gt;インデックス作成に関するドキュメント&lt;/a&gt;も用意されています。最初はポータル(GUI)でインデックスを作成する方法が紹介されています。
+ここで、簡単な操作(インデックス作成、フィールドの追加)</p>
+<p>APIを使ってインデックス(特にAnalyzer)の設定をしたり、データをいれて、クエリしてみるというところをサクッと紹介しようと思います。</p>
+<h2 id="インデックスの作り方">インデックスの作り方</h2>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/search/search-what-is-an-index#recommended-workflow">インデックス作成に関するドキュメント</a>も用意されています。最初はポータル(GUI)でインデックスを作成する方法が紹介されています。
 ですが、今回はn-gram(n=2)のAnalyzerを利用したかったので、GUIではなくAPIでインデックスを作成しました。
-&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-add-custom-analyzers&#34;&gt;カスタムアナライザー&lt;/a&gt;を利用する場合、REST APIを利用しなければ行けないということになっています。
-n-gramのAnalyzerを含むインデックス生成のREST APIは以下のとおりです。こちらを実行することで、インデックスが作成されます(JSONの記述ミスなどがある場合はエラーが返ってきます)。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;@host = &amp;lt;サーチのサービス名&amp;gt;.search.windows.net
-@api-key = &amp;lt;APIキー&amp;gt;
+<a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-custom-analyzers">カスタムアナライザー</a>を利用する場合、REST APIを利用しなければ行けないということになっています。
+n-gramのAnalyzerを含むインデックス生成のREST APIは以下のとおりです。こちらを実行することで、インデックスが作成されます(JSONの記述ミスなどがある場合はエラーが返ってきます)。</p>
+<pre><code>@host = &lt;サーチのサービス名&gt;.search.windows.net
+@api-key = &lt;APIキー&gt;
 
 ###
 
@@ -820,250 +820,250 @@ Content-Type: application/json
 api-key: {{api-key}}
 
 {
-    &amp;quot;name&amp;quot;:&amp;quot;ngram-test&amp;quot;,
-    &amp;quot;fields&amp;quot;:[
+    &quot;name&quot;:&quot;ngram-test&quot;,
+    &quot;fields&quot;:[
        {
-          &amp;quot;name&amp;quot;:&amp;quot;id&amp;quot;,
-          &amp;quot;type&amp;quot;:&amp;quot;Edm.String&amp;quot;,
-          &amp;quot;key&amp;quot;:true,
-          &amp;quot;searchable&amp;quot;:false
+          &quot;name&quot;:&quot;id&quot;,
+          &quot;type&quot;:&quot;Edm.String&quot;,
+          &quot;key&quot;:true,
+          &quot;searchable&quot;:false
        },
        {
-          &amp;quot;name&amp;quot;:&amp;quot;ngram&amp;quot;,
-          &amp;quot;type&amp;quot;:&amp;quot;Edm.String&amp;quot;,
-          &amp;quot;searchable&amp;quot;:true,
-          &amp;quot;analyzer&amp;quot;:&amp;quot;bi_gram_analyzer&amp;quot;
+          &quot;name&quot;:&quot;ngram&quot;,
+          &quot;type&quot;:&quot;Edm.String&quot;,
+          &quot;searchable&quot;:true,
+          &quot;analyzer&quot;:&quot;bi_gram_analyzer&quot;
        }
     ],
-    &amp;quot;analyzers&amp;quot;:[
+    &quot;analyzers&quot;:[
       {
-         &amp;quot;name&amp;quot;:&amp;quot;bi_gram_analyzer&amp;quot;,
-         &amp;quot;@odata.type&amp;quot;:&amp;quot;#Microsoft.Azure.Search.CustomAnalyzer&amp;quot;,
-         &amp;quot;tokenizer&amp;quot;:&amp;quot;bi_gram_tokenizer&amp;quot;,
-         &amp;quot;tokenFilters&amp;quot;:[
-            &amp;quot;lowercase&amp;quot;
+         &quot;name&quot;:&quot;bi_gram_analyzer&quot;,
+         &quot;@odata.type&quot;:&quot;#Microsoft.Azure.Search.CustomAnalyzer&quot;,
+         &quot;tokenizer&quot;:&quot;bi_gram_tokenizer&quot;,
+         &quot;tokenFilters&quot;:[
+            &quot;lowercase&quot;
          ]
       }
     ],
-    &amp;quot;tokenizers&amp;quot;:[
+    &quot;tokenizers&quot;:[
        {
-          &amp;quot;name&amp;quot;:&amp;quot;bi_gram_tokenizer&amp;quot;,
-          &amp;quot;@odata.type&amp;quot;:&amp;quot;#Microsoft.Azure.Search.NGramTokenizer&amp;quot;,
-          &amp;quot;minGram&amp;quot;:2,
-          &amp;quot;maxGram&amp;quot;:2
+          &quot;name&quot;:&quot;bi_gram_tokenizer&quot;,
+          &quot;@odata.type&quot;:&quot;#Microsoft.Azure.Search.NGramTokenizer&quot;,
+          &quot;minGram&quot;:2,
+          &quot;maxGram&quot;:2
        }
     ]
  }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;なんだかどこかで見たことのある記述のようなそうでないような。。。
+</code></pre><p>なんだかどこかで見たことのある記述のようなそうでないような。。。
 Analyzerは、charFilters(0以上複数可)、tokenizer(1つ必須)、tokenFilters(0以上複数可)から構成されます。
-フィールドで指定するのはAnalyzerなので、まずanalyzersに&lt;code&gt;CustomAnalyzer&lt;/code&gt;の設定を行います。
-名前は&lt;code&gt;bi_gram_analyzer&lt;/code&gt;にしました(好きに付けてください)。
-&lt;code&gt;tokenizer&lt;/code&gt;にはこのあと設定するtokenizerの名前を設定します。ここでは、&lt;code&gt;bi_gram_tokenizer&lt;/code&gt;という名前にしています。
-また、大文字小文字を気にせずに検索したいため、&lt;code&gt;tokenFilters&lt;/code&gt;に&lt;code&gt;lowercase&lt;/code&gt;を指定しています。こちらは&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-add-custom-analyzers#token-filters-reference&#34;&gt;すでに定義済み&lt;/a&gt;のため、定義済みの名前で呼び出すだけで使用できます。&lt;/p&gt;
-&lt;p&gt;次が、&lt;code&gt;bi_gram_tokenizer&lt;/code&gt;の設定です。
-n=2としたいので、&lt;code&gt;tokenizers&lt;/code&gt;配下にTokenizerの設定をします。
-&lt;code&gt;@odata.type&amp;quot;:&amp;quot;#Microsoft.Azure.Search.NGramTokenizer&lt;/code&gt;がTokenizerの名前です(ちょっと独特な名前ですね)。
-Tokenizerごとにオプションがあり、NGramTokenizerの場合は、&lt;code&gt;minGram&lt;/code&gt;、&lt;code&gt;maxGram&lt;/code&gt;がオプションに相当します。
-今回は2文字ごとにトークンを出力したいので、minとmaxをそれぞれ2としています。&lt;/p&gt;
-&lt;p&gt;これで、あとは、フィールドで&lt;code&gt;analyzer&lt;/code&gt;という設定に&lt;code&gt;bi_gram_analyzer&lt;/code&gt;を指定すればそのフィールドは&lt;code&gt;bi_gram_analyzer&lt;/code&gt;を使用してアナライズされるようになります(このへんはElasticsearchといっしょですね)。
-フィールドは文字列を扱うので、&lt;code&gt;Edm.String&lt;/code&gt;というタイプにしてあります。データ型については、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-what-is-an-index#fields-collection-and-field-attributes&#34;&gt;フィールドコレクションとフィールド属性&lt;/a&gt;というドキュメントを参考に設定しましょう。&lt;/p&gt;
-&lt;h3 id=&#34;閑話休題---rest-client-exstension-for-visual-studio-code&#34;&gt;閑話休題 - REST Client Exstension for Visual Studio Code&lt;/h3&gt;
-&lt;p&gt;なお、今回のサンプルは&lt;a href=&#34;https://github.com/Huachao/vscode-restclient&#34;&gt;REST Clinet Extention for Visual Studio Code&lt;/a&gt;を利用する想定の記述になっています。&lt;/p&gt;
-&lt;p&gt;Visual Studio Codeで&lt;code&gt;.rest&lt;/code&gt;もしくは&lt;code&gt;.http&lt;/code&gt;というファイルに以下のAPIを記述すると、&lt;code&gt;Send Request&lt;/code&gt;というリンクがURLの上部に出てくるような拡張機能です。REST APIにリクエストするときに便利なツールになっています。
-変数も使えるので、APIのキーやURLの一部をこのように共通化して、他の環境でも使いやすくできるのは素晴らしいなと。&lt;/p&gt;
+フィールドで指定するのはAnalyzerなので、まずanalyzersに<code>CustomAnalyzer</code>の設定を行います。
+名前は<code>bi_gram_analyzer</code>にしました(好きに付けてください)。
+<code>tokenizer</code>にはこのあと設定するtokenizerの名前を設定します。ここでは、<code>bi_gram_tokenizer</code>という名前にしています。
+また、大文字小文字を気にせずに検索したいため、<code>tokenFilters</code>に<code>lowercase</code>を指定しています。こちらは<a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-custom-analyzers#token-filters-reference">すでに定義済み</a>のため、定義済みの名前で呼び出すだけで使用できます。</p>
+<p>次が、<code>bi_gram_tokenizer</code>の設定です。
+n=2としたいので、<code>tokenizers</code>配下にTokenizerの設定をします。
+<code>@odata.type&quot;:&quot;#Microsoft.Azure.Search.NGramTokenizer</code>がTokenizerの名前です(ちょっと独特な名前ですね)。
+Tokenizerごとにオプションがあり、NGramTokenizerの場合は、<code>minGram</code>、<code>maxGram</code>がオプションに相当します。
+今回は2文字ごとにトークンを出力したいので、minとmaxをそれぞれ2としています。</p>
+<p>これで、あとは、フィールドで<code>analyzer</code>という設定に<code>bi_gram_analyzer</code>を指定すればそのフィールドは<code>bi_gram_analyzer</code>を使用してアナライズされるようになります(このへんはElasticsearchといっしょですね)。
+フィールドは文字列を扱うので、<code>Edm.String</code>というタイプにしてあります。データ型については、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-what-is-an-index#fields-collection-and-field-attributes">フィールドコレクションとフィールド属性</a>というドキュメントを参考に設定しましょう。</p>
+<h3 id="閑話休題---rest-client-exstension-for-visual-studio-code">閑話休題 - REST Client Exstension for Visual Studio Code</h3>
+<p>なお、今回のサンプルは<a href="https://github.com/Huachao/vscode-restclient">REST Clinet Extention for Visual Studio Code</a>を利用する想定の記述になっています。</p>
+<p>Visual Studio Codeで<code>.rest</code>もしくは<code>.http</code>というファイルに以下のAPIを記述すると、<code>Send Request</code>というリンクがURLの上部に出てくるような拡張機能です。REST APIにリクエストするときに便利なツールになっています。
+変数も使えるので、APIのキーやURLの一部をこのように共通化して、他の環境でも使いやすくできるのは素晴らしいなと。</p>
 
-&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
-&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
-  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
-    &lt;div class=&#34;img&#34;&gt;
-      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20200220/rest_client_extension.png&#34; /&gt;
-    &lt;/div&gt;
-    &lt;a href=&#34;https://blog.johtani.info/images/entries/20200220/rest_client_extension.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
-  &lt;/figure&gt;
-&lt;/div&gt;
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200220/rest_client_extension.png" />
+    </div>
+    <a href="/images/entries/20200220/rest_client_extension.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
 
-&lt;h2 id=&#34;アナライザーの挙動の確認&#34;&gt;アナライザーの挙動の確認&lt;/h2&gt;
-&lt;p&gt;設定したAnalyzerがきちんと機能しているかというのを確認する必要があります。
-入力した文字列がきちんと想定している単語として切り出されて、転置インデックスの見出し語に使われるかというのが重要になるからです。&lt;/p&gt;
-&lt;p&gt;Azure Cognitive Searchでもアナライザーのテスト用APIが用意されています。
-&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-add-custom-analyzers#test-custom-analyzers&#34;&gt;使い方はこちら&lt;/a&gt;。
-&lt;a href=&#34;https://docs.microsoft.com/ja-jp/rest/api/searchservice/test-analyzer&#34;&gt;APIの仕様のページもありました&lt;/a&gt;。
-「&lt;code&gt;アナライザーの挙動はどんな感じ？&lt;/code&gt;」という文字列が、作成したインデックスの定義したアナライザー&lt;code&gt;bi_gram_analyzer&lt;/code&gt;により、
-どのように分割されるかを確認するAPIの呼び出しは以下のとおりです。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;###
+<h2 id="アナライザーの挙動の確認">アナライザーの挙動の確認</h2>
+<p>設定したAnalyzerがきちんと機能しているかというのを確認する必要があります。
+入力した文字列がきちんと想定している単語として切り出されて、転置インデックスの見出し語に使われるかというのが重要になるからです。</p>
+<p>Azure Cognitive Searchでもアナライザーのテスト用APIが用意されています。
+<a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-custom-analyzers#test-custom-analyzers">使い方はこちら</a>。
+<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/test-analyzer">APIの仕様のページもありました</a>。
+「<code>アナライザーの挙動はどんな感じ？</code>」という文字列が、作成したインデックスの定義したアナライザー<code>bi_gram_analyzer</code>により、
+どのように分割されるかを確認するAPIの呼び出しは以下のとおりです。</p>
+<pre><code>###
 POST https://{{host}}/indexes/ngram-test/analyze?api-version=2019-05-06
 Content-Type: application/json
 api-key: {{api-key}}
 
 {
-   &amp;quot;analyzer&amp;quot;:&amp;quot;bi_gram_analyzer&amp;quot;,
-   &amp;quot;text&amp;quot;: &amp;quot;アナライザーの挙動はどんな感じ？&amp;quot;
+   &quot;analyzer&quot;:&quot;bi_gram_analyzer&quot;,
+   &quot;text&quot;: &quot;アナライザーの挙動はどんな感じ？&quot;
 }
 
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;レスポンスはこんな形です。ヘッダ部分は省略してあります。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
-  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://{{host}}.search.windows.net/$metadata#Microsoft.Azure.Search.V2019_05_06.AnalyzeResult&amp;#34;&lt;/span&gt;,
-  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;tokens&amp;#34;&lt;/span&gt;: [
+</code></pre><p>レスポンスはこんな形です。ヘッダ部分は省略してあります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;@odata.context&#34;</span>: <span style="color:#e6db74">&#34;https://{{host}}.search.windows.net/$metadata#Microsoft.Azure.Search.V2019_05_06.AnalyzeResult&#34;</span>,
+  <span style="color:#f92672">&#34;tokens&#34;</span>: [
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;アナ&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;アナ&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">0</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">2</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">0</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ナラ&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;ナラ&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">1</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">3</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">1</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ライ&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;ライ&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">2</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">4</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">2</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;イザ&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;イザ&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">3</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">5</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">3</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ザー&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;ザー&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">4</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">6</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">4</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ーの&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;ーの&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">5</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">7</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">5</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;の挙&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;の挙&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">6</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">8</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">6</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;挙動&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;7&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;挙動&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">7</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">9</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">7</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;動は&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;動は&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">8</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">10</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">8</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;はど&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;はど&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">9</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">11</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">9</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;どん&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;どん&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">10</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">12</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">10</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;んな&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;11&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;んな&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">11</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">13</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">11</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;な感&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;12&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;な感&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">12</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">14</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">12</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;感じ&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;15&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;13&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;感じ&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">13</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">15</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">13</span>
     },
     {
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;じ？&amp;#34;&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;,
-      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;14&lt;/span&gt;
+      <span style="color:#f92672">&#34;token&#34;</span>: <span style="color:#e6db74">&#34;じ？&#34;</span>,
+      <span style="color:#f92672">&#34;startOffset&#34;</span>: <span style="color:#ae81ff">14</span>,
+      <span style="color:#f92672">&#34;endOffset&#34;</span>: <span style="color:#ae81ff">16</span>,
+      <span style="color:#f92672">&#34;position&#34;</span>: <span style="color:#ae81ff">14</span>
     }
   ]
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;このAzure SearchのAnalyze API、使用できるオプションはすくないですが、&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html&#34;&gt;ElasticsearchのAnalyze API&lt;/a&gt;と似ています。&lt;/p&gt;
-&lt;h2 id=&#34;データの登録の仕方&#34;&gt;データの登録の仕方&lt;/h2&gt;
-&lt;p&gt;データ登録もAPIからできます(あたりまえですね)。
-&lt;a href=&#34;https://docs.microsoft.com/ja-jp/rest/api/searchservice/addupdate-or-delete-documents&#34;&gt;APIは1件ずつではなく、バルクで登録できる形で提供されています&lt;/a&gt;。&lt;/p&gt;
-&lt;p&gt;サンプルとしては、以下のような形です。
-&lt;code&gt;@search.action&lt;/code&gt;の部分(&lt;code&gt;search&lt;/code&gt;があるとわかりにくい気がするけど。。。)が、ドキュメントの登録、更新、削除の命令を書き込むところになります。
-今回は単純に登録するだけなので、&lt;code&gt;upload&lt;/code&gt;を指定しました。
-ほかにも&lt;a href=&#34;https://docs.microsoft.com/ja-jp/rest/api/searchservice/addupdate-or-delete-documents#document-actions&#34;&gt;いくつかアクションが用意されています。&lt;/a&gt;用途に合わせて指定する感じになります。
-&lt;code&gt;id&lt;/code&gt;、&lt;code&gt;ngram&lt;/code&gt;はそれぞれフィールド名です。ドキュメントに登録したい値を記述します。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+</code></pre></div><p>このAzure SearchのAnalyze API、使用できるオプションはすくないですが、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-analyze.html">ElasticsearchのAnalyze API</a>と似ています。</p>
+<h2 id="データの登録の仕方">データの登録の仕方</h2>
+<p>データ登録もAPIからできます(あたりまえですね)。
+<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/addupdate-or-delete-documents">APIは1件ずつではなく、バルクで登録できる形で提供されています</a>。</p>
+<p>サンプルとしては、以下のような形です。
+<code>@search.action</code>の部分(<code>search</code>があるとわかりにくい気がするけど。。。)が、ドキュメントの登録、更新、削除の命令を書き込むところになります。
+今回は単純に登録するだけなので、<code>upload</code>を指定しました。
+ほかにも<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/addupdate-or-delete-documents#document-actions">いくつかアクションが用意されています。</a>用途に合わせて指定する感じになります。
+<code>id</code>、<code>ngram</code>はそれぞれフィールド名です。ドキュメントに登録したい値を記述します。</p>
+<pre><code>
 POST https://{{host}}/indexes/ngram-test/docs/index?api-version=2019-05-06
 Content-Type: application/json
 api-key: {{api-key}}
 
 {
-  &amp;quot;value&amp;quot;: [
+  &quot;value&quot;: [
     {          
-      &amp;quot;@search.action&amp;quot;: &amp;quot;upload&amp;quot;,  
-      &amp;quot;id&amp;quot;: &amp;quot;1&amp;quot;,
-      &amp;quot;ngram&amp;quot;: &amp;quot;新しいAzure Searchの使い方&amp;quot;
+      &quot;@search.action&quot;: &quot;upload&quot;,  
+      &quot;id&quot;: &quot;1&quot;,
+      &quot;ngram&quot;: &quot;新しいAzure Searchの使い方&quot;
     },
     {          
-      &amp;quot;@search.action&amp;quot;: &amp;quot;upload&amp;quot;,  
-      &amp;quot;id&amp;quot;: &amp;quot;2&amp;quot;,
-      &amp;quot;ngram&amp;quot;: &amp;quot;Elasticsearchの紹介&amp;quot;
+      &quot;@search.action&quot;: &quot;upload&quot;,  
+      &quot;id&quot;: &quot;2&quot;,
+      &quot;ngram&quot;: &quot;Elasticsearchの紹介&quot;
     }
   ]
 }
 
-&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;検索クエリ&#34;&gt;検索クエリ&lt;/h2&gt;
-&lt;p&gt;最後は検索クエリです。
-&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-query-overview&#34;&gt;検索クエリはいくつかのオプションがあります&lt;/a&gt;。
-ざっくりだと、&lt;code&gt;queryType&lt;/code&gt;が&lt;code&gt;simple&lt;/code&gt;と&lt;code&gt;full&lt;/code&gt;という2種類が用意されており、ちょっとした検索を作る場合は&lt;code&gt;simple&lt;/code&gt;で事足りそうという感じです。
+</code></pre><h2 id="検索クエリ">検索クエリ</h2>
+<p>最後は検索クエリです。
+<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-overview">検索クエリはいくつかのオプションがあります</a>。
+ざっくりだと、<code>queryType</code>が<code>simple</code>と<code>full</code>という2種類が用意されており、ちょっとした検索を作る場合は<code>simple</code>で事足りそうという感じです。
 入力された単語(スペース区切りで複数扱い)をフィールド(複数可)に対していずれかの単語を含むもしくは、すべての単語を含むという検索に行くというパターンですね。
-このときの、「いずれか」か「すべて」の設定が&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-query-overview#tips-for-unexpected-results&#34;&gt;&lt;code&gt;searchMode&lt;/code&gt;&lt;/a&gt;というパラメータになります。
-&lt;code&gt;any&lt;/code&gt;の場合、Googleの検索と同様に、どれかの単語が入っているドキュメントが対象に、&lt;code&gt;all&lt;/code&gt;の場合すべての単語が含まれるドキュメントだけがたいしょうになるといった形です。&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;queryType=full&lt;/code&gt;の場合はLuceneの構文でクエリがかけます。Elasticsearchの&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html&#34;&gt;Query String Query&lt;/a&gt;みたいな形です。&lt;/p&gt;
-&lt;p&gt;簡単なサンプルは次のような感じです。このサンプル&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+このときの、「いずれか」か「すべて」の設定が<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-overview#tips-for-unexpected-results"><code>searchMode</code></a>というパラメータになります。
+<code>any</code>の場合、Googleの検索と同様に、どれかの単語が入っているドキュメントが対象に、<code>all</code>の場合すべての単語が含まれるドキュメントだけがたいしょうになるといった形です。</p>
+<p><code>queryType=full</code>の場合はLuceneの構文でクエリがかけます。Elasticsearchの<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html">Query String Query</a>みたいな形です。</p>
+<p>簡単なサンプルは次のような感じです。このサンプル</p>
+<pre><code>
 POST https://{{host}}/indexes/multi-field-test/docs/search?api-version=2019-05-06
 Content-Type: application/json
 api-key: {{api-key}}
 
 {
-   &amp;quot;search&amp;quot;: &#39;ngram:&amp;quot;使い方&amp;quot; ngram:&amp;quot;紹介&amp;quot;&#39;,
-   &amp;quot;queryType&amp;quot;: &amp;quot;full&amp;quot;,
-   &amp;quot;searchMode&amp;quot;: &amp;quot;any&amp;quot;
+   &quot;search&quot;: 'ngram:&quot;使い方&quot; ngram:&quot;紹介&quot;',
+   &quot;queryType&quot;: &quot;full&quot;,
+   &quot;searchMode&quot;: &quot;any&quot;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;すこしだけクエリの補足を。
+</code></pre><p>すこしだけクエリの補足を。
 searchに入力された単語をダブルクォートで囲んでいます。これは、「使い方」という文字がbi_gram_analyzerにより「使い」「い方」に
-分割されるのですが、必ずこの順序で出現したものだけを検索対象にしたい(フレーズ検索)という意味になります(*bi_*gramなので、「紹介」に関してはダブルクォートは厳密には必要ないです)。&lt;/p&gt;
-&lt;p&gt;あと、レスポンスは今回記載していませんが、&lt;code&gt;@search.score&lt;/code&gt;という項目で、スコアが返ってきます。
-デフォルトのスコア計算には何を使ってるんだろう?&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-add-scoring-profiles#what-is-default-scoring&#34;&gt;ドキュメントにはTF-IDFとの記述があるのですが&lt;/a&gt;。。。カスタマイズもできそうです。&lt;/p&gt;
-&lt;p&gt;少しオモシロイと思ったのは、スキーマ(インデックスの設定)に定義されているが、ドキュメントとしては登録していない項目についても、
-Azure Cognitive Searchはドキュメントのフィールドが&lt;code&gt;null&lt;/code&gt;という形で返ってくるようでした。
-そもそもフィールドが存在しないドキュメントとフィールドの値が&lt;code&gt;null&lt;/code&gt;のものの違いは無いようです。&lt;/p&gt;
-&lt;p&gt;簡単ですが、インデックスの設定、ドキュメントの登録、検索の方法の紹介でした。&lt;/p&gt;
-&lt;h2 id=&#34;ちょっと触った感想&#34;&gt;ちょっと触った感想&lt;/h2&gt;
-&lt;p&gt;一番売りである、Cognitiveの部分はまだ触っていないです、すみません(こっちが売りな気もするんですが)。
+分割されるのですが、必ずこの順序で出現したものだけを検索対象にしたい(フレーズ検索)という意味になります(*bi_*gramなので、「紹介」に関してはダブルクォートは厳密には必要ないです)。</p>
+<p>あと、レスポンスは今回記載していませんが、<code>@search.score</code>という項目で、スコアが返ってきます。
+デフォルトのスコア計算には何を使ってるんだろう?<a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-scoring-profiles#what-is-default-scoring">ドキュメントにはTF-IDFとの記述があるのですが</a>。。。カスタマイズもできそうです。</p>
+<p>少しオモシロイと思ったのは、スキーマ(インデックスの設定)に定義されているが、ドキュメントとしては登録していない項目についても、
+Azure Cognitive Searchはドキュメントのフィールドが<code>null</code>という形で返ってくるようでした。
+そもそもフィールドが存在しないドキュメントとフィールドの値が<code>null</code>のものの違いは無いようです。</p>
+<p>簡単ですが、インデックスの設定、ドキュメントの登録、検索の方法の紹介でした。</p>
+<h2 id="ちょっと触った感想">ちょっと触った感想</h2>
+<p>一番売りである、Cognitiveの部分はまだ触っていないです、すみません(こっちが売りな気もするんですが)。
 検索エンジンの部分としては、Elasticsearchを知っていると、「あー、そんな感じね」という気持ちになれるサービスです。
 個々のAPIやデータの形式は異なるので、きちんとAPIのリファレンスなどを確認しつつという形になりますが、なんとなくこういうAPIなどがありそうだな?と予測しつつ使えるかなと。
-内部的にはElasticsearchだと思いますが、独自のAPIでラップされているおかげで、バージョンの違いなどを意識せずに使えるのではないかと思います。&lt;/p&gt;
-&lt;p&gt;また、今回は紹介していませんが、マイクロソフト独自の各言語のアナライザー(日本語も含む)があります。
+内部的にはElasticsearchだと思いますが、独自のAPIでラップされているおかげで、バージョンの違いなどを意識せずに使えるのではないかと思います。</p>
+<p>また、今回は紹介していませんが、マイクロソフト独自の各言語のアナライザー(日本語も含む)があります。
 Luceneのアナライザーとマイクロソフトのアナライザーのどちらも利用できますので、ここの違いを見てみるのも面白そうだなと思いました。
-緯度経度を利用した検索、フィルター検索(スコア計算対象にならない)、ファセット、スコア調整の機能なども備えているようです。&lt;/p&gt;
-&lt;p&gt;なんにせよ、利用する場合やドキュメントを読む場合に、全文検索の仕組みをなんとなく知っておいたほうが読みやすいんじゃないかなというのが感想です。&lt;/p&gt;
-&lt;p&gt;ここ数年はElasticsearchがメインでほかはほぼ触っていない状況だったので新しい製品に触れるのは面白いですね。
-時間があったら、アナライザーの違いなども調べてみたいなと思います。&lt;/p&gt;
+緯度経度を利用した検索、フィルター検索(スコア計算対象にならない)、ファセット、スコア調整の機能なども備えているようです。</p>
+<p>なんにせよ、利用する場合やドキュメントを読む場合に、全文検索の仕組みをなんとなく知っておいたほうが読みやすいんじゃないかなというのが感想です。</p>
+<p>ここ数年はElasticsearchがメインでほかはほぼ触っていない状況だったので新しい製品に触れるのは面白いですね。
+時間があったら、アナライザーの違いなども調べてみたいなと思います。</p>
 </content:encoded>
     </item>
     
