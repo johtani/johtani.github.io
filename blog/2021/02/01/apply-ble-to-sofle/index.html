@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Corne Light v2のBLE&#43;LPME-IO対応 #DIYキーボード" />
-    <meta property="og:title" content="Corne Light v2のBLE&#43;LPME-IO対応 #DIYキーボード" />
-    <meta property="twitter:title" content="Corne Light v2のBLE&#43;LPME-IO対応 #DIYキーボード" />
+    <meta name="title" content="Sofle v2を組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード" />
+    <meta property="og:title" content="Sofle v2を組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード" />
+    <meta property="twitter:title" content="Sofle v2を組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Corne Light v2のBLE&#43;LPME-IO対応 #DIYキーボード-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Sofle v2を組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2021/01/11/apply-ble-and-lpme-to-corne/">
+    <link rel="canonical" href="/blog/2021/02/01/apply-ble-to-sofle/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -166,7 +166,7 @@
                         </a>
                         
                     </div>
-                    <h1>Corne Light v2のBLE&#43;LPME-IO対応 #DIYキーボード</h1>
+                    <h1>Sofle v2を組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +174,7 @@
                             johtani
                          
                         on 
-                        Monday, January 11, 2021
+                        Monday, February 1, 2021
                         
                         
                         
@@ -204,206 +204,228 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#ble--lpme-io対応">BLE + LPME-IO対応</a></li>
-    <li><a href="#材料">材料</a></li>
-    <li><a href="#実装">実装</a>
+    <li><a href="#sofle-keyboard-v2-ビルドログ">Sofle keyboard v2 ビルドログ</a>
       <ul>
-        <li><a href="#電池基盤">電池基盤</a></li>
-        <li><a href="#ble-micro-proもげ対策">BLE Micro Pro（もげ対策）</a></li>
-        <li><a href="#lpme-io対応">LPME-IO対応</a></li>
+        <li><a href="#oled用のジャンパをはんだ付けし忘れ">OLED用のジャンパをはんだ付けし忘れ</a></li>
+        <li><a href="#ソケットのはんだ付け甘すぎ">ソケットのはんだ付け甘すぎ</a></li>
+        <li><a href="#滑り止め">滑り止め</a></li>
       </ul>
     </li>
-    <li><a href="#usb-cで接続テスト">USB-Cで接続テスト</a></li>
-    <li><a href="#キーマップの書き換えとか">キーマップの書き換えとか</a></li>
-    <li><a href="#bleで接続テスト">BLEで接続テスト</a></li>
-    <li><a href="#課題">課題</a></li>
+    <li><a href="#sofle-keyboardのble化">Sofle keyboardのBLE化</a>
+      <ul>
+        <li><a href="#ハードウェア編">ハードウェア編</a></li>
+        <li><a href="#ファームウェア設定編">ファームウェア・設定編</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>メインマシンとMacは下記のサンワサプライのUSB接続のKVMスイッチを使っていますが、もう一台ノートPCがありここに接続しているCorne（<a href="https://blog.johtani.info/blog/2020/11/05/build-corne-light-v2/">初めてのDIYキーボード</a>）が長いUSBケーブルでつながっています。</p>
-
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B0843QRVFH/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B0843QRVFH&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B0843QRVFH/?tag=johtani-22">
-      Amazon | サンワダイレクト USB切替器 キーボード・マウス用 KVMスイッチ
-      </a>
-    </p>
-  </div>
-</div>
-<p>時々必要になって、デスクにキーボードだけ引っ張ってきて利用するのですが、ケーブルの取り回しがまぁ邪魔で。。。
-BLE対応（<a href="https://nogikes.booth.pm/items/1177319">BLE Micro Pro</a>）をしてみようかなということに。</p>
-<h2 id="ble--lpme-io対応">BLE + LPME-IO対応</h2>
-<p>分割キーボードをBLE対応(それぞれにBLE Micro Proを実装)すると、キーボード間のつながりがいまいちになることもあるというのをちらほら見ていたので、BLE Micro Pro + <a href="https://nogikes.booth.pm/items/1656264">LPME-IO</a>という構成で、
-Corneのキーボード同士はTRRSケーブルで接続し、PCとCorne間をBluetoothで接続する構成にしてみました。</p>
-<p>BLE Micro Proについては、<a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/">公式ドキュメント</a>にいろいろと記載があります。</p>
-<h2 id="材料">材料</h2>
-<p>ということで、材料は以下の通り。セット販売は売り切れていたので、個別に購入しました。
-コンスルーと電池以外は１つずつです。</p>
+                <p>Corne使ってましたが、数字キーがあるとどうなのかな？というのがやはり気になって。
+そこに、Kochi KeyboardさんからSofle Keyboard v2というのが発売されたので組み立ててみました（去年末に）。また、先日Corne Light v2のBLE化に成功したので、Sofle keyboard v2のBLE Pro Micro + LPME-IO化にもチャレンジしてみました。</p>
+<h2 id="sofle-keyboard-v2-ビルドログ">Sofle keyboard v2 ビルドログ</h2>
+<p>自分で書くよりもすごくよくできたビルドログがKochi Keyboardさんで公開されているので、そちらを参考にしてください。</p>
 <ul>
-<li><a href="https://nogikes.booth.pm/items/1177319">BLE Micro Pro(のぎけす屋)</a> x 1</li>
-<li><a href="https://nogikes.booth.pm/items/1656264">LPME-IO(のぎけす屋)</a> x 1</li>
-<li><a href="https://yushakobo.jp/shop/ble-micro-pro-battery-board/">BLE Micro Pro用電池基盤(遊舎工房)</a> x 1</li>
-<li><a href="https://kochikeyboard.stores.jp/items/5f83efcd94f3ae7ba99d07ba">コンスルー(Kochi Keyboard)</a> x 4</li>
-<li>CR1632ボタン電池（近所のスーパー） x 2</li>
+<li><a href="https://kochikbd.hatenablog.com/entry/2020/12/05/200000">Sofle Keyboard v2ビルドガイド</a></li>
 </ul>
-<h2 id="実装">実装</h2>
-<p>まずは、それぞれ組み立てです。</p>
-<h3 id="電池基盤">電池基盤</h3>
-<p>以下の記事を参考にはんだ付けしました。</p>
-<ul>
-<li><a href="https://qiita.com/h-oikawa/items/10b672e03653a1b3fa62#%E9%9B%BB%E6%B1%A0%E5%9F%BA%E7%9B%A4%E3%81%AE%E7%B5%84%E3%81%BF%E7%AB%8B%E3%81%A6%E5%8D%8A%E7%94%B0%E4%BB%98%E3%81%91">Qiita: 自作キーボードビルドログ：その２「ErgoDash」無線化対応 ハードウェア編 - 電池基盤の組み立て・半田付け</a></li>
-<li><a href="https://yfuku.com/claw44/bmp/">yfuku docs - Claw44 / 無線接続について</a></li>
-</ul>
-<p>注意点は以下の通りです。</p>
-<ul>
-<li>基盤が軽いので固定が必要（マスキングテープでマットに貼り付けたらましになった）</li>
-<li>電池ホルダーが変形しやすい（設置して、足を折るために上から押さえつけたら、本体が曲がってしまった。。。）</li>
-<li>部品が細かいので大変（老眼だから？）</li>
-</ul>
-<p>BLE Micro Proとの接続は参考にしたyfuku docsにある方法（余っていたピンヘッダを１本ずつ使ってはんだ付け）を採用しました。
-（パッと見大丈夫そうだったので電池基盤の裏に絶縁テープは貼ってないです貼ってないです）</p>
-<h3 id="ble-micro-proもげ対策">BLE Micro Pro（もげ対策）</h3>
-<p>BLE Micro Pro自体はコンスルーをはんだ付けするだけですが、今回はもげ対策として、ダイソーで買ってきたグルーガンで
-ちょっとだけ補強してみました。
-初グルーガンだったので不細工だけど。これ難しいな。</p>
+<p>すごく詳しく書いてあります。なので、こちらを見ていただければ問題ないかなと。
+ただ、自分ではいくつか失敗したので自戒を込めてログを残しておきます。</p>
+<h3 id="oled用のジャンパをはんだ付けし忘れ">OLED用のジャンパをはんだ付けし忘れ</h3>
+<p>単にビルドログを流し読みしたツケが。。。
+Sofleは同じ基盤を左右で利用します。なので、右手と左手で、同じ基盤の表と裏を利用します。
+OLED用のジャンパする部分は両面に用意されていますが、はんだでジャンプするのは<strong>Pro Micro</strong>が実装される面となります。</p>
+<p>両面にジャンプ用のランドがあるとは気づかないで、左手の<strong>裏面</strong>をジャンプしてすべて実装し終わってから、OLEDが表示されないことに気づいてしまいました（ビルドログ用にと思って撮った写真に証拠が残ってますねｗ）。。。</p>
 
 <link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
 <div class="box" style="max-width:600px">
   <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
     <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210111/ble_micro_pro1.jpg" />
+      <img itemprop="thumbnail" src="/images/entries/20210201/jump_oled_on_wrong_side.jpg" />
     </div>
-    <a href="/images/entries/20210111/ble_micro_pro1.jpg" itemprop="contentUrl"></a>
+    <a href="/images/entries/20210201/jump_oled_on_wrong_side.jpg" itemprop="contentUrl"></a>
   </figure>
 </div>
 
+<p>ということで、またはんダッシュ太郎くんのお世話になりました（Pro Microを外してジャンプしました）。本当に有能ですよ彼は。。。</p>
+
+
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B01FEV2BPG/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B01FEV2BPG&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B01FEV2BPG/?tag=johtani-22">
+      Amazon | サンハヤト はんだシュッ太郎NEO 45Wタイプ HSK-300 | ハンダゴテパーツ
+      </a>
+    </p>
+  </div>
+</div>
+<h3 id="ソケットのはんだ付け甘すぎ">ソケットのはんだ付け甘すぎ</h3>
+<p>あとは、慣れてきたなぁと思っていたところに天罰が。
+キースイッチのソケットを付けるの慣れてきたなーと思って、サクサクとつけていたのですが、
+いざキースイッチをはめるときにボロボロとはがれていきましたｗ
+半分くらいは外れたんじゃないかな？ちゃんとはんだ付けした後にピンセットなどで軽くいじってみるべきですね。。。</p>
+<h3 id="滑り止め">滑り止め</h3>
+<p>利用しているキーキャップがOEMプロファイルということもあり、数字キー側を少し高くしたほうが入力しやすいです。そのために、少し大きめのソフトクッションを購入しました。</p>
+
+
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B00N3TOZQ0/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B00N3TOZQ0&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B00N3TOZQ0/?tag=johtani-22">
+      Amazon | WAKI ソフトクッションCN-020 クリアータイプ: 産業・研究開発用品
+      </a>
+    </p>
+  </div>
+</div>
+<p>上の左右の角に貼り付けると、がたつきがあったので少しずらして貼り付けて安定させています。
+OLEDのプレートの部分を押すと手前が浮き上がってしまいますが、そこにはキーはないので問題ないかと。</p>
 
 
 <div class="box" style="max-width:600px">
   <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
     <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210111/ble_micro_pro2.jpg" />
+      <img itemprop="thumbnail" src="/images/entries/20210201/apply_rubber.jpg" />
     </div>
-    <a href="/images/entries/20210111/ble_micro_pro2.jpg" itemprop="contentUrl"></a>
+    <a href="/images/entries/20210201/apply_rubber.jpg" itemprop="contentUrl"></a>
   </figure>
 </div>
 
-<p>効き目あればいいけど？</p>
-<h3 id="lpme-io対応">LPME-IO対応</h3>
-<h4 id="いくつかのジャンパをはんだでブリッジ">いくつかのジャンパをはんだでブリッジ</h4>
-<p>まずは、<a href="https://github.com/sekigon-gonnoc/LPME-IO">LPME-IOのREADMEのページ</a>の導入手順を読み、いくつかのピンをジャンプしました。
-せきごんさんのBLE-Micro-Proのリポジトリに、<a href="https://github.com/sekigon-gonnoc/BLE-Micro-Pro/blob/master/AboutDefaultFirmware/keyboards/crkbd/crkbd_rev1_lpme_left_config.json">CorneのLPME用コンフィグファイル</a>を見ると、ジャンプするのは<code>20, 19, 18, 17, 16, 15</code>に対応している、<code>F,E,D,C,B,A</code>の６つです（写真撮り忘れた。。。）。</p>
-<h4 id="trrsのi2c対応って言い方であってるのかなぁ">TRRSのI2C対応（って言い方であってるのかなぁ？）</h4>
-<p>ジャンプだけでいけないかなぁ？と思いましたがダメでした（USBでつないでみたけど、左手（BLE-Micro-Proがついている側）だけ入力可能です。</p>
-<p>BLE Micro Proの公式サイトにLPME-IOについても記載があります。
-<a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/keyboard_list">実績のあるキーボード一覧</a>にCorne Lightの記載もあったので、試してみようと思ったのが発端です。</p>
-<p>ただ、LPME-IOの欄に注意書きが。</p>
+<p>ということで、毎回気づきがあって面白いですね。。。</p>
+<h2 id="sofle-keyboardのble化">Sofle keyboardのBLE化</h2>
+<p>Corne LightのBLE化がうまくいったので、もうひとセット<a href="https://nogikes.booth.pm/items/1177319">のぎけす屋</a>さんから購入しました。
+BLE Micro ProやLPME-IO、電池基盤などについては<a href="https://blog.johtani.info/blog/2021/01/11/apply-ble-and-lpme-to-corne/">前回のCorneのBLE化の記事</a>を参照してください。</p>
+<h3 id="ハードウェア編">ハードウェア編</h3>
+<p>Sofle keyboard v2は残念ながらせきごんさんの公式ページの<a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/keyboard_list">対応キーボード一覧</a>には掲載されていません。
+が、<a href="https://github.com/josefadamcik/SofleKeyboard">Sofle KeyboardのGitHubのページ</a>には次のような記載があります。</p>
 <blockquote>
-<p>*LPME-IOを使うには改造が必要</p>
+<p>Sofle is 6×4+5 keys column-staggered split keyboard with encoder support. Based on Lily58, Corne and Helix keyboards.</p>
 </blockquote>
-<p>また、一覧の最初にも記載があります。</p>
-<blockquote>
-<p>LPME-IOを使うにはキーボードの左右の有線通信がI2Cである必要があります。とくにOLEDに対応しているキーボード等の場合は、I2C用のピンをTRRSジャックに接続する改造を施すことでI2C化できる場合があります。</p>
-</blockquote>
-<p>まだ、自作キーボードの仕組みをがっつり理解しているわけではない初心者なので、まぁ、ちょっとわからないかなと。。。
-<a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/">BLE Micro Proのはじめに</a>のページを見ると、
-Self Made keyboard in JapanのDiscordに専用チャネルがあるようで、過去ログを検索してみました。
-検索したところ、Corneの場合Micro ProのSDA(写真の青い線)とSCL(写真の黄色い線)（参考：<a href="https://github.com/foostan/crkbd/blob/master/corne-light/doc/v2/assets/build_trrs_reset_oled.jpg">Corneの基盤の図</a>）をそれぞれ、TRRSの２つのピンに接続する必要がありそうだというコメントがありました。</p>
-<p>Corne Cherry v2の場合は、接続するためのショートカットが用意されていましたが、Corne Light v2だと見当たりませんでした。
-ということで、線を使って物理ショートカットしました。ちなみに、ショートカットは両手ともに必要なようです。</p>
-
-
-<div class="box" style="max-width:600px">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210111/shortcut_left_micropro.jpg" />
-    </div>
-    <a href="/images/entries/20210111/shortcut_left_micropro.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-
-
-<div class="box" style="max-width:600px">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210111/shortcut_left_trrs.jpg" />
-    </div>
-    <a href="/images/entries/20210111/shortcut_left_trrs.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-
-
-<div class="box" style="max-width:600px">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210111/shortcut_right_lpme.jpg" />
-    </div>
-    <a href="/images/entries/20210111/shortcut_right_lpme.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-
-
-<div class="box" style="max-width:600px">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210111/shortcut_right_trrs.jpg" />
-    </div>
-    <a href="/images/entries/20210111/shortcut_right_trrs.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<h2 id="usb-cで接続テスト">USB-Cで接続テスト</h2>
-<p>上記対応が終わって、基板に設置してUSB-Cケーブルで接続したところ、外部ドライブとして見えるようになりました。</p>
-<h2 id="キーマップの書き換えとか">キーマップの書き換えとか</h2>
-<p><a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/getting_started?id=ble-micro-pro-web-configurator%e3%82%92%e4%bd%bf%e3%81%86">公式ドキュメントのBLE Micro Pro Web Configuratorを使う</a>の手順通りに書き込みを行っていくと、特に問題なく接続できました。
-便利すぎですね。キーマップの変更は、これまでのCorneのキーマップJSONファイルからコピペして書き込んだだけです。
-（この後、BLE用のキーマップを書き足すためにもう一度変更しますが）</p>
-<p>LPME-IO対応なので、Micro Proは片側しかないので、書き換えも楽々でした。</p>
-<h2 id="bleで接続テスト">BLEで接続テスト</h2>
-<p>今回の目的だったWindowsにBluetoothで接続できるようにしてみました。
-最初は<a href="https://salicylic-acid3.hatenablog.com/entry/BMP-Introduction#%E4%BD%BF%E7%94%A8%E7%B7%A8">サリチル酸さんの記事を見ていたのですが</a>、キーコードがちょっと変わっているようでした。</p>
-<p>で、よくよく見ると、BLE Micro Pro Web ConfiguratorにBLE関連のキーも用意されているじゃないですか。。。</p>
-
-
-<div class="box" style="max-width:600px">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210111/keymap_layer3.png" />
-    </div>
-    <a href="/images/entries/20210111/keymap_layer3.png" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<p>BLE関連のキーを割り当てた後は、USBをオフにして、Bluetoothをオン、BTNEWで新しくペアリングするようにすれば接続完了でした。</p>
-<h2 id="課題">課題</h2>
-<p>これまでと違い、すんなり実装ができましたがまだいくつか気になる点が。</p>
+<p><a href="https://github.com/josefadamcik/SofleKeyboard/blob/master/Images/IMG_20191104_202757.jpg">基盤の写真</a>のPro Micro周りもCorneに似ています。
+ということで、おそらくBLE + LPME-IO化が行けるのでは？と予測して作業に取り掛かりました。</p>
+<h4 id="pcbの確認">PCBの確認</h4>
+<p>Sofle Keyboardの基盤の設計図は<a href="https://github.com/josefadamcik/SofleKeyboard/tree/master/Sofle_v2/PCB">GitHub上に公開</a>されています。
+この設計図を見る方法をまずは探しました。</p>
+<p>自作キーボードについて探すにはまずはサリチル酸さんのブログ「<a href="https://salicylic-acid3.hatenablog.com/">自作キーボード温泉街の歩き方</a>」です。
+回路図なので、設計ノウハウあたりのカテゴリーにあるだろうと探したところ見つかりました。</p>
 <ul>
-<li>複数の機器とペアリングして切り替え
+<li><a href="https://salicylic-acid3.hatenablog.com/entry/auto-router-introduction">（設計者向け）オートルーターを使って睡眠時間を確保しよう</a></li>
+</ul>
+<p>配線のテクニックというブログですが、回路図を書くためのツールKiCadについて記載があります。
+このブログにある以下の記事をもとに、KiCadのインストールや使い方をちょっとだけ勉強しました。</p>
 <ul>
-<li>Macともペアリングしてみようとしたのですが、切り替えがうまくいかないようで。。。</li>
+<li>foostanさんの<a href="https://github.com/foostan/mkbd/blob/master/developers_guide/developrs_guide_jp.md">Meishi Keyboardの開発者向けガイド(JP)</a></li>
+<li><a href="http://kicad.jp/translate/getting_started_in_kicad.pdf">KiCadことはじめ</a></li>
 </ul>
-</li>
-<li>OLEDつけるにはどうするんだろう？
+<p>KiCadの中の回路図エディタ「Eeschema」でSofle keyboardのPCBのフォルダを開くと回路図が開きます。
+実際の基盤になる前に、Pro Microのどの足と何がつながっているのか？などが見て取れます。
+<a href="https://blog.johtani.info/blog/2021/01/11/apply-ble-and-lpme-to-corne/#lpme-io%E5%AF%BE%E5%BF%9C">前回のCorneのBLE化でLPME-IO対応</a>したときに、学習しましたが、
+TRRSの足とPro Microの<strong>SDA</strong>と<strong>SCL</strong>をつなぐことで、LPME-IOを使うことができるようになるというのがわかっています。
+それをもとに回路図を見たところ、以下のような記述がありました。</p>
+
+
+<div class="box" style="max-width:600px">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20210201/logic_design.png" />
+    </div>
+    <a href="/images/entries/20210201/logic_design.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>どうも、JP9とJP10というはんだでジャンプする場所を用意してくれていそうです。
+先を見越した設計本当にありがたいですね。</p>
+<h4 id="jp9とjp10のはんだ付け">JP9とJP10のはんだ付け</h4>
+<p>今ついているPro Microを外し（またはんダッシュ太郎が活躍）、基板を確認したところ対象の個所がありました。下の写真は左手の裏側です。</p>
+
+
+<div class="box" style="max-width:600px">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20210201/jp9and10_for_lpme.jpg" />
+    </div>
+    <a href="/images/entries/20210201/jp9and10_for_lpme.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>これらをはんだでジャンプします。</p>
+<p>右手は表側にあるので、Pro Microを外した後にジャンプしました。
+
+
+<div class="box" style="max-width:600px">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20210201/jump_jp9and10_right.jpg" />
+    </div>
+    <a href="/images/entries/20210201/jump_jp9and10_right.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+</p>
+<p>左手は裏側です。
+
+
+<div class="box" style="max-width:600px">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20210201/jump_jp9and10_left.jpg" />
+    </div>
+    <a href="/images/entries/20210201/jump_jp9and10_left.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+</p>
+<p>Corne Lightでは、Pro Microの足から導線を使ってTRRSの足につなぎましたが、今回はすっきり実装できました。
+ジャンプした後はBLE Micro Proをはんだ付けします（はんだ付けせずに動作確認しようとしましたが、うまく通電しなくてちゃんと動かなかったです）。</p>
+<h4 id="lpme-ioのジャンパ">LPME-IOのジャンパ</h4>
+<p><a href="https://github.com/sekigon-gonnoc/LPME-IO#v2%E3%81%AE%E5%A0%B4%E5%90%88%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89%E3%81%AE%E5%88%97col%E3%81%AB%E5%AF%BE%E5%BF%9C%E3%81%99%E3%82%8B%E3%83%94%E3%83%B3%E3%81%AE%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%91%E3%82%92%E3%83%8F%E3%83%B3%E3%83%80%E3%81%A7%E3%83%96%E3%83%AA%E3%83%83%E3%82%B8%E3%81%99%E3%82%8B">LPME-IOのGitHubページ</a>にあるように、利用するキーボードによって、いくつかはんだでジャンプする必要があります。
+これは、BLE Micro Pro用のConfigファイルを見て、対象を決める必要があります。
+が、Sofleは事前に用意されたものがありません。</p>
+<h4 id="configファイルの生成">Configファイルの生成</h4>
+<p>用意されていないConfigファイルが、QMKの設定ファイルから生成することができるようななっています（本当に感謝しかないですね）。
+手順はBLE Micro Proのドキュメントにありました。</p>
 <ul>
-<li>左手側は電池が乗っているのですが、右手側はLPME-IOだけなので、上にOLEDを載せる余裕があります。</li>
-<li>なので載せてみましたが点かないですね。ファームウェアを何かしないといけないんじゃないかな？調べないとなぁ。</li>
+<li><a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/edit_config_file">新しいキーボード用の設定を作成する - QMK用の設定から変換する</a></li>
 </ul>
-</li>
+<p>この変換スクリプトで３種類のconfig（右手用、左手用、LPME-IO用）が生成されます。
+私の場合はLPMEを利用するので、lpmeという名前の入ったconfigを利用します。
+中を見るとcol以下の記載が以下の通りだったので、<code>8</code>から<code>D</code>をジャンプします。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#e6db74">&#34;col_pins&#34;</span><span style="color:#960050;background-color:#1e0010">:</span>[<span style="color:#ae81ff">18</span>, <span style="color:#ae81ff">17</span>, <span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">14</span>, <span style="color:#ae81ff">13</span>, <span style="color:#ae81ff">18</span>, <span style="color:#ae81ff">17</span>, <span style="color:#ae81ff">16</span>, <span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">14</span>, <span style="color:#ae81ff">13</span>]<span style="color:#960050;background-color:#1e0010">,</span>
+</code></pre></div><p>ここまででハードウェア側が終了です。</p>
+<h3 id="ファームウェア設定編">ファームウェア・設定編</h3>
+<p>ハードウェアの実装が終わったので、ファームウェアおよびアプリの設定です。</p>
+<h4 id="ファームウェアのセットアップ">ファームウェアのセットアップ</h4>
+<p>キーボードをUSBで接続し、BLE Micro Pro Web Configuratorのページにアクセスすると、
+セットアップ初期画面が出てきます。</p>
+<p><a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/getting_started?id=%e3%82%ad%e3%83%bc%e3%83%9c%e3%83%bc%e3%83%89%e3%82%92%e9%81%b8%e3%81%b6">公式ページの「キーボードを選ぶ」</a>を参考にファームウェア、アプリのアップデートを行います。
+「設定ファイルの書き込み」のタイミングで<code>upload your own</code>を選択すると、ファイル選択画面が出てくるので、変換スクリプトで生成したJSONファイルを選択します。
+このとき、Mas Storage Classとしてキーボードが認識されている状態だとうまく書き込めなかったので、キーボードのドライブを「取り出し」してからファイルをアップロードしました。</p>
+<h4 id="キーマップの設定">キーマップの設定</h4>
+<p>BLE Micro Proのアプリが設定をきちんと認識すれば、あとはWeb Configuratorでキーマップの設定が可能になります。
+これまた、残念なことに、BLE化する前のキーマップをJSONファイルで保存してなかったので（泣きそうｗ）、QMKの<code>keymap.c</code>のファイルをもとに、ブラウザ上でがんばって設定しましたｗ
+また、新しい設定ではBLE関連のキーをマッピングとして追加しています。</p>
+<h4 id="bluetooth接続">Bluetooth接続</h4>
+<p>あとは、接続確認です。
+MacとWin２台と接続するのですが、Win→Mac→Winの順番でBluetoothの接続をやっていたら、なぜか３つ目のWindowsで接続候補に出てくるけど、接続しようとするとタイムアウトをするという現象に遭遇しました。
+MacのBluetoothの設定を一旦削除してから、Win→Win→Macの順番でペアリングしたところ問題なく接続できました。ただ、これが本当の対処なのかどうかは不明です。３番目だと接続できなかったWindowsマシンは再起動もしてみたのですがダメでした。この辺よくわかってないなぁ。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、Corne Lightに引き続き、Sofle Keyboard v2もBLE＋LPME化に成功しました。
+導線なども使わずにLPME対応ができたので見た目もすっきりしています。
+これで、KVMスイッチだと２台までしか切り替えできなかったのが、３台をひとつのキーボードで操ることができるようになりました。
+だいぶ楽になりそうな予感がしています。</p>
+<p>まだ、完ぺきではないので、次のような対応をやっていく予定です。</p>
+<ul>
+<li>ロータリーエンコーダー対応：BLE以前はQMKのkeymap.cの中でロータリーエンコーダーの動作を記述していたので、BLE Micro Proでどうやるのかを調べたい。encorder.jsonというファイルがあったのでその辺ではないかな？</li>
+<li>OLED対応：Corne Lightの時と同様に、OLEDが点かなくなったのでこの辺りを調べたい。</li>
 </ul>
-<p>という感じです。
-まだちゃんと長時間使っていないので、他の問題点も出てくるかもしれませんが、まぁとりあえず使ってみてからかな。
-うまくいくようなら、メインマシンにBluetoothモジュール追加してみるのもありかと考えているところです。</p>
-<p>調べながら、自分なりに対応してみましたが他にもいい方法とかあれば教えてもらえると助かります。</p>
+<p>ということで、とりあえずキー入力するのには困らない程度にはできたので、より便利にする方法を時間を見つけて模索する感じになりそうです。
+あと、KiCadも面白そうなのでこっちもちょっと触ってみたくなってきたかも？</p>
 
 
                 
@@ -412,15 +434,10 @@ Self Made keyboard in JapanのDiscordに専用チャネルがあるようで、�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/12/31/diy-pc/" data-toggle="tooltip" data-placement="top" title="PCもDIYしました">&larr;
+                        <a href="/blog/2021/01/11/apply-ble-and-lpme-to-corne/" data-toggle="tooltip" data-placement="top" title="Corne Light v2のBLE&#43;LPME-IO対応 #DIYキーボード">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2021/02/01/apply-ble-to-sofle/" data-toggle="tooltip" data-placement="top" title="Sofle v2を組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
