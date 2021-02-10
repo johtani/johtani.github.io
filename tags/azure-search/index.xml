@@ -7,7 +7,397 @@
     <description>Recent content in azure search on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Tue, 18 Aug 2020 18:26:47 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/azure-search/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 05 Feb 2021 17:52:00 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/azure-search/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Azure Cognitive Searchでオートコンプリートやサジェストをしてみる</title>
+      <link>https://blog.johtani.info/blog/2021/02/05/azure-cognitive-search%E3%81%A7%E3%82%AA%E3%83%BC%E3%83%88%E3%82%B3%E3%83%B3%E3%83%97%E3%83%AA%E3%83%BC%E3%83%88%E3%82%84%E3%82%B5%E3%82%B8%E3%82%A7%E3%82%B9%E3%83%88%E3%82%92%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B/</link>
+      <pubDate>Fri, 05 Feb 2021 17:52:00 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2021/02/05/azure-cognitive-search%E3%81%A7%E3%82%AA%E3%83%BC%E3%83%88%E3%82%B3%E3%83%B3%E3%83%97%E3%83%AA%E3%83%BC%E3%83%88%E3%82%84%E3%82%B5%E3%82%B8%E3%82%A7%E3%82%B9%E3%83%88%E3%82%92%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B/</guid>
+      <description>Azure Cognitive SearchにSuggestやAutocompleteの機能があるのを見つけたので、どんな挙動なのかを調べてログとして残しておきます。 公</description>
+      <content:encoded>&lt;p&gt;Azure Cognitive SearchにSuggestやAutocompleteの機能があるのを見つけたので、どんな挙動なのかを調べてログとして残しておきます。&lt;/p&gt;
+&lt;h2 id=&#34;公式ドキュメント&#34;&gt;公式ドキュメント&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-add-suggesters&#34;&gt;日本語で公式ドキュメントが公開されています&lt;/a&gt;。使い方や流れについてはこちらをまずは見れば使えると思います。&lt;/p&gt;
+&lt;p&gt;本ブログでは、ざっくりとした機能の紹介と内部がどんな挙動をしていそうか？、日本語だとどういう感じになるのか？という点を紹介しようと思います。&lt;/p&gt;
+&lt;h2 id=&#34;どんな機能&#34;&gt;どんな機能？&lt;/h2&gt;
+&lt;p&gt;検索窓でよく、キーワードを入力しているときに検索キーワードの候補が表示されることがあります。
+このキーワードの候補を表示するための機能が今回紹介するSuggesterと呼ばれる機能です（日本語の公式ドキュメントでは「先行入力エクスペリエンス」）。
+Suggesterには、以下の2つの機能が用意されています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Autocomplete：キー入力しているときに、入力されている文字列で始まる単語で、検索できるもの（転置インデックスに登録されている単語）をリストで返す機能&lt;/li&gt;
+&lt;li&gt;Suggestion：入力した文字列で始まるキーワードを含む、元のデータを返す機能&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;利用方法&#34;&gt;利用方法&lt;/h2&gt;
+&lt;p&gt;Suggesterの機能を利用するにはインデックスに設定を追加する必要があります（新規、既存どちらでも可）。
+ただ、既存のインデックスに設定を追加した場合、内部にすでに存在するドキュメント（データ）については、このSuggesterのデータは作られません。
+ですので、既存データを再度登録しなおすといった作業が必要となるので注意が必要です。&lt;/p&gt;
+&lt;p&gt;本ブログでは、いくつかAzure Cognitive Searchのサンプルのリクエストが出てきます。Visual Studio CodeのREST Client Extensionの書式となります。&lt;a href=&#34;https://blog.johtani.info/blog/2020/02/19/research-azure-cognitive-search/#%E9%96%91%E8%A9%B1%E4%BC%91%E9%A1%8C---rest-client-exstension-for-visual-studio-code&#34;&gt;拡張機能の簡単な紹介は昨年のブログをご覧ください&lt;/a&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;設定編&#34;&gt;設定編&lt;/h3&gt;
+&lt;p&gt;Suggesterの設定では、主に以下の2つを設定する必要があります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;name: suggesterの名称。クエリ時に指定します。&lt;/li&gt;
+&lt;li&gt;sourceFields: 入力データのもととなるフィールド名。
+&lt;ul&gt;
+&lt;li&gt;String型のみ指定可能。また、Azureで用意されたアナライザーだけが利用可能です。自分で用意するカスタムアナライザーは利用できないので注意が必要です（&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/index-add-suggesters#how-to-create-a-suggester&#34;&gt;制限についてはこちら&lt;/a&gt;）。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;今回使用するサンプルのインデックス設定は次の通りです。&lt;/p&gt;
+&lt;p&gt;インデックス作成のリクエスト（&lt;code&gt;@host&lt;/code&gt;、&lt;code&gt;@api-key&lt;/code&gt;はご自身のものに置き換えてください。）&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;##&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;設定&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;@&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;host&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;名前&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;windows&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;netと記載&lt;/span&gt;
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;@&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;APIキーを入力&lt;/span&gt;
+
+&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Create&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;index&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;with&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;suggester&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggester-test&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fields&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;[
+       {
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Edm.String&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;key&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;searchable&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;
+       },
+       {
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Edm.String&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;searchable&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analyzer&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ngram_analyzer&amp;#34;&lt;/span&gt;
+       },       
+       {
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Edm.String&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;filterable&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;facetable&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+       }
+    ],
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesters&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+       {
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;searchMode&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analyzingInfixMatching&amp;#34;&lt;/span&gt;,
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;sourceFields&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+             &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;
+          ]
+       }
+    ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;公式ドキュメントのサンプルでは日本語がないので、日本語のデータも入力しています。&lt;/p&gt;
+&lt;p&gt;データ登録リクエスト&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Index&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;data&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/index?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Microsoft Office&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;microsoft&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Microsoft Azure&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;microsoft&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;3&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;GitHub Enterprise&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;github&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;4&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;GitHub dot com&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;github&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;5&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Bluetooth Mic&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hardware&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;6&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京スカイツリー&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;7&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京タワー&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;8&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京特許許可局&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese&amp;#34;&lt;/span&gt;
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;9&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;グランメゾン東京&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese&amp;#34;&lt;/span&gt;
+
+    },
+    {          
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.action&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;upload&amp;#34;&lt;/span&gt;,  
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;10&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京都庁&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;以上が事前準備です。データ登録時に内部でSuggester用のデータを内部で生成しているようです（公式ドキュメント）。&lt;/p&gt;
+&lt;h3 id=&#34;クエリ編&#34;&gt;クエリ編&lt;/h3&gt;
+&lt;p&gt;最初に説明しましたが、Suggesterの中ではAutocompleteとSuggestionという2種類の機能が用意されています。それぞれについて例をもとに説明していきます。&lt;/p&gt;
+&lt;h4 id=&#34;autocomplete-api&#34;&gt;Autocomplete API&lt;/h4&gt;
+&lt;p&gt;検索窓に入力された文字を元に、前方一致でどのような単語で検索できるか？という候補を表示するための機能です（2単語も対応していますが今回は省略。&lt;a href=&#34;https://docs.microsoft.com/ja-jp/rest/api/searchservice/autocomplete&#34;&gt;APIの仕様はこちら&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;たとえば、&lt;code&gt;mic&lt;/code&gt;という文字が入力されているところでAutocomplete APIを呼び出す時は、次のようなリクエストです。&lt;code&gt;search&lt;/code&gt;というパラメータに入力値を与えます。&lt;code&gt;suggesterName&lt;/code&gt;はインデックス作成時につけた名前になります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/autocomplete?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mic&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesterName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;レスポンスとして、次のようなJSONが返ってきます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;microsoft&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;queryPlusText&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;microsoft&amp;#34;&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mic&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;queryPlusText&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mic&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;サンプルデータとして登録したデータに&lt;code&gt;category&lt;/code&gt;というフィールドを入れていました。
+Autocompleteは条件を絞り込んで結果を返すこともできます。
+&lt;code&gt;filter&lt;/code&gt;にODataの書式で条件を書けます。
+&lt;code&gt;category&lt;/code&gt;フィールドに&lt;code&gt;microsoft&lt;/code&gt;が設定されているデータだけを取得するということができます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Autocomplete&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;with&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;filter&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/autocomplete?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mic&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesterName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;filter&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category eq &amp;#39;microsoft&amp;#39;&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;レスポンスはこちら。先ほどとは違い、&lt;code&gt;mic&lt;/code&gt;というデータは返ってきていません。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;microsoft&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;queryPlusText&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;microsoft&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;英語の場合、「単語」の単位は字面の通りです。スペースで単語が区切られているのでわかりやすいです。
+日本語の場合は普通の人には少し想像しにくいです。
+&lt;code&gt;東京&lt;/code&gt;という文字を入力してみます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Autocomplete&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Japanese&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/autocomplete?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesterName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;すると返ってくるのは以下の通り「東京」だけになります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;queryPlusText&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;入っているデータは「東京スカイツリー」、「東京タワー」などです。
+普通に考えると、これらがそのまま返ってくると思うかもしれませんが、違います。&lt;/p&gt;
+&lt;p&gt;これは、Suggesterの元となるフィールドのAnalyzerの挙動によります。
+今回のインデックスの&lt;code&gt;name&lt;/code&gt;フィールドの&lt;code&gt;analyzer&lt;/code&gt;には&lt;code&gt;ja.lucene&lt;/code&gt;です。これは、日本語用のアナライザー（Kuromoji）になります。いわゆる形態素解析器で日本語の文字列を「単語」に分割します。
+英語についてはスペース区切りで分割しますが、日本語についてはKuromojiが内部の辞書とアルゴリズムに基づいて単語に分割してくれます。
+Azure Cognitive Searchでは、Analyzerの挙動を確認するためのAPIも用意してあるので実行しみると、&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Autocomplete&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Japanese&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/analyze?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京スカイツリー&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analyzer&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ja.lucene&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;このような結果が返ってきます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;tokens&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;スカイ&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;token&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ツリー&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;startOffset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;endOffset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;position&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;ja.lucene&lt;/code&gt;のAnalyzerによって、3つの単語に分割されているのがわかります。
+Autocomplete APIの実行結果も、このAnalyzerによって分割された単語をもとに、候補となる単語を前方一致で検索して結果を返しているのです。
+ですので、「東」と入れても「東京」が返ってくるのがわかります。
+一方で、「東京ス」と入力した場合は次のような結果となります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;スカイ&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;queryPlusText&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京スカイ&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;これは、&lt;code&gt;autocompleteMode&lt;/code&gt;と呼ばれるパラメータの挙動となります。
+デフォルトでは、&lt;code&gt;oneTerm&lt;/code&gt;という設定で、最後の単語（例の「東京ス」の場合は「東京」「ス」と区切られるので「ス」という文字を単語とみなす）にマッチする単語（例では「スカイ」）が返ってきます。
+queryPlusTextについては、入力された文字に&lt;code&gt;text&lt;/code&gt;で返ってきた単語をくっつけたものが取得できます。&lt;/p&gt;
+&lt;p&gt;英語であれば、スペースで区切られており、単語が切れているのが簡単にイメージできますが、日本語の場合は少し違和感が出るかと。&lt;/p&gt;
+&lt;p&gt;このように、入力された文字が含まれる「単語」を基本的に返す動作をするのがAutocomplete APIです。&lt;/p&gt;
+&lt;h4 id=&#34;suggest-api&#34;&gt;Suggest API&lt;/h4&gt;
+&lt;p&gt;では、もうひとつのSuggest APIはどういったものでしょうか？
+autocomplete APIに似ていますが、返ってくるデータが登録されたデータそのものになります。&lt;/p&gt;
+&lt;p&gt;たとえば、&lt;code&gt;mic&lt;/code&gt;という文字列を入力とした場合、&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mic&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesterName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;次のような結果が返ってきます。Autocompleteの時は単語でしたが、こちらは入力データがそのまま返ってきています。
+入力データの中に&lt;code&gt;mic&lt;/code&gt;で始まる単語が含まれたものが候補となっています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Bluetooth Mic&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;5&amp;#34;&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Microsoft Office&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&amp;#34;&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Microsoft Azure&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;日本語の場合、Autocompleteとは異なり、その単語を含むものがサジェストされるので、「東京」をsearchに指定すると「東京」を含むデータが出てきます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Suggest&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Japanese&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesterName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;レスポンスはこちら。単語を含む元の文字列が返ってきます。ここまでは違和感はありません。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京タワー&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;7&amp;#34;&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;グランメゾン東京&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;9&amp;#34;&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京都庁&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;10&amp;#34;&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京スカイツリー&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;6&amp;#34;&lt;/span&gt;
+    },
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京特許許可局&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;8&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;では、「東京」「特許」という2つの単語をスペースで区切ったものが入力されたとするとどうでしょう？&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Suggest&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Japanese&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京 特許&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesterName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;スペースがありますが、内部処理では形態素解析器が分割した後でこの単語の順番で出てくるものを探しているので、出てくることになります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@odata.context&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;...&amp;#34;&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+    {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@search.text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;東京特許許可局&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;8&amp;#34;&lt;/span&gt;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;なお、このSuggestのAPIは、単語の語順を気を付ける必要があります。
+「特許」「東京」と順序を入れ替えたスペース区切りの場合は、&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;###&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Suggest&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Japanese&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;POST&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Content&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;application&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;json&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {{&lt;span style=&#34;color:#a6e22e&#34;&gt;api&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;key&lt;/span&gt;}}
+
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;特許 東京&amp;#34;&lt;/span&gt;,
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggesterName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name_suggester&amp;#34;&lt;/span&gt;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;結果は返ってこないです。おそらく内部では、フレーズクエリで、最後の単語だけを前方一致で検索するような仕組みが動いているのだと思われます。
+スペースで区切られてはいるが、順序があるので少し違和感を感じるかもしれません。英語だとフレーズの部分のイメージは沸きやすいのですが。&lt;/p&gt;
+&lt;p&gt;短い文章のデータ（例：本のタイトルやランドマーク名など）では、このSuggestAPIを利用するとデータそのものが返却されるので、便利かもしれません。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、Azure Cognitive SearchのSuggesterの簡単な紹介でした。APIのページにはそのほかのパラメータについても説明があるので、使ってみようと思う方は目を通していただくのがよいかと。&lt;/p&gt;
+&lt;p&gt;今回のブログは裏の仕組みがどんな感じなのか？を想像しながらAPIについて調べた形になります。日本語の場合に、少し違和感を覚える人もいそうだろうなということでブログを書いてみました。
+今回は書いていませんが日本語でAutocompleteをやりたい場合は、読み仮名でも漢字が表示されるほうがよいという場合もあると思います。
+その場合は、用意されている機能では難しいので、独自実装するといった方法になりそうです。
+英語や、読みを利用しない場合は、挙動を理解していれば役に立つ場面もありそうです。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>TerraformでAzure Cognitive Searchのクラスターを起動</title>
       <link>https://blog.johtani.info/blog/2020/08/18/azure-search-with-terraform/</link>

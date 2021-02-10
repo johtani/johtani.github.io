@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Azure Cognitive Searchでオートコンプリートやサジェストをしてみる" />
+    <meta property="og:title" content="Azure Cognitive Searchでオートコンプリートやサジェストをしてみる" />
+    <meta property="twitter:title" content="Azure Cognitive Searchでオートコンプリートやサジェストをしてみる" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Azure Cognitive Searchでオートコンプリートやサジェストをしてみる-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2021/02/05/azure-cognitive-search%E3%81%A7%E3%82%AA%E3%83%BC%E3%83%88%E3%82%B3%E3%83%B3%E3%83%97%E3%83%AA%E3%83%BC%E3%83%88%E3%82%84%E3%82%B5%E3%82%B8%E3%82%A7%E3%82%B9%E3%83%88%E3%82%92%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+	
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+    
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+    
+    
+    <script src="/js/bootstrap.min.js"></script>
+    
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/azure-search" title="azure search">
+                            azure search
+                        </a>
+                        
+                    </div>
+                    <h1>Azure Cognitive Searchでオートコンプリートやサジェストをしてみる</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Friday, February 5, 2021
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#公式ドキュメント">公式ドキュメント</a></li>
+    <li><a href="#どんな機能">どんな機能？</a></li>
+    <li><a href="#利用方法">利用方法</a>
+      <ul>
+        <li><a href="#設定編">設定編</a></li>
+        <li><a href="#クエリ編">クエリ編</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>Azure Cognitive SearchにSuggestやAutocompleteの機能があるのを見つけたので、どんな挙動なのかを調べてログとして残しておきます。</p>
+<h2 id="公式ドキュメント">公式ドキュメント</h2>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-suggesters">日本語で公式ドキュメントが公開されています</a>。使い方や流れについてはこちらをまずは見れば使えると思います。</p>
+<p>本ブログでは、ざっくりとした機能の紹介と内部がどんな挙動をしていそうか？、日本語だとどういう感じになるのか？という点を紹介しようと思います。</p>
+<h2 id="どんな機能">どんな機能？</h2>
+<p>検索窓でよく、キーワードを入力しているときに検索キーワードの候補が表示されることがあります。
+このキーワードの候補を表示するための機能が今回紹介するSuggesterと呼ばれる機能です（日本語の公式ドキュメントでは「先行入力エクスペリエンス」）。
+Suggesterには、以下の2つの機能が用意されています。</p>
+<ul>
+<li>Autocomplete：キー入力しているときに、入力されている文字列で始まる単語で、検索できるもの（転置インデックスに登録されている単語）をリストで返す機能</li>
+<li>Suggestion：入力した文字列で始まるキーワードを含む、元のデータを返す機能</li>
+</ul>
+<h2 id="利用方法">利用方法</h2>
+<p>Suggesterの機能を利用するにはインデックスに設定を追加する必要があります（新規、既存どちらでも可）。
+ただ、既存のインデックスに設定を追加した場合、内部にすでに存在するドキュメント（データ）については、このSuggesterのデータは作られません。
+ですので、既存データを再度登録しなおすといった作業が必要となるので注意が必要です。</p>
+<p>本ブログでは、いくつかAzure Cognitive Searchのサンプルのリクエストが出てきます。Visual Studio CodeのREST Client Extensionの書式となります。<a href="https://blog.johtani.info/blog/2020/02/19/research-azure-cognitive-search/#%E9%96%91%E8%A9%B1%E4%BC%91%E9%A1%8C---rest-client-exstension-for-visual-studio-code">拡張機能の簡単な紹介は昨年のブログをご覧ください</a>。</p>
+<h3 id="設定編">設定編</h3>
+<p>Suggesterの設定では、主に以下の2つを設定する必要があります。</p>
+<ul>
+<li>name: suggesterの名称。クエリ時に指定します。</li>
+<li>sourceFields: 入力データのもととなるフィールド名。
+<ul>
+<li>String型のみ指定可能。また、Azureで用意されたアナライザーだけが利用可能です。自分で用意するカスタムアナライザーは利用できないので注意が必要です（<a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-suggesters#how-to-create-a-suggester">制限についてはこちら</a>）。</li>
+</ul>
+</li>
+</ul>
+<p>今回使用するサンプルのインデックス設定は次の通りです。</p>
+<p>インデックス作成のリクエスト（<code>@host</code>、<code>@api-key</code>はご自身のものに置き換えてください。）</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">##</span> <span style="color:#a6e22e">設定</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#a6e22e">host</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">名前</span>.<span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">windows</span>.<span style="color:#a6e22e">netと記載</span>
+<span style="color:#960050;background-color:#1e0010">@</span><span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">APIキーを入力</span>
+
+<span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Create</span> <span style="color:#a6e22e">index</span> <span style="color:#66d9ef">with</span> <span style="color:#a6e22e">suggester</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;suggester-test&#34;</span>,
+    <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span>[
+       {
+          <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;id&#34;</span>,
+          <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;Edm.String&#34;</span>,
+          <span style="color:#e6db74">&#34;key&#34;</span><span style="color:#f92672">:</span><span style="color:#66d9ef">true</span>,
+          <span style="color:#e6db74">&#34;searchable&#34;</span><span style="color:#f92672">:</span><span style="color:#66d9ef">false</span>
+       },
+       {
+          <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;name&#34;</span>,
+          <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;Edm.String&#34;</span>,
+          <span style="color:#e6db74">&#34;searchable&#34;</span><span style="color:#f92672">:</span><span style="color:#66d9ef">true</span>,
+          <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;ngram_analyzer&#34;</span>
+       },       
+       {
+          <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;category&#34;</span>,
+          <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;Edm.String&#34;</span>,
+          <span style="color:#e6db74">&#34;filterable&#34;</span><span style="color:#f92672">:</span><span style="color:#66d9ef">true</span>,
+          <span style="color:#e6db74">&#34;facetable&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>
+       }
+    ],
+    <span style="color:#e6db74">&#34;suggesters&#34;</span><span style="color:#f92672">:</span> [
+       {
+          <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>,
+          <span style="color:#e6db74">&#34;searchMode&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;analyzingInfixMatching&#34;</span>,
+          <span style="color:#e6db74">&#34;sourceFields&#34;</span><span style="color:#f92672">:</span> [
+             <span style="color:#e6db74">&#34;name&#34;</span>
+          ]
+       }
+    ]
+}
+</code></pre></div><p>公式ドキュメントのサンプルでは日本語がないので、日本語のデータも入力しています。</p>
+<p>データ登録リクエスト</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Index</span> <span style="color:#a6e22e">data</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/index?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;1&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Microsoft Office&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;microsoft&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;2&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Microsoft Azure&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;microsoft&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;3&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;GitHub Enterprise&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;github&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;4&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;GitHub dot com&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;github&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;5&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Bluetooth Mic&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;hardware&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;6&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京スカイツリー&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;japanese&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;7&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京タワー&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;japanese&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;8&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京特許許可局&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;japanese&#34;</span>
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;9&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;グランメゾン東京&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;japanese&#34;</span>
+
+    },
+    {          
+      <span style="color:#e6db74">&#34;@search.action&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;upload&#34;</span>,  
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;10&#34;</span>,
+      <span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京都庁&#34;</span>,
+      <span style="color:#e6db74">&#34;category&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;japanese&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>以上が事前準備です。データ登録時に内部でSuggester用のデータを内部で生成しているようです（公式ドキュメント）。</p>
+<h3 id="クエリ編">クエリ編</h3>
+<p>最初に説明しましたが、Suggesterの中ではAutocompleteとSuggestionという2種類の機能が用意されています。それぞれについて例をもとに説明していきます。</p>
+<h4 id="autocomplete-api">Autocomplete API</h4>
+<p>検索窓に入力された文字を元に、前方一致でどのような単語で検索できるか？という候補を表示するための機能です（2単語も対応していますが今回は省略。<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/autocomplete">APIの仕様はこちら</a>）。</p>
+<p>たとえば、<code>mic</code>という文字が入力されているところでAutocomplete APIを呼び出す時は、次のようなリクエストです。<code>search</code>というパラメータに入力値を与えます。<code>suggesterName</code>はインデックス作成時につけた名前になります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/autocomplete?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;mic&#34;</span>,
+   <span style="color:#e6db74">&#34;suggesterName&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>
+}
+</code></pre></div><p>レスポンスとして、次のようなJSONが返ってきます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;microsoft&#34;</span>,
+      <span style="color:#e6db74">&#34;queryPlusText&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;microsoft&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;mic&#34;</span>,
+      <span style="color:#e6db74">&#34;queryPlusText&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;mic&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>サンプルデータとして登録したデータに<code>category</code>というフィールドを入れていました。
+Autocompleteは条件を絞り込んで結果を返すこともできます。
+<code>filter</code>にODataの書式で条件を書けます。
+<code>category</code>フィールドに<code>microsoft</code>が設定されているデータだけを取得するということができます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Autocomplete</span> <span style="color:#66d9ef">with</span> <span style="color:#a6e22e">filter</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/autocomplete?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;mic&#34;</span>,
+   <span style="color:#e6db74">&#34;suggesterName&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>,
+   <span style="color:#e6db74">&#34;filter&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;category eq &#39;microsoft&#39;&#34;</span>
+}
+</code></pre></div><p>レスポンスはこちら。先ほどとは違い、<code>mic</code>というデータは返ってきていません。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;microsoft&#34;</span>,
+      <span style="color:#e6db74">&#34;queryPlusText&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;microsoft&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>英語の場合、「単語」の単位は字面の通りです。スペースで単語が区切られているのでわかりやすいです。
+日本語の場合は普通の人には少し想像しにくいです。
+<code>東京</code>という文字を入力してみます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Autocomplete</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">Japanese</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/autocomplete?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京&#34;</span>,
+   <span style="color:#e6db74">&#34;suggesterName&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>
+}
+</code></pre></div><p>すると返ってくるのは以下の通り「東京」だけになります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京&#34;</span>,
+      <span style="color:#e6db74">&#34;queryPlusText&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>入っているデータは「東京スカイツリー」、「東京タワー」などです。
+普通に考えると、これらがそのまま返ってくると思うかもしれませんが、違います。</p>
+<p>これは、Suggesterの元となるフィールドのAnalyzerの挙動によります。
+今回のインデックスの<code>name</code>フィールドの<code>analyzer</code>には<code>ja.lucene</code>です。これは、日本語用のアナライザー（Kuromoji）になります。いわゆる形態素解析器で日本語の文字列を「単語」に分割します。
+英語についてはスペース区切りで分割しますが、日本語についてはKuromojiが内部の辞書とアルゴリズムに基づいて単語に分割してくれます。
+Azure Cognitive Searchでは、Analyzerの挙動を確認するためのAPIも用意してあるので実行しみると、</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Autocomplete</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">Japanese</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/analyze?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京スカイツリー&#34;</span>,
+   <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ja.lucene&#34;</span>
+}
+</code></pre></div><p>このような結果が返ってきます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;tokens&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;スカイ&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">5</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ツリー&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">5</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">8</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>
+    }
+  ]
+}
+</code></pre></div><p><code>ja.lucene</code>のAnalyzerによって、3つの単語に分割されているのがわかります。
+Autocomplete APIの実行結果も、このAnalyzerによって分割された単語をもとに、候補となる単語を前方一致で検索して結果を返しているのです。
+ですので、「東」と入れても「東京」が返ってくるのがわかります。
+一方で、「東京ス」と入力した場合は次のような結果となります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;スカイ&#34;</span>,
+      <span style="color:#e6db74">&#34;queryPlusText&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京スカイ&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>これは、<code>autocompleteMode</code>と呼ばれるパラメータの挙動となります。
+デフォルトでは、<code>oneTerm</code>という設定で、最後の単語（例の「東京ス」の場合は「東京」「ス」と区切られるので「ス」という文字を単語とみなす）にマッチする単語（例では「スカイ」）が返ってきます。
+queryPlusTextについては、入力された文字に<code>text</code>で返ってきた単語をくっつけたものが取得できます。</p>
+<p>英語であれば、スペースで区切られており、単語が切れているのが簡単にイメージできますが、日本語の場合は少し違和感が出るかと。</p>
+<p>このように、入力された文字が含まれる「単語」を基本的に返す動作をするのがAutocomplete APIです。</p>
+<h4 id="suggest-api">Suggest API</h4>
+<p>では、もうひとつのSuggest APIはどういったものでしょうか？
+autocomplete APIに似ていますが、返ってくるデータが登録されたデータそのものになります。</p>
+<p>たとえば、<code>mic</code>という文字列を入力とした場合、</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;mic&#34;</span>,
+   <span style="color:#e6db74">&#34;suggesterName&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>
+}
+</code></pre></div><p>次のような結果が返ってきます。Autocompleteの時は単語でしたが、こちらは入力データがそのまま返ってきています。
+入力データの中に<code>mic</code>で始まる単語が含まれたものが候補となっています。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Bluetooth Mic&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;5&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Microsoft Office&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;1&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Microsoft Azure&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;2&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>日本語の場合、Autocompleteとは異なり、その単語を含むものがサジェストされるので、「東京」をsearchに指定すると「東京」を含むデータが出てきます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Suggest</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">Japanese</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京&#34;</span>,
+   <span style="color:#e6db74">&#34;suggesterName&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>
+}
+</code></pre></div><p>レスポンスはこちら。単語を含む元の文字列が返ってきます。ここまでは違和感はありません。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京タワー&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;7&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;グランメゾン東京&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;9&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京都庁&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;10&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京スカイツリー&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;6&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京特許許可局&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;8&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>では、「東京」「特許」という2つの単語をスペースで区切ったものが入力されたとするとどうでしょう？</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Suggest</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">Japanese</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京 特許&#34;</span>,
+   <span style="color:#e6db74">&#34;suggesterName&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>
+}
+</code></pre></div><p>スペースがありますが、内部処理では形態素解析器が分割した後でこの単語の順番で出てくるものを探しているので、出てくることになります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">{
+  <span style="color:#e6db74">&#34;@odata.context&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;...&#34;</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;東京特許許可局&#34;</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;8&#34;</span>
+    }
+  ]
+}
+</code></pre></div><p>なお、このSuggestのAPIは、単語の語順を気を付ける必要があります。
+「特許」「東京」と順序を入れ替えたスペース区切りの場合は、</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">Suggest</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">Japanese</span>
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/suggester-test/docs/suggest?api-version=2020-06-30
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;特許 東京&#34;</span>,
+   <span style="color:#e6db74">&#34;suggesterName&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;name_suggester&#34;</span>
+}
+</code></pre></div><p>結果は返ってこないです。おそらく内部では、フレーズクエリで、最後の単語だけを前方一致で検索するような仕組みが動いているのだと思われます。
+スペースで区切られてはいるが、順序があるので少し違和感を感じるかもしれません。英語だとフレーズの部分のイメージは沸きやすいのですが。</p>
+<p>短い文章のデータ（例：本のタイトルやランドマーク名など）では、このSuggestAPIを利用するとデータそのものが返却されるので、便利かもしれません。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、Azure Cognitive SearchのSuggesterの簡単な紹介でした。APIのページにはそのほかのパラメータについても説明があるので、使ってみようと思う方は目を通していただくのがよいかと。</p>
+<p>今回のブログは裏の仕組みがどんな感じなのか？を想像しながらAPIについて調べた形になります。日本語の場合に、少し違和感を覚える人もいそうだろうなということでブログを書いてみました。
+今回は書いていませんが日本語でAutocompleteをやりたい場合は、読み仮名でも漢字が表示されるほうがよいという場合もあると思います。
+その場合は、用意されている機能では難しいので、独自実装するといった方法になりそうです。
+英語や、読みを利用しない場合は、挙動を理解していれば役に立つ場面もありそうです。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2021/02/04/reading-elements-of-computing-systems/" data-toggle="tooltip" data-placement="top" title="「コンピュータシステムの理論と実装」を読み始めた #Nand2Tetris">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fa fa-circle fa-stack-2x"></i>
+                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+                    
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2021
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-41371795-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+
+
+</body>
+</html>
