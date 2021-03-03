@@ -7,7 +7,192 @@
     <description>Recent content in azure search on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Fri, 05 Feb 2021 17:52:00 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/azure-search/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 03 Mar 2021 16:23:33 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/azure-search/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>OData式と日本語の検索(NGram)とフレーズ検索</title>
+      <link>https://blog.johtani.info/blog/2021/03/03/phrase-query-in-japanese/</link>
+      <pubDate>Wed, 03 Mar 2021 16:23:33 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2021/03/03/phrase-query-in-japanese/</guid>
+      <description>Azure Cognitive SearchにはOData式という書式で条件が書ける仕組みがあります。 ODataは検索条件（$filter）やソート条件（$orderb</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/query-odata-filter-orderby-syntax&#34;&gt;Azure Cognitive SearchにはOData式&lt;/a&gt;という書式で条件が書ける仕組みがあります。
+ODataは検索条件（&lt;code&gt;$filter&lt;/code&gt;）やソート条件（&lt;code&gt;$orderby&lt;/code&gt;）、取得する項目名の指定（&lt;code&gt;$select&lt;/code&gt;）です。&lt;/p&gt;
+&lt;p&gt;私は、Luceneの構文に慣れているので、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-query-overview&#34;&gt;普通の&lt;code&gt;search&lt;/code&gt;パラメータ&lt;/a&gt;を利用しようとします。
+が、OData式として特殊な書き方がいくつかあるようなのでこちらの利用方法も調べてみました。
+その時、N-Gram（よくやるのはN=2）で陥る問題の話もあるのでこちらについても言及します。&lt;/p&gt;
+&lt;h2 id=&#34;odata式で検索&#34;&gt;OData式で検索&lt;/h2&gt;
+&lt;p&gt;次のような3件のドキュメント(フィールド名は&lt;code&gt;body&lt;/code&gt;とします)をN-Gramで登録していたとします。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;ミルクティを飲みたいです。&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;マティーニはカクテルですが、ミルクセーキは？&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;風呂上がりのミルクは最高です。&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;この時、OData式で&lt;code&gt;ミルクティ&lt;/code&gt;という単語で検索してみましょう。&lt;/p&gt;
+&lt;p&gt;検索条件は&lt;code&gt;$filter&lt;/code&gt;で指定します。
+フルテキスト検索用に関数が用意されており、こちらに単語を指定します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;$filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;ミルクティ&amp;#39;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;こんな感じ。フィールドの指定がない場合、対象のフィールドは検索可能なフィールドすべてが検索対象になります（&lt;a href=&#34;https://docs.microsoft.com/ja-jp/rest/api/searchservice/search-documents#query-parameters&#34;&gt;公式ガイドのクエリパラメータ&lt;/a&gt;の&lt;code&gt;queryType&lt;/code&gt;に説明あり）。&lt;/p&gt;
+&lt;p&gt;では、実行してみましょう。で返ってくるのは？1だけかな？と思う人が多いかもしれません。
+が、結果は3件とも帰ってきます。&lt;/p&gt;
+&lt;h2 id=&#34;問題点は&#34;&gt;問題点は？&lt;/h2&gt;
+&lt;p&gt;では問題点はどこでしょう？
+&lt;code&gt;ismatchscoring&lt;/code&gt;のオプションなどを見る前に、転置インデックスを用いた検索エンジンの挙動をおさらいしましょう。
+転置インデックスの仕組みを理解することで、なぜそんな挙動になるのか？というのがわかりやすくなります。
+おさらいにはElasticsearchをベースに話をしますが、Azure Cognitive Searchでも同じような挙動になります。&lt;/p&gt;
+&lt;h3 id=&#34;転置インデックスとトークナイザーアナライザーの関係おさらい&#34;&gt;転置インデックスとトークナイザー（アナライザー）の関係（おさらい）&lt;/h3&gt;
+&lt;p&gt;昨年、オンラインで開催されたOSC広島で発表した資料（録画あり）でもざっくりと説明しています。&lt;/p&gt;
+&lt;p data-notist=&#34;johtani/KO04wZ&#34;&gt;View &lt;a href=&#34;https://noti.st/johtani/KO04wZ&#34;&gt;本当にその検索は自分が想像している検索になってますか？&lt;/a&gt; on Notist.&lt;/p&gt;&lt;script async src=&#34;https://on.notist.cloud/embed/002.js&#34;&gt;&lt;/script&gt;
+&lt;p&gt;ざっくりですが、おさらいです。&lt;/p&gt;
+&lt;p&gt;検索エンジンでは、入力された文章を、ある規則（アナライザー）で単語に分割し、その単語ごとにどのドキュメントに出現したのか？というリストが作られます。
+このリストが転置インデックスです。書籍の後ろにある索引を想像するとどんなものかがわかりやすいです。
+単語に対してその単語が出てくるページ番号がわかるという仕組みです（下図は本の索引の一例）。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://on.notist.cloud/slides/deck5730/large-21.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://on.notist.cloud/slides/deck5730/large-21.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;書籍の索引は著者や編集の方により厳選された単語のみが採用されています。
+が、検索エンジンでは文章を単語に区切る機能が存在します。
+この「ある規則」で単語を区切る仕組みが「アナライザー（トークナイザー）」と呼ばれる機能です。
+例えば英語用のアナライザーに英語の文章が入力されたとき、文章はこのように単語に区切られたもの（単語列）を出力します（下図）。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://on.notist.cloud/slides/deck5730/large-24.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://on.notist.cloud/slides/deck5730/large-24.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;今回はNGramの話なので、NGramのAnalyzerを利用してみるとこんな感じになります。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://on.notist.cloud/slides/deck5730/large-43.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://on.notist.cloud/slides/deck5730/large-43.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;実際に出来上がる転置インデックスは次のような形になります。
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://on.notist.cloud/slides/deck5730/large-44.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://on.notist.cloud/slides/deck5730/large-44.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+&lt;/p&gt;
+&lt;h3 id=&#34;検索の仕組みおさらい&#34;&gt;検索の仕組み（おさらい）&lt;/h3&gt;
+&lt;p&gt;出来上がっている転置インデックスに対して検索をする場合、入力文字列（検索条件）に対して、転置インデックス作成時と同様にAnalyzerが動作します。
+処理としては、&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;クエリのパース&lt;/li&gt;
+&lt;li&gt;フィールドのAnalyzerで処理&lt;/li&gt;
+&lt;li&gt;転置インデックスを検索&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;という形です。
+例えばこんな感じ。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://on.notist.cloud/slides/deck5730/large-45.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://on.notist.cloud/slides/deck5730/large-45.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;同じAnalyzerの処理が入ることで、転置インデックスに採用されているのと同じ単語が出てくるため、検索がきちんとできるということになります。&lt;/p&gt;
+&lt;h3 id=&#34;英語と日本語ngramの違い&#34;&gt;英語と日本語（NGram）の違い&lt;/h3&gt;
+&lt;p&gt;英語と日本語の違いは、スペースの意味になります。
+英語の場合は、スペースが単語の区切りになりますが、日本語の場合スペースでは区切られていません。&lt;/p&gt;
+&lt;p&gt;ですので、検索窓に入力された文字列は、英語の場合、クエリのパースの時点で単語に区切られます。そのあとにAnalyzerになるので、基本的には単語単位でAnalyzerの処理が動きます。そのあと、転置インデックスへの検索となります。なので、多くの場合はAnalyzerの出力は1単語です（類義語などを利用していたりする場合は異なりますが）。&lt;/p&gt;
+&lt;p&gt;日本語の場合、スペースでは区切られていないので、クエリのパースの時点で入力された文字列がそのままAnalyzerにわたります。
+今回はAnalyzer（NGram）が単語に分割し、それをもとに検索処理が実行されます。&lt;/p&gt;
+&lt;h3 id=&#34;ismatchscoringの問題点はやっと帰ってきました&#34;&gt;ismatchscoringの問題点は？（やっと帰ってきました）&lt;/h3&gt;
+&lt;p&gt;さて、回り道をし、簡単ですが転置インデックスやAnalyzerについて説明しました。
+では本題です。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;$filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;ミルクティ&amp;#39;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;この&lt;code&gt;ismatchscoring&lt;/code&gt;関数ですが、そのほかにも引数の指定が可能で、省略した場合にデフォルトで採用される値がいくつかあります。
+&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions&#34;&gt;公式のドキュメントにパラメータの意味&lt;/a&gt;が掲載されています。&lt;/p&gt;
+&lt;p&gt;今回は、第4引数の&lt;code&gt;searchMode&lt;/code&gt;の値が問題点です。デフォルトでは、&lt;code&gt;any&lt;/code&gt;が指定されます。
+この、&lt;code&gt;any&lt;/code&gt;は検索語（今回は&lt;code&gt;ミルクティ&lt;/code&gt;）の&lt;strong&gt;任意の検索語句&lt;/strong&gt;が一致する必要があることになります。
+「検索語句」？なんでしょう？これが、ここまで回り道をして説明してきた、Analyzerの出力した単語になります。
+「ミルクティ」はNGram（N=2）のAnalyzerを通すと、&lt;/p&gt;
+&lt;p&gt;「ミル」「ルク」「クテ」「ティ」&lt;/p&gt;
+&lt;p&gt;という4つの単語が出力されます。
+これが、「検索語句」です。「任意の」とあるので、上記4つの2文字のどれか？が出現すれば検索条件にヒットしたこととなります。&lt;/p&gt;
+&lt;p&gt;ですので、以下のように（一部のみ色を変えてます）3つの文章にはそれぞれの文字が含まれているため、先ほどの条件では3件の結果が返ってくることになります。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;ミル&lt;/code&gt;クティを飲みたいです。&lt;/li&gt;
+&lt;li&gt;マ&lt;code&gt;ティ&lt;/code&gt;ーニはカクテルですが、ミルクセーキは？&lt;/li&gt;
+&lt;li&gt;風呂上がりの&lt;code&gt;ミル&lt;/code&gt;クは最高です。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;NGramで一部分の単語だけで一致したものがヒットしてしまうと違和感があるので、&lt;code&gt;all&lt;/code&gt;に変更します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;$filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;ミルクティ&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;body&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simple&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;all&amp;#39;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;今度はどうなるでしょう？&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;ミルクティ&lt;/code&gt;を飲みたいです。&lt;/li&gt;
+&lt;li&gt;マ&lt;code&gt;ティ&lt;/code&gt;ーニはカ&lt;code&gt;クテ&lt;/code&gt;ルですが、&lt;code&gt;ミルク&lt;/code&gt;セーキは？&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;先ほどよりもマシになりました。
+3がヒットしなくなっています。3の文章には「ティ」などが出てこないためです。
+ただ、感覚的に2番目がヒットするのは少し違和感がありますよね？
+確かに4つの単語がすべて出てきていますが、「ミルクティ」とは少し遠いです。&lt;/p&gt;
+&lt;p&gt;さらに「ミルクティ」にヒットさせるにはフレーズ検索にする必要があります。
+&lt;a href=&#34;https://www.elastic.co/jp/blog/how-to-implement-japanese-full-text-search-in-elasticsearch&#34;&gt;Elastic社のブログの日本語の検索に関する記事&lt;/a&gt;でも出てきますが、フレーズで検索することで「ミルクティ」だけにヒットさせることができます。&lt;/p&gt;
+&lt;p&gt;「フレーズ検索＝語順を保証する検索」となります。
+ですので、&lt;/p&gt;
+&lt;p&gt;「ミル」「ルク」「クテ」「ティ」&lt;/p&gt;
+&lt;p&gt;この順序で出てきた場合のみ、検索にヒットしたことになります。
+OData式でフレーズ検索する場合は、単語をダブルクォート&lt;code&gt;&amp;quot;&lt;/code&gt;でくくる必要があります（&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions#examples&#34;&gt;公式ドキュメントの例に記載あり&lt;/a&gt;）。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;$filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;ミルクティ&amp;#34;&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;body&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simple&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;all&amp;#39;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;これで結果は以下の1件だけとなります。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;ミルクティ&lt;/code&gt;を飲みたいです。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;これでNGramで部分一致のような挙動で日本語の検索ができるようになりました。&lt;/p&gt;
+&lt;p&gt;ちなみに、フレーズにした場合は第4引数は&lt;code&gt;any&lt;/code&gt;に変更しても1件だけの検索結果となります。
+フレーズ検索には「すべての語が含まれる」、「すべての語が順番に現れる」という2つの条件が含まれるためです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;$filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;ミルクティ&amp;#34;&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;body&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simple&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;any&amp;#39;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;この例の引数を&lt;code&gt;ミルクティ&lt;/code&gt;を&lt;code&gt;&amp;quot;ミルク&amp;quot; &amp;quot;最高&amp;quot;&lt;/code&gt;のような検索条件に変えた場合、「&amp;ldquo;ミルク&amp;rdquo;」「&amp;ldquo;最高&amp;rdquo;」の2つの条件を&lt;code&gt;any&lt;/code&gt;で扱うため、
+「&amp;ldquo;ミルク&amp;rdquo;」「&amp;ldquo;最高&amp;rdquo;」のどちらかが出てくれば良い結果となり、3件の結果が返ってきます。
+第4引数を&lt;code&gt;all&lt;/code&gt;に変更すると、「&amp;ldquo;ミルク&amp;rdquo;」「&amp;ldquo;最高&amp;rdquo;」の両方が出てこなければならないため、3件目のデータのみが返ってきます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;$filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;ミルクティ&amp;#34; &amp;#34;最高&amp;#34;&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;body&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simple&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;all&amp;#39;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;これは、&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;$filter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;ミルクティ&amp;#34;&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;body&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simple&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;any&amp;#39;&lt;/span&gt;) &lt;span style=&#34;color:#a6e22e&#34;&gt;and&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ismatchscoring&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;最高&amp;#34;&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;body&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;simple&amp;#39;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;any&amp;#39;&lt;/span&gt;)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;と同じ意味となります。
+少し長くはなりますが、後者の書き方をプログラムで書くと思います、私の場合は。
+検索窓に入力された単語に必ず&lt;code&gt;&amp;quot;&lt;/code&gt;を追加する処理を書くために、画面入力の文字列を一旦パースをすることになるからです。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;簡単？にですが、OData式でのフルテキスト検索と、NGramでのフレーズ検索について説明しました。
+英語の場合、もともとスペースで区切られているので、フレーズといわれてピンときますが、日本語の場合はAnalyzerの挙動をわかっていないと「？」となるかと思います。
+なぜフレーズ検索が必要なのか？というのが少しでもわかっていただければと。
+ちなみに、NGramのTokenizerには別の落とし穴もありますが、その話はまた後日にでも。&lt;/p&gt;
+&lt;p&gt;参考として日本語関連の検索に関する記事のリンクを残しておきます。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://medium.com/hello-elasticsearch/elasticsearch-22a369387dc5&#34;&gt;Elasticsearch日本語でフレーズ検索が必要なわけ&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;NGramも含め、Elasticsearchでの日本語の検索の設定やクエリについては、&lt;a href=&#34;https://www.elastic.co/jp/blog/how-to-implement-japanese-full-text-search-in-elasticsearch&#34;&gt;Elastic社のブログで日本語で書かれた記事&lt;/a&gt;が詳しいのでこちらをご覧いただくのがいいです。&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>Azure Cognitive Searchでオートコンプリートやサジェストをしてみる</title>
       <link>https://blog.johtani.info/blog/2021/02/05/autocomplete-and-suggest-on-azure-search/</link>

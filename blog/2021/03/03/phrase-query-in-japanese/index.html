@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="自宅の作業環境(2021/02)" />
-    <meta property="og:title" content="自宅の作業環境(2021/02)" />
-    <meta property="twitter:title" content="自宅の作業環境(2021/02)" />
+    <meta name="title" content="OData式と日本語の検索(NGram)とフレーズ検索" />
+    <meta property="og:title" content="OData式と日本語の検索(NGram)とフレーズ検索" />
+    <meta property="twitter:title" content="OData式と日本語の検索(NGram)とフレーズ検索" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>自宅の作業環境(2021/02)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>OData式と日本語の検索(NGram)とフレーズ検索-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2021/02/25/update-working-facility/">
+    <link rel="canonical" href="/blog/2021/03/03/phrase-query-in-japanese/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,12 +157,16 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/misc" title="misc">
-                            misc
+                        <a class="tag" href="/tags/azure-search" title="azure search">
+                            azure search
+                        </a>
+                        
+                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
                         </a>
                         
                     </div>
-                    <h1>自宅の作業環境(2021/02)</h1>
+                    <h1>OData式と日本語の検索(NGram)とフレーズ検索</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -170,7 +174,7 @@
                             johtani
                          
                         on 
-                        Thursday, February 25, 2021
+                        Wednesday, March 3, 2021
                         
                         
                         
@@ -200,257 +204,195 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#pc">PC</a></li>
-    <li><a href="#キーボード">キーボード</a></li>
-    <li><a href="#マイクオーディオインターフェース">マイク＆オーディオインターフェース</a></li>
-    <li><a href="#ディスプレイ">ディスプレイ</a></li>
-    <li><a href="#音楽再生環境">音楽再生環境</a></li>
-    <li><a href="#webカメラ">Webカメラ</a></li>
-    <li><a href="#照明">照明</a></li>
-    <li><a href="#フットレスト">フットレスト</a></li>
+    <li><a href="#odata式で検索">OData式で検索</a></li>
+    <li><a href="#問題点は">問題点は？</a>
+      <ul>
+        <li><a href="#転置インデックスとトークナイザーアナライザーの関係おさらい">転置インデックスとトークナイザー（アナライザー）の関係（おさらい）</a></li>
+        <li><a href="#検索の仕組みおさらい">検索の仕組み（おさらい）</a></li>
+        <li><a href="#英語と日本語ngramの違い">英語と日本語（NGram）の違い</a></li>
+        <li><a href="#ismatchscoringの問題点はやっと帰ってきました">ismatchscoringの問題点は？（やっと帰ってきました）</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+    <li><a href="#参考">参考</a></li>
   </ul>
 </nav>
                 
-                <p>自宅の環境がいろいろと変わったのですが、書いていなかったので更新版です。
-<a href="/blog/2020/09/08/update-working-facility/">前回のブログ(2020/09)</a>、<a href="/blog/2020/03/26/working-facility/">前々回のブログ(2020/03)</a>はそれぞれリンクをたどってください。</p>
-<p>現状のデスクトップはこんな感じ</p>
+                <p><a href="https://docs.microsoft.com/ja-jp/azure/search/query-odata-filter-orderby-syntax">Azure Cognitive SearchにはOData式</a>という書式で条件が書ける仕組みがあります。
+ODataは検索条件（<code>$filter</code>）やソート条件（<code>$orderby</code>）、取得する項目名の指定（<code>$select</code>）です。</p>
+<p>私は、Luceneの構文に慣れているので、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-overview">普通の<code>search</code>パラメータ</a>を利用しようとします。
+が、OData式として特殊な書き方がいくつかあるようなのでこちらの利用方法も調べてみました。
+その時、N-Gram（よくやるのはN=2）で陥る問題の話もあるのでこちらについても言及します。</p>
+<h2 id="odata式で検索">OData式で検索</h2>
+<p>次のような3件のドキュメント(フィールド名は<code>body</code>とします)をN-Gramで登録していたとします。</p>
+<ol>
+<li><code>ミルクティを飲みたいです。</code></li>
+<li><code>マティーニはカクテルですが、ミルクセーキは？</code></li>
+<li><code>風呂上がりのミルクは最高です。</code></li>
+</ol>
+<p>この時、OData式で<code>ミルクティ</code>という単語で検索してみましょう。</p>
+<p>検索条件は<code>$filter</code>で指定します。
+フルテキスト検索用に関数が用意されており、こちらに単語を指定します。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
+</code></pre></div><p>こんな感じ。フィールドの指定がない場合、対象のフィールドは検索可能なフィールドすべてが検索対象になります（<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/search-documents#query-parameters">公式ガイドのクエリパラメータ</a>の<code>queryType</code>に説明あり）。</p>
+<p>では、実行してみましょう。で返ってくるのは？1だけかな？と思う人が多いかもしれません。
+が、結果は3件とも帰ってきます。</p>
+<h2 id="問題点は">問題点は？</h2>
+<p>では問題点はどこでしょう？
+<code>ismatchscoring</code>のオプションなどを見る前に、転置インデックスを用いた検索エンジンの挙動をおさらいしましょう。
+転置インデックスの仕組みを理解することで、なぜそんな挙動になるのか？というのがわかりやすくなります。
+おさらいにはElasticsearchをベースに話をしますが、Azure Cognitive Searchでも同じような挙動になります。</p>
+<h3 id="転置インデックスとトークナイザーアナライザーの関係おさらい">転置インデックスとトークナイザー（アナライザー）の関係（おさらい）</h3>
+<p>昨年、オンラインで開催されたOSC広島で発表した資料（録画あり）でもざっくりと説明しています。</p>
+<p data-notist="johtani/KO04wZ">View <a href="https://noti.st/johtani/KO04wZ">本当にその検索は自分が想像している検索になってますか？</a> on Notist.</p><script async src="https://on.notist.cloud/embed/002.js"></script>
+<p>ざっくりですが、おさらいです。</p>
+<p>検索エンジンでは、入力された文章を、ある規則（アナライザー）で単語に分割し、その単語ごとにどのドキュメントに出現したのか？というリストが作られます。
+このリストが転置インデックスです。書籍の後ろにある索引を想像するとどんなものかがわかりやすいです。
+単語に対してその単語が出てくるページ番号がわかるという仕組みです（下図は本の索引の一例）。</p>
 
 <link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
+<div class="box" >
   <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
     <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210225/desktop.jpg" />
+      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-21.jpg" />
     </div>
-    <a href="/images/entries/20210225/desktop.jpg" itemprop="contentUrl"></a>
+    <a href="https://on.notist.cloud/slides/deck5730/large-21.jpg" itemprop="contentUrl"></a>
   </figure>
 </div>
 
-<h2 id="pc">PC</h2>
-<p><a href="/blog/2020/12/31/diy-pc">別のブログ</a>にまとめましたが、Windowsメインに切り替えました。
-ハードの話以外に、Windows OSに切り替えたときにいくつか入れたものもあります。
-それは、<a href="/blog/2020/10/18/restart-windows-no1/">移行のブログ</a>に少しだけ書いてあります。</p>
-<p>ひさびさにWindowsに戻ってきていますが、だいぶ慣れました。
-まぁ、それほど大したことをやってないというのもあるかもですが。。。</p>
-<p>メインPC以外にこれまでのmacをブラウジング用にサブディスプレイにつなぎ、マウスをLogicool Flowで行き来できるようにし、
-キーボードはKVMスイッチで切り替えてやりくりしていました（最新環境はキーボードのところを参照してください）。</p>
+<p>書籍の索引は著者や編集の方により厳選された単語のみが採用されています。
+が、検索エンジンでは文章を単語に区切る機能が存在します。
+この「ある規則」で単語を区切る仕組みが「アナライザー（トークナイザー）」と呼ばれる機能です。
+例えば英語用のアナライザーに英語の文章が入力されたとき、文章はこのように単語に区切られたもの（単語列）を出力します（下図）。</p>
 
 
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B0843QRVFH/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B0843QRVFH&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B0843QRVFH/?tag=johtani-22">
-      Amazon | サンワダイレクト USB切替器 キーボード・マウス用 KVMスイッチ
-      </a>
-    </p>
-  </div>
-</div>
-<h2 id="キーボード">キーボード</h2>
-<p>いくつかDIYしましたが、今はメインでSofle Keyboard v2を利用しています（<a href="https://kochikeyboard.stores.jp/items/5fcb8040df5159606b8c5d74">Kochi Keyboardさんで購入できます</a>）</p>
-<p>Sofle keyboard v2を有線で使っていましたが、最近Bluetooth対応して無線化しました（<a href="https://blog.johtani.info/blog/2021/02/01/apply-ble-to-sofle/">その時のブログはこちら</a>）。
-ですので、PCとの接続の切り替えはキーボード上で特定のキーの組み合わせを押すことで、切り替えられるようになっています。
-KVMとは異なり、Bluetoothの接続が切り替わるのにタイムラグがある＋どこにつながっているのか？というのがわからないので、想定していないところでキーが入力されていることがあります。
-これは、何とかしたいかもなぁと考えてはいるところ。</p>
-<h2 id="マイクオーディオインターフェース">マイク＆オーディオインターフェース</h2>
-<p>基本的に自宅でリモート作業をしています（ありがとうございます）。
-なので、ミーティングもオンラインです。
-となるとやはり、音がいいほうがお客さんにも喜ばれるかなぁと。
-<a href="https://blog.johtani.info//blog/2020/03/26/working-facility/#%E3%83%9E%E3%82%A4%E3%82%AF">2020年3月時点ではSAMSONのGoMicを利用していました</a>。
-これもいい音なのですが、大きいマイクでもいいかなと。
-あとは、ほかの使い道もあるかも？ということで、オーディオテクニカのマイク（＋ポップガード）とフォーカスライトのオーディオインターフェースに変えてみました。
-自分は実感ないですが、きっと役に立っていると思いますｗ</p>
-<p>
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B001DTNKNG/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B001DTNKNG&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B001DTNKNG/?tag=johtani-22">
-      Amazon | audio-technica サイドアドレス コンデンサーマイクロホン AT2050 | コンデンサ | 楽器
-      </a>
-    </p>
-  </div>
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-24.jpg" />
+    </div>
+    <a href="https://on.notist.cloud/slides/deck5730/large-24.jpg" itemprop="contentUrl"></a>
+  </figure>
 </div>
 
+<p>今回はNGramの話なので、NGramのAnalyzerを利用してみるとこんな感じになります。</p>
 
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B01HNLSG9U/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B01HNLSG9U&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B01HNLSG9U/?tag=johtani-22">
-      Amazon | AUDIO-TECHNICA AT-PF2 ポップフィルター | マイクアクセサリ | 楽器
-      </a>
-    </p>
-  </div>
+
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-43.jpg" />
+    </div>
+    <a href="https://on.notist.cloud/slides/deck5730/large-43.jpg" itemprop="contentUrl"></a>
+  </figure>
 </div>
 
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B07VMCYKNZ/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B07VMCYKNZ&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B07VMCYKNZ/?tag=johtani-22">
-      Amazon | Focusrite フォーカスライト オーディオインターフェイス 2イン/2アウト 24bit/192kHz Scarlett Solo (3rd Gen) ステッカー付きセット 【国内正規品】 | 楽器・音響機器 | 楽器
-      </a>
-    </p>
-  </div>
-</div></p>
-<h2 id="ディスプレイ">ディスプレイ</h2>
-<p>以前は、MacBookProの16インチで、メインディスプレイの下に2枚目のディスプレイも兼ねて開いて利用していました（<a href="https://blog.johtani.info/blog/2020/09/08/update-working-facility/">前回のブログ参照</a>）。
-自作PCに切り替えたので、ディスプレイがなくなってしまうので、同じような大きさのモバイルモニターを利用しています。
-今のところは据え置きになっていますが、持ち運べるので、ほかの部屋や外出時にも使えるんではないかなと。
-ディスプレイの足などはないので、邪魔にもならず便利ですね。</p>
+<p>実際に出来上がる転置インデックスは次のような形になります。
 
 
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B07SCZ5STT/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B07SCZ5STT&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B07SCZ5STT/?tag=johtani-22">
-      Amazon | モバイルモニター モバイルディスプレイ 4K 15.6インチ cocoparスイッチ用モニター 非光沢IPSパネル 薄い 軽量HDRモード/FreeSync対応/ブルーライト機能 3840x2160 UHD/USB Type-C/標準HDMI/mini DP/カバー付3年保証付 | cocopar | ディスプレイ 通販
-      </a>
-    </p>
-  </div>
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-44.jpg" />
+    </div>
+    <a href="https://on.notist.cloud/slides/deck5730/large-44.jpg" itemprop="contentUrl"></a>
+  </figure>
 </div>
-<h2 id="音楽再生環境">音楽再生環境</h2>
-<p>サブディスプレイにサンダーボルトディスプレイを使用していたので、Mac Miniを接続していましたがサンダーボルトディスプレイには退役してもらいました。
-それに伴って、Mac Miniも別の場所に移動しました。音楽再生環境にラズパイ４を復活させました。
-以前購入したセットについていたケースではファンの音が気になっていたので、ヒートシンク型に変えました。
-結構重いですが、冷えてそうです。</p>
+</p>
+<h3 id="検索の仕組みおさらい">検索の仕組み（おさらい）</h3>
+<p>出来上がっている転置インデックスに対して検索をする場合、入力文字列（検索条件）に対して、転置インデックス作成時と同様にAnalyzerが動作します。
+処理としては、</p>
+<ol>
+<li>クエリのパース</li>
+<li>フィールドのAnalyzerで処理</li>
+<li>転置インデックスを検索</li>
+</ol>
+<p>という形です。
+例えばこんな感じ。</p>
 
 
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B07VD5L1VY/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B07VD5L1VY&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B07VD5L1VY/?tag=johtani-22">
-      Amazon | Geekworm Raspberry Pi(ラズベリーパイ) 4 B 用アーマー金属ケース パッシブ冷却/シェル熱放散 ラズベリーパイ4 コンピュ ータモデルB適用 (アーマーケース（ファン無し）) | Geekworm | 冷却パーツ・ファン 通販
-      </a>
-    </p>
-  </div>
-</div>
-<h2 id="webカメラ">Webカメラ</h2>
-<p>カメラ自体に変更はないですが、付属品をいくつか。
-Webカメラではないカメラもつけてみたいなと思い、モニターアームにカメラを付けられるものを付けてみました。
-ただ、おっさんの顔をきれいに映してもなぁという結論に至ったので、Webカメラが乗っかっています。。。
-あとは、デスクトップPCになり、カメラのケーブルだけではPCまで届かなくなってしまったのでUSB Type-Cの延長コードを買ってみました。実はこれ2本目ですが。。。
-スタンディングデスクの昇降でケーブルに負荷がかかってしまったことがなんどかあり、1本目の延長コードは接触が悪くなってしまいました。。。時々外したりしていて、ケーブルの配置がおかしいときがあるので、気を付けるようにしています。</p>
-
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B08BC1P692/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B08BC1P692&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B08BC1P692/?tag=johtani-22">
-      Amazon | 長尾製作所 モニターアーム用 VESA カメラ＆マイクマウント NB-MV001MH | 長尾製作所 | モニタアーム&amp;スタンド 通販
-      </a>
-    </p>
-  </div>
+<div class="box" >
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-45.jpg" />
+    </div>
+    <a href="https://on.notist.cloud/slides/deck5730/large-45.jpg" itemprop="contentUrl"></a>
+  </figure>
 </div>
 
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B089GPPKRP/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B089GPPKRP&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B089GPPKRP/?tag=johtani-22">
-      Amazon | iVANKY USB Type C 延長ケーブル USB 3.1 Gen 2(4K@60Hz/1.0m/オス－メス)10Gbps高速データ転送 3A急速充電 usb-c 変換 Huawei MateBook13, iPad Pro11, Nintendo Switch, MacBook等対応 | IVANKY | USBケーブル 通販
-      </a>
-    </p>
-  </div>
-</div>
-<h2 id="照明">照明</h2>
-<p>裸の蛍光管だったのですが、リモコンで点灯したり、照度を変えられるようにしたかったので、
-パナソニックの照明に変えました。</p>
-
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B07H2LFFR3/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B07H2LFFR3&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B07H2LFFR3/?tag=johtani-22">
-      Amazon | パナソニック LEDシーリングライト 調光・調色タイプ リモコン付 6畳 3, 699lm HH-CD0620AZ 【Amazon.co.jp限定】 | パナソニック(Panasonic) | ホーム＆キッチン
-      </a>
-    </p>
-  </div>
-</div>
-<p>変えたのはよかったのですが、部屋が長細い＋Webカメラの位置（自分から見て左にカメラを置いて、部屋の奥への画角？になっている）のせいで、右半分の顔が暗くなる場合がありました。
-幸い、右にはスチールラックが組んであるので、そこにつけられる照明を購入して女優ライトみたいな感じで使っています（頻繁ではないですが）</p>
-
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B01N0UJ2B6/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B01N0UJ2B6&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B01N0UJ2B6/?tag=johtani-22">
-      Amazon｜ルミナス メタルラック用 LEDライト 磁石で簡単設置 連結可能 幅60cm 昼白色 LED60R-N｜メタルラックパーツ オンライン通販
-      </a>
-    </p>
-  </div>
-</div>
-<h2 id="フットレスト">フットレスト</h2>
-<p>昨年3月くらいに配置して、座っているときに足を置くのに便利に使っていました。
-が、1台だと幅が足りないので最近2つ目を購入して並べて使っています。
-片足ずつ載せられるのは便利ですね（基本ガニ股なので。。。）。</p>
-
-
-<div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B07CN8VZQ3/?tag=johtani-22">
-      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B07CN8VZQ3&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B07CN8VZQ3/?tag=johtani-22">
-      Amazon | サンワダイレクト フットレスト スチール製 角度10° 幅40×奥行30cm 足置き台 100-FR011 | フットレスト | 文房具・オフィス用品
-      </a>
-    </p>
-  </div>
-</div>
-<p>ということで、最近はこんな環境で仕事をしています。
-当分これで更新しないんじゃないかなぁ。
-（サブディスプレイが左に寄っているので、局面ディスプレイが気になっているところですが。。。）</p>
+<p>同じAnalyzerの処理が入ることで、転置インデックスに採用されているのと同じ単語が出てくるため、検索がきちんとできるということになります。</p>
+<h3 id="英語と日本語ngramの違い">英語と日本語（NGram）の違い</h3>
+<p>英語と日本語の違いは、スペースの意味になります。
+英語の場合は、スペースが単語の区切りになりますが、日本語の場合スペースでは区切られていません。</p>
+<p>ですので、検索窓に入力された文字列は、英語の場合、クエリのパースの時点で単語に区切られます。そのあとにAnalyzerになるので、基本的には単語単位でAnalyzerの処理が動きます。そのあと、転置インデックスへの検索となります。なので、多くの場合はAnalyzerの出力は1単語です（類義語などを利用していたりする場合は異なりますが）。</p>
+<p>日本語の場合、スペースでは区切られていないので、クエリのパースの時点で入力された文字列がそのままAnalyzerにわたります。
+今回はAnalyzer（NGram）が単語に分割し、それをもとに検索処理が実行されます。</p>
+<h3 id="ismatchscoringの問題点はやっと帰ってきました">ismatchscoringの問題点は？（やっと帰ってきました）</h3>
+<p>さて、回り道をし、簡単ですが転置インデックスやAnalyzerについて説明しました。
+では本題です。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
+</code></pre></div><p>この<code>ismatchscoring</code>関数ですが、そのほかにも引数の指定が可能で、省略した場合にデフォルトで採用される値がいくつかあります。
+<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions">公式のドキュメントにパラメータの意味</a>が掲載されています。</p>
+<p>今回は、第4引数の<code>searchMode</code>の値が問題点です。デフォルトでは、<code>any</code>が指定されます。
+この、<code>any</code>は検索語（今回は<code>ミルクティ</code>）の<strong>任意の検索語句</strong>が一致する必要があることになります。
+「検索語句」？なんでしょう？これが、ここまで回り道をして説明してきた、Analyzerの出力した単語になります。
+「ミルクティ」はNGram（N=2）のAnalyzerを通すと、</p>
+<p>「ミル」「ルク」「クテ」「ティ」</p>
+<p>という4つの単語が出力されます。
+これが、「検索語句」です。「任意の」とあるので、上記4つの2文字のどれか？が出現すれば検索条件にヒットしたこととなります。</p>
+<p>ですので、以下のように（一部のみ色を変えてます）3つの文章にはそれぞれの文字が含まれているため、先ほどの条件では3件の結果が返ってくることになります。</p>
+<ol>
+<li><code>ミル</code>クティを飲みたいです。</li>
+<li>マ<code>ティ</code>ーニはカクテルですが、ミルクセーキは？</li>
+<li>風呂上がりの<code>ミル</code>クは最高です。</li>
+</ol>
+<p>NGramで一部分の単語だけで一致したものがヒットしてしまうと違和感があるので、<code>all</code>に変更します。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
+</code></pre></div><p>今度はどうなるでしょう？</p>
+<ol>
+<li><code>ミルクティ</code>を飲みたいです。</li>
+<li>マ<code>ティ</code>ーニはカ<code>クテ</code>ルですが、<code>ミルク</code>セーキは？</li>
+</ol>
+<p>先ほどよりもマシになりました。
+3がヒットしなくなっています。3の文章には「ティ」などが出てこないためです。
+ただ、感覚的に2番目がヒットするのは少し違和感がありますよね？
+確かに4つの単語がすべて出てきていますが、「ミルクティ」とは少し遠いです。</p>
+<p>さらに「ミルクティ」にヒットさせるにはフレーズ検索にする必要があります。
+<a href="https://www.elastic.co/jp/blog/how-to-implement-japanese-full-text-search-in-elasticsearch">Elastic社のブログの日本語の検索に関する記事</a>でも出てきますが、フレーズで検索することで「ミルクティ」だけにヒットさせることができます。</p>
+<p>「フレーズ検索＝語順を保証する検索」となります。
+ですので、</p>
+<p>「ミル」「ルク」「クテ」「ティ」</p>
+<p>この順序で出てきた場合のみ、検索にヒットしたことになります。
+OData式でフレーズ検索する場合は、単語をダブルクォート<code>&quot;</code>でくくる必要があります（<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions#examples">公式ドキュメントの例に記載あり</a>）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
+</code></pre></div><p>これで結果は以下の1件だけとなります。</p>
+<ol>
+<li><code>ミルクティ</code>を飲みたいです。</li>
+</ol>
+<p>これでNGramで部分一致のような挙動で日本語の検索ができるようになりました。</p>
+<p>ちなみに、フレーズにした場合は第4引数は<code>any</code>に変更しても1件だけの検索結果となります。
+フレーズ検索には「すべての語が含まれる」、「すべての語が順番に現れる」という2つの条件が含まれるためです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
+</code></pre></div><p>この例の引数を<code>ミルクティ</code>を<code>&quot;ミルク&quot; &quot;最高&quot;</code>のような検索条件に変えた場合、「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」の2つの条件を<code>any</code>で扱うため、
+「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」のどちらかが出てくれば良い結果となり、3件の結果が返ってきます。
+第4引数を<code>all</code>に変更すると、「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」の両方が出てこなければならないため、3件目のデータのみが返ってきます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34; &#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
+</code></pre></div><p>これは、</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>) <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
+</code></pre></div><p>と同じ意味となります。
+少し長くはなりますが、後者の書き方をプログラムで書くと思います、私の場合は。
+検索窓に入力された単語に必ず<code>&quot;</code>を追加する処理を書くために、画面入力の文字列を一旦パースをすることになるからです。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>簡単？にですが、OData式でのフルテキスト検索と、NGramでのフレーズ検索について説明しました。
+英語の場合、もともとスペースで区切られているので、フレーズといわれてピンときますが、日本語の場合はAnalyzerの挙動をわかっていないと「？」となるかと思います。
+なぜフレーズ検索が必要なのか？というのが少しでもわかっていただければと。
+ちなみに、NGramのTokenizerには別の落とし穴もありますが、その話はまた後日にでも。</p>
+<p>参考として日本語関連の検索に関する記事のリンクを残しておきます。</p>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a href="https://medium.com/hello-elasticsearch/elasticsearch-22a369387dc5">Elasticsearch日本語でフレーズ検索が必要なわけ</a></li>
+<li>NGramも含め、Elasticsearchでの日本語の検索の設定やクエリについては、<a href="https://www.elastic.co/jp/blog/how-to-implement-japanese-full-text-search-in-elasticsearch">Elastic社のブログで日本語で書かれた記事</a>が詳しいのでこちらをご覧いただくのがいいです。</li>
+</ul>
 
 
                 
@@ -459,15 +401,10 @@ Webカメラではないカメラもつけてみたいなと思い、モニタ�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2021/02/05/autocomplete-and-suggest-on-azure-search/" data-toggle="tooltip" data-placement="top" title="Azure Cognitive Searchでオートコンプリートやサジェストをしてみる">&larr;
+                        <a href="/blog/2021/02/25/update-working-facility/" data-toggle="tooltip" data-placement="top" title="自宅の作業環境(2021/02)">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2021/03/03/phrase-query-in-japanese/" data-toggle="tooltip" data-placement="top" title="OData式と日本語の検索(NGram)とフレーズ検索">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
