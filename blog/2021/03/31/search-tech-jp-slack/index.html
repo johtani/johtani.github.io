@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="OData式と日本語の検索(NGram)とフレーズ検索" />
-    <meta property="og:title" content="OData式と日本語の検索(NGram)とフレーズ検索" />
-    <meta property="twitter:title" content="OData式と日本語の検索(NGram)とフレーズ検索" />
+    <meta name="title" content="検索技術に関する情報交換を目的としたSlackができました！" />
+    <meta property="og:title" content="検索技術に関する情報交換を目的としたSlackができました！" />
+    <meta property="twitter:title" content="検索技術に関する情報交換を目的としたSlackができました！" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>OData式と日本語の検索(NGram)とフレーズ検索-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>検索技術に関する情報交換を目的としたSlackができました！-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2021/03/03/phrase-query-in-japanese/">
+    <link rel="canonical" href="/blog/2021/03/31/search-tech-jp-slack/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,16 +157,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/azure-search" title="azure search">
-                            azure search
-                        </a>
-                        
-                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
-                            elasticsearch
+                        <a class="tag" href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
                         </a>
                         
                     </div>
-                    <h1>OData式と日本語の検索(NGram)とフレーズ検索</h1>
+                    <h1>検索技術に関する情報交換を目的としたSlackができました！</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +170,7 @@
                             johtani
                          
                         on 
-                        Wednesday, March 3, 2021
+                        Wednesday, March 31, 2021
                         
                         
                         
@@ -202,197 +198,26 @@
                 <header>
                     <h2>目次</h2>
                 </header>
-                <nav id="TableOfContents">
-  <ul>
-    <li><a href="#odata式で検索">OData式で検索</a></li>
-    <li><a href="#問題点は">問題点は？</a>
-      <ul>
-        <li><a href="#転置インデックスとトークナイザーアナライザーの関係おさらい">転置インデックスとトークナイザー（アナライザー）の関係（おさらい）</a></li>
-        <li><a href="#検索の仕組みおさらい">検索の仕組み（おさらい）</a></li>
-        <li><a href="#英語と日本語ngramの違い">英語と日本語（NGram）の違い</a></li>
-        <li><a href="#ismatchscoringの問題点はやっと帰ってきました">ismatchscoringの問題点は？（やっと帰ってきました）</a></li>
-      </ul>
-    </li>
-    <li><a href="#まとめ">まとめ</a></li>
-    <li><a href="#参考">参考</a></li>
-  </ul>
-</nav>
+                <nav id="TableOfContents"></nav>
                 
-                <p><a href="https://docs.microsoft.com/ja-jp/azure/search/query-odata-filter-orderby-syntax">Azure Cognitive SearchにはOData式</a>という書式で条件が書ける仕組みがあります。
-ODataは検索条件（<code>$filter</code>）やソート条件（<code>$orderby</code>）、取得する項目名の指定（<code>$select</code>）です。</p>
-<p>私は、Luceneの構文に慣れているので、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-overview">普通の<code>search</code>パラメータ</a>を利用しようとします。
-が、OData式として特殊な書き方がいくつかあるようなのでこちらの利用方法も調べてみました。
-その時、N-Gram（よくやるのはN=2）で陥る問題の話もあるのでこちらについても言及します。</p>
-<h2 id="odata式で検索">OData式で検索</h2>
-<p>次のような3件のドキュメント(フィールド名は<code>body</code>とします)をN-Gramで登録していたとします。</p>
-<ol>
-<li><code>ミルクティを飲みたいです。</code></li>
-<li><code>マティーニはカクテルですが、ミルクセーキは？</code></li>
-<li><code>風呂上がりのミルクは最高です。</code></li>
-</ol>
-<p>この時、OData式で<code>ミルクティ</code>という単語で検索してみましょう。</p>
-<p>検索条件は<code>$filter</code>で指定します。
-フルテキスト検索用に関数が用意されており、こちらに単語を指定します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
-</code></pre></div><p>こんな感じ。フィールドの指定がない場合、対象のフィールドは検索可能なフィールドすべてが検索対象になります（<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/search-documents#query-parameters">公式ガイドのクエリパラメータ</a>の<code>queryType</code>に説明あり）。</p>
-<p>では、実行してみましょう。で返ってくるのは？1だけかな？と思う人が多いかもしれません。
-が、結果は3件とも帰ってきます。</p>
-<h2 id="問題点は">問題点は？</h2>
-<p>では問題点はどこでしょう？
-<code>ismatchscoring</code>のオプションなどを見る前に、転置インデックスを用いた検索エンジンの挙動をおさらいしましょう。
-転置インデックスの仕組みを理解することで、なぜそんな挙動になるのか？というのがわかりやすくなります。
-おさらいにはElasticsearchをベースに話をしますが、Azure Cognitive Searchでも同じような挙動になります。</p>
-<h3 id="転置インデックスとトークナイザーアナライザーの関係おさらい">転置インデックスとトークナイザー（アナライザー）の関係（おさらい）</h3>
-<p>昨年、オンラインで開催されたOSC広島で発表した資料（録画あり）でもざっくりと説明しています。</p>
-<p data-notist="johtani/KO04wZ">View <a href="https://noti.st/johtani/KO04wZ">本当にその検索は自分が想像している検索になってますか？</a> on Notist.</p><script async src="https://on.notist.cloud/embed/002.js"></script>
-<p>ざっくりですが、おさらいです。</p>
-<p>検索エンジンでは、入力された文章を、ある規則（アナライザー）で単語に分割し、その単語ごとにどのドキュメントに出現したのか？というリストが作られます。
-このリストが転置インデックスです。書籍の後ろにある索引を想像するとどんなものかがわかりやすいです。
-単語に対してその単語が出てくるページ番号がわかるという仕組みです（下図は本の索引の一例）。</p>
+                <p>新型コロナウィルスの影響もあり、オフラインで集まって勉強会も開催できなくなっています。
+検索技術勉強会も、もう1年以上開催できていないです。</p>
+<p>スピーカーの人にオンラインでしゃべってもらうのもありだとは思うのですが、
+懇親会とセットでその価値があったかもなぁと思うところもあり、オンラインでの開催に乗り気になれないまま時間がたってしまいました。
+(配信周りを調べるのがめんどくさいなぁというのもあったかも（反省）)</p>
+<p>そんな中、<a href="https://twitter.com/takuya_b/">takuya-a</a>さんと話をしていて、エンジニア同士のゆるいつながりができる場所が欲しいですねぇということに。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">はー、検索技術勉強会、オフラインでできないまま１年以上たってしまったのか。オンライン勉強会とかはスピーカーの人の負担とかもあるし、Discordみたいなオープンな場だけ用意してみるのありかなぁ？ただ、活発に話がされるのかどうかわからんし、ROMな人ばかりだとアレなんだけどなぁ。</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1376806794480164868?ref_src=twsrc%5Etfw">March 30, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-21.jpg" />
-    </div>
-    <a href="https://on.notist.cloud/slides/deck5730/large-21.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
+<p>そこからの、このツイートです。
+ちらほらと興味のありそうな人が出てきたねという話をしていたら、Slackのワークスペースが出来上がってましたｗ</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">検索技術に関する情報交換を目的とした Slack を立ち上げました！こちらの招待リンクからご参加ください。 <a href="https://t.co/Tca70vuMff">https://t.co/Tca70vuMff</a></p>&mdash; takuya-a (@takuya_b) <a href="https://twitter.com/takuya_b/status/1377219737457860610?ref_src=twsrc%5Etfw">March 31, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<p>書籍の索引は著者や編集の方により厳選された単語のみが採用されています。
-が、検索エンジンでは文章を単語に区切る機能が存在します。
-この「ある規則」で単語を区切る仕組みが「アナライザー（トークナイザー）」と呼ばれる機能です。
-例えば英語用のアナライザーに英語の文章が入力されたとき、文章はこのように単語に区切られたもの（単語列）を出力します（下図）。</p>
-
-
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-24.jpg" />
-    </div>
-    <a href="https://on.notist.cloud/slides/deck5730/large-24.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<p>今回はNGramの話なので、NGramのAnalyzerを利用してみるとこんな感じになります。</p>
-
-
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-43.jpg" />
-    </div>
-    <a href="https://on.notist.cloud/slides/deck5730/large-43.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<p>実際に出来上がる転置インデックスは次のような形になります。
-
-
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-44.jpg" />
-    </div>
-    <a href="https://on.notist.cloud/slides/deck5730/large-44.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-</p>
-<h3 id="検索の仕組みおさらい">検索の仕組み（おさらい）</h3>
-<p>出来上がっている転置インデックスに対して検索をする場合、入力文字列（検索条件）に対して、転置インデックス作成時と同様にAnalyzerが動作します。
-処理としては、</p>
-<ol>
-<li>クエリのパース</li>
-<li>フィールドのAnalyzerで処理</li>
-<li>転置インデックスを検索</li>
-</ol>
-<p>という形です。
-例えばこんな感じ。</p>
-
-
-<div class="box" >
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="https://on.notist.cloud/slides/deck5730/large-45.jpg" />
-    </div>
-    <a href="https://on.notist.cloud/slides/deck5730/large-45.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<p>同じAnalyzerの処理が入ることで、転置インデックスに採用されているのと同じ単語が出てくるため、検索がきちんとできるということになります。</p>
-<h3 id="英語と日本語ngramの違い">英語と日本語（NGram）の違い</h3>
-<p>英語と日本語の違いは、スペースの意味になります。
-英語の場合は、スペースが単語の区切りになりますが、日本語の場合スペースでは区切られていません。</p>
-<p>ですので、検索窓に入力された文字列は、英語の場合、クエリのパースの時点で単語に区切られます。そのあとにAnalyzerになるので、基本的には単語単位でAnalyzerの処理が動きます。そのあと、転置インデックスへの検索となります。なので、多くの場合はAnalyzerの出力は1単語です（類義語などを利用していたりする場合は異なりますが）。</p>
-<p>日本語の場合、スペースでは区切られていないので、クエリのパースの時点で入力された文字列がそのままAnalyzerにわたります。
-今回はAnalyzer（NGram）が単語に分割し、それをもとに検索処理が実行されます。</p>
-<h3 id="ismatchscoringの問題点はやっと帰ってきました">ismatchscoringの問題点は？（やっと帰ってきました）</h3>
-<p>さて、回り道をし、簡単ですが転置インデックスやAnalyzerについて説明しました。
-では本題です。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
-</code></pre></div><p>この<code>ismatchscoring</code>関数ですが、そのほかにも引数の指定が可能で、省略した場合にデフォルトで採用される値がいくつかあります。
-<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions">公式のドキュメントにパラメータの意味</a>が掲載されています。</p>
-<p>今回は、第4引数の<code>searchMode</code>の値が問題点です。デフォルトでは、<code>any</code>が指定されます。
-この、<code>any</code>は検索語（今回は<code>ミルクティ</code>）の<strong>任意の検索語句</strong>が一致する必要があることになります。
-「検索語句」？なんでしょう？これが、ここまで回り道をして説明してきた、Analyzerの出力した単語になります。
-「ミルクティ」はNGram（N=2）のAnalyzerを通すと、</p>
-<p>「ミル」「ルク」「クテ」「ティ」</p>
-<p>という4つの単語が出力されます。
-これが、「検索語句」です。「任意の」とあるので、上記4つの2文字のどれか？が出現すれば検索条件にヒットしたこととなります。</p>
-<p>ですので、以下のように（一部のみ色を変えてます）3つの文章にはそれぞれの文字が含まれているため、先ほどの条件では3件の結果が返ってくることになります。</p>
-<ol>
-<li><code>ミル</code>クティを飲みたいです。</li>
-<li>マ<code>ティ</code>ーニはカクテルですが、ミルクセーキは？</li>
-<li>風呂上がりの<code>ミル</code>クは最高です。</li>
-</ol>
-<p>NGramで一部分の単語だけで一致したものがヒットしてしまうと違和感があるので、<code>all</code>に変更します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
-</code></pre></div><p>今度はどうなるでしょう？</p>
-<ol>
-<li><code>ミルクティ</code>を飲みたいです。</li>
-<li>マ<code>ティ</code>ーニはカ<code>クテ</code>ルですが、<code>ミルク</code>セーキは？</li>
-</ol>
-<p>先ほどよりもマシになりました。
-3がヒットしなくなっています。3の文章には「ティ」などが出てこないためです。
-ただ、感覚的に2番目がヒットするのは少し違和感がありますよね？
-確かに4つの単語がすべて出てきていますが、「ミルクティ」とは少し遠いです。</p>
-<p>さらに「ミルクティ」にヒットさせるにはフレーズ検索にする必要があります。
-<a href="https://www.elastic.co/jp/blog/how-to-implement-japanese-full-text-search-in-elasticsearch">Elastic社のブログの日本語の検索に関する記事</a>でも出てきますが、フレーズで検索することで「ミルクティ」だけにヒットさせることができます。</p>
-<p>「フレーズ検索＝語順を保証する検索」となります。
-ですので、</p>
-<p>「ミル」「ルク」「クテ」「ティ」</p>
-<p>この順序で出てきた場合のみ、検索にヒットしたことになります。
-OData式でフレーズ検索する場合は、単語をダブルクォート<code>&quot;</code>でくくる必要があります（<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions#examples">公式ドキュメントの例に記載あり</a>）。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
-</code></pre></div><p>これで結果は以下の1件だけとなります。</p>
-<ol>
-<li><code>ミルクティ</code>を飲みたいです。</li>
-</ol>
-<p>これでNGramで部分一致のような挙動で日本語の検索ができるようになりました。</p>
-<p>ちなみに、フレーズにした場合は第4引数は<code>any</code>に変更しても1件だけの検索結果となります。
-フレーズ検索には「すべての語が含まれる」、「すべての語が順番に現れる」という2つの条件が含まれるためです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
-</code></pre></div><p>この例の引数を<code>ミルクティ</code>を<code>&quot;ミルク&quot; &quot;最高&quot;</code>のような検索条件に変えた場合、「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」の2つの条件を<code>any</code>で扱うため、
-「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」のどちらかが出てくれば良い結果となり、3件の結果が返ってきます。
-第4引数を<code>all</code>に変更すると、「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」の両方が出てこなければならないため、3件目のデータのみが返ってきます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34; &#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
-</code></pre></div><p>これは、</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>) <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
-</code></pre></div><p>と同じ意味となります。
-少し長くはなりますが、後者の書き方をプログラムで書くと思います、私の場合は。
-検索窓に入力された単語に必ず<code>&quot;</code>を追加する処理を書くために、画面入力の文字列を一旦パースをすることになるからです。</p>
-<h2 id="まとめ">まとめ</h2>
-<p>簡単？にですが、OData式でのフルテキスト検索と、NGramでのフレーズ検索について説明しました。
-英語の場合、もともとスペースで区切られているので、フレーズといわれてピンときますが、日本語の場合はAnalyzerの挙動をわかっていないと「？」となるかと思います。
-なぜフレーズ検索が必要なのか？というのが少しでもわかっていただければと。
-ちなみに、NGramのTokenizerには別の落とし穴もありますが、その話はまた後日にでも。</p>
-<p>参考として日本語関連の検索に関する記事のリンクを残しておきます。</p>
-<h2 id="参考">参考</h2>
-<ul>
-<li><a href="https://medium.com/hello-elasticsearch/elasticsearch-22a369387dc5">Elasticsearch日本語でフレーズ検索が必要なわけ</a></li>
-<li>NGramも含め、Elasticsearchでの日本語の検索の設定やクエリについては、<a href="https://www.elastic.co/jp/blog/how-to-implement-japanese-full-text-search-in-elasticsearch">Elastic社のブログで日本語で書かれた記事</a>が詳しいのでこちらをご覧いただくのがいいです。</li>
-</ul>
+<p>ありがとう、<a href="https://twitter.com/takuya_b/">takuya-a</a>さん！</p>
+<p>ということで、検索周りでわいわいできる場になればいいなぁと。
+盛り上がってくれば、オンラインでの勉強会とかもありかもしれないですね！
+興味のある方は、上記ツイート内のリンクからご参加下さい！！</p>
 
 
                 
@@ -401,15 +226,10 @@ OData式でフレーズ検索する場合は、単語をダブルクォート<co
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2021/02/25/update-working-facility/" data-toggle="tooltip" data-placement="top" title="自宅の作業環境(2021/02)">&larr;
+                        <a href="/blog/2021/03/03/phrase-query-in-japanese/" data-toggle="tooltip" data-placement="top" title="OData式と日本語の検索(NGram)とフレーズ検索">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2021/03/31/search-tech-jp-slack/" data-toggle="tooltip" data-placement="top" title="検索技術に関する情報交換を目的としたSlackができました！">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
