@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="スライド作成の環境をMarpにしてみた" />
-    <meta property="og:title" content="スライド作成の環境をMarpにしてみた" />
-    <meta property="twitter:title" content="スライド作成の環境をMarpにしてみた" />
+    <meta name="title" content="Lunakey Miniを組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード" />
+    <meta property="og:title" content="Lunakey Miniを組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード" />
+    <meta property="twitter:title" content="Lunakey Miniを組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>スライド作成の環境をMarpにしてみた-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Lunakey Miniを組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2021/04/05/intro-marp/">
+    <link rel="canonical" href="/blog/2021/04/30/build-lunakey-mini-ble/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 	
@@ -157,12 +157,16 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
-                            勉強会
+                        <a class="tag" href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="DIYキーボード">
+                            DIYキーボード
+                        </a>
+                        
+                        <a class="tag" href="/tags/misc" title="misc">
+                            misc
                         </a>
                         
                     </div>
-                    <h1>スライド作成の環境をMarpにしてみた</h1>
+                    <h1>Lunakey Miniを組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -170,7 +174,7 @@
                             johtani
                          
                         on 
-                        Monday, April 5, 2021
+                        Friday, April 30, 2021
                         
                         
                         
@@ -200,120 +204,149 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#marpとは">Marpとは？</a>
+    <li><a href="#lunakey-miniビルドガイド">Lunakey Miniビルドガイド</a></li>
+    <li><a href="#ビルドログ主にツイート">ビルドログ（主にツイート）</a>
       <ul>
-        <li><a href="#サンプル">サンプル</a></li>
+        <li><a href="#コンスルー問題">コンスルー問題</a></li>
+        <li><a href="#led実装">LED実装</a></li>
+        <li><a href="#ソケットの実装x2">ソケットの実装x2</a></li>
+        <li><a href="#キースイッチ設置">キースイッチ設置</a></li>
+        <li><a href="#キーキャップキーマップ">キーキャップ＋キーマップ</a></li>
+        <li><a href="#ble--lpme-io化">BLE + LPME-IO化</a></li>
+        <li><a href="#疑問点">疑問点</a></li>
       </ul>
     </li>
-    <li><a href="#プラグイン">プラグイン</a></li>
-    <li><a href="#decksetのスライドとの違い">Decksetのスライドとの違い</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>みなさんは、スライドの作成には何を使っていますか？
-Keynote？Powerpoint？Google Slides？</p>
-<p>私は、Macでスライドを作るときは前職ではテンプレートもあったのでKeynoteでしたが、ちょっとしたものはMarkdownベースの<a href="https://www.deckset.com/">Deckset</a>を利用していました（買い切りタイプの有料ソフト）。</p>
-<p>フリーランスになってもこちらを利用していたのですが、Windows環境に切り替えたので使えなくなってしまいました。
-一度はGoogle Slidesで作ったのですが（<a href="https://noti.st/events/AhSY43/39-elasticsearch-2020-12-17-elasticsearchjp">第39回Es勉強会スライド</a>）、既存の資産を流用したくなりどうしたものかと悩んでい(ツイートし)たら。</p>
-<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">Macの頃はDecksetってアプリでMarkdownで書いてたんだけど、Winに移動したのでこのタイミングでGoogle Slidesにでもしようかなと考えてるところ。Markdownでスライド作るのほかになんかあるか探すほうがいいかなぁ？</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1372412249357225986?ref_src=twsrc%5Etfw">March 18, 2021</a></blockquote>
+                <p>Sofle v2を長らく使っていましたが、コンパクトなのもやっぱりいいよなぁというときにKochi KeyboardからLunakey Miniが発売していました。
+小指のあたりの傾斜が使いやすいかも？ということで、組み立ててみました。</p>
+<p>もちろん購入は<a href="https://kochikeyboard.stores.jp/">Kochi Keyboardさん</a>からです（<a href="https://kochikeyboard.stores.jp/items/605ab0a6baeb3a0ff29252a2">購入はこちらから</a>）。</p>
+<h2 id="lunakey-miniビルドガイド">Lunakey Miniビルドガイド</h2>
+<p>作者の<a href="https://twitter.com/yoichiro">Yoichiroさん</a>が公開しているビルドガイドが詳細まで書かれています。
+こちらをまずは参照してください。</p>
+<ul>
+<li><a href="https://www.eisbahn.jp/yoichiro/2020/12/lunakey_mini_build_guide_rev4.html">Lunakey Mini ビルドガイド (Rev.4以降)</a></li>
+</ul>
+<h2 id="ビルドログ主にツイート">ビルドログ（主にツイート）</h2>
+<p>私の組み立てについては、Twitterでツイートしていたものがありますので、そちらを貼っておきます。
+ちなみに、ツイートしていて躓いているときに、作者のYoichiroさんからたびたびコメントをいただきました。
+ありがとうございました！！</p>
+<p>間にいくつかコメントを差し込んでいます。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">結局両方のダイオードつけてしまいました。今日はここまで <a href="https://t.co/3qLI6EpfXB">pic.twitter.com/3qLI6EpfXB</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1381616549715304448?ref_src=twsrc%5Etfw">April 12, 2021</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">僕はこれ使ってます<a href="https://t.co/sFaAmKZY6V">https://t.co/sFaAmKZY6V</a></p>&mdash; miyake (@kazuyukimiyake) <a href="https://twitter.com/kazuyukimiyake/status/1372527588552273920?ref_src=twsrc%5Etfw">March 18, 2021</a></blockquote>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ハンダはつけた <a href="https://t.co/ySE9SA3gZn">pic.twitter.com/ySE9SA3gZn</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1381981178832379907?ref_src=twsrc%5Etfw">April 13, 2021</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<p>ということで、利用してみようかなとなりました。</p>
-<h2 id="marpとは">Marpとは？</h2>
-<p>Markdownでプレゼンテーションのスライドを作ることができるOSS?になります。</p>
+<h3 id="コンスルー問題">コンスルー問題</h3>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">左手じゃん、T。Tのダイオード浮いてた。右手も一回全部見直すか</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1381991175750488067?ref_src=twsrc%5Etfw">April 13, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>ここで問題が発覚。右手（ツイートではぼけていて、左手と書いています）についてはダイオードが1か所浮いていただけなので、はんだ付けですぐ直りました。
+左手側が大問題です。そもそも右手につけたProMicroへの書き込みができませんでした。
+キーボードによっては、ダイオードなどを付ける前からまず、リセットボタンを付けて、ProMicroを指して書き込みをする場合もあります。
+ただ、その書き込みができない。
+（ちなみにこのタイミングでテスターをつけっぱなしにしていたのが発覚し、9V電池切れのため翌日に持ち越した。。。）</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">さて、デバッグのお時間です <a href="https://t.co/CaEOv4E5Bg">pic.twitter.com/CaEOv4E5Bg</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1382330968539684872?ref_src=twsrc%5Etfw">April 14, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ただ、ProMicro刺した状態で、リセットボタン、リセットボタンの足をショートさせても書き込みはできず、ProMicroのGndとResetの足のショートでは書き込みができる。</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1382335579417759748?ref_src=twsrc%5Etfw">April 14, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>テスターで調べてみたところ、リセットボタンとProMicroがうまく通電していません。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">だいぶ進んだけど、Eの列がおかしいなぁ。さて、どこの接触だ？ <a href="https://t.co/5tci12Vk05">pic.twitter.com/5tci12Vk05</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1382358367188914179?ref_src=twsrc%5Etfw">April 14, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>どうも、左手の基盤のProMicroの足の穴がコンスルーとの接触が悪いみたいでした。
+コンスルーの足を無理やりまげて（3個のコンスルーの足を折りました。。。）、通電できるようにして解決（結局あとでいくつかの足についてははんだ付けしました）。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">終わった。LEDの予備はんだまでやってからおしまいにしよ</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1383082534288859137?ref_src=twsrc%5Etfw">April 16, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<h3 id="led実装">LED実装</h3>
+<p>鬼門の表面実装ですが、LEDを1個破損するだけで乗り切りました。ちょっと色はおかしかったですが、これはおそらくProMicroの足のせい。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">一個逆につけてしまい、お亡くなりになりましたが、まぁ、良いかな。まずは右手 <a href="https://t.co/zldu6fRsXR">pic.twitter.com/zldu6fRsXR</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1383788595111100443?ref_src=twsrc%5Etfw">April 18, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<h3 id="ソケットの実装x2">ソケットの実装x2</h3>
+<p>ロープロファイル（Kailh choc v1）のキースイッチも試してみたいので、MXと両方のソケットをはんだ付けしました。
+両方利用できるのは便利ですね。はんだ付けも楽しいし。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ソケットを片手だけ(両方のソケットつけるのでまだ、1/4) <a href="https://t.co/7XFRDx0D0I">pic.twitter.com/7XFRDx0D0I</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1383801006593478665?ref_src=twsrc%5Etfw">April 18, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<h3 id="キースイッチ設置">キースイッチ設置</h3>
+<p>親指以外には<a href="https://kochikeyboard.stores.jp/items/6008cdf1bbb6833001e9711b">Kailh Box Silentのピンク軸（Kochi Keyboardから）</a>、親指には<a href="https://shop.yushakobo.jp/products/input-club-hako-switches?variant=37665677639841">Kailh Input Club Hako Violet（AliExpressで購入したもの。リンクは遊舎工房のもの）</a>をつけました。
+どちらもそれほどぶれもないものです。Silent ピンクはリニアで静かでそれほど力がいらないスイッチになっています。
+親指はタクタイルで小気味のいい音が気に入っています。Sofleもこのキースイッチになってます。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">残りのソケットつけて、キースイッチも設置して、動確してボトムプレートも装着。残りはキーキャップ。 <a href="https://t.co/hGc1TtI6fu">pic.twitter.com/hGc1TtI6fu</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1386322961854996483?ref_src=twsrc%5Etfw">April 25, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<h3 id="キーキャップキーマップ">キーキャップ＋キーマップ</h3>
+<p>お試しにXDAのキーキャップをはめてみたのですが、キーの境目がわかりにくく、タイプミスが多かったです。
+その後のツイートにあるようにOEMに切り替えています。</p>
+<p>キーマップについては、Lunakey Miniの作者のYoichiroさんが作った<a href="https://remap-keys.app/">Remap</a>というブラウザベースでキーマップの書き換えができるツールで楽々変更ができました。JISキーまで対応しているのでJISベースでキーマップを作成している私にはうってつけでした。
+<a href="https://salicylic-acid3.hatenablog.com/entry/remap-manual">Remapの利用方法についてはサリチル酸さんのブログ</a>が詳しく書いてあります（本当に頭が下がります）。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">Remap使ってキーマップいじったら、すごく楽だった。</p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1386472185535991809?ref_src=twsrc%5Etfw">April 26, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<h3 id="ble--lpme-io化">BLE + LPME-IO化</h3>
+<p>ここまでで、USB接続で動作はしていたのですが、Sofle同様に3台をBluetoothで切り替えながら使いたかったので、
+Corne Light v2につけていたBLE+LPME-IO(<a href="https://blog.johtani.info/blog/2021/01/11/apply-ble-and-lpme-to-corne/">Corneの実装などは前のブログを参照</a>)を抜き取って、Lunakey Miniに移植してみました。</p>
+<p>BLE ProMicro化は<a href="https://www.eisbahn.jp/yoichiro/2021/03/lunakey_mini_ble.html">作者の方のブログ</a>で行われていたので、LPME-IO対応も何とかなるだろうと。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">BLE+LPMEに変えた。後でブログ書こう <a href="https://t.co/mGePN52v6k">pic.twitter.com/mGePN52v6k</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1387563117979201538?ref_src=twsrc%5Etfw">April 29, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>LPME-IOへの対応はCorneとSofleの時に行なったこともあり、なんとなくあたりがついていました。
+流れとしては、以下の通りです。</p>
+<ol>
+<li>BLE Micro Pro用の設定ファイルを作成
 <ul>
-<li><a href="https://marp.app/">Marp公式サイト</a></li>
-</ul>
-<p>といっても、これ自体を使わなくても、VS Code上でプレビューしたりHTML形式で動作するスライドを吐き出すことが可能です。
-なので、VS Code用のプラグインを利用しています。</p>
-<h3 id="サンプル">サンプル</h3>
-<p>この間利用したスライドはこんな感じのMarkdownになってます。
-<code>---</code>でページを区切りつつ、記述していく形です。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-markdown" data-lang="markdown">---
-marp: true
-theme: poster
-
----
-
-&lt;!-- _class: big-center --&gt;
-# 本当にその検索は&lt;br/&gt;自分が想像している検索に&lt;br/&gt;なってますか？
-
-&lt;br/&gt;
-&lt;br/&gt;
-<span style="color:#66d9ef">
-</span><span style="color:#66d9ef">&gt; </span><span style="font-style:italic">2021/03
-</span><span style="font-style:italic"></span><span style="color:#66d9ef">&gt; </span><span style="font-style:italic">Jun Ohtani / @johtani
-</span><span style="font-style:italic"></span>
----
-![<span style="color:#f92672">bg right:40% 40%</span>](<span style="color:#a6e22e">johtani_face.jpg</span>)
-# 自己紹介
-
-
-
-<span style="color:#66d9ef">-</span> フリーランスエンジニア 
-<span style="color:#66d9ef">-</span> 検索技術勉強会主催者
-<span style="color:#66d9ef">-</span> Apache Solr入門(第2版まで)や
-データ分析基盤構築入門の著者の一人
-
----
-</code></pre></div><p>プレビューで見るとこんな感じです。</p>
-
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20210409/preview.png" />
-    </div>
-    <a href="/images/entries/20210409/preview.png" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<h2 id="プラグイン">プラグイン</h2>
-<ul>
-<li><a href="https://marketplace.visualstudio.com/items?itemName=marp-team.marp-vscode">Marp for VS Code</a></li>
-</ul>
-<p>プラグインをインストールするのも簡単ですよね。
-マーケットプレイスからインストールすれば完了です。</p>
-<p>機能については上記のページにあるように、プレビューとスライドの出力です。
-プレビューでは、Markdownのプレビューみたいな形で、スライドが表示できます。</p>
-<p>先日この機能を利用して作成して、HTMLで出力して利用しました。
-PDFとかPPTX出も出せるようなので、今後試してみようかなと。</p>
-<h2 id="decksetのスライドとの違い">Decksetのスライドとの違い</h2>
-<p>ページの区切りなども同じだったので、大筋ではそれほど違いはありませんでした。
-ただ、画像周りとスタイルの設定は細かく修正をしました。</p>
-<p>変更した点としては、以下のようなものがあります。</p>
-<ul>
-<li>ヘッダ部分の変更
-<ul>
-<li>上のサンプルにありますが、<code>marp: true</code>を含む部分がMarp独自の記述です。</li>
+<li><a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/edit_config_file?id=qmk%e7%94%a8%e3%81%ae%e8%a8%ad%e5%ae%9a%e3%81%8b%e3%82%89%e5%a4%89%e6%8f%9b%e3%81%99%e3%82%8b">BLE Micro Proのサイトの「キーボードの設定ファイルを編集する」のコマンドでコンフィグファイルを生成</a></li>
 </ul>
 </li>
-<li>ページごとのちょっとした変更
+<li>LPME-IOのジャンパをはんだでブリッジ
 <ul>
-<li>ページごとにスタイルの変更ができるみたいで（Decksetではできなかったはず？）、タイトルページのスタイルを変えてあります。</li>
+<li>1.で生成したコンフィグから、Corne Lightと同じ個所のジャンプをすれば良いとわかったので今回はスキップ</li>
 </ul>
 </li>
-<li>画像の指定
+<li>TRRSのI2C対応
 <ul>
-<li>画像の読み込み自体は違いはないのですが、画像の配置についての指定方法は</li>
+<li><a href="https://blog.johtani.info/blog/2021/01/11/apply-ble-and-lpme-to-corne/#lpme-io%E5%AF%BE%E5%BF%9C">Corne LightのLPME-IO対応の時と同様にSDAとSCLをTRRSの足にショートカット</a></li>
+<li>ただ、今回右手側は、下記ツイートのようにOLEDの足からTRRSの足にショートカットしました。Corneの基盤を見ていた時にこれでも行けそうだな？と思っていたので、試してみた次第です。ちなみに、左手はCorneの時と同じPro Microから長い銅線を引っ張っています（電池基盤があったので、外すのがめんどくさかったため）。</li>
 </ul>
 </li>
-<li>カスタムテーマ用CSSの作成
+<li>BLE Micro Proにファームウェア書き込み
 <ul>
-<li>デフォルトではなく、Decksetで用意されているような感じのスタイルに変更してみてます。</li>
+<li><a href="https://sekigon-gonnoc.github.io/BLE-Micro-Pro/#/getting_started?id=ble-micro-pro-wqeb-configurator%E3%82%92%E4%BD%BF%E3%81%86">BLE Micro Proのサイトの手順</a>に従います。</li>
+<li>設定ファイルには1.で出力されているLPME用のファイルを使用。</li>
+</ul>
+</li>
+</ol>
+<p>といった感じです。キーマップが設定されていないので、Remapで設定しなおしました。
+Remapは、キーマップをPDFで出力する機能までついていて、すごくいいですね。サイコー</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">あと、足。 <a href="https://t.co/W0Wpf5k5SE">pic.twitter.com/W0Wpf5k5SE</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1387795946784714760?ref_src=twsrc%5Etfw">April 29, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>傾斜がつくように奥側に高さを出すためのゴム足を貼り付けました。
+あとは、3台のPCにBluetoothで接続すれば終了です。
+（AD_WO_Lのキーを利用して追加していくのを毎回忘れる。。。）</p>
+<h3 id="疑問点">疑問点</h3>
+<p>ちょっとだけ疑問点がありますが、時間があればそのうち調べるかな。</p>
+<ul>
+<li>Remapはクラウドに設定ファイルをセーブできるけど、json形式で手元にダウンロードしたりはできないのかなぁ？</li>
+<li>LEDは有線じゃないと点かないみたいだけど、音はどうなんだろう？
+<ul>
+<li>音が出せそうなら、Bluetoothの接続切り替えするときに音の出方を変えるとかをやってみたいなぁ。</li>
 </ul>
 </li>
 </ul>
-<p>カスタムテーマはCSSで設定できるので、CSSファイルを用意して、VS Codeの拡張機能の設定からファイルパスを指定する形です。</p>
-<p>ということで、当面はMarpでスライドを作っていくことになるかと思います。
-まぁ、ただ、スライドを作るいこと自体が減ってきてはいるのですが。
-ほかの配色を試したり、ヘッダフッタとかも試してみるのもいいかもな。</p>
-<p>気が向いたら、CSSをどこかにアップロードするかもです。</p>
-<p>※今回のブログはGateronサイレントクリア軸をルブしてみた、Corne Light v2で最後の数行を書いてみました。
-キースイッチだけだとこすれる音が減った気がしてましたが、キーキャップを付けたら少しこすれる音が気になる感じです。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、Lunakey Miniを組み立てて、BLE+LPME-IO対応してみました。
+はんだ付けはだいぶ慣れてきましたし、今回もトラブルがあったおかげでテスターを利用して、どのあたりがおかしいかという調査をするのも慣れてきました。
+あとは、キーの配置の違いを体感して、どれが自分に合ってるかなぁ？というのを試したり仕様と思います。
+ロープロファイルも試してみようかな。</p>
+<p>あ。もちろん、このブログは組み立ててBluetoothで接続したLunakey Mini Rev5、Kailh Box Silentピンク軸＋Input Club Hako Violetで書きました！！久々に数字列がないので記号入力とかがちょっとバタバタしましたｗ</p>
 
 
                 
@@ -322,15 +355,10 @@ PDFとかPPTX出も出せるようなので、今後試してみようかなと�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2021/03/31/search-tech-jp-slack/" data-toggle="tooltip" data-placement="top" title="検索技術に関する情報交換を目的としたSlackができました！">&larr;
+                        <a href="/blog/2021/04/05/intro-marp/" data-toggle="tooltip" data-placement="top" title="スライド作成の環境をMarpにしてみた">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2021/04/30/build-lunakey-mini-ble/" data-toggle="tooltip" data-placement="top" title="Lunakey Miniを組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
