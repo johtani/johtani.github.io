@@ -39,7 +39,7 @@
     <link rel="canonical" href="/blog/2020/05/26/logging-azure-search-request/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-	
+
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
@@ -48,9 +48,9 @@
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
+
     
-    
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
@@ -58,10 +58,10 @@
     
     
     <script src="/js/jquery.min.js"></script>
-    
+
     
     <script src="/js/bootstrap.min.js"></script>
-    
+
     
     <script src="/js/hux-blog.min.js"></script>
 
@@ -242,8 +242,8 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
 ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには<code>Microsoft.Extensions.Logging</code>の<code>ILogger</code>を使用します。</p>
 <p>また、Azure Cognitive SearchのSDK側に違う問題点もありました。<a href="https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method">チュートリアルにあるように</a>、検索するときには、SDKは次のような使い方を想定しています。</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">        <span style="color:#75715e">// Create a service and index client.
-</span><span style="color:#75715e"></span>        _serviceClient = <span style="color:#66d9ef">new</span> SearchServiceClient(searchServiceName, <span style="color:#66d9ef">new</span> SearchCredentials(queryApiKey));
-        _indexClient = _serviceClient.Indexes.GetClient(<span style="color:#e6db74">&#34;hotels&#34;</span>);
+</span><span style="color:#75715e"></span>        <span style="color:#ae81ff">_</span>serviceClient = <span style="color:#66d9ef">new</span> SearchServiceClient(searchServiceName, <span style="color:#66d9ef">new</span> SearchCredentials(queryApiKey));
+        <span style="color:#ae81ff">_</span>indexClient = <span style="color:#ae81ff">_</span>serviceClient.Indexes.GetClient(<span style="color:#e6db74">&#34;hotels&#34;</span>);
 </code></pre></div><p>インデックス用のクライアントを取得するために、<code>GetClient(インデックス名)</code>というメソッドを使用します。この<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_"><code>GetClient</code>メソッドのバリエーション</a>として、DelegatingHandlerを受け取るメソッドがないのです。。。</p>
 <p>ということで、DelegationHandlerを活用する方法としては、以下の2つを実装する必要があります。</p>
 <ol>
@@ -266,8 +266,8 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
 {
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CustomLoggingHttpMessageHandler</span> : DelegatingHandler
     {
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> ILogger _logger;
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">bool</span> _logContent = <span style="color:#66d9ef">false</span>;
+        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> ILogger <span style="color:#ae81ff">_l</span>ogger;
+        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">bool</span> <span style="color:#ae81ff">_l</span>ogContent = <span style="color:#66d9ef">false</span>;
 
         <span style="color:#66d9ef">public</span> CustomLoggingHttpMessageHandler(ILogger logger, <span style="color:#66d9ef">bool</span> logContent)
         {
@@ -276,8 +276,8 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
                 <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(logger));
             }
 
-            <span style="color:#66d9ef">this</span>._logger = logger;
-            <span style="color:#66d9ef">this</span>._logContent = logContent;
+            <span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogger = logger;
+            <span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogContent = logContent;
         }
 
 
@@ -287,11 +287,11 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
             {
                 <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(request));
             } 
-            <span style="color:#66d9ef">await</span> Log.RequestStart(<span style="color:#66d9ef">this</span>._logger, request, <span style="color:#66d9ef">this</span>._logContent);
+            <span style="color:#66d9ef">await</span> Log.RequestStart(<span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogger, request, <span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogContent);
             <span style="color:#66d9ef">var</span> stopwatch = <span style="color:#66d9ef">new</span> Stopwatch();
             HttpResponseMessage response = <span style="color:#66d9ef">await</span> <span style="color:#66d9ef">base</span>.SendAsync(request, cancellationToken).ConfigureAwait(<span style="color:#66d9ef">false</span>);
             stopwatch.Stop();
-            <span style="color:#66d9ef">await</span> Log.RequestEnd(<span style="color:#66d9ef">this</span>._logger, response, stopwatch.Elapsed);
+            <span style="color:#66d9ef">await</span> Log.RequestEnd(<span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogger, response, stopwatch.Elapsed);
 
             <span style="color:#66d9ef">return</span> response;
         }
@@ -379,15 +379,15 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">
         <span style="color:#66d9ef">private</span> ISearchIndexClient GetClient(<span style="color:#66d9ef">string</span> indexName, <span style="color:#66d9ef">params</span> DelegatingHandler[] handlers)
         {
-            <span style="color:#66d9ef">var</span> rootHandler = _searchServiceClient.HttpMessageHandlers.OfType&lt;HttpClientHandler&gt;().SingleOrDefault();
+            <span style="color:#66d9ef">var</span> rootHandler = <span style="color:#ae81ff">_</span>searchServiceClient.HttpMessageHandlers.OfType&lt;HttpClientHandler&gt;().SingleOrDefault();
             <span style="color:#66d9ef">var</span> indexClient =
-                <span style="color:#66d9ef">new</span> SearchIndexClient(_searchServiceClient.SearchServiceName, indexName,
-                    _searchServiceClient.SearchCredentials, rootHandler, handlers)
+                <span style="color:#66d9ef">new</span> SearchIndexClient(<span style="color:#ae81ff">_</span>searchServiceClient.SearchServiceName, indexName,
+                    <span style="color:#ae81ff">_</span>searchServiceClient.SearchCredentials, rootHandler, handlers)
                 {
-                    SearchDnsSuffix = _searchServiceClient.SearchDnsSuffix
+                    SearchDnsSuffix = <span style="color:#ae81ff">_</span>searchServiceClient.SearchDnsSuffix
                 };
 
-            indexClient.HttpClient.Timeout = _searchServiceClient.HttpClient.Timeout;
+            indexClient.HttpClient.Timeout = <span style="color:#ae81ff">_</span>searchServiceClient.HttpClient.Timeout;
             <span style="color:#66d9ef">return</span> indexClient;
         }
 </code></pre></div><p>出力されるログ例</p>
@@ -982,20 +982,20 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
                    <li>
                        <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
                            <span class="fa-stack fa-lg">
-                               <i class="fa fa-circle fa-stack-2x"></i>
-                               <i class="fa fa-rss fa-stack-1x fa-inverse"></i>
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
                            </span>
                        </a>
                    </li>
                    
                     
-                    
+
                     
                     <li>
                         <a href="https://twitter.com/johtani">
                             <span class="fa-stack fa-lg">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
                             </span>
                         </a>
                     </li>
@@ -1011,8 +1011,8 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
                     <li>
                         <a target="_blank" href="https://github.com/johtani">
                             <span class="fa-stack fa-lg">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
                             </span>
                         </a>
                     </li>
@@ -1023,8 +1023,8 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
                     <li>
                         <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
                             <span class="fa-stack fa-lg">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
                             </span>
                         </a>
                     </li>
@@ -1098,16 +1098,16 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
 
 
 
-<script type="application/javascript">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
 var doNotTrack = false;
 if (!doNotTrack) {
-	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-	ga('create', 'UA-41371795-1', 'auto');
-	
-	ga('send', 'pageview');
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
 }
 </script>
-<script async src='https://www.google-analytics.com/analytics.js'></script>
 
 
 

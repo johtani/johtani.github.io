@@ -39,8 +39,8 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
 ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには&lt;code&gt;Microsoft.Extensions.Logging&lt;/code&gt;の&lt;code&gt;ILogger&lt;/code&gt;を使用します。&lt;/p&gt;
 &lt;p&gt;また、Azure Cognitive SearchのSDK側に違う問題点もありました。&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method&#34;&gt;チュートリアルにあるように&lt;/a&gt;、検索するときには、SDKは次のような使い方を想定しています。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;// Create a service and index client.
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        _serviceClient = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchServiceClient(searchServiceName, &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchCredentials(queryApiKey));
-        _indexClient = _serviceClient.Indexes.GetClient(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hotels&amp;#34;&lt;/span&gt;);
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;serviceClient = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchServiceClient(searchServiceName, &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchCredentials(queryApiKey));
+        &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;indexClient = &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;serviceClient.Indexes.GetClient(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hotels&amp;#34;&lt;/span&gt;);
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;インデックス用のクライアントを取得するために、&lt;code&gt;GetClient(インデックス名)&lt;/code&gt;というメソッドを使用します。この&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_&#34;&gt;&lt;code&gt;GetClient&lt;/code&gt;メソッドのバリエーション&lt;/a&gt;として、DelegatingHandlerを受け取るメソッドがないのです。。。&lt;/p&gt;
 &lt;p&gt;ということで、DelegationHandlerを活用する方法としては、以下の2つを実装する必要があります。&lt;/p&gt;
 &lt;ol&gt;
@@ -63,8 +63,8 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
 {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;CustomLoggingHttpMessageHandler&lt;/span&gt; : DelegatingHandler
     {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; ILogger _logger;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; _logContent = &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; ILogger &lt;span style=&#34;color:#ae81ff&#34;&gt;_l&lt;/span&gt;ogger;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;readonly&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;_l&lt;/span&gt;ogContent = &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;;
 
         &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; CustomLoggingHttpMessageHandler(ILogger logger, &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt; logContent)
         {
@@ -73,8 +73,8 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(logger));
             }
 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger = logger;
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logContent = logContent;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;.&lt;span style=&#34;color:#ae81ff&#34;&gt;_l&lt;/span&gt;ogger = logger;
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;.&lt;span style=&#34;color:#ae81ff&#34;&gt;_l&lt;/span&gt;ogContent = logContent;
         }
 
 
@@ -84,11 +84,11 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
             {
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArgumentNullException(nameof(request));
             } 
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestStart(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger, request, &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logContent);
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestStart(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;.&lt;span style=&#34;color:#ae81ff&#34;&gt;_l&lt;/span&gt;ogger, request, &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;.&lt;span style=&#34;color:#ae81ff&#34;&gt;_l&lt;/span&gt;ogContent);
             &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; stopwatch = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Stopwatch();
             HttpResponseMessage response = &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;base&lt;/span&gt;.SendAsync(request, cancellationToken).ConfigureAwait(&lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;);
             stopwatch.Stop();
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestEnd(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;._logger, response, stopwatch.Elapsed);
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; Log.RequestEnd(&lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;.&lt;span style=&#34;color:#ae81ff&#34;&gt;_l&lt;/span&gt;ogger, response, stopwatch.Elapsed);
 
             &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; response;
         }
@@ -176,15 +176,15 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;
         &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; ISearchIndexClient GetClient(&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; indexName, &lt;span style=&#34;color:#66d9ef&#34;&gt;params&lt;/span&gt; DelegatingHandler[] handlers)
         {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; rootHandler = _searchServiceClient.HttpMessageHandlers.OfType&amp;lt;HttpClientHandler&amp;gt;().SingleOrDefault();
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; rootHandler = &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;searchServiceClient.HttpMessageHandlers.OfType&amp;lt;HttpClientHandler&amp;gt;().SingleOrDefault();
             &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; indexClient =
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchIndexClient(_searchServiceClient.SearchServiceName, indexName,
-                    _searchServiceClient.SearchCredentials, rootHandler, handlers)
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchIndexClient(&lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;searchServiceClient.SearchServiceName, indexName,
+                    &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;searchServiceClient.SearchCredentials, rootHandler, handlers)
                 {
-                    SearchDnsSuffix = _searchServiceClient.SearchDnsSuffix
+                    SearchDnsSuffix = &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;searchServiceClient.SearchDnsSuffix
                 };
 
-            indexClient.HttpClient.Timeout = _searchServiceClient.HttpClient.Timeout;
+            indexClient.HttpClient.Timeout = &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;searchServiceClient.HttpClient.Timeout;
             &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; indexClient;
         }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力されるログ例&lt;/p&gt;

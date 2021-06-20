@@ -686,7 +686,7 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
 &lt;p&gt;この関数には&lt;code&gt;async&lt;/code&gt;とついています。非同期処理の関数です。内部で2回ほど(リクエスト送信の結果待ちとレスポンスのパース待ち)&lt;code&gt;.await&lt;/code&gt;があります。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;client&lt;/code&gt;に&lt;code&gt;.get(URL)&lt;/code&gt;や&lt;code&gt;query(&amp;amp;[])&lt;/code&gt;といったメソッドが用意されているので、URLやクエリパラメータを用意して&lt;code&gt;send()&lt;/code&gt;でリクエスト送信します。&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
-async &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;call_api&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Result&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String, String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
+&lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;call_api&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Result&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String, String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; client &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; reqwest::Client::new();
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; file_name2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;File:{}&amp;#34;&lt;/span&gt;, file_name);
     &lt;span style=&#34;color:#75715e&#34;&gt;//let mut file_name2 = file_name.to_string().replace(&amp;#34; &amp;#34;, &amp;#34;_&amp;#34;);
@@ -701,12 +701,12 @@ async &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&
         .get(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://en.wikipedia.org/w/api.php&amp;#34;&lt;/span&gt;)
         .query(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;query)
         .send()
-        .await;
+        .&lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt;;
 
     &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; result {
         Ok(response) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; response.status() {
             StatusCode::OK &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; body &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; response.json::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;MediaWikiResponse&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;().await;
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; body &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; response.json::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;MediaWikiResponse&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;().&lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt;;
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; body {
                     Ok(obj) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; obj.get_url() {
                         Some(url) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Ok(url),
@@ -2292,7 +2292,7 @@ sliceは特定のシーケンス（配列）に対してある特定のサイズ
 &lt;h3 id=&#34;03-円周率&#34;&gt;03. 円周率&lt;/h3&gt;
 &lt;p&gt;問題は&lt;a href=&#34;http://www.cl.ecei.tohoku.ac.jp/nlp100/#sec03&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
 &lt;script src=&#34;http://gist-it.appspot.com/http://github.com/johtani/nlp100-rust/blob/8ca508cc16fbc7a11ac04bbc43687dfec4f25483/src/chapter01/answer/mod.rs?slice=60:71&#34;&gt;&lt;/script&gt;
-&lt;p&gt;入力文字列を&lt;code&gt;.split_whitespace()&lt;/code&gt;で分割しておいて、単語ごとのベクタを作り出し、そこに対して文字を数えました。「アルファベットの」という注意書きがあるので&amp;rdquo;,&amp;ldquo;や&amp;rdquo;.&amp;ldquo;は含めずに数えるのかなということで、
+&lt;p&gt;入力文字列を&lt;code&gt;.split_whitespace()&lt;/code&gt;で分割しておいて、単語ごとのベクタを作り出し、そこに対して文字を数えました。「アルファベットの」という注意書きがあるので&amp;quot;,&amp;ldquo;や&amp;rdquo;.&amp;ldquo;は含めずに数えるのかなということで、
 charの&lt;code&gt;.is_alphabetic()&lt;/code&gt;で&lt;code&gt;A-z&lt;/code&gt;までの判定をしつつ、文字のベクタを作ってから、そのベクタの長さを詰め込むという感じでやりました。&lt;/p&gt;
 &lt;p&gt;これ、ひょっとして、collectでベクタにしなくても、i32とかの変数でカウントするとベクタ作らなくてもいいなじゃにか？というのに書きながら気づいた。。。
 必要じゃないオブジェクトを作ってるよなぁ。&lt;/p&gt;

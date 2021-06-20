@@ -1453,7 +1453,7 @@ NGDataのチームがSolr/HBaseの統合とかしてるみたい。&lt;/p&gt;
 　　2.&lt;a href=&#34;http://issues.apache.org/jira/browse/SOLR-4623&#34;&gt;SOLR-4623&lt;/a&gt;　REST APIで現在のschemaのエレメントをすべて読めるように。REST APIの返却の形式として、XMLとJSONとschema.xmlの形式を追加REST APIのパッケージを変更。
 　　　クラス名も変更しschemaにフォーカスした機能も除去。今後のschema以外のREST APIのために。
 　　　copyFieldsとdynamicFieldsの出力パスをすべてlowercaseのものからCamelCaseに変更。他のREST APIも同様。
-　　3.&lt;a href=&#34;http://issues.apache.org/jira/browse/SOLR-4658&#34;&gt;SOLR-4658&lt;/a&gt;　REST APIリクエストでschemaを変更できるようにするために、「managed schema」を導入。solrconfig.xmlに「&amp;lt;schemaFactory class=&amp;quot;ManagedSchemaFactory&amp;rdquo; mutable=&amp;quot;true&amp;rdquo;/&amp;gt;」を追加。REST APIリクエストでスキーマ変更が可能にするために。
+　　3.&lt;a href=&#34;http://issues.apache.org/jira/browse/SOLR-4658&#34;&gt;SOLR-4658&lt;/a&gt;　REST APIリクエストでschemaを変更できるようにするために、「managed schema」を導入。solrconfig.xmlに「&amp;lt;schemaFactory class=&amp;ldquo;ManagedSchemaFactory&amp;rdquo; mutable=&amp;ldquo;true&amp;rdquo;/&amp;gt;」を追加。REST APIリクエストでスキーマ変更が可能にするために。
 　　4.&lt;a href=&#34;http://issues.apache.org/jira/browse/SOLR-4656&#34;&gt;SOLR-4656&lt;/a&gt;　2つのハイライトパラメータ（hl.maxMultiValuedToMatch、hl.maxMultiValuedToExamine）を追加。
 　　　hl.maxMultiValuedToMatchは指定された数のsnippetが見つかったらそれ以降の探索を停止する設定。multiValuedフィールドがどんなに離れてても探索する。
 　　　hl.maxMultiValuedToExamineは指定された数のmultiValuedのエントリ数を調査したら探索を停止する設定。
@@ -1552,16 +1552,16 @@ RDBを触っていた方が、Solrを始めた場合に必ず使いづらいと�
 &lt;hr&gt;
 &lt;p&gt;前提条件はつぎのとおりです。&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;すべてのフィールドをstored=&amp;quot;true&amp;quot;にする&lt;/li&gt;
+&lt;li&gt;すべてのフィールドをstored=&amp;ldquo;true&amp;quot;にする&lt;/li&gt;
 &lt;li&gt;「&lt;em&gt;version&lt;/em&gt;」という特殊なフィールドを用意する&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;1点目は、データの保存方法についてです。
 先ほど流れに書きましたが、Solrが内部に保存してあるデータを取り出して、更新対象以外のデータを保存しなおしてくれます。
-このため、stored=&amp;quot;true&amp;quot;にしておかないと、元のデータがSolr内部で取得できません。&lt;/p&gt;
+このため、stored=&amp;ldquo;true&amp;quot;にしておかないと、元のデータがSolr内部で取得できません。&lt;/p&gt;
 &lt;p&gt;2点目の「&lt;em&gt;version&lt;/em&gt;」というフィールドは4.0から導入されたフィールドです。
 SolrCloudに必要な機能としてドキュメントのバージョン管理を行うために導入されたフィールドだと思います。（あまり詳しく調べていない。。。）
 SolrCloud内でレプリカの更新などに使ってるのかなぁと（そのうち調べます。）
-以上の2点が前提条件です。すべてのデータをstored=&amp;quot;true&amp;quot;としなければならない点は、インデックスのサイズや性能に関わってくるので考えて利用するほうがいいかと思います。&lt;/p&gt;
+以上の2点が前提条件です。すべてのデータをstored=&amp;ldquo;true&amp;quot;としなければならない点は、インデックスのサイズや性能に関わってくるので考えて利用するほうがいいかと思います。&lt;/p&gt;
 &lt;p&gt;###利用方法&lt;/p&gt;
 &lt;hr&gt;
 &lt;p&gt;Solrのサンプルデータ（exampledocs/mem.xml）を例として利用します。
@@ -1622,12 +1622,12 @@ multiValuedでない、copyFieldを利用しているしている場合には注
 根本的な問題は、部分更新ではなく&lt;a href=&#34;https://issues.apache.org/jira/browse/SOLR-3502&#34;&gt;copyFieldのバグ&lt;/a&gt;のようです。（部分更新の処理にも問題は有るような気がしますが。。。）&lt;/p&gt;
 &lt;p&gt;バグの内容はつぎのとおりです。&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;multiValued=&amp;quot;false&amp;quot;のフィールドをdestに指定&lt;/li&gt;
+&lt;li&gt;multiValued=&amp;ldquo;false&amp;quot;のフィールドをdestに指定&lt;/li&gt;
 &lt;li&gt;srcに指定されたフィールドに値を設定（exampleのpriceフィールドに「1」を指定）&lt;/li&gt;
 &lt;li&gt;destに指定されたフィールドに値を設定（exampleのprice_cフィールドに「2,USD」を指定）&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;上記のように設定した場合、「price_c」フィールドに、指定された値＋「price」の値がcopyにより追加されます。
-通常は「price_c」フィールドはmultiValued=&amp;quot;false&amp;quot;なのでエラーが出るはずなのですが、エラーが発生せず2つの値が登録されてしまいます。&lt;/p&gt;
+通常は「price_c」フィールドはmultiValued=&amp;ldquo;false&amp;quot;なのでエラーが出るはずなのですが、エラーが発生せず2つの値が登録されてしまいます。&lt;/p&gt;
 &lt;p&gt;このバグのため、exampleのデータを利用して部分更新を行うとつぎのような状態が発生します。
 更新を行う対象のデータはprice、price_cフィールド以外のフィールドとします。&lt;/p&gt;
 &lt;ul&gt;
@@ -1754,7 +1754,7 @@ StandardTokenizerFactoryを指定してしまうと、類義語が展開でき�
 &lt;/table&gt;
 &lt;h2 id=&#34;2章&#34;&gt;2章&lt;/h2&gt;
 &lt;h3 id=&#34;213-schemaxmlのバージョン27ページ&#34;&gt;2.1.3 schema.xmlのバージョン（27ページ）&lt;/h3&gt;
-&lt;p&gt;Solr3.xではschema.xmlのファイルの最新バージョンは&lt;strong&gt;1.&lt;span style=&#34;color:#FF0000&#34;&gt;5&lt;/span&gt;&lt;/strong&gt;になっています。&lt;/p&gt;
+&lt;p&gt;Solr3.xではschema.xmlのファイルの最新バージョンは**1.&lt;span style=&#34;color:#FF0000&#34;&gt;5&lt;/span&gt;**になっています。&lt;/p&gt;
 &lt;h3 id=&#34;223-代表的なトークナイザ35ページ&#34;&gt;2.2.3 代表的なトークナイザ（35ページ）&lt;/h3&gt;
 &lt;p&gt;solrbook.analysis.SenTokenizerFactoryは必要ありません。
 &lt;span style=&#34;color:#FF0000&#34;&gt;Solr 3.6.0からはKuromojiと呼ばれる形態素解析器が用意されています。
@@ -1856,7 +1856,7 @@ $ java -jar start.jar
 ちなみに、スライドの一覧はこちらです。
 &lt;span style=&#34;color:#FF0000&#34;&gt;※スライドへのリンクはすべてPDFへのリンクになっていますので、注意が必要です。&lt;/span&gt;&lt;/p&gt;
 &lt;hr&gt;
-&lt;p&gt;&lt;a href=&#34;http://www.lucidimagination.com/sites/default/files/file/Eurocon2011/miller_solr4highlights2_eurocon2011.pdf&#34;&gt;&lt;em&gt;**Solr 4 Highlights（PDF）**&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://www.lucidimagination.com/sites/default/files/file/Eurocon2011/miller_solr4highlights2_eurocon2011.pdf&#34;&gt;&lt;em&gt;&lt;strong&gt;Solr 4 Highlights（PDF）&lt;/strong&gt;&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Solrの次期バージョン4.0で採用される機能の紹介でした。
 紹介されているのは次の機能。各機能について、JIRAの番号も記載があるので便利ですね。&lt;/p&gt;
 &lt;ul&gt;
