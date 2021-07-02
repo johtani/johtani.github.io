@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Azure Cognitive Searchの新機能、Semantic Searchを試してみた" />
+    <meta property="og:title" content="Azure Cognitive Searchの新機能、Semantic Searchを試してみた" />
+    <meta property="twitter:title" content="Azure Cognitive Searchの新機能、Semantic Searchを試してみた" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Azure Cognitive Searchの新機能、Semantic Searchを試してみた-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2021/07/01/semantic-search-in-azure-cognitive-search/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/azure-search" title="azure search">
+                            azure search
+                        </a>
+                        
+                    </div>
+                    <h1>Azure Cognitive Searchの新機能、Semantic Searchを試してみた</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Thursday, July 1, 2021
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#公式ドキュメント">公式ドキュメント</a></li>
+    <li><a href="#semantic-searchとは">Semantic Searchとは？</a>
+      <ul>
+        <li><a href="#仕組み">仕組み</a></li>
+        <li><a href="#利用できる環境と制限">利用できる環境と制限</a></li>
+      </ul>
+    </li>
+    <li><a href="#wikipediaのデータを入れて試してみた">Wikipediaのデータを入れて試してみた</a>
+      <ul>
+        <li><a href="#日本語のwikipedia">日本語のWikipedia</a></li>
+        <li><a href="#英語のwikipedia">英語のWikipedia</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>Azure Cognitive Searchで新機能「Semantic Search（セマンティック検索）」という機能の日本語対応が発表されました。
+実際にはPublic Previewという状態ではありますが、どんな機能か気になったので調べてみました。
+なお、本ブログは2021年6月時点での内容となります。</p>
+<h2 id="公式ドキュメント">公式ドキュメント</h2>
+<p>公式ドキュメントでいろいろと説明されています。まずは公式ドキュメントを見ていただくのが良いかなと。最初のドキュメントには10分ちょっとの紹介ビデオもあります。ピックアップしたのは概要、クエリ、レスポンスの構造、紹介ブログになります。ブログ以外は日本語（たぶん機械翻訳？）になっています(新機能の紹介の日本語ページにはまだ記載がありません)。</p>
+<ul>
+<li><a href="https://docs.microsoft.com/ja-jp/azure/search/semantic-search-overview">Semantic search - Azure Cognitive Search | Microsoft Docs</a></li>
+<li><a href="https://docs.microsoft.com/ja-jp/azure/search/semantic-how-to-query-request">Create a semantic query - Azure Cognitive Search | Microsoft Docs</a></li>
+<li><a href="https://docs.microsoft.com/ja-jp/azure/search/semantic-how-to-query-response">Structure a semantic response - Azure Cognitive Search | Microsoft Docs</a></li>
+<li><a href="https://www.microsoft.com/en-us/research/blog/the-science-behind-semantic-search-how-ai-from-bing-is-powering-azure-cognitive-search/">The science behind semantic search： How AI from Bing is powering Azure Cognitive Search - Microsoft Research</a></li>
+</ul>
+<p>簡単にですがデータを入れて試してみたので、どんな仕組みなのかどういう挙動なのかを紹介します。</p>
+<h2 id="semantic-searchとは">Semantic Searchとは？</h2>
+<p>言語理解、セマンティック関連性などを提供する機能です。BingとMSリサーチにより開発されて、Azure Cognitive Searchに導入されました。
+クエリの書き方を少し変更する必要がありますが、再インデックスや設定変更などは必要ないという仕組みになっています。</p>
+<ul>
+<li>検索クエリからコンテキストを読み取って、検索し、リランクするアルゴリズム(Semantic Ranker)</li>
+<li>関連する一節を強調表示（Semantic Caption）</li>
+<li>クエリに対するセマンティック回答(Semantic Answer)</li>
+<li>スペルチェック機能</li>
+</ul>
+<p><a href="https://docs.microsoft.com/en-us/rest/api/searchservice/preview-api/search-documents#queryLanguage">言語によって利用できる機能が異なります</a>。</p>
+<p>Semantic Searchの利点は先ほどの紹介にも書きましたが、インデキシング時に特殊処理をする必要がないことかなと。
+すでに登録してあるデータ（制限がありますが）でもすぐに試すことができます。</p>
+<h3 id="仕組み">仕組み</h3>
+<p><a href="https://docs.microsoft.com/ja-jp/azure/search/media/semantic-search-overview/semantic-query-architecture.png">https://docs.microsoft.com/ja-jp/azure/search/media/semantic-search-overview/semantic-query-architecture.png</a></p>
+<ol>
+<li>スペル修正機能</li>
+<li>クエリパース</li>
+<li>スコアリング</li>
+<li>上位50件に対してSemantic Rankerにより再評価（検索ヒットが50件以上の場合でも<strong>上位50件</strong>のみがリランクの対象）
+<ul>
+<li>言語表現モデルを利用</li>
+<li>結果の要約として最適な部分をキャプションとして抽出。</li>
+<li>クエリが質問形式の場合は一番よさそうな場所を回答として選択</li>
+</ul>
+</li>
+</ol>
+<p>1および4番目の処理が今回新しく使えるSemantic Searchの機能になります。スペルチェックは日本語がまだ対象外なので、4番目の機能について紹介します。</p>
+<h3 id="利用できる環境と制限">利用できる環境と制限</h3>
+<p>冒頭でも書きましたが、Public Previewの段階です。実際に利用するには<a href="https://forms.office.com/pages/responsepage.aspx?id=v4j5cvGGr0GRqy180BHbRyhHvXnF8jlIrXhuXLZqYeJUNTNUMEQ2V0NLOU5JVEVBTEU5NkZNUlA3RS4u">リクエストページ</a>から申し込みが必要になっています。</p>
+<p>利用リクエスト時に利用するAzure Cognitive Searchのサービス名が必要になるので、あらかじめ起動しておかなければいけません。
+また、利用できるリージョンが限定されているのでサービス起動時のリージョンには気を付けてください。</p>
+<ul>
+<li>利用できるリージョン
+<ul>
+<li>米国中北部、米国西部、米国西部 2、米国東部 2、北ヨーロッパ、西ヨーロッパ</li>
+</ul>
+</li>
+<li>利用できるTier
+<ul>
+<li>セマンティック検索はStandardレベル</li>
+<li>スペルチェックはレベル制限なし</li>
+</ul>
+</li>
+<li>価格（セマンティック検索のみ）
+<ul>
+<li>7月初旬までは25万クエリで500ドル</li>
+</ul>
+</li>
+<li>Analyzerの制限
+<ul>
+<li>Azure Cognitive Searchが提供する言語アナライザーが対象（Custom Analyzerでは利用不可）</li>
+</ul>
+</li>
+</ul>
+<p>サービス起動後にプレビュープログラムを申請すると、利用できるようになるとメールが届きます。そこから利用ができるようになります。</p>
+<p>今回は日本語のWikipediaのデータをいれてどんな機能なのかを確認してみました。</p>
+<h2 id="wikipediaのデータを入れて試してみた">Wikipediaのデータを入れて試してみた</h2>
+<p>日本語のWikipedia（あとで英語も入れました）を一部（10万件程度）登録してSemantic Search（主にRanker）の動きを確認してみました。</p>
+<p>データの登録には自作ツールを利用。</p>
+<ul>
+<li>JSONデータ生成ツール：https://github.com/johtani/wiki-extractor-rs</li>
+<li>JSONデータ登録ツール：https://github.com/johtani/wiki-json-loader</li>
+</ul>
+<p>日本語Wikipediaの2020年6月のデータ、英語Wikipediaの2021年6月のデータを利用。上記ツールで生成したもののうち約10万件をAzure Cognitive Searchに登録して動作確認をしました（英語のデータでJSONデータ生成ツールでバグがあるのですが修正していません。。。）。
+また、クエリの実行にはVisual Studio CodeのREST Client拡張(<a href="https://blog.johtani.info/blog/2020/02/19/research-azure-cognitive-search/#%E9%96%91%E8%A9%B1%E4%BC%91%E9%A1%8C---rest-client-exstension-for-visual-studio-code">どんなものかは以前のブログをご覧ください</a>)を使いました。簡単にREST APIを呼び出せるのはすばらしい。</p>
+<h3 id="日本語のwikipedia">日本語のWikipedia</h3>
+<p>日本語のWikipediaのデータを「96,344件」登録し実験しました。
+スキーマは次のような形です（説明に必要なものだけ抽出してあります）。自然分が入っている<code>title</code>、<code>contents</code>、<code>headings</code>の3つのフィールドを今回はSemantic Searchの対象にしてみるので、AnalyzerをLuceneベースの日本語Analyzerである<code>ja.lucene</code>を設定しました。</p>
+<ul>
+<li>フィールド名 : タイプ / Analyzer</li>
+<li>id : Edm.String / keyword</li>
+<li>categories : Collection(Edm.String) / keyword</li>
+<li>title : Edm.String / ja.lucene</li>
+<li>contents : Edm.String / ja.lucene</li>
+<li>headings : Edm.String / ja.lucene</li>
+</ul>
+<p>Analyzerに言語Analyzerを設定するくらいで、他の設定は特に必要ありません。</p>
+<h4 id="クエリとデータの確認">クエリとデータの確認</h4>
+<p>デモの動画や説明のサンプルを見たところ英語で「Where was Alan Turing born?」や「What&rsquo;s the capital of France?」のような自然文のクエリが出てきたので、次のようなクエリで試してみました。</p>
+<ul>
+<li>フランスの首都はどこですか？</li>
+</ul>
+<p>実際にパリのページがインデックスに存在していることは以下のクエリで確認しました。</p>
+<ul>
+<li>パリ：3047件</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;パリ&#34;</span>,
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, categories, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, id, contents&#34;</span>
+}
+</code></pre></div><p>※ここで<code>{{host}}</code>などはREST Client拡張で変数として定義したものです。</p>
+<ul>
+<li>host : Azure Cognitive Searchのサービス名</li>
+<li>index-name : インデックス名</li>
+<li>api-key : 接続のためのAPIキー</li>
+</ul>
+<p>URLパラメータの<code>api-version=2020-06-30-Preview</code>がPreview機能を呼び出すための指定になっています。</p>
+<p>3047件の1件目が「パリ」のページで以下のようなWikipediaの文章をセクションごとに文字列としてページ全体を配列に入れて<code>contents</code>に登録してあります。</p>
+<pre><code>&quot;パリ（、巴里）は、フランス北部、イル＝ド＝フランス地域圏にある都市。フランスの首都であり、イル＝ド＝フランス地域圏の首府である。\nフランス最大の都市であり、同国の政治、経済、文化などの中心である。ロンドンと共に欧州を代表する世界都市。行政上では、1コミューン単独で県を構成する特別市であり、ルーヴル美術館を含む1区を中心に、時計回りに20の行政区が並ぶ（エスカルゴと形容される）。&quot;,
+</code></pre><p>このインデックスに対して「フランスの首都はどこですか？」というクエリを、セマンティック検索のクエリと通常のクエリの2パターンで検索をしてみました。</p>
+<h4 id="これまでのクエリセマンティックではない検索">これまでのクエリ（セマンティックではない検索）</h4>
+<p>まずは通常のクエリです。
+<code>search</code>がクエリ文字列、<code>searchFields</code>が検索対象フィールドになります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランスの首都はどこですか？&#34;</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title,  id&#34;</span>
+
+}
+</code></pre></div><p>クエリを実行するとヒット件数が'13996&rsquo;件で、トップ5件のデータは次のようになりました。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">13996</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">17.059355</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;462&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;首都&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">16.086372</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;21053&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;首都圏&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">15.059893</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;71414&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;どこでもドア&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">14.086605</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;51972&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;首都機能移転&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.996841</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;3877&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;首都の一覧&#34;</span>
+    },
+</code></pre></div><p>見るとわかりますが、「首都」「どこ」といった単語を含むデータが上位に入っています。「フランス」を含むデータは8件目と10件目に「フランス植民地帝国」、「ラ・フランス」といったデータが出てきます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.705561</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;129279&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランス植民地帝国&#34;</span>
+    },
+    ...
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.036648</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;3173&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ラ・フランス&#34;</span>
+    },
+</code></pre></div><p>残念ながら望んでいる結果にはほど遠いかと。</p>
+<p>どんな検索になっているのでしょうか？まずは、クエリの解釈から。
+デフォルトで、Azure Cognitive Searchはデフォルトでは、入力された文字列を<code>type=simple</code>、<code>mode=any</code>で検索します（<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/search-documents#query-parameters">クエリパラメータ参照</a>）。
+対象となるフィールドは<code>searchFields</code>で今回は指定してあるので、これらのフィールドに対して、入力された文字列を渡してAnalyzerで単語分割し（今回は<code>simple</code>クエリ用の特殊文字が入っていないため文字列として扱われる）、
+出てきた単語で（<code>mode=any</code>だから）OR検索します。
+<code>ja.lucene</code>のAnalyzerが出力する単語列がどんなものかは以下のリクエストを実行するとわかります。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/analyze?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;ja.lucene&#34;</span>,
+   <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランスの首都はどこですか？&#34;</span>
+
+}
+</code></pre></div><p>結果は以下の通りです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;tokens&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランス&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">4</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;首都&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">5</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">7</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;どこ&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">8</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">4</span>
+    }
+  ]
+</code></pre></div><p>これで、どのような単語が出てきているかがわかりました。
+それぞれのフィールドでどのようなスコアになっているかまではわからないですが、検索結果には上記3つの単語のいずれかが<code>searchFields</code>にヒットすれば出てきます。おそらく、ヒットした単語数が多い、短い文字列のフィールドがより高いスコアになるというような動きになっていると思われます（<a href="https://docs.microsoft.com/ja-jp/azure/search/index-similarity-and-scoring">BM25になってるはず</a>）。</p>
+<h4 id="セマンティック検索">セマンティック検索</h4>
+<p>では、セマンティック検索のクエリに変更してみましょう。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランスの首都はどこですか？&#34;</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title,  id&#34;</span>,
+    <span style="color:#e6db74">&#34;queryType&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;semantic&#34;</span>,
+    <span style="color:#e6db74">&#34;queryLanguage&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ja-jp&#34;</span>
+}
+</code></pre></div><p><code>queryType</code>、<code>queryLanguage</code>がセマンティック検索のクエリを実行するためのパラメータになります（<a href="https://docs.microsoft.com/ja-jp/azure/search/semantic-how-to-query-request#query-using-rest">公式ガイド参照</a>）。
+今回は日本語のデータであるため、日本語のモデルを利用するように<code>queryLanguage</code>を指定します（許可されていない文字列を渡すとエラーになる）。
+この2つを追加するだけです。簡単ですね。</p>
+<p>結果は次のようになります（上位5件抜粋）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">13996</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.036648</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.3456064984202385</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ラ・フランス&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;ラ・フランス&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;3173&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ラ・フランス&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">11.144733</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.3173404783010483</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ラン (フランス)&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;ラン&lt;/em&gt; (&lt;em&gt;フランス)&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;108094&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ラン (フランス)&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">11.144793</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.1937477812170982</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ブレスト (フランス)&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;ブレスト&lt;/em&gt; (&lt;em&gt;フランス)&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;116154&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ブレスト (フランス)&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10.199907</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.1590753793716431</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランス・ハルス&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;フランス・ハルス&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;81566&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランス・ハルス&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">11.273148</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.1434053033590317</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;バカロレア (フランス)&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;バカロレア&lt;/em&gt; (&lt;em&gt;フランス&lt;/em&gt;)&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;54514&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;バカロレア (フランス)&#34;</span>
+    },
+</code></pre></div><p>検索結果数を見ると、通常のクエリと同じ値です。
+これは、<a href="https://docs.microsoft.com/ja-jp/azure/search/semantic-search-overview">公式ドキュメントのセマンティック検索</a>に説明があるように、
+セマンティック検索が通常のクエリで実行した後の検索結果に対して、上位50件のデータだけに対してsemantic rankerによってスコアを再計算するという仕様のためです（ドキュメントからの推測）。</p>
+<p>実際に検索結果の50件目、51件目は次のようになっていました。50件目までのデータには<code>@search.rerankerScore</code>というスコア（と<code>@search.captions</code>）が追加されています。
+51件目のデータについては、前の通常のクエリの51件目のデータと同じデータでした。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10.909212</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0.07321979058906436</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;首都高速埼玉大宮線&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;67667&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;首都高速埼玉大宮線&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10.049902</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;68569&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;スタッド・ド・フランス&#34;</span>
+    },
+</code></pre></div><p>上位5件のデータに戻ります。
+これらは、通常のクエリとは異なる結果となりました。
+見ると<code>@search.captions</code>というところにハイライトされた項目が表示されています。
+検索クエリをもとにそれっぽい部分がキャプションという形で返ってくる仕組みです。</p>
+<p>結果を見るとわかりますが、残念ながら「パリ」のページは返ってきませんでした。
+もともと通常のクエリを実行したときの「326」番目の結果として返ってきているため、セマンティック検索の対象とはならなかったためです。
+ただ、「首都」「どこ」といった単語よりも「フランス」に関するドキュメントが通常の検索よりも上位に来ています。
+クエリに存在する単語で「フランス」がより重要であると判断されているようです。</p>
+<h4 id="semantic-rankerに処理させてみる">Semantic Rankerに処理させてみる</h4>
+<p>ちなみに、今回登録したデータにはWikipediaのカテゴリも登録してあります。
+「ヨーロッパの首都」というカテゴリで絞り込んでから検索してみるとどうなるかもやってみました。
+<code>filter</code>のパラメータが絞り込み条件です。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランスの首都はどこですか？&#34;</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title,  id&#34;</span>,
+    <span style="color:#e6db74">&#34;queryType&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;semantic&#34;</span>,
+    <span style="color:#e6db74">&#34;queryLanguage&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ja-jp&#34;</span>,
+    <span style="color:#e6db74">&#34;filter&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;search.ismatch(&#39;ヨーロッパの首都&#39;, &#39;categories&#39;)&#34;</span>
+}
+</code></pre></div><p>結果は次の通りです。カテゴリで絞り込みをしているので検索結果数は39件となります。このため、すべてのデータがSemantic Rankerの対象です。
+ですが、「パリ」のページは11件目に出てきました。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">39</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">3.8405614</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.0472740978002548</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ウィーン&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;9465&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ウィーン&#34;</span>
+    },
+...
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">4.8915977</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.8480307757854462</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;レイキャヴィーク&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;レイキャヴィーク&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;112253&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;レイキャヴィーク&#34;</span>
+    },
+...
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">7.277628</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.7982495501637459</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;パリ&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;パリ&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;31&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;パリ&#34;</span>
+    },
+
+</code></pre></div><p>キャプションは入力された単語だけではなく、クエリが持っている単語をもとにした何かしらの基準（おそらく言語モデルで近い単語？）で選択されていると思われます。首都というカテゴリーで絞り込んでしまったので、ヒットした文章が似たようなものが多くなったせいか、残念ながらそこまでSemantic Rankerが意図を汲み取るところまでは行きませんでした。</p>
+<h4 id="フランスの歴史">フランスの歴史</h4>
+<p>視点を変えてみましょう。質問そのものの答えではなく、クエリの意図に近いものが出てくるかを見てみましょう。
+ここまでのクエリでフランスに関するクエリを投げていました。今回のインデックスに「フランスの歴史」で検索すると「30820」件のドキュメントがヒットし、上位にはフランスには関係ない「歴史」のページや「フランス」の文学、都市など「フランスの歴史」とは少し離れた意味のものが上位に来ています。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">30820</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.888079</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;17875&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;スコットランドの歴史&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.718105</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;10665&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;世界の歴史&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.701981</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;31397&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ベトナムの歴史&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.579847</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;22433&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランス文学&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.524254</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;34667&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランスの国旗&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.52136</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;108094&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ラン (フランス)&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.41088</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;20717&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;歴史小説&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.388911</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;56229&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;演劇の歴史&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.343941</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;39669&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;イギリスの歴史&#34;</span>
+    },
+</code></pre></div><p>このクエリをセマンティッククエリで検索すると次のようになりました。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">30820</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.274498</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.482184374704957</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;自由フランス&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;自由フランス&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;96475&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;自由フランス&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">11.446766</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.3535655084997416</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランスの地域圏&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;フランスの地域圏&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;51845&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランスの地域圏&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10.926437</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.3261859538033605</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランス第一帝政&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;&lt;em&gt;フランス第一帝政&lt;/em&gt;&#34;</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;57573&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;フランス第一帝政&#34;</span>
+    },
+</code></pre></div><p>上位には「フランスの歴史」に関連しそうなタイトルが上がってきています。
+また、先ほど「歴史」という単語でヒットして上位に来ていた「スコットランドの歴史」は<code>@search.rerankerScore</code>の値が低くなっていました（31件目に出現）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.888079</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0.42768346797674894</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;スコットランドの歴史&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;17875&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;スコットランドの歴史&#34;</span>
+    },
+</code></pre></div><h4 id="考察">考察</h4>
+<p>日本語のWikipediaを約10万件入れたインデックスでセマンティック検索を試してみました。
+デモや説明などでクエリが自然文の質問だったこともあり、質問の回答になりそうなページが上に来るかと期待しましたが、期待しすぎました。</p>
+<p>これは、Azure Cognitive Searchのセマンティック検索の仕組みを考えると納得のいくものです。
+説明を読んだ時にも感じたのですが、<strong>入力された文字列でまず検索</strong>をし、<strong>上位50件</strong>をセマンティック検索の対象としています。</p>
+<p>ですので、そもそもクエリの文章に出てくる単語が含まれたデータだけが対象となります。
+このため、クエリに出てこない単語のみで構成されているものは残念ながら対象とできません。
+また、上位50件だけがSemantic Rankerの対象となっているため、検索にヒットしたとしても上位に食い込まなければ言語モデルによるランキングの対象にもなりません。
+セマンティック検索といっても、残念ながらドキュメントに出てこない単語（似た単語、質問に対するそのものの回答）まで読み取る機能はありません。</p>
+<p>ただ、「フランスの歴史」の検索で見たようにそれぞれの単語だけで検索をしていた場合とは異なり、
+クエリの意味に沿ったスコアづけにより、通常の検索よりも意図したものに近いデータが出ていることが確認できました。
+複数の単語で構成されるクエリの場合に、単語だけでスコアを計算した場合よりもよさそうな結果が上位に出てくることがわかりました。</p>
+<p>ただし、重要なのは「<strong>上位50件</strong>」までしかSemantic Rankerの対象にはならない点です。</p>
+<h3 id="英語のwikipedia">英語のWikipedia</h3>
+<p>セマンティックは英語対応が一番最初にリリースされているので、英語のWikipediaについてもデータを登録してみました。</p>
+<p>英語のWikipediaのデータを「111,649件」登録しました。
+スキーマは以下の通り（今回の調査に利用していないものは省略）です。日本語と異なる点はAnalyzerが<code>en.lucene</code>になっていることぐらいです。</p>
+<ul>
+<li>フィールド名 : タイプ / Analyzer</li>
+<li>id : Edm.String / keyword</li>
+<li>categories : Collection(Edm.String) / keyword</li>
+<li>title : Edm.String / en.lucene</li>
+<li>contents : Edm.String / en.lucene</li>
+<li>headings : Edm.String / en.lucene</li>
+</ul>
+<h4 id="クエリとデータの確認-1">クエリとデータの確認</h4>
+<p>日本語同様に首都に関する質問形式にしてみました。</p>
+<ul>
+<li>What&rsquo;s the capital of Italy?</li>
+</ul>
+<p>実際にRomeのページがインデックスに存在していることは以下のクエリで確認済みです。</p>
+<p>Rome：2302件</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Rome&#34;</span>,
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, id, contents&#34;</span>
+}
+</code></pre></div><p>以下のようなWikipediaの文章をセクションごとに文字列としてページ全体を配列に入れて<code>contents</code>に登録してあります（これも日本語と同じです）。</p>
+<pre><code>&quot;&quot;\n\nRome (Italian and Latin: Roma ) is the capital city and a special comune of Italy (named Comune di Roma Capitale), as well as the capital of the Lazio region. The city has been a major human settlement for almost three millennia. With 2,860,009 residents in , it is also the country's most populated comune...&quot;,
+</code></pre><p>このデータ群に対して「What&rsquo;s the capital of Italy?」というクエリを、Semantic Searchのクエリと通常のクエリの2パターンで検索をしてみる。</p>
+<h4 id="これまでのクエリセマンティックではない検索-1">これまでのクエリ（セマンティックではない検索）</h4>
+<p>まずは、Semantic Searchではないクエリです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;What&#39;s the capital of Italy?&#34;</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title,  id&#34;</span>
+
+}
+</code></pre></div><p>ヒット件数は<code>18049</code>件で、トップ5件は次のような形です。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">18049</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">17.870815</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;14532&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Italy&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">16.596167</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;14702&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Economy of Italy&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">16.180624</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;183878&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Louis II of Italy&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">15.917025</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;29665&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;State capitalism&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">15.88901</span>,
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;215741&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Capitalization&#34;</span>
+    },
+</code></pre></div><p>日本語の場合よりもItalyに関連するものが上位に多く含まれます。
+ただ、Rome自体のページは上位50件には出てきていませんでした。
+また、capitalとは意味の異なるcapitalizationやcapitalismが上位に来ています。
+日本語の場合と同様にクエリがどのように解釈されているのか？も見てみます。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/analyze?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+   <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;en.lucene&#34;</span>,
+   <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;What&#39;s the capital of Italy?&#34;</span>
+
+}
+</code></pre></div><p>結果は以下の通りです。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;tokens&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;what&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">6</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;capit&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">11</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">18</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;token&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;itali&#34;</span>,
+      <span style="color:#e6db74">&#34;startOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">22</span>,
+      <span style="color:#e6db74">&#34;endOffset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">27</span>,
+      <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">4</span>
+    }
+  ]
+</code></pre></div><p>日本語とあまり変わってはいません。ただ、単語が入力されたものとは少し変わっています。
+これは、<code>en.lucene</code>の処理で、stemmingが行われているためだと思われます。たとえば、「capital」の場合、Stemmingにより「capital」「capitalize」などの単語が元になりますが、動詞、名詞などの違いなく検索できるようにするためにこのようなStemmingの処理が行われます。
+ということで、これらの単語を含むドキュメントがヒットしています。Italyが一番上に来ているのはItalyという単語が多く含まれるからのようです。</p>
+<h4 id="semantic-searchクエリ">Semantic Searchクエリ</h4>
+<p>では、Semantic Searchのクエリに変更してみましょう。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;What&#39;s the capital of Italy?&#34;</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title,  id&#34;</span>,
+    <span style="color:#e6db74">&#34;queryType&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;semantic&#34;</span>,
+    <span style="color:#e6db74">&#34;queryLanguage&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;en_us&#34;</span>
+}
+</code></pre></div><p><code>queryType</code>、<code>queryLanguage</code>がsemantic searchのクエリを実行するためのパラメータになります（<a href="https://docs.microsoft.com/ja-jp/azure/search/semantic-how-to-query-request#query-using-rest">公式ガイド参照</a>）。
+今回は英語のデータであるため、英語のモデルを利用するように<code>queryLanguage</code>を指定します（許可されていない文字列を渡すとエラーになる）。</p>
+<p>結果は次のようになります（上位5件抜粋）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">18049</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">17.870815</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.9688458815217018</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Italy&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;14532&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Italy&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">14.239678</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.9419755563139915</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Capital city&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;181337&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Capital city&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10.181764</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.8902588561177254</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Lepontii&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;325133&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Lepontii&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">10.865718</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.875102698802948</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ItalY&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;14482&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;ItalY&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">11.689348</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.8201303631067276</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Savoy&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;27885&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Savoy&#34;</span>
+    },
+</code></pre></div><p>日本語で見てきたように、検索結果数を見ると、通常のクエリと同じ値で、残念ながら50件までにRomeは入っていないため、Semantic Rankerによるブーストもかかりませんでした。
+ただし、「Capitalization」や「State capitalism」といった別の意味（地理に関するものではない単語）のものが上位に出てこなくなっています。
+これは、capitalという単語が地理に関する意味を持っていると判断された結果のように見えます。
+Capitalizationの<code>@search.rerankerScore</code>は上位のスコアに比べて小さいものとなっています。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">15.88901</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0.93921028636395931</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Capitalization&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;215741&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Capitalization&#34;</span>
+    },
+</code></pre></div><h5 id="whats-the-capital-of-finland">What&rsquo;s the capital of Finland?</h5>
+<p>上位50件以内(20件目)に「Helsinki」のページが出てくるクエリでセマンティック検索をしてみました。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">
+<span style="color:#a6e22e">POST</span> <span style="color:#a6e22e">https</span><span style="color:#f92672">:</span><span style="color:#75715e">//{{host}}/indexes/{{index-name}}/docs/search?api-version=2020-06-30-Preview
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span><span style="color:#f92672">:</span> {{<span style="color:#a6e22e">api</span><span style="color:#f92672">-</span><span style="color:#a6e22e">key</span>}}
+
+{
+    <span style="color:#e6db74">&#34;top&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
+    <span style="color:#e6db74">&#34;count&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+    <span style="color:#e6db74">&#34;search&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;What&#39;s the captial of Finland?&#34;</span>,
+    <span style="color:#e6db74">&#34;searchFields&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title, contents&#34;</span>,
+    <span style="color:#e6db74">&#34;select&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;title,  id&#34;</span>,
+    <span style="color:#e6db74">&#34;queryType&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;semantic&#34;</span>,
+    <span style="color:#e6db74">&#34;queryLanguage&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;en-us&#34;</span>
+}
+</code></pre></div><p>結果としては、2件目にHelsinkiが返ってきていたので、Semantic Rankerがによる並び替えがうまくいきました。
+（下記の結果は上位3件を抜粋したものです）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">  <span style="color:#e6db74">&#34;@odata.count&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">16673</span>,
+  <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> [
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">14.026371</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.42378556355834</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Vanaja (Finland)&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;7132102&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Vanaja (Finland)&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">12.434971</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.383675143122673</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Helsinki&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;13696&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Helsinki&#34;</span>
+    },
+    {
+      <span style="color:#e6db74">&#34;@search.score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">13.380153</span>,
+      <span style="color:#e6db74">&#34;@search.rerankerScore&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2.2026549801230431</span>,
+      <span style="color:#e6db74">&#34;@search.captions&#34;</span><span style="color:#f92672">:</span> [
+        {
+          <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Rauma, Finland&#34;</span>,
+          <span style="color:#e6db74">&#34;highlights&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>
+        }
+      ],
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;178635&#34;</span>,
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Rauma, Finland&#34;</span>
+    },
+</code></pre></div><h4 id="考察-1">考察</h4>
+<p>今回の英語のクエリではSemantic Rankerがある程度の役割をはたしていそうだということはわかりました。
+Capitalがいくつもの意味を持っていることもあり、文章をもとにより意味の近いドキュメントが上位に来たということです。
+ただ、英語の場合も基本的には上位50件以内のデータに対して処理が行われるので上位50件以内にデータが入らなければうまくいかないようです。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>Azure Cognitive Searchの新機能であるセマンティック検索について調べてみました。
+まだPublic Previewですが、簡単に使えるような仕組み（データの再登録なし、クエリでパラメータを追加するだけ）が用意されているのは便利でした。
+ただ、最初に想像していたもの（私の早とちりもありますが）ほどのセマンティック検索とは行きませんでした。
+似たような言葉の意味を持ったものを探してくれたり、答えそのもののページのスコアがすごく高くなるといったものではありませんでした。</p>
+<p>仕組み上、クエリに含まれる単語で検索し、上位50件以内のデータだけが対象になる(残念ながら現時点ではこの件数の変更はできません。)ため、これまでの検索とは劇的に変化するものではないことはわかりました（銀の弾丸はないんですけどね）。</p>
+<p>ある程度の挙動をわかっていれば、Wikipediaのようなデータでもそれなりの結果は取得できそうだということはわかりました。</p>
+<p>「言語モデル」でクエリとヒットしたデータをもとにスコア計算をし直しているようですが、この部分がどのようなデータ・クエリだと有効活用できるのか？というのをもう少しいろいろな角度で試してみる必要がある気がします（適材適所が何なのか？）。
+あとは、上位50件までが対象なので、それ以上の件数のデータの並びに関してはこれまでと同様の結果となる点は注意しないといけません。
+また、今回試していないほかの機能（スペルチェック、Semantic Answerなど）にメリットがあるのかもしれません。</p>
+<p>ざっくりですがセマンティック検索について調べてみました。
+こんなデータだとどうなの？ここの考え方が間違ってるのでは？などの指摘がありましたら、コメント欄またはTwitter（<a href="https://twitter.com/johtani">@johtani</a>）でコメントを頂けたらと。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2021/04/30/build-lunakey-mini-ble/" data-toggle="tooltip" data-placement="top" title="Lunakey Miniを組み立てて、BLE&#43;LPME-IO化してみた #DIYキーボード">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2021
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
+
+</body>
+</html>
