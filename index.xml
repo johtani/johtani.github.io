@@ -7,7 +7,106 @@
     <description>Recent content on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Tue, 13 Jul 2021 16:08:23 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 10 Nov 2021 14:33:16 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだ</title>
+      <link>https://blog.johtani.info/blog/2021/11/10/reading-ms-biomedical-search-paper/</link>
+      <pubDate>Wed, 10 Nov 2021 14:33:16 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2021/11/10/reading-ms-biomedical-search-paper/</guid>
+      <description>Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだので軽くメモを残しておきます。論文自体はリンクから参照してください。 読んだ理由 Azure Cognitive S</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://arxiv.org/abs/2106.13375&#34;&gt;Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literature&lt;/a&gt;という論文を読んだので軽くメモを残しておきます。論文自体はリンクから参照してください。&lt;/p&gt;
+&lt;h2 id=&#34;読んだ理由&#34;&gt;読んだ理由&lt;/h2&gt;
+&lt;p&gt;Azure Cognitive SearchでSemantic Searchが利用可能になったこともあり、「Semantic Search」に関するMSのリサーチチームが発表している論文をたまたま見つけたためです。
+Elasticsearchとニューラルモデルを利用したランカーでのリランクする仕組みがSemantic Searchと似ていたので読んでみました。&lt;/p&gt;
+&lt;h2 id=&#34;ざっくりメモ&#34;&gt;ざっくりメモ&lt;/h2&gt;
+&lt;h3 id=&#34;どんなもの&#34;&gt;どんなもの？&lt;/h3&gt;
+&lt;p&gt;クリックログなどで関連度を改善できないような場合に、ドメイン固有の言語モデルを利用して検索結果の改善をする方法が提案されているので、バイオメディカル検索で実際に評価してみたという論文です。
+特定分野の大量の文書から検索をするときに、ドメイン固有の事前学習した言語モデルを用意して、さらにファインチューニングする方法を評価しています。
+言語モデルの生成に利用されたのはBERTになります。&lt;/p&gt;
+&lt;h3 id=&#34;技術や手法のキモはどこ&#34;&gt;技術や手法のキモはどこ？&lt;/h3&gt;
+&lt;p&gt;医療分野のデータを利用して評価していますが、ほかのドメインにも一般化できる可能性があることや、実際のシステムを提示している部分が肝になりそうです。&lt;/p&gt;
+&lt;p&gt;論文から引用した言語モデルを用いてランキングを行う仕組みを構築する部分の構成です。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20211110/system-overview.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20211110/system-overview.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;左半分が、ドメイン固有の事前学習についてです。Wikipediaなどを利用したBERTのモデルが公開されたりしていますが、大量のドメイン固有データが用意できるのであれば、ドメイン固有のデータで事前学習することが有効であるという主張です（&lt;a href=&#34;https://arxiv.org/abs/2007.15779&#34;&gt;参考文献&lt;/a&gt;。これもMS Researchでした。同じチームなのかな？）。
+この論文ではBERTの学習データとして、ドメイン固有のテキストを用いています。
+実際にはPubMedBERTを利用しています。&lt;/p&gt;
+&lt;p&gt;右半分がドメイン固有のデータで生成された言語モデルを利用して、ドメイン固有のニューラルランカー（検索結果のランキングを行なう仕組み）をファインチューニングする処理です。
+MS MARCOと呼ばれるMSが公開している機械学習向けのデータセットのうち、ドメイン固有のサブセットを取り出して利用しているようです。&lt;/p&gt;
+&lt;p&gt;この論文では、L1検索（第1段階の検索）にBM25を利用して、L2検索にここで作成したニューラルランカーを利用し、検索結果を返す仕組みとなっています。
+これは、Azure Cognitive SearchのSemantic Searchのシステムに似ています。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20211110/system_detail.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20211110/system_detail.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;この論文では、BM25で検索した結果の上位60件の結果がL2のランカーの入力となっています。&lt;/p&gt;
+&lt;p&gt;以下の2つが主な論文の成果となっています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ドメイン固有の事前学習を利用することで、高度な学習コンポーネントなどの追加することなく高い精度が出た。&lt;/li&gt;
+&lt;li&gt;既存のBM25の検索エンジンと組み合わせてニューラルランカーを使うことで、計算コストを下げつつより良い上位の検索結果を返す仕組みを構築した。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;どうやって有効だと検証した&#34;&gt;どうやって有効だと検証した？&lt;/h3&gt;
+&lt;p&gt;TREC-COVIDデータセットを用いて評価して、TREC-COVIDに参加しているシステムと論文で提案している構成のシステムとの比較をしています。
+また、ドメイン固有の事前学習が、一般ドメインなどの事前学習と比較して影響があるかどうかの評価もしています。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20211110/table1.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20211110/table1.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20211110/table2.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20211110/table2.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;実際にAzure上で構築した仕組みをMicrosoft Biomedical Searchとして公開しているようです。
+上記のシステム構成のように、Elasticsearchで検索して、ニューラルランカーはKubernetes上に展開されたGPUで計算をしています。
+論文には使用しているマシンの構成や台数なども記載があります。&lt;/p&gt;
+&lt;p&gt;実際に構築したシステムをユーザーに利用して体験したもらった結果としては、
+複雑な意図を持った長いクエリに対してはPubMedなどの他の検索ツールとしても良い結果が返ってきたことが確認されたとなっています。
+ただし、一般的な短いクエリの場合は十分な結果にならない場合があったとのことです。&lt;/p&gt;
+&lt;h3 id=&#34;議論はある&#34;&gt;議論はある？&lt;/h3&gt;
+&lt;p&gt;実際にほかのドメイン（金融、法律、小売りなど）で適用してもうまくいくかは今後の研究に期待だと思います。
+また、ファインチューニングするときに利用できるデータが今回の論文にあるようにMS MARCOのサブセットとして抽出できればよさそうです。&lt;/p&gt;
+&lt;h3 id=&#34;他に読むべき論文は&#34;&gt;他に読むべき論文は？&lt;/h3&gt;
+&lt;p&gt;TREC-COVIDに参加しているほかのシステムがどのような学習や仕組みが必要なのかを見ることで、どのくらいの手間・コストが軽減しているのかがわかるはずです。&lt;/p&gt;
+&lt;h2 id=&#34;感想&#34;&gt;感想&lt;/h2&gt;
+&lt;p&gt;ということで、読んでみました。
+細かなほかの手法については調べていませんが、システム構成としてはAzure Cognitive SearchのSemantic Searchの仕組みと同じだと思われます。
+違いは、ドメイン固有の事前学習のモデルではないことでしょうか。
+ある程度のドメイン固有のモデルを利用できる仕組みができると、さらにSemantic Searchがうまく使えるようになるのかもしれません（前回書いたブログではWikipediaのデータを利用してみましたが、思ったほど良い感じはしなかったです。。。ファインチューニングの仕組みもないしなぁ）。
+また、短いクエリでは芳しくない結果もあったというのは、おそらくニューラルランカーで評価するための情報が少なくなってしまうのだと思います。Semantic Searchに向いているクエリの作り方とかが出てくるのかな？&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>今年もMICESにオンライン出張してた</title>
       <link>https://blog.johtani.info/blog/2021/07/13/attend-mices-2021/</link>
