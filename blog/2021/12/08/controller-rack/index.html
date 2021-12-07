@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだ" />
-    <meta property="og:title" content="Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだ" />
-    <meta property="twitter:title" content="Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだ" />
+    <meta name="title" content="今年のDIYキーボードとコントローラーラック" />
+    <meta property="og:title" content="今年のDIYキーボードとコントローラーラック" />
+    <meta property="twitter:title" content="今年のDIYキーボードとコントローラーラック" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだ-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>今年のDIYキーボードとコントローラーラック-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2021/11/10/reading-ms-biomedical-search-paper/">
+    <link rel="canonical" href="/blog/2021/12/08/controller-rack/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 
@@ -157,16 +157,16 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/search" title="search">
-                            search
+                        <a class="tag" href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="DIYキーボード">
+                            DIYキーボード
                         </a>
                         
-                        <a class="tag" href="/tags/paper" title="paper">
-                            paper
+                        <a class="tag" href="/tags/misc" title="misc">
+                            misc
                         </a>
                         
                     </div>
-                    <h1>Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだ</h1>
+                    <h1>今年のDIYキーボードとコントローラーラック</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +174,7 @@
                             johtani
                          
                         on 
-                        Wednesday, November 10, 2021
+                        Wednesday, December 8, 2021
                         
                         
                         
@@ -204,109 +204,252 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#読んだ理由">読んだ理由</a></li>
-    <li><a href="#ざっくりメモ">ざっくりメモ</a>
+    <li><a href="#コントローラーラック">コントローラーラック</a>
       <ul>
-        <li><a href="#どんなもの">どんなもの？</a></li>
-        <li><a href="#技術や手法のキモはどこ">技術や手法のキモはどこ？</a></li>
-        <li><a href="#どうやって有効だと検証した">どうやって有効だと検証した？</a></li>
-        <li><a href="#議論はある">議論はある？</a></li>
-        <li><a href="#他に読むべき論文は">他に読むべき論文は？</a></li>
+        <li><a href="#材料">材料</a></li>
+        <li><a href="#設置">設置</a></li>
       </ul>
     </li>
-    <li><a href="#感想">感想</a></li>
+    <li><a href="#今年のdiyキーボード">今年のDIYキーボード</a>
+      <ul>
+        <li><a href="#ケーブル自作">ケーブル自作</a></li>
+        <li><a href="#corne-light-v2のblelpme-io対応">Corne Light v2のBLE+LPME-IO対応</a></li>
+        <li><a href="#sofle-keyboard-v2のblelpme-io対応">Sofle keyboard v2のBLE+LPME-IO対応</a></li>
+        <li><a href="#lunakey-miniの組み立てとblelpme-io対応">Lunakey Miniの組み立てとBLE+LPME-IO対応</a></li>
+        <li><a href="#soyuzの組み立てnumpadキット">Soyuzの組み立て（Numpadキット）</a></li>
+        <li><a href="#gk21snumpad">GK21S（Numpad）</a></li>
+        <li><a href="#お気に入りキースイッチ">お気に入りキースイッチ</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p><a href="https://arxiv.org/abs/2106.13375">Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literature</a>という論文を読んだので軽くメモを残しておきます。論文自体はリンクから参照してください。</p>
-<h2 id="読んだ理由">読んだ理由</h2>
-<p>Azure Cognitive SearchでSemantic Searchが利用可能になったこともあり、「Semantic Search」に関するMSのリサーチチームが発表している論文をたまたま見つけたためです。
-Elasticsearchとニューラルモデルを利用したランカーでのリランクする仕組みがSemantic Searchと似ていたので読んでみました。</p>
-<h2 id="ざっくりメモ">ざっくりメモ</h2>
-<h3 id="どんなもの">どんなもの？</h3>
-<p>クリックログなどで関連度を改善できないような場合に、ドメイン固有の言語モデルを利用して検索結果の改善をする方法が提案されているので、バイオメディカル検索で実際に評価してみたという論文です。
-特定分野の大量の文書から検索をするときに、ドメイン固有の事前学習した言語モデルを用意して、さらにファインチューニングする方法を評価しています。
-言語モデルの生成に利用されたのはBERTになります。</p>
-<h3 id="技術や手法のキモはどこ">技術や手法のキモはどこ？</h3>
-<p>医療分野のデータを利用して評価していますが、ほかのドメインにも一般化できる可能性があることや、実際のシステムを提示している部分が肝になりそうです。</p>
-<p>論文から引用した言語モデルを用いてランキングを行う仕組みを構築する部分の構成です。</p>
+                <p>今年もアドベントカレンダーの季節になってしまいました。
+今年で2回目となる、<a href="https://adventar.org/calendars/6234">pyspa Advent Calendar 2021</a>の投稿です。
+昨年に引き続きDIYがらみの投稿です。</p>
+<h2 id="コントローラーラック">コントローラーラック</h2>
+<p>3つのコントローラーがあるのですが、結構場所を取ります。
+また、それぞれ充電しないといけません。</p>
 
 <link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
 <div class="box" style="max-width:600">
   <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
     <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20211110/system-overview.png" />
+      <img itemprop="thumbnail" src="/images/entries/20211208/before_controllers.jpg" />
     </div>
-    <a href="/images/entries/20211110/system-overview.png" itemprop="contentUrl"></a>
+    <a href="/images/entries/20211208/before_controllers.jpg" itemprop="contentUrl"></a>
   </figure>
 </div>
 
-<p>左半分が、ドメイン固有の事前学習についてです。Wikipediaなどを利用したBERTのモデルが公開されたりしていますが、大量のドメイン固有データが用意できるのであれば、ドメイン固有のデータで事前学習することが有効であるという主張です（<a href="https://arxiv.org/abs/2007.15779">参考文献</a>。これもMS Researchでした。同じチームなのかな？）。
-この論文ではBERTの学習データとして、ドメイン固有のテキストを用いています。
-実際にはPubMedBERTを利用しています。</p>
-<p>右半分がドメイン固有のデータで生成された言語モデルを利用して、ドメイン固有のニューラルランカー（検索結果のランキングを行なう仕組み）をファインチューニングする処理です。
-MS MARCOと呼ばれるMSが公開している機械学習向けのデータセットのうち、ドメイン固有のサブセットを取り出して利用しているようです。</p>
-<p>この論文では、L1検索（第1段階の検索）にBM25を利用して、L2検索にここで作成したニューラルランカーを利用し、検索結果を返す仕組みとなっています。
-これは、Azure Cognitive SearchのSemantic Searchのシステムに似ています。</p>
+<p>充電しつつ、邪魔にならない置き方はできないものか？と思っていたところ次のようなコントローラーラックを見つけました。</p>
 
 
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20211110/system_detail.png" />
-    </div>
-    <a href="/images/entries/20211110/system_detail.png" itemprop="contentUrl"></a>
-  </figure>
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B085BT3ZBZ/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B085BT3ZBZ&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B085BT3ZBZ/?tag=johtani-22">
+      Amazon | 山崎実業(Yamazaki) ゲームコントローラー収納ラック
+      </a>
+    </p>
+  </div>
 </div>
-
-<p>この論文では、BM25で検索した結果の上位60件の結果がL2のランカーの入力となっています。</p>
-<p>以下の2つが主な論文の成果となっています。</p>
+<p>これそのものは場所を取るので購入は見送りましたが、エレクターの棚にワイヤーネットをつけると似たようなものができるのでは？ということで、DIYしてみることにしました。</p>
+<h3 id="材料">材料</h3>
+<p>材料は以下の通りです。
+書いていない材料としてあとは、結束バンドがあります。</p>
 <ul>
-<li>ドメイン固有の事前学習を利用することで、高度な学習コンポーネントなどの追加することなく高い精度が出た。</li>
-<li>既存のBM25の検索エンジンと組み合わせてニューラルランカーを使うことで、計算コストを下げつつより良い上位の検索結果を返す仕組みを構築した。</li>
+<li><a href="https://jp.daisonet.com/products/4549131595000?_pos=13&amp;_sid=fd69621ac&amp;_ss=r">ワイヤーネット４４×２９．５ｃｍ オフホワイトＢ２８ | 【公式】DAISO（ダイソー）ネットストア</a></li>
+<li><a href="https://jp.daisonet.com/collections/remodeling0222/products/4945371270507">スリム型ネットフック５０ｍｍ ２本入り | 【公式】DAISO（ダイソー）ネットストア</a></li>
+<li><a href="https://jp.daisonet.com/collections/remodeling0222/products/4549131635317">クロームメッキワイヤーフック（２連、Ｕ字、２個） | 【公式】DAISO（ダイソー）ネットストア</a></li>
 </ul>
-<h3 id="どうやって有効だと検証した">どうやって有効だと検証した？</h3>
-<p>TREC-COVIDデータセットを用いて評価して、TREC-COVIDに参加しているシステムと論文で提案している構成のシステムとの比較をしています。
-また、ドメイン固有の事前学習が、一般ドメインなどの事前学習と比較して影響があるかどうかの評価もしています。</p>
+<p>
+
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B09923KV51/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B09923KV51&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B09923KV51/?tag=johtani-22">
+      Amazon | マグネット 充電ケーブル SUNTAIHO USBケーブル LEDインジケーター付き
+      </a>
+    </p>
+  </div>
+</div>
+
+
+<div class="amazon-shortcode-box">
+  <div class="amazon-shortcode-image">
+    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/B07ZNFR6BF/?tag=johtani-22">
+      <img border="0" src="//ws-fe.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=JP&ASIN=B07ZNFR6BF&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=johtani-22" >
+    </a>
+  </div>
+  <div class="amazon-shortcode-info">
+    <p class="amazon-shortcode-title">
+      <a target="_blank" href="https://www.amazon.co.jp/gp/product/B07ZNFR6BF/?tag=johtani-22">
+      Amazon | Anker PowerPort Atom III Slim （PD 充電器 65W 4ポート USB-C）
+      </a>
+    </p>
+  </div>
+</div></p>
+<h3 id="設置">設置</h3>
+<p>まずは、2連のワイヤーフックでワイヤーネットをエレクターの棚にぶら下げました。</p>
 
 
 <div class="box" style="max-width:600">
   <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
     <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20211110/table1.png" />
+      <img itemprop="thumbnail" src="/images/entries/20211208/dual_fook_hung_wirenet.jpg" />
     </div>
-    <a href="/images/entries/20211110/table1.png" itemprop="contentUrl"></a>
+    <a href="/images/entries/20211208/dual_fook_hung_wirenet.jpg" itemprop="contentUrl"></a>
   </figure>
 </div>
 
+<p>そのままでは固定されないので、下のエレクターの棚とワイヤーネットを結束バンドで固定。
+これで、コントローラーを置いたり取ったりしてもぐらぐらしません。</p>
+<p>固定したワイヤーネットの表（コントローラーを配置する側）に、ネットフック50mmをコントローラーの数だけ配置しました（上の写真でフックとコントローラーの関係がわかります）。</p>
 
 
 <div class="box" style="max-width:600">
   <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
     <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20211110/table2.png" />
+      <img itemprop="thumbnail" src="/images/entries/20211208/controller_on_fook.jpg" />
     </div>
-    <a href="/images/entries/20211110/table2.png" itemprop="contentUrl"></a>
+    <a href="/images/entries/20211208/controller_on_fook.jpg" itemprop="contentUrl"></a>
   </figure>
 </div>
 
-<p>実際にAzure上で構築した仕組みをMicrosoft Biomedical Searchとして公開しているようです。
-上記のシステム構成のように、Elasticsearchで検索して、ニューラルランカーはKubernetes上に展開されたGPUで計算をしています。
-論文には使用しているマシンの構成や台数なども記載があります。</p>
-<p>実際に構築したシステムをユーザーに利用して体験したもらった結果としては、
-複雑な意図を持った長いクエリに対してはPubMedなどの他の検索ツールとしても良い結果が返ってきたことが確認されたとなっています。
-ただし、一般的な短いクエリの場合は十分な結果にならない場合があったとのことです。</p>
-<h3 id="議論はある">議論はある？</h3>
-<p>実際にほかのドメイン（金融、法律、小売りなど）で適用してもうまくいくかは今後の研究に期待だと思います。
-また、ファインチューニングするときに利用できるデータが今回の論文にあるようにMS MARCOのサブセットとして抽出できればよさそうです。</p>
-<h3 id="他に読むべき論文は">他に読むべき論文は？</h3>
-<p>TREC-COVIDに参加しているほかのシステムがどのような学習や仕組みが必要なのかを見ることで、どのくらいの手間・コストが軽減しているのかがわかるはずです。</p>
-<h2 id="感想">感想</h2>
-<p>ということで、読んでみました。
-細かなほかの手法については調べていませんが、システム構成としてはAzure Cognitive SearchのSemantic Searchの仕組みと同じだと思われます。
-違いは、ドメイン固有の事前学習のモデルではないことでしょうか。
-ある程度のドメイン固有のモデルを利用できる仕組みができると、さらにSemantic Searchがうまく使えるようになるのかもしれません（前回書いたブログではWikipediaのデータを利用してみましたが、思ったほど良い感じはしなかったです。。。ファインチューニングの仕組みもないしなぁ）。
-また、短いクエリでは芳しくない結果もあったというのは、おそらくニューラルランカーで評価するための情報が少なくなってしまうのだと思います。Semantic Searchに向いているクエリの作り方とかが出てくるのかな？</p>
+<p>前から見るとこのような形です。
+裏側に、2連フックを使って、Ankerの充電器を固定し、USBのケーブルをコントローラーの上に来るように配置します（写真ではPS4とPS5のコントローラーの上の部分にぶら下がる形です）。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20211208/anker.jpg" />
+    </div>
+    <a href="/images/entries/20211208/anker.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>コントローラーには磁石の端子をコントローラーに差し込んでおきます。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20211208/controller.jpg" />
+    </div>
+    <a href="/images/entries/20211208/controller.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>磁石のUSBケーブルを利用していることで、コントローラーを取り出すときは少し力を入れて引っ張るだけ、収めるときは、ケーブルに近づけて充電できる状態にした後にフックに載せるだけとなりました。
+ケーブルの抜き差しをしなくてもよいのでとても便利。
+全体像は次の写真のようになっています。一番上のコントローラーはエネループを利用しているのでケーブルは不要になっています。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20211208/overview.jpg" />
+    </div>
+    <a href="/images/entries/20211208/overview.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>磁石のUSBケーブルをpyspaでとんぷーに教えてもらって思いついたアイデアです。
+磁石の端子は色々と使い勝手が良いので、DIYキーボードやテンキー、MX Ergo、Kindleなど色々なところに使っています。</p>
+<h2 id="今年のdiyキーボード">今年のDIYキーボード</h2>
+<p>キーボードを作ったのは2つですが、改造を色々やってました。
+ブログに記載したものはリンクだけにしておきます。</p>
+<h3 id="ケーブル自作">ケーブル自作</h3>
+<ul>
+<li><a href="https://shop.yushakobo.jp/collections/accessory/products/self-made-cable">自作ケーブルキット – 遊舎工房</a></li>
+</ul>
+<p>ケーブルも自作できるみたいなので作ってみました。
+現在はテンキーの配置の問題もあって、メインでは利用はしていませんが工作としては面白かったです。
+熱収縮チューブを処理するための道具を持っていなかったので、チューブの固定が甘いのが失敗でした。ドライヤーくらいの熱では足りないので作ろうと思っている方は要注意かと。</p>
+<h3 id="corne-light-v2のblelpme-io対応">Corne Light v2のBLE+LPME-IO対応</h3>
+<p>詳細はブログ記事を。Corneはこれ以外に、キースイッチの付け替えも行ないました。ルブしたGateronクリアをハンダでつけなおしました。</p>
+<ul>
+<li><a href="/blog/2021/01/11/apply-ble-and-lpme-to-corne/">Corne Light v2のBLE+LPME-IO対応 #DIYキーボード</a></li>
+</ul>
+<h3 id="sofle-keyboard-v2のblelpme-io対応">Sofle keyboard v2のBLE+LPME-IO対応</h3>
+<p>詳細はブログ記事を。このブログはSofleで書いています。現在メインに利用しているキーボードです。</p>
+<ul>
+<li><a href="https://blog.johtani.info/blog/2021/02/01/apply-ble-to-sofle/">Sofle v2を組み立てて、BLE+LPME-IO化してみた #DIYキーボード</a></li>
+</ul>
+<p>10月には電池モジュールを次のものに付け替えました。家で主に使用するのもあり、充電池のほうが使い勝手がよさそうだという判断です。スイッチのON/OFFもしやすくなって満足しています。</p>
+<ul>
+<li><a href="https://nogikes.booth.pm/items/2710739">単4電池昇圧モジュール - のぎけす屋 - BOOTH</a></li>
+</ul>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">Sofleの電池モジュールをボタン電池から単4電池用に差し替えた。 <a href="https://t.co/TUizwr2qmw">pic.twitter.com/TUizwr2qmw</a></p>&mdash; Jun Ohtani (@johtani) <a href="https://twitter.com/johtani/status/1449214872143609860?ref_src=twsrc%5Etfw">October 16, 2021</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<h3 id="lunakey-miniの組み立てとblelpme-io対応">Lunakey Miniの組み立てとBLE+LPME-IO対応</h3>
+<p>詳細はブログ記事を。Sofleと時々入れ替えて使っています。小指のあたりのずれの大きさ、親指のキーの多さが使い勝手のよいキーボードです。コンパクトなのもあり、こちらは持ち運びにも利用できるかなと考えています。</p>
+<ul>
+<li><a href="https://blog.johtani.info/blog/2021/04/30/build-lunakey-mini-ble/">Lunakey Miniを組み立てて、BLE+LPME-IO化してみた #DIYキーボード</a></li>
+</ul>
+<h3 id="soyuzの組み立てnumpadキット">Soyuzの組み立て（Numpadキット）</h3>
+<ul>
+<li><a href="https://shop.yushakobo.jp/products/soyuz">Soyuz （黒基板） – 遊舎工房</a></li>
+</ul>
+<p><a href="https://blog.johtani.info/blog/2021/02/25/update-working-facility/">自宅の作業環境(2021/02)</a>の写真にもありますが、分割したキーボードとは別にテンキーを利用しています。
+WindowsのログインでPinコードを入力したり、色々な場面で数字の入力をすることがあるためです。
+Soyuzを組み立てる前は<a href="https://shop.yushakobo.jp/collections/keyboard/products/consign_shiro">素 - Shiro – 遊舎工房</a>を利用していたのですが、これでは「⁺」や「Enter」など、電卓のような利用方法の場合にはキーが足りません。
+かゆいところに手が届かないので、きちんとしたNumpadをということでSoyuzを組み立てました。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20211208/soyuz.jpg" />
+    </div>
+    <a href="/images/entries/20211208/soyuz.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>Shiroよりもだいぶ存在感があります。</p>
+<h3 id="gk21snumpad">GK21S（Numpad）</h3>
+<ul>
+<li><a href="https://ja.aliexpress.com/item/1005003248143336.html">USB Type C充電器付きの滑らかな交換用キーボードキット (Gk21s/k21),スイッチ,デュアルモードPCB|Keyboards| - AliExpress</a></li>
+</ul>
+<p>最後は独身の日のセールで見つけたNumpadキットです。キットといってもこちらは、基盤からケースまで組み立てが終わっているキットで、キースイッチを差し込んで、キーキャップを付けるだけというものになります。
+現在はこれをメインに利用しています。通常のNumpadの上に1列キーが多く、Backspaceなどを割り当てられるのが便利です。
+ドライバーソフトも用意されており、キーマップのカスタマイズも可能です（まだそこまでやってないけど）。</p>
+<h3 id="お気に入りキースイッチ">お気に入りキースイッチ</h3>
+<ul>
+<li><a href="https://kochikeyboard.stores.jp/items/6008cdf1bbb6833001e9711b">Kailh Box Silent ピンク軸 5個 | Kochi Keyboard</a></li>
+<li><a href="https://shop.yushakobo.jp/products/input-club-hako-switches">Input Club Hako スイッチ（10個入り） – 遊舎工房</a></li>
+</ul>
+<p>最後はキースイッチの紹介です。
+現時点ではこの2種類を組み合わせるのが私の好みに合っているようです（今のところ）。
+Box Silentのピンクをアルファベットのキーに、Input Club HakoのVioletをCtrlやShift、Enterなどのキーに割り当てて使っています（下の写真の左側で、キーキャップをつけている部分がHako Violetになっています）。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20211208/keyswitch.jpg" />
+    </div>
+    <a href="/images/entries/20211208/keyswitch.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、<a href="https://adventar.org/calendars/6234">pyspa Advent Calendar 2021</a>の8日目の記事でした。
+それほど作ったりしてないなと思っていたのですが、記事にしてみると今年も色々とDIYしてたみたいです。
+キースイッチやキーキャップも自分の好みが固まってきたので、来年はファームウェアやキーマップ周りをいじっていきたいと思っています。</p>
 
 
                 
@@ -315,15 +458,10 @@ MS MARCOと呼ばれるMSが公開している機械学習向けのデータセ�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2021/07/13/attend-mices-2021/" data-toggle="tooltip" data-placement="top" title="今年もMICESにオンライン出張してた">&larr;
+                        <a href="/blog/2021/11/10/reading-ms-biomedical-search-paper/" data-toggle="tooltip" data-placement="top" title="Domain-Specific Pretraining for Vertical Search: Case Study on Biomedical Literatureという論文を読んだ">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2021/12/08/controller-rack/" data-toggle="tooltip" data-placement="top" title="今年のDIYキーボードとコントローラーラック">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
