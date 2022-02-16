@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ" />
+    <meta property="og:title" content="Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ" />
+    <meta property="twitter:title" content="Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2022/01/12/reading-xmc-for-semantic-search-in-prod/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/search" title="search">
+                            search
+                        </a>
+                        
+                        <a class="tag" href="/tags/paper" title="paper">
+                            paper
+                        </a>
+                        
+                    </div>
+                    <h1>Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Wednesday, January 12, 2022
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#なんで読んだの">なんで読んだの？</a></li>
+    <li><a href="#どんな論文">どんな論文？</a>
+      <ul>
+        <li><a href="#xmc問題とは">XMC問題とは？</a></li>
+      </ul>
+    </li>
+    <li><a href="#どういう仕組み">どういう仕組み？</a></li>
+    <li><a href="#どうやって検証した">どうやって検証した？</a></li>
+    <li><a href="#気になる点は">気になる点は？</a></li>
+    <li><a href="#まとめ感想">まとめ＆感想</a></li>
+    <li><a href="#参考文献">参考文献</a></li>
+  </ul>
+</nav>
+                
+                <p>年末までに知り合いと次の論文を読んだので軽くまとめておきます。</p>
+<ul>
+<li><a href="https://dl.acm.org/doi/10.1145/3447548.3467092">Extreme Multi-label Learning for Semantic Matching in Product Search</a></li>
+</ul>
+<h2 id="なんで読んだの">なんで読んだの？</h2>
+<p>前回読んだ理由と一緒ですが、<code>Semantic Search</code>に絡んだ検索の論文であり、Amazonの製品検索での話も関係していたので読みました。</p>
+<h2 id="どんな論文">どんな論文？</h2>
+<p>Amazonの製品検索でセマンティックマッチングを利用する方法、レイテンシを低くしつつ再現率を改善できるような仕組みを検討して評価した論文です。
+実際には商品検索のマッチングを大規模なマルチラベル問題（Extreme Multi-label Classification：以下ではXMC問題とする）として定義して、その問題を効率よく解く方法について検討評価しています。</p>
+<p>検索には大きく2つのフェーズがあります。マッチング（クエリにヒットした文書の集合を求める）とランキング（マッチングのデータを関連性の高い順序で並べる）です。
+前回のMSの論文では、マッチング後のランキングのフェーズで言語モデルを利用した並び替えを行う話でした。
+今回の論文ではマッチングに関してセマンティックサーチを有効活用できないか？という論文になります。
+転置インデックスベースの（語彙による）検索では、スペルミスや類義語などを検索することが難しいです。
+語彙以外のデータ（クリックや購入といったユーザーの行動や製品の意味的表現など）を学習できる埋め込みベースのニューラルモデルを活用して、マッチングを補完する方法を検討しています。
+下図のようにあくまで転置インデックスベースの検索の補完として利用するみたいです（論文に掲載されていたアーキテクチャ）。</p>
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20220112/system.jpg" />
+    </div>
+    <a href="/images/entries/20220112/system.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<h3 id="xmc問題とは">XMC問題とは？</h3>
+<p>セマンティックサーチを行なう場合、埋め込みベースのニューラルモデル（例えばBERTとか）を利用することが多いですが、
+クエリトークンを埋め込み空間にベクトル化する部分が推論のボトルネック（レイテンシが高くなる）になることが多いです。
+これは、ニューラルネットワークの複雑さに依存します。
+低レイテンシになるように、複雑ではないエンコーダーを用いることもありますが今度は性能（精度）が良くなくなります。</p>
+<p>そこで、この論文ではセマンティックマッチングをXMC問題として定義し、これを効率よく解くための手法を提案しています。
+ここで、XMCの問題とは、入力（今回はクエリ）に対して、最も関連性の高い複数のラベル（今回は製品）を出力することとなります。
+Amazonでの製品なのでほんとに大規模（ラベル＝製品＝1億件）です。</p>
+<p>従来のXMC問題を解くための手法として、疎な線形モデルの手法、パーティションベースの手法、グラフベースの手法などが列挙されています。
+疎な線形モデルの手法では、ナイーブなOVR(one-versus-rest)だと出力となるラベルの数に対して線形に推論時間も大きくなるため、今回の用途には適しません。
+この論文ではパーティションベースの手法として、推論時間を短くできるツリーベースで疎な線形モデルの手法を評価しています。</p>
+<h2 id="どういう仕組み">どういう仕組み？</h2>
+<p>ツリーベースのモデルは次のような感じです。
+<a href="https://arxiv.org/abs/2010.05878">PECOS</a>のXR-Linearモデルを利用しています。
+モデルに関する詳細についてはこちらの論文に詳しく載っているようです（まだ読んでいないです、、、）。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20220112/xr-linear.jpg" />
+    </div>
+    <a href="/images/entries/20220112/xr-linear.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>一番上に入力として与えられる<code>x</code>がクエリ（ベクトル）で一番下の四角が製品にあたるラベル（<code>Y={1,...,l,...L}</code>）です。
+これらが与えられたときに最も関連性の高い上位<code>k</code>件のラベル（製品）を出力するモデルを生成します。
+モデルのパラメータは、学習データとして<code>(x, y)</code>(ここで、<code>y∈{0, 1}^𝐿</code>、すなわちクエリに製品がマッチするかしないかの二値)を使って調整します。</p>
+<p>これは、ツリーのそれぞれの階層のノードで、その下の層に関連するデータがあるかどうか？という分類を学習すればよいことになります。
+学習データとしては、入力と最下層のラベルにマッチするかどうかというデータです。
+これをもとに、ツリーの最下層のデータをもとにひとつ上の層の分類器の学習をすればよいことになります。</p>
+<p>推論は出来上がったツリーベースのモデルに対して、ビームサーチで行ないます。
+この時、それぞれの層のノードの分類器では推論の効率化のために枝刈りの閾値を設定しています。
+本論文で閾値の違いによる精度とレイテンシの比較も行われています。
+また、ビームサーチのビームサイズを変化させた場合の性能についても実験しています。</p>
+<h2 id="どうやって検証した">どうやって検証した？</h2>
+<p>次のようなデータを用いてAWS上にモデル構築、推論のシステムを用意し実験しています。</p>
+<ul>
+<li>10億件以上のポジティブなクエリ-商品ペアのデータセット
+<ul>
+<li>クエリ：2億4千万、商品：1億</li>
+</ul>
+</li>
+<li>ポジティブなペアとは、クリック数や購入数の集計値が閾値以上。ただし、データセットとしては集計値は利用していない。</li>
+<li>トレーニングセット：12か月分の検索ログ</li>
+<li>評価用テストセット：1か月分の検索ログ（12％の製品はトレーニングセットには出てこない）</li>
+</ul>
+<p>というデーセットをもとに上記のモデルを学習しています。
+特徴量はクエリテキストと製品のタイトルをもとにTF-IDFをいくつかのパターンで導出したものが使われています。
+詳しくは論文の結果に関する表などを見ていただくとして。。。</p>
+<p>結果として、1億件の商品カタログで60.9%のRecall@100を1.25ミリ秒/リクエストという低レイテンシで達成したとなっています。</p>
+<h2 id="気になる点は">気になる点は？</h2>
+<p>知り合いと3人で読んでいて次のような気になる点が出てきました。</p>
+<ul>
+<li>ツリーの構築をするときに、製品の<strong>ラベルの並び順</strong>（製品のクラスタリング？に他製品が似た場所に来る感じ）が推論の効率の良し悪しに影響するんじゃないの？＝Amazonではないところではうまくいかない？
+<ul>
+<li>PECOSの論文読まないといけない？</li>
+</ul>
+</li>
+<li>製品が<strong>増えたとき</strong>にモデルの組み換えとかどうするの？
+<ul>
+<li>コールドスタート問題という形で今後の課題として書かれていたので、今後に期待</li>
+</ul>
+</li>
+<li>転置インデックスでのマッチングの補完として利用しているということだったけど、<strong>ランキングはどうしてるんだろう</strong>？
+<ul>
+<li>別のランキング用の指標があるのかな？上位k件とした場合にどうやって、決めているのか？</li>
+</ul>
+</li>
+<li>モデル更新のタイミングはどのくらいのスパンなんだろう？</li>
+</ul>
+<h2 id="まとめ感想">まとめ＆感想</h2>
+<p>セマンティック検索の処理を分類問題に置き換えてその手法を用いて行い、実際のシステムに適用できそうな速度と精度を出しているのが面白かったです。
+セマンティック検索にもいろんな手法があるのだなと（そして、いろいろ勉強しないといけないんだなと。。。）。</p>
+<p>気になる点にも書きましたが、ツリーの作り方になにかコツがあるのか？他の検索結果と組み合わせるときに、どのような基準で上位を選択しているのか？など疑問点も残っています。
+個人的には特にどのように既存のシステムにくっつけていくのかというところが気になっています。
+論文の続編でその辺の話が出てくるのかなぁ？</p>
+<p>ツリーの作り方に関するPECOSの論文を誰か解説してくれると嬉しいかもなぁと思いつつ、とりあえずブログに書き残してみました。参考になるかなぁ。。。</p>
+<h2 id="参考文献">参考文献</h2>
+<ul>
+<li><a href="https://dl.acm.org/doi/10.1145/3447548.3467092">Extreme Multi-label Learning for Semantic Matching in Product Search - ACM</a></li>
+<li><a href="https://www.amazon.science/publications/extreme-multi-label-learning-for-semantic-matching-in-product-search">Extreme multi-label learning for semantic matching in product search - Amazon Science</a></li>
+<li><a href="https://arxiv.org/abs/2010.05878">PECOS： Prediction for Enormous and Correlated Output Spaces</a></li>
+<li><a href="https://kamujun.hatenablog.com/entry/2018/06/22/180605">数えきれないほどの分類を行うExtreme Classification - Technical Hedgehog</a></li>
+</ul>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/blog/2021/12/31/looking-back-2021/" data-toggle="tooltip" data-placement="top" title="今年の振り返りと来年の抱負（2021）">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+<div id="disqus-comment"></div>
+
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/berlin-buzzwords" title="berlin-buzzwords">
+                            berlin-buzzwords
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/conference" title="conference">
+                            conference
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/paper" title="paper">
+                            paper
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/search" title="search">
+                            search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2022
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
+
+</body>
+</html>

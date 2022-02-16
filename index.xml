@@ -7,7 +7,129 @@
     <description>Recent content on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Fri, 31 Dec 2021 22:29:19 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 12 Jan 2022 18:41:02 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ</title>
+      <link>https://blog.johtani.info/blog/2022/01/12/reading-xmc-for-semantic-search-in-prod/</link>
+      <pubDate>Wed, 12 Jan 2022 18:41:02 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/01/12/reading-xmc-for-semantic-search-in-prod/</guid>
+      <description>年末までに知り合いと次の論文を読んだので軽くまとめておきます。 Extreme Multi-label Learning for Semantic Matching in Product Search なんで読んだの？ 前回読んだ理由と一緒ですが、Semantic</description>
+      <content:encoded>&lt;p&gt;年末までに知り合いと次の論文を読んだので軽くまとめておきます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://dl.acm.org/doi/10.1145/3447548.3467092&#34;&gt;Extreme Multi-label Learning for Semantic Matching in Product Search&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;なんで読んだの&#34;&gt;なんで読んだの？&lt;/h2&gt;
+&lt;p&gt;前回読んだ理由と一緒ですが、&lt;code&gt;Semantic Search&lt;/code&gt;に絡んだ検索の論文であり、Amazonの製品検索での話も関係していたので読みました。&lt;/p&gt;
+&lt;h2 id=&#34;どんな論文&#34;&gt;どんな論文？&lt;/h2&gt;
+&lt;p&gt;Amazonの製品検索でセマンティックマッチングを利用する方法、レイテンシを低くしつつ再現率を改善できるような仕組みを検討して評価した論文です。
+実際には商品検索のマッチングを大規模なマルチラベル問題（Extreme Multi-label Classification：以下ではXMC問題とする）として定義して、その問題を効率よく解く方法について検討評価しています。&lt;/p&gt;
+&lt;p&gt;検索には大きく2つのフェーズがあります。マッチング（クエリにヒットした文書の集合を求める）とランキング（マッチングのデータを関連性の高い順序で並べる）です。
+前回のMSの論文では、マッチング後のランキングのフェーズで言語モデルを利用した並び替えを行う話でした。
+今回の論文ではマッチングに関してセマンティックサーチを有効活用できないか？という論文になります。
+転置インデックスベースの（語彙による）検索では、スペルミスや類義語などを検索することが難しいです。
+語彙以外のデータ（クリックや購入といったユーザーの行動や製品の意味的表現など）を学習できる埋め込みベースのニューラルモデルを活用して、マッチングを補完する方法を検討しています。
+下図のようにあくまで転置インデックスベースの検索の補完として利用するみたいです（論文に掲載されていたアーキテクチャ）。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20220112/system.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20220112/system.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&#34;xmc問題とは&#34;&gt;XMC問題とは？&lt;/h3&gt;
+&lt;p&gt;セマンティックサーチを行なう場合、埋め込みベースのニューラルモデル（例えばBERTとか）を利用することが多いですが、
+クエリトークンを埋め込み空間にベクトル化する部分が推論のボトルネック（レイテンシが高くなる）になることが多いです。
+これは、ニューラルネットワークの複雑さに依存します。
+低レイテンシになるように、複雑ではないエンコーダーを用いることもありますが今度は性能（精度）が良くなくなります。&lt;/p&gt;
+&lt;p&gt;そこで、この論文ではセマンティックマッチングをXMC問題として定義し、これを効率よく解くための手法を提案しています。
+ここで、XMCの問題とは、入力（今回はクエリ）に対して、最も関連性の高い複数のラベル（今回は製品）を出力することとなります。
+Amazonでの製品なのでほんとに大規模（ラベル＝製品＝1億件）です。&lt;/p&gt;
+&lt;p&gt;従来のXMC問題を解くための手法として、疎な線形モデルの手法、パーティションベースの手法、グラフベースの手法などが列挙されています。
+疎な線形モデルの手法では、ナイーブなOVR(one-versus-rest)だと出力となるラベルの数に対して線形に推論時間も大きくなるため、今回の用途には適しません。
+この論文ではパーティションベースの手法として、推論時間を短くできるツリーベースで疎な線形モデルの手法を評価しています。&lt;/p&gt;
+&lt;h2 id=&#34;どういう仕組み&#34;&gt;どういう仕組み？&lt;/h2&gt;
+&lt;p&gt;ツリーベースのモデルは次のような感じです。
+&lt;a href=&#34;https://arxiv.org/abs/2010.05878&#34;&gt;PECOS&lt;/a&gt;のXR-Linearモデルを利用しています。
+モデルに関する詳細についてはこちらの論文に詳しく載っているようです（まだ読んでいないです、、、）。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20220112/xr-linear.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20220112/xr-linear.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;一番上に入力として与えられる&lt;code&gt;x&lt;/code&gt;がクエリ（ベクトル）で一番下の四角が製品にあたるラベル（&lt;code&gt;Y={1,...,l,...L}&lt;/code&gt;）です。
+これらが与えられたときに最も関連性の高い上位&lt;code&gt;k&lt;/code&gt;件のラベル（製品）を出力するモデルを生成します。
+モデルのパラメータは、学習データとして&lt;code&gt;(x, y)&lt;/code&gt;(ここで、&lt;code&gt;y∈{0, 1}^𝐿&lt;/code&gt;、すなわちクエリに製品がマッチするかしないかの二値)を使って調整します。&lt;/p&gt;
+&lt;p&gt;これは、ツリーのそれぞれの階層のノードで、その下の層に関連するデータがあるかどうか？という分類を学習すればよいことになります。
+学習データとしては、入力と最下層のラベルにマッチするかどうかというデータです。
+これをもとに、ツリーの最下層のデータをもとにひとつ上の層の分類器の学習をすればよいことになります。&lt;/p&gt;
+&lt;p&gt;推論は出来上がったツリーベースのモデルに対して、ビームサーチで行ないます。
+この時、それぞれの層のノードの分類器では推論の効率化のために枝刈りの閾値を設定しています。
+本論文で閾値の違いによる精度とレイテンシの比較も行われています。
+また、ビームサーチのビームサイズを変化させた場合の性能についても実験しています。&lt;/p&gt;
+&lt;h2 id=&#34;どうやって検証した&#34;&gt;どうやって検証した？&lt;/h2&gt;
+&lt;p&gt;次のようなデータを用いてAWS上にモデル構築、推論のシステムを用意し実験しています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;10億件以上のポジティブなクエリ-商品ペアのデータセット
+&lt;ul&gt;
+&lt;li&gt;クエリ：2億4千万、商品：1億&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;ポジティブなペアとは、クリック数や購入数の集計値が閾値以上。ただし、データセットとしては集計値は利用していない。&lt;/li&gt;
+&lt;li&gt;トレーニングセット：12か月分の検索ログ&lt;/li&gt;
+&lt;li&gt;評価用テストセット：1か月分の検索ログ（12％の製品はトレーニングセットには出てこない）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;というデーセットをもとに上記のモデルを学習しています。
+特徴量はクエリテキストと製品のタイトルをもとにTF-IDFをいくつかのパターンで導出したものが使われています。
+詳しくは論文の結果に関する表などを見ていただくとして。。。&lt;/p&gt;
+&lt;p&gt;結果として、1億件の商品カタログで60.9%のRecall@100を1.25ミリ秒/リクエストという低レイテンシで達成したとなっています。&lt;/p&gt;
+&lt;h2 id=&#34;気になる点は&#34;&gt;気になる点は？&lt;/h2&gt;
+&lt;p&gt;知り合いと3人で読んでいて次のような気になる点が出てきました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ツリーの構築をするときに、製品の&lt;strong&gt;ラベルの並び順&lt;/strong&gt;（製品のクラスタリング？に他製品が似た場所に来る感じ）が推論の効率の良し悪しに影響するんじゃないの？＝Amazonではないところではうまくいかない？
+&lt;ul&gt;
+&lt;li&gt;PECOSの論文読まないといけない？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;製品が&lt;strong&gt;増えたとき&lt;/strong&gt;にモデルの組み換えとかどうするの？
+&lt;ul&gt;
+&lt;li&gt;コールドスタート問題という形で今後の課題として書かれていたので、今後に期待&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;転置インデックスでのマッチングの補完として利用しているということだったけど、&lt;strong&gt;ランキングはどうしてるんだろう&lt;/strong&gt;？
+&lt;ul&gt;
+&lt;li&gt;別のランキング用の指標があるのかな？上位k件とした場合にどうやって、決めているのか？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;モデル更新のタイミングはどのくらいのスパンなんだろう？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ感想&#34;&gt;まとめ＆感想&lt;/h2&gt;
+&lt;p&gt;セマンティック検索の処理を分類問題に置き換えてその手法を用いて行い、実際のシステムに適用できそうな速度と精度を出しているのが面白かったです。
+セマンティック検索にもいろんな手法があるのだなと（そして、いろいろ勉強しないといけないんだなと。。。）。&lt;/p&gt;
+&lt;p&gt;気になる点にも書きましたが、ツリーの作り方になにかコツがあるのか？他の検索結果と組み合わせるときに、どのような基準で上位を選択しているのか？など疑問点も残っています。
+個人的には特にどのように既存のシステムにくっつけていくのかというところが気になっています。
+論文の続編でその辺の話が出てくるのかなぁ？&lt;/p&gt;
+&lt;p&gt;ツリーの作り方に関するPECOSの論文を誰か解説してくれると嬉しいかもなぁと思いつつ、とりあえずブログに書き残してみました。参考になるかなぁ。。。&lt;/p&gt;
+&lt;h2 id=&#34;参考文献&#34;&gt;参考文献&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://dl.acm.org/doi/10.1145/3447548.3467092&#34;&gt;Extreme Multi-label Learning for Semantic Matching in Product Search - ACM&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.amazon.science/publications/extreme-multi-label-learning-for-semantic-matching-in-product-search&#34;&gt;Extreme multi-label learning for semantic matching in product search - Amazon Science&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://arxiv.org/abs/2010.05878&#34;&gt;PECOS： Prediction for Enormous and Correlated Output Spaces&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kamujun.hatenablog.com/entry/2018/06/22/180605&#34;&gt;数えきれないほどの分類を行うExtreme Classification - Technical Hedgehog&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>今年の振り返りと来年の抱負（2021）</title>
       <link>https://blog.johtani.info/blog/2021/12/31/looking-back-2021/</link>
