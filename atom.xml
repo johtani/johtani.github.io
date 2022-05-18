@@ -7,7 +7,97 @@
     <description>Recent content on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Wed, 12 Jan 2022 18:41:02 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 18 May 2022 15:54:17 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>インデックスエイリアス - Azure Cognitive Searchの新機能</title>
+      <link>https://blog.johtani.info/blog/2022/05/18/index-alias-in-azure-cognitive-search/</link>
+      <pubDate>Wed, 18 May 2022 15:54:17 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/05/18/index-alias-in-azure-cognitive-search/</guid>
+      <description>Azure Cognitive Searchで2月に新しい機能が公開されました。 「Index Alias」（インデックスの別名）です。まだ、パブリックプレビューの段階です</description>
+      <content:encoded>&lt;p&gt;Azure Cognitive Searchで2月に新しい機能が公開されました。
+「Index Alias」（インデックスの別名）です。まだ、パブリックプレビューの段階ですが、ドキュメントなどが公開されていたのでどんな機能かを調べてみました。&lt;strong&gt;なお、本ブログの内容は2022/05/18時点での内容となります、ご注意ください。&lt;/strong&gt;&lt;/p&gt;
+&lt;h2 id=&#34;公式ドキュメント&#34;&gt;公式ドキュメント&lt;/h2&gt;
+&lt;p&gt;まずは公式ドキュメントです。1つ目の「インデックスの別名を作成する」の冒頭で別名（エイリアス）がどんなものかを説明しています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-how-to-alias?tabs=rest&#34;&gt;インデックスの別名を作成する - Azure Cognitive Search | Microsoft Docs&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/ja-JP/rest/api/searchservice/preview-api/create-or-update-alias&#34;&gt;エイリアスの作成または更新 (2021-04-30-Preview) - Azure Cognitive Search | Microsoft Docs&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/en-us/rest/api/searchservice/preview-api/alias-operations&#34;&gt;Alias Operations (2021-04-30-Preview) - Azure Cognitive Search | Microsoft Docs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;REST APIのドキュメント（2022/05/18現在、日本語のページだと左のメニューが壊れているため、どんなAPIがあるかがわかりにくいため、Alias Operationsのページは英語のリンクになっています）&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;インデックスエイリアスってどんなもの&#34;&gt;インデックスエイリアスってどんなもの？&lt;/h2&gt;
+&lt;p&gt;文字通り、インデックスにエイリアス（別名）をつけることができるようになります。
+Azure Cognitive Searchでは残念ながらインデックスを作成するタイミング以外ではインデックスの名前を&lt;strong&gt;変更できません&lt;/strong&gt;。
+このため、インデックスのスキーマ（Analyzerの設定変更など）を変更したい場合、新しいインデックスを作成します。
+新しいインデックスの名前はこれまでのものとは別の名前になってしまうため、アプリケーションで指定しているインデックス名も書き換える必要が出てきます。
+利用しているアプリが複数ある場合は、すべて変更が必要です。&lt;/p&gt;
+&lt;p&gt;今回出てきたエイリアスを利用することで、アプリケーションではエイリアスを指定することで、アプリケーション側の変更なくインデックスを入れ替えることができるようになります。&lt;/p&gt;
+&lt;h2 id=&#34;エイリアスの操作方法&#34;&gt;エイリアスの操作方法&lt;/h2&gt;
+&lt;p&gt;公式ドキュメントにAPIの一覧や利用方法の記載があるので詳細はそちらをご覧ください。
+本ブログでは、いくつか利用するときに気になった点を書き残しておきます。&lt;/p&gt;
+&lt;h3 id=&#34;作成&#34;&gt;作成&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;aliases&lt;/code&gt;というエンドポイントにエイリアスの名前とインデックス名をPOSTすることで作成できます。
+以下のサンプルは公式ドキュメントの例です。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;POST /aliases?api-version=2021-04-30-preview
+{
+    &amp;quot;name&amp;quot;: &amp;quot;my-alias&amp;quot;,
+    &amp;quot;indexes&amp;quot;: [&amp;quot;hotel-samples-index&amp;quot;]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ちなみに、インデックスの指定が&lt;code&gt;indexes&lt;/code&gt;で配列になっていますが、公式ドキュメントに以下の記述があり、複数の指定はできないです（エラーが返ってきます）。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;indexes 配列に指定できるインデックスの名前は 1 つだけです。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;また、1つのインデックスに対して複数のエイリアスをつけることは問題ありません。&lt;/p&gt;
+&lt;h3 id=&#34;確認&#34;&gt;確認&lt;/h3&gt;
+&lt;p&gt;エイリアスのリストも取得できます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;GET /aliases?api-version=2021-04-30-preview
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;現在どんなエイリアスが、どのインデックスに対して付与されているかがリストで取得できます。
+きちんと作成されたかどうかなどの確認にも使えるかと思います（もちろんエイリアス名を指定したGETも可能です）&lt;/p&gt;
+&lt;h3 id=&#34;検索での利用&#34;&gt;検索での利用&lt;/h3&gt;
+&lt;p&gt;検索のREST APIでインデックス名を指定していた部分をエイリアス名に置き換えるだけです。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;POST /indexes/my-alias/docs/search?api-version=2021-04-30-preview
+{
+    &amp;quot;search&amp;quot;: &amp;quot;pool spa +airport&amp;quot;,
+    &amp;quot;searchMode&amp;quot;: any,
+    &amp;quot;queryType&amp;quot;: &amp;quot;simple&amp;quot;,
+    &amp;quot;select&amp;quot;: &amp;quot;HotelId, HotelName, Category, Description&amp;quot;,
+    &amp;quot;count&amp;quot;: true
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;更新&#34;&gt;更新&lt;/h3&gt;
+&lt;p&gt;エイリアスの更新（インデックスの入れ替え）は作成と同じリクエストです。
+更新が成功すれば&lt;code&gt;204&lt;/code&gt;のステータスコードが返ってきます（エイリアス初回作成時は&lt;code&gt;201&lt;/code&gt;）
+なお、ドキュメントには以下のような記述があります。入れ替え時の注意点になるかと（入れ替えのタイミングをきちんと制御したい場合は、少しだけアプリケーションを停止するなどが必要かと思います）。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;別名に対する更新がシステムに反映されるまでに最大 10 秒かかります。以前その別名が対応付けられていたインデックスを削除するのは、10 秒以上待ってからにしてください。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;削除&#34;&gt;削除&lt;/h3&gt;
+&lt;p&gt;もちろん削除もできます。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;DELETE /aliases/my-alias
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;エイリアスを利用する場合の注意点&#34;&gt;エイリアスを利用する場合の注意点&lt;/h2&gt;
+&lt;p&gt;便利なエイリアスですが、エイリアスが使用できない場合もあるので注意が必要です。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;データ登録のAPIと検索のAPIでのみエイリアス名を利用可能
+&lt;ul&gt;
+&lt;li&gt;インデックスの設定変更やAnalyze Text APIではこれまで通りインデックス名を指定します。&lt;/li&gt;
+&lt;li&gt;また、エイリアス名は&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-howto-create-indexers?tabs=portal&#34;&gt;インデクサー機能&lt;/a&gt;で&lt;code&gt;targetIndexName&lt;/code&gt;にも指定できません。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;エイリアス名がついているインデックスは削除不可
+&lt;ul&gt;
+&lt;li&gt;エイリアスがついているインデックスを削除しようとした場合はエラーが出るようになっています。&lt;/li&gt;
+&lt;li&gt;まずはエイリアスを削除してからインデックスを削除するという手順になります。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;簡単ですが、インデックスのエイリアスに関しての紹介でした。まだパブリックプレビューなので正式リリース時点では利用方法が変わっている可能性もあります。こちらは注意してください。&lt;/p&gt;
+&lt;p&gt;正式公開されればですが、今後Azure Cognitive Searchを使ったアプリを開発する場合はインデックスエイリアスを利用することを基本にするのがいいかもなと思います
+（ちなみに、Elasticsearchにもインデックスエイリアスの機能がありますが、異なる点が多いので同じものとは思わないほうがよさそうです）。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ</title>
       <link>https://blog.johtani.info/blog/2022/01/12/reading-xmc-for-semantic-search-in-prod/</link>

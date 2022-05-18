@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ" />
-    <meta property="og:title" content="Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ" />
-    <meta property="twitter:title" content="Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ" />
+    <meta name="title" content="インデックスエイリアス - Azure Cognitive Searchの新機能" />
+    <meta property="og:title" content="インデックスエイリアス - Azure Cognitive Searchの新機能" />
+    <meta property="twitter:title" content="インデックスエイリアス - Azure Cognitive Searchの新機能" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>インデックスエイリアス - Azure Cognitive Searchの新機能-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2022/01/12/reading-xmc-for-semantic-search-in-prod/">
+    <link rel="canonical" href="/blog/2022/05/18/index-alias-in-azure-cognitive-search/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 
@@ -157,16 +157,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/search" title="search">
-                            search
-                        </a>
-                        
-                        <a class="tag" href="/tags/paper" title="paper">
-                            paper
+                        <a class="tag" href="/tags/azure-search" title="azure search">
+                            azure search
                         </a>
                         
                     </div>
-                    <h1>Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ</h1>
+                    <h1>インデックスエイリアス - Azure Cognitive Searchの新機能</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -174,7 +170,7 @@
                             johtani
                          
                         on 
-                        Wednesday, January 12, 2022
+                        Wednesday, May 18, 2022
                         
                         
                         
@@ -204,132 +200,102 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#なんで読んだの">なんで読んだの？</a></li>
-    <li><a href="#どんな論文">どんな論文？</a>
+    <li><a href="#公式ドキュメント">公式ドキュメント</a></li>
+    <li><a href="#インデックスエイリアスってどんなもの">インデックスエイリアスってどんなもの？</a></li>
+    <li><a href="#エイリアスの操作方法">エイリアスの操作方法</a>
       <ul>
-        <li><a href="#xmc問題とは">XMC問題とは？</a></li>
+        <li><a href="#作成">作成</a></li>
+        <li><a href="#確認">確認</a></li>
+        <li><a href="#検索での利用">検索での利用</a></li>
+        <li><a href="#更新">更新</a></li>
+        <li><a href="#削除">削除</a></li>
       </ul>
     </li>
-    <li><a href="#どういう仕組み">どういう仕組み？</a></li>
-    <li><a href="#どうやって検証した">どうやって検証した？</a></li>
-    <li><a href="#気になる点は">気になる点は？</a></li>
-    <li><a href="#まとめ感想">まとめ＆感想</a></li>
-    <li><a href="#参考文献">参考文献</a></li>
+    <li><a href="#エイリアスを利用する場合の注意点">エイリアスを利用する場合の注意点</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
   </ul>
 </nav>
                 
-                <p>年末までに知り合いと次の論文を読んだので軽くまとめておきます。</p>
+                <p>Azure Cognitive Searchで2月に新しい機能が公開されました。
+「Index Alias」（インデックスの別名）です。まだ、パブリックプレビューの段階ですが、ドキュメントなどが公開されていたのでどんな機能かを調べてみました。<strong>なお、本ブログの内容は2022/05/18時点での内容となります、ご注意ください。</strong></p>
+<h2 id="公式ドキュメント">公式ドキュメント</h2>
+<p>まずは公式ドキュメントです。1つ目の「インデックスの別名を作成する」の冒頭で別名（エイリアス）がどんなものかを説明しています。</p>
 <ul>
-<li><a href="https://dl.acm.org/doi/10.1145/3447548.3467092">Extreme Multi-label Learning for Semantic Matching in Product Search</a></li>
+<li><a href="https://docs.microsoft.com/ja-jp/azure/search/search-how-to-alias?tabs=rest">インデックスの別名を作成する - Azure Cognitive Search | Microsoft Docs</a></li>
+<li><a href="https://docs.microsoft.com/ja-JP/rest/api/searchservice/preview-api/create-or-update-alias">エイリアスの作成または更新 (2021-04-30-Preview) - Azure Cognitive Search | Microsoft Docs</a></li>
+<li><a href="https://docs.microsoft.com/en-us/rest/api/searchservice/preview-api/alias-operations">Alias Operations (2021-04-30-Preview) - Azure Cognitive Search | Microsoft Docs</a></li>
 </ul>
-<h2 id="なんで読んだの">なんで読んだの？</h2>
-<p>前回読んだ理由と一緒ですが、<code>Semantic Search</code>に絡んだ検索の論文であり、Amazonの製品検索での話も関係していたので読みました。</p>
-<h2 id="どんな論文">どんな論文？</h2>
-<p>Amazonの製品検索でセマンティックマッチングを利用する方法、レイテンシを低くしつつ再現率を改善できるような仕組みを検討して評価した論文です。
-実際には商品検索のマッチングを大規模なマルチラベル問題（Extreme Multi-label Classification：以下ではXMC問題とする）として定義して、その問題を効率よく解く方法について検討評価しています。</p>
-<p>検索には大きく2つのフェーズがあります。マッチング（クエリにヒットした文書の集合を求める）とランキング（マッチングのデータを関連性の高い順序で並べる）です。
-前回のMSの論文では、マッチング後のランキングのフェーズで言語モデルを利用した並び替えを行う話でした。
-今回の論文ではマッチングに関してセマンティックサーチを有効活用できないか？という論文になります。
-転置インデックスベースの（語彙による）検索では、スペルミスや類義語などを検索することが難しいです。
-語彙以外のデータ（クリックや購入といったユーザーの行動や製品の意味的表現など）を学習できる埋め込みベースのニューラルモデルを活用して、マッチングを補完する方法を検討しています。
-下図のようにあくまで転置インデックスベースの検索の補完として利用するみたいです（論文に掲載されていたアーキテクチャ）。</p>
-
-<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20220112/system.jpg" />
-    </div>
-    <a href="/images/entries/20220112/system.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<h3 id="xmc問題とは">XMC問題とは？</h3>
-<p>セマンティックサーチを行なう場合、埋め込みベースのニューラルモデル（例えばBERTとか）を利用することが多いですが、
-クエリトークンを埋め込み空間にベクトル化する部分が推論のボトルネック（レイテンシが高くなる）になることが多いです。
-これは、ニューラルネットワークの複雑さに依存します。
-低レイテンシになるように、複雑ではないエンコーダーを用いることもありますが今度は性能（精度）が良くなくなります。</p>
-<p>そこで、この論文ではセマンティックマッチングをXMC問題として定義し、これを効率よく解くための手法を提案しています。
-ここで、XMCの問題とは、入力（今回はクエリ）に対して、最も関連性の高い複数のラベル（今回は製品）を出力することとなります。
-Amazonでの製品なのでほんとに大規模（ラベル＝製品＝1億件）です。</p>
-<p>従来のXMC問題を解くための手法として、疎な線形モデルの手法、パーティションベースの手法、グラフベースの手法などが列挙されています。
-疎な線形モデルの手法では、ナイーブなOVR(one-versus-rest)だと出力となるラベルの数に対して線形に推論時間も大きくなるため、今回の用途には適しません。
-この論文ではパーティションベースの手法として、推論時間を短くできるツリーベースで疎な線形モデルの手法を評価しています。</p>
-<h2 id="どういう仕組み">どういう仕組み？</h2>
-<p>ツリーベースのモデルは次のような感じです。
-<a href="https://arxiv.org/abs/2010.05878">PECOS</a>のXR-Linearモデルを利用しています。
-モデルに関する詳細についてはこちらの論文に詳しく載っているようです（まだ読んでいないです、、、）。</p>
-
-
-<div class="box" style="max-width:600">
-  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
-    <div class="img">
-      <img itemprop="thumbnail" src="/images/entries/20220112/xr-linear.jpg" />
-    </div>
-    <a href="/images/entries/20220112/xr-linear.jpg" itemprop="contentUrl"></a>
-  </figure>
-</div>
-
-<p>一番上に入力として与えられる<code>x</code>がクエリ（ベクトル）で一番下の四角が製品にあたるラベル（<code>Y={1,...,l,...L}</code>）です。
-これらが与えられたときに最も関連性の高い上位<code>k</code>件のラベル（製品）を出力するモデルを生成します。
-モデルのパラメータは、学習データとして<code>(x, y)</code>(ここで、<code>y∈{0, 1}^𝐿</code>、すなわちクエリに製品がマッチするかしないかの二値)を使って調整します。</p>
-<p>これは、ツリーのそれぞれの階層のノードで、その下の層に関連するデータがあるかどうか？という分類を学習すればよいことになります。
-学習データとしては、入力と最下層のラベルにマッチするかどうかというデータです。
-これをもとに、ツリーの最下層のデータをもとにひとつ上の層の分類器の学習をすればよいことになります。</p>
-<p>推論は出来上がったツリーベースのモデルに対して、ビームサーチで行ないます。
-この時、それぞれの層のノードの分類器では推論の効率化のために枝刈りの閾値を設定しています。
-本論文で閾値の違いによる精度とレイテンシの比較も行われています。
-また、ビームサーチのビームサイズを変化させた場合の性能についても実験しています。</p>
-<h2 id="どうやって検証した">どうやって検証した？</h2>
-<p>次のようなデータを用いてAWS上にモデル構築、推論のシステムを用意し実験しています。</p>
+<blockquote>
+<p>REST APIのドキュメント（2022/05/18現在、日本語のページだと左のメニューが壊れているため、どんなAPIがあるかがわかりにくいため、Alias Operationsのページは英語のリンクになっています）</p>
+</blockquote>
+<h2 id="インデックスエイリアスってどんなもの">インデックスエイリアスってどんなもの？</h2>
+<p>文字通り、インデックスにエイリアス（別名）をつけることができるようになります。
+Azure Cognitive Searchでは残念ながらインデックスを作成するタイミング以外ではインデックスの名前を<strong>変更できません</strong>。
+このため、インデックスのスキーマ（Analyzerの設定変更など）を変更したい場合、新しいインデックスを作成します。
+新しいインデックスの名前はこれまでのものとは別の名前になってしまうため、アプリケーションで指定しているインデックス名も書き換える必要が出てきます。
+利用しているアプリが複数ある場合は、すべて変更が必要です。</p>
+<p>今回出てきたエイリアスを利用することで、アプリケーションではエイリアスを指定することで、アプリケーション側の変更なくインデックスを入れ替えることができるようになります。</p>
+<h2 id="エイリアスの操作方法">エイリアスの操作方法</h2>
+<p>公式ドキュメントにAPIの一覧や利用方法の記載があるので詳細はそちらをご覧ください。
+本ブログでは、いくつか利用するときに気になった点を書き残しておきます。</p>
+<h3 id="作成">作成</h3>
+<p><code>aliases</code>というエンドポイントにエイリアスの名前とインデックス名をPOSTすることで作成できます。
+以下のサンプルは公式ドキュメントの例です。</p>
+<pre><code>POST /aliases?api-version=2021-04-30-preview
+{
+    &quot;name&quot;: &quot;my-alias&quot;,
+    &quot;indexes&quot;: [&quot;hotel-samples-index&quot;]
+}
+</code></pre><p>ちなみに、インデックスの指定が<code>indexes</code>で配列になっていますが、公式ドキュメントに以下の記述があり、複数の指定はできないです（エラーが返ってきます）。</p>
+<blockquote>
+<p>indexes 配列に指定できるインデックスの名前は 1 つだけです。</p>
+</blockquote>
+<p>また、1つのインデックスに対して複数のエイリアスをつけることは問題ありません。</p>
+<h3 id="確認">確認</h3>
+<p>エイリアスのリストも取得できます。</p>
+<pre><code>GET /aliases?api-version=2021-04-30-preview
+</code></pre><p>現在どんなエイリアスが、どのインデックスに対して付与されているかがリストで取得できます。
+きちんと作成されたかどうかなどの確認にも使えるかと思います（もちろんエイリアス名を指定したGETも可能です）</p>
+<h3 id="検索での利用">検索での利用</h3>
+<p>検索のREST APIでインデックス名を指定していた部分をエイリアス名に置き換えるだけです。</p>
+<pre><code>POST /indexes/my-alias/docs/search?api-version=2021-04-30-preview
+{
+    &quot;search&quot;: &quot;pool spa +airport&quot;,
+    &quot;searchMode&quot;: any,
+    &quot;queryType&quot;: &quot;simple&quot;,
+    &quot;select&quot;: &quot;HotelId, HotelName, Category, Description&quot;,
+    &quot;count&quot;: true
+}
+</code></pre><h3 id="更新">更新</h3>
+<p>エイリアスの更新（インデックスの入れ替え）は作成と同じリクエストです。
+更新が成功すれば<code>204</code>のステータスコードが返ってきます（エイリアス初回作成時は<code>201</code>）
+なお、ドキュメントには以下のような記述があります。入れ替え時の注意点になるかと（入れ替えのタイミングをきちんと制御したい場合は、少しだけアプリケーションを停止するなどが必要かと思います）。</p>
+<blockquote>
+<p>別名に対する更新がシステムに反映されるまでに最大 10 秒かかります。以前その別名が対応付けられていたインデックスを削除するのは、10 秒以上待ってからにしてください。</p>
+</blockquote>
+<h3 id="削除">削除</h3>
+<p>もちろん削除もできます。</p>
+<pre><code>DELETE /aliases/my-alias
+</code></pre><h2 id="エイリアスを利用する場合の注意点">エイリアスを利用する場合の注意点</h2>
+<p>便利なエイリアスですが、エイリアスが使用できない場合もあるので注意が必要です。</p>
 <ul>
-<li>10億件以上のポジティブなクエリ-商品ペアのデータセット
+<li>データ登録のAPIと検索のAPIでのみエイリアス名を利用可能
 <ul>
-<li>クエリ：2億4千万、商品：1億</li>
-</ul>
-</li>
-<li>ポジティブなペアとは、クリック数や購入数の集計値が閾値以上。ただし、データセットとしては集計値は利用していない。</li>
-<li>トレーニングセット：12か月分の検索ログ</li>
-<li>評価用テストセット：1か月分の検索ログ（12％の製品はトレーニングセットには出てこない）</li>
-</ul>
-<p>というデーセットをもとに上記のモデルを学習しています。
-特徴量はクエリテキストと製品のタイトルをもとにTF-IDFをいくつかのパターンで導出したものが使われています。
-詳しくは論文の結果に関する表などを見ていただくとして。。。</p>
-<p>結果として、1億件の商品カタログで60.9%のRecall@100を1.25ミリ秒/リクエストという低レイテンシで達成したとなっています。</p>
-<h2 id="気になる点は">気になる点は？</h2>
-<p>知り合いと3人で読んでいて次のような気になる点が出てきました。</p>
-<ul>
-<li>ツリーの構築をするときに、製品の<strong>ラベルの並び順</strong>（製品のクラスタリング？に他製品が似た場所に来る感じ）が推論の効率の良し悪しに影響するんじゃないの？＝Amazonではないところではうまくいかない？
-<ul>
-<li>PECOSの論文読まないといけない？</li>
+<li>インデックスの設定変更やAnalyze Text APIではこれまで通りインデックス名を指定します。</li>
+<li>また、エイリアス名は<a href="https://docs.microsoft.com/ja-jp/azure/search/search-howto-create-indexers?tabs=portal">インデクサー機能</a>で<code>targetIndexName</code>にも指定できません。</li>
 </ul>
 </li>
-<li>製品が<strong>増えたとき</strong>にモデルの組み換えとかどうするの？
+<li>エイリアス名がついているインデックスは削除不可
 <ul>
-<li>コールドスタート問題という形で今後の課題として書かれていたので、今後に期待</li>
+<li>エイリアスがついているインデックスを削除しようとした場合はエラーが出るようになっています。</li>
+<li>まずはエイリアスを削除してからインデックスを削除するという手順になります。</li>
 </ul>
 </li>
-<li>転置インデックスでのマッチングの補完として利用しているということだったけど、<strong>ランキングはどうしてるんだろう</strong>？
-<ul>
-<li>別のランキング用の指標があるのかな？上位k件とした場合にどうやって、決めているのか？</li>
 </ul>
-</li>
-<li>モデル更新のタイミングはどのくらいのスパンなんだろう？</li>
-</ul>
-<h2 id="まとめ感想">まとめ＆感想</h2>
-<p>セマンティック検索の処理を分類問題に置き換えてその手法を用いて行い、実際のシステムに適用できそうな速度と精度を出しているのが面白かったです。
-セマンティック検索にもいろんな手法があるのだなと（そして、いろいろ勉強しないといけないんだなと。。。）。</p>
-<p>気になる点にも書きましたが、ツリーの作り方になにかコツがあるのか？他の検索結果と組み合わせるときに、どのような基準で上位を選択しているのか？など疑問点も残っています。
-個人的には特にどのように既存のシステムにくっつけていくのかというところが気になっています。
-論文の続編でその辺の話が出てくるのかなぁ？</p>
-<p>ツリーの作り方に関するPECOSの論文を誰か解説してくれると嬉しいかもなぁと思いつつ、とりあえずブログに書き残してみました。参考になるかなぁ。。。</p>
-<h2 id="参考文献">参考文献</h2>
-<ul>
-<li><a href="https://dl.acm.org/doi/10.1145/3447548.3467092">Extreme Multi-label Learning for Semantic Matching in Product Search - ACM</a></li>
-<li><a href="https://www.amazon.science/publications/extreme-multi-label-learning-for-semantic-matching-in-product-search">Extreme multi-label learning for semantic matching in product search - Amazon Science</a></li>
-<li><a href="https://arxiv.org/abs/2010.05878">PECOS： Prediction for Enormous and Correlated Output Spaces</a></li>
-<li><a href="https://kamujun.hatenablog.com/entry/2018/06/22/180605">数えきれないほどの分類を行うExtreme Classification - Technical Hedgehog</a></li>
-</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>簡単ですが、インデックスのエイリアスに関しての紹介でした。まだパブリックプレビューなので正式リリース時点では利用方法が変わっている可能性もあります。こちらは注意してください。</p>
+<p>正式公開されればですが、今後Azure Cognitive Searchを使ったアプリを開発する場合はインデックスエイリアスを利用することを基本にするのがいいかもなと思います
+（ちなみに、Elasticsearchにもインデックスエイリアスの機能がありますが、異なる点が多いので同じものとは思わないほうがよさそうです）。</p>
 
 
                 
@@ -338,15 +304,10 @@ Amazonでの製品なのでほんとに大規模（ラベル＝製品＝1億件�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2021/12/31/looking-back-2021/" data-toggle="tooltip" data-placement="top" title="今年の振り返りと来年の抱負（2021）">&larr;
+                        <a href="/blog/2022/01/12/reading-xmc-for-semantic-search-in-prod/" data-toggle="tooltip" data-placement="top" title="Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2022/05/18/index-alias-in-azure-cognitive-search/" data-toggle="tooltip" data-placement="top" title="インデックスエイリアス - Azure Cognitive Searchの新機能">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
