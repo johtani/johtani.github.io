@@ -7,7 +7,99 @@
     <description>Recent content in Posts on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Wed, 18 May 2022 15:54:17 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 13 Jun 2022 20:24:06 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Elasticsearchの新しいJavaクライアント</title>
+      <link>https://blog.johtani.info/blog/2022/06/13/new-elasticsearch-java-client/</link>
+      <pubDate>Mon, 13 Jun 2022 20:24:06 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/06/13/new-elasticsearch-java-client/</guid>
+      <description>7.16で正式リリースされましたが、Elasticsearchの新しいJavaのクライアントが出ています。 使ってみたので、ちょっとだけ紹介で</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/7.16/introduction.html&#34;&gt;7.16で正式リリース&lt;/a&gt;されましたが、Elasticsearchの新しいJavaのクライアントが出ています。
+使ってみたので、ちょっとだけ紹介でもしてみようかな。&lt;/p&gt;
+&lt;p&gt;このクライアントが出るまでは、ElasticsearchのJavaクライアント（REST版）はElasticsearch本体の一部として実装・管理されていました（&lt;a href=&#34;https://github.com/elastic/elasticsearch/tree/7.16/client&#34;&gt;Elasticsearchのリポジトリにあるclientディレクトリ&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;HTTP経由でElasticsearchにアクセスするクライアントだったのですが、Elasticsearch本体のリポジトリで管理されていることもあり、Elasticsearch本体で利用されているクラスを使用していました。
+このため、クライアントライブラリなのですが、Elasticsearch本体のJarが必要になりサイズが大きくなっていました。
+また、JavaのObjectへの詰め替えなどの機能も備えておらず、すこし古臭い感じでもあります。
+この辺りを刷新する目的もあり新しいクライアントが公開されたようです。
+3月くらいに触った時はまだ、ドキュメントが揃ってなかったのですが利用方法などが増えているので移行も楽になってきているようです。
+根本的に作り直されたため、これまでのREST Clientとは使い方が違います。ですので、jarだけの差し替えでこれまで動いていたプログラムを移行ができるわけではないので注意が必要です。&lt;/p&gt;
+&lt;h2 id=&#34;どの辺が便利&#34;&gt;どの辺が便利？&lt;/h2&gt;
+&lt;h3 id=&#34;順次移行が可能&#34;&gt;順次移行が可能&lt;/h3&gt;
+&lt;p&gt;これまでのRESTクライアントとはパッケージ名もjarも別モノになっています。
+ですので、少しずつ新しいJava Clientに切り替えていくことが可能になっています。
+根本的に使い方が変わっているので、大きなシステムのクライアントを全部切り替えるのは結構大変かと思います。
+ですので、Indexをしている部分だけとか、検索部分だけなどといった部分的な置き換えをしつつ新しいクライアントに慣れていくことができます。&lt;/p&gt;
+&lt;h3 id=&#34;ラムダっぽく書ける&#34;&gt;ラムダっぽく書ける&lt;/h3&gt;
+&lt;p&gt;検索のクエリのサンプルを見るとわかりますが、こんな感じでクエリが書けます(&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/searching.html#_simple_search_query&#34;&gt;公式ドキュメントより抜粋&lt;/a&gt;)。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-Java&#34; data-lang=&#34;Java&#34;&gt;SearchResponse&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Product&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; response &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; esClient&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;s &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; s
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;index&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;products&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; 
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;query&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;q &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; q      
+        &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;match&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;t &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; t   
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;field&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;  
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;query&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;searchText&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt;
+    Product&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;class&lt;/span&gt;      
+&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;また、最後で渡している&lt;code&gt;Product.class&lt;/code&gt;は、検索結果をどのクラスのインスタンスにして返すかの指定です。
+Elasticsearchのレスポンス（JSON）から値をコピーして返してくれるようになっています。
+ですので、値を入れ替える処理を書く必要がなくなっています。&lt;/p&gt;
+&lt;h3 id=&#34;json文字列をそのまま使える&#34;&gt;JSON文字列をそのまま使える&lt;/h3&gt;
+&lt;p&gt;触り始めてからリリース（7.17.2より後なら使える）された、&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/loading-json.html&#34;&gt;JSON文字列からリクエストを作る機能&lt;/a&gt;もあります。&lt;/p&gt;
+&lt;p&gt;これまでのREST Clientだと、Elasticsearchへのリクエストを必ずJavaのメソッドで構築する必要がありました。
+今回のこの機能を利用すると、JSON文字列（やファイル）からリクエストオブジェクトを作るためのメソッド&lt;code&gt;.withJson()&lt;/code&gt;が提供されています。
+例えば、スキーマや設定変更用のリクエストのJSONなどは、Kibanaやcurlから試験的に投げたリクエスト（JSON）と同じものを使いたいことが多いです。また、ElasticsearchのAPIは数が多く、ドキュメントを見ながら利用方法を調べてJSONでまず試行錯誤することが多いです。
+この&lt;code&gt;withJson&lt;/code&gt;メソッドを利用することで、動作確認などをしたJSONがそのままソースにも利用できるので、リクエスト変更時の確認なども容易になると思います。&lt;/p&gt;
+&lt;h2 id=&#34;使ってみて困ったのは&#34;&gt;使ってみて困ったのは？&lt;/h2&gt;
+&lt;p&gt;便利な面も多いのですが、使っていて少し困ったこともあったのでそれもメモを残しておきます。&lt;/p&gt;
+&lt;h3 id=&#34;どんなリクエストを投げているかが不明&#34;&gt;どんなリクエストを投げているかが不明&lt;/h3&gt;
+&lt;p&gt;先ほども書きましたが、Elasticsearchのリクエストを試行錯誤するときは公式ドキュメントを見ながら、Kibanaなどを利用して試すことが多いです。
+ですので、自分がやりたいことのJSONは手元にあることが多いです。
+ただ、プログラムでクエリを組み立てる必要も出てきます。この時、実際にRESTリクエストとしてどんなJSONを投げているのかを知りたいことがあります（実際、検索クエリ作っててメソッドの使い方がうまくいかなくて四苦八苦してました）。
+4月時点では簡単にリクエストで投げているJSONを文字列としてログに出すメソッドなどは用意されていないようでした。
+デバッグ用に次のようなメソッドを書いてみました。
+Elasticsearchへ投げるRequestのクラス（例：CreateTemplateRequestとか）を引数に渡すことで、JSON文字列に変換できるようになっています（StringWriterに書き出されてる）。
+ここの&lt;code&gt;Logger&lt;/code&gt;はサンプルです。&lt;code&gt;writer.toString()&lt;/code&gt;で取り出せる文字列がJSON文字列になっているので、ログに出してみるなり、ファイルに落とすなりしてデバッグのお供にしてください。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-Java&#34; data-lang=&#34;Java&#34;&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; java.io.StringWriter&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; co.elastic.clients.elasticsearch._types.RequestBase&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; co.elastic.clients.json.SimpleJsonpMapper&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; jakarta.json.stream.JsonGenerator&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+
+
+&lt;span style=&#34;color:#f92672&#34;&gt;...&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;printRequestBodyJsonForDebug&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;RequestBase request&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+
+        &lt;span style=&#34;color:#75715e&#34;&gt;//for debug
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        Logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;** Debug print start **&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        StringWriter writer &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; StringWriter&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+        SimpleJsonpMapper mapper &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SimpleJsonpMapper&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+        JsonGenerator generator &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mapper&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;jsonProvider&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;createGenerator&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;writer&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        mapper&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;serialize&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;request&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; generator&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+        generator&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;close&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+        Logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;writer&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;toString&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;());&lt;/span&gt;
+        Logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;** Debug print finish **&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;プラグインなどで提供されるクエリが書けない&#34;&gt;プラグインなどで提供されるクエリが書けない&lt;/h3&gt;
+&lt;p&gt;LtRプラグインなどは、Elasticsearchの検索クエリを拡張しています。
+残念ながら、現時点（2022/06/13）ではカスタムクエリを新しいJavaクライアントで利用しようとした場合、エラーが発生してしまいます（知らないJSONだと判断されてしまいます）。&lt;/p&gt;
+&lt;p&gt;GitHubのIssueとして「&lt;a href=&#34;https://github.com/elastic/elasticsearch-java/issues/252&#34;&gt;［roadmap］ Add support for plugin-defined custom components · Issue #252 · elastic/elasticsearch-java&lt;/a&gt;」があります。
+これに対応されたら、拡張されたクエリも利用できるようになるでしょう。
+プラグインなどで拡張されているものを使いたい場合は、残念ながら既存のRESTクライアントを当面は使うことになりそうです。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;新しいElasticsearchのJavaクライアントを簡単ですが触ってみて、気になった点を記事にしました。
+JavaのObjectに詰め替えてくれる機能など便利になっているので使ってみてください。
+ドキュメントもちょっとずつ増えているようで、使い方も分かりやすくなっていました（触った時はレスポンスの扱い方などがJavaDocしか用意されてなかったんです）。
+説明が欲しいなぁと思うことがあれば、GitHubにIssueを上げてみるといいかもです。&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/introduction.html&#34;&gt;公式ドキュメント&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.google.com/presentation/d/1dd93-5N5OkNuvpxbEB8HY_XEzXSRvdpAj3c9x_VcSbA/present?slide=id.g10a773dc4cc_0_2262&#34;&gt;Java Clientチームの人がカンファレンスで利用したスライド&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>インデックスエイリアス - Azure Cognitive Searchの新機能</title>
       <link>https://blog.johtani.info/blog/2022/05/18/index-alias-in-azure-cognitive-search/</link>
