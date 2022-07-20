@@ -7,7 +7,141 @@
     <description>Recent content in elasticsearch on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Mon, 13 Jun 2022 20:24:06 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/elasticsearch/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 20 Jul 2022 11:52:43 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/elasticsearch/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Querqyの調査（その１）</title>
+      <link>https://blog.johtani.info/blog/2022/07/20/intro-querqy/</link>
+      <pubDate>Wed, 20 Jul 2022 11:52:43 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/07/20/intro-querqy/</guid>
+      <description>Querqyというクエリのリライト用のプラグインがあるのでどんなものかを調べてみました。とりあえずは概要をドキュメントから追いかけてみた感じ</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;https://github.com/querqy/querqy&#34;&gt;Querqyというクエリのリライト用のプラグイン&lt;/a&gt;があるのでどんなものかを調べてみました。とりあえずは概要をドキュメントから追いかけてみた感じです。対応しているのはSolrとElasticsearch（以降、Es）になります。手元にはEsの環境があるのでそちらで試してみました。&lt;/p&gt;
+&lt;h2 id=&#34;なにもの&#34;&gt;なにもの？&lt;/h2&gt;
+&lt;p&gt;EsやSolrのプラグインで、ルールやパラメータを利用して、クエリの書き換えをEsやSolr側で行えるプラグインです。
+なお、本記事ではEsのプラグインを説明します。
+今回はドキュメントを読みながらメモを取った感じなので、詳細については&lt;a href=&#34;https://docs.querqy.org/querqy/index.html&#34;&gt;公式ドキュメント&lt;/a&gt;を見ていただくのが良いかと。
+手元では動作させてみましたが、今回の記事ではざっとメモを取っただけになります。&lt;/p&gt;
+&lt;h2 id=&#34;インストール&#34;&gt;インストール&lt;/h2&gt;
+&lt;p&gt;Esのpluginコマンドでインストール可能ですが、Mavenにアップロードされているバージョンは限定的なので、必要に応じて自分でビルドする必要があります。
+対応しているかは、&lt;a href=&#34;https://docs.querqy.org/querqy/index.html#installation&#34;&gt;公式ドキュメントのInstallation&lt;/a&gt;のプルダウンが参考になります。&lt;/p&gt;
+&lt;h2 id=&#34;どうやって使うの&#34;&gt;どうやって使うの？&lt;/h2&gt;
+&lt;p&gt;Query DSLに&lt;code&gt;querqy&lt;/code&gt;というクエリが追加されるので、あとはドキュメントをもとにクエリを組み立てるクエリを書いていきます。
+すると、プラグインが指定されたルールに従い、EsのQueryに書き換え、実際の検索が実行して結果が返ってきます。
+普通に&lt;code&gt;match&lt;/code&gt;などの既存のQueryと同レベルのものになるので、既存のEsのクエリと組み合わせた使い方もできるようです。&lt;/p&gt;
+&lt;p&gt;サンプルとして紹介されている短めのクエリ（このクエリではルールによるクエリの書き換えはない）。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;GET&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;ecommerce&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;
+{
+   &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;query&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+       &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;querqy&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+           &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;matching_query&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+               &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;query&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;notebook&amp;#34;&lt;/span&gt;
+           },
+           &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;query_fields&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [ &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title^3.0&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;brand^2.1&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;short_description&amp;#34;&lt;/span&gt;]
+       }
+   }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;また、書き換え（Rewriter）の設定をElasticsearchに対して保存できるエンドポイント&lt;code&gt;_querqy/rewriter&lt;/code&gt;が用意されています。&lt;/p&gt;
+&lt;p&gt;Synonymの書き換えを行なうサンプル（後述するCommon Rules Rewriterの設定）。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;PUT&lt;/span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;querqy&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;rewriter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;common_rules&lt;/span&gt;
+{
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;class&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;querqy.elasticsearch.rewriter.SimpleCommonRulesRewriterFactory&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;config&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;rules&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;notebook =&amp;gt;\nSYNONYM: laptop&amp;#34;&lt;/span&gt;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;どんな書き換えができるの&#34;&gt;どんな書き換えができるの？&lt;/h2&gt;
+&lt;p&gt;用意されているRewriterは2022年7月時点では次のようなものになります（がんばれば、Javaで実装すれば自作もできそう）。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Common Rules Rewriter&lt;/li&gt;
+&lt;li&gt;Replace Rewriter&lt;/li&gt;
+&lt;li&gt;Number Unit Rewriter&lt;/li&gt;
+&lt;li&gt;Word Break Rewriter&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;また、複数のRewriterをチェインして使うこともできる。記述した順番で適用されます。
+それぞれのRewriterについて簡単にメモを。&lt;/p&gt;
+&lt;h3 id=&#34;common-rules-rewriter&#34;&gt;Common Rules Rewriter&lt;/h3&gt;
+&lt;p&gt;シノニム、結果のブースト、フィルター、結果に対して追加情報を付与したりできます。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;rules&lt;/code&gt;にルールを記載していきます。
+以下のようなフォーマットになっています。
+クエリが入力に合致したら、ルールが適用される形です。プロパティは後述しますが、ルールの適用する順序などをハンドリングするために使用します。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;入力 =&amp;gt; 
+  ルール
+  ルール
+  @プロパティ
+  @プロパティ
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;入力部分に関する書式&#34;&gt;入力部分に関する書式&lt;/h4&gt;
+&lt;p&gt;ルールの左辺に該当する部分で、クエリに入力された文字列がマッチするかどうかで、右辺のルールを適用するかがきまります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;入力の一致の条件は次のような感じです。
+&lt;ul&gt;
+&lt;li&gt;完全一致、前方一致、後方一致の使い分けが可能。ダブルクォート&lt;code&gt;&amp;quot;&lt;/code&gt;で制御&lt;/li&gt;
+&lt;li&gt;デフォルトでは、大文字小文字の区別なし（後述するオプションで変更可能）&lt;/li&gt;
+&lt;li&gt;単語の末尾にワイルドカード&lt;code&gt;*&lt;/code&gt;で1文字以上にマッチ。入力の最後にだけ利用可能&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;書き換えの命令ルール&#34;&gt;書き換えの命令（ルール）&lt;/h4&gt;
+&lt;p&gt;右辺に利用できる命令で、次のようなものがあります。&lt;/p&gt;
+&lt;h5 id=&#34;synonym&#34;&gt;SYNONYM&lt;/h5&gt;
+&lt;p&gt;同義語展開するための命令です。Synonym Token Filterとの違いは、複数のルールを同時に適用できます。
+フィールドに依存しない設定なのでメンテナンスが楽になるとのこと。
+ただし、双方向の設定はないため、例えば&amp;quot;personal computer&amp;quot;と&amp;quot;pc&amp;quot;の場合、2つの設定を個別に定義する必要があります。
+また、ステミングなどには未対応なので、&amp;ldquo;personal computers&amp;quot;も対応する場合はこれも追加する必要があります。
+類義語ごとに重みを変えることが可能になっています。同列ではなく、同義語のスコアを下げるなどで、リコールを増加させつつ、入力語のスコアを上位にすると行ったことが可能です。&lt;/p&gt;
+&lt;h5 id=&#34;updown&#34;&gt;UP/DOWN&lt;/h5&gt;
+&lt;p&gt;入力文字列がマッチした場合に、追加のクエリを正か負のブーストをしつつ追加できます。
+例えば、「iphone」と検索された場合に、「apple」もクエリとして追加しつつスコアをブーストし、「case」のクエリをスコアを下げるように追加できます。
+これにより、アクセサリーではなく本体が検索結果の上位に出てくるような仕組みを提供できます。&lt;/p&gt;
+&lt;h5 id=&#34;filter&#34;&gt;FILTER&lt;/h5&gt;
+&lt;p&gt;UP/DOWNではクエリとして追加されていたが、こちらはフィルターとして追加されます（＝スコアで調整ではなく、結果から除外される）。&lt;/p&gt;
+&lt;h5 id=&#34;delete&#34;&gt;DELETE&lt;/h5&gt;
+&lt;p&gt;クエリからキーワードを削除できます。
+単語自体をそのまま削除することも、入力された単語に合わせて他の単語を削除することもできます。&lt;/p&gt;
+&lt;h5 id=&#34;decorate&#34;&gt;DECORATE&lt;/h5&gt;
+&lt;p&gt;2022年7月時点でEsでは利用不可で、Solrのみで利用可能です（なので読み飛ばしました）。&lt;/p&gt;
+&lt;h4 id=&#34;プロパティ&#34;&gt;プロパティ&lt;/h4&gt;
+&lt;p&gt;各ルールの設定にタグをつけられるような機能です。
+このプロパティを利用して、ルールのソートやフィルタリングなどが可能になります。
+複数のルールにクエリがマッチした場合に、優先度が最高のものだけを適用したり、プロパティに特定の値を持っているものだけを採用したりできます。
+なお、プロパティは命令のあとに記述する必要があります（パーサーの関係かな？）。&lt;/p&gt;
+&lt;h3 id=&#34;replace-rewriter&#34;&gt;Replace Rewriter&lt;/h3&gt;
+&lt;p&gt;クエリタームの置き換え用のRewriterです。クエリの正規化処理として、他のRewriterの前処理に利用したりできます。
+サンプルではタイポの修正などに利用したり、不要な語の除去などがあげてありました。&lt;/p&gt;
+&lt;h3 id=&#34;word-break-rewriter&#34;&gt;Word Break Rewriter&lt;/h3&gt;
+&lt;p&gt;クエリトークンを分解・結合します。
+たとえばドイツ語は、複合語と呼ばれる個別の意味の単語を結合した1つの単語を持っているため、個別の意味に分解して検索すると便利なことがあります。
+そういった単語を辞書を基にして分割できるようにする機能です。
+辞書とは実際のインデックスのタームディクショナリのことと思われます（&lt;strong&gt;要調査&lt;/strong&gt;。どのインデックスのフィールドを指し示すのかなど、設定とドキュメントではよくわからない）。
+なお、利用可能な形態素解析を基にした実装はドイツ語のみとなっており、また、分解の時には形態素解析を考慮しますが結合時には考慮しません。&lt;/p&gt;
+&lt;h3 id=&#34;number-unit-rewriter&#34;&gt;Number-Unit Rewriter&lt;/h3&gt;
+&lt;p&gt;クエリの数値と単位を判別し、対象となるフィールドにマッチさせます。範囲での一致や完全一致やブーストが可能です。
+単位をもとにして、特定のフィールドに対する数値のクエリに書き換えることができます。&lt;/p&gt;
+&lt;h3 id=&#34;shingle-rewriter&#34;&gt;Shingle Rewriter&lt;/h3&gt;
+&lt;p&gt;Solrのみで利用可能なので読み飛ばしました。&lt;/p&gt;
+&lt;h3 id=&#34;ルールはどこに保存されるの&#34;&gt;ルールはどこに保存されるの？&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;.querqy&lt;/code&gt;というインデックスが内部で作成され、そこに保存されます（&lt;a href=&#34;https://docs.querqy.org/querqy/elasticsearch-plugin-configuration.html&#34;&gt;公式ドキュメントより&lt;/a&gt;）。
+（ちなみに、&lt;a href=&#34;https://github.com/querqy/querqy-elasticsearch/blob/master/src/main/resources/querqy-mapping.json&#34;&gt;Mappingはこんな感じ&lt;/a&gt;みたいです）。
+現状、プラグインでは設定したRewriterの取得ができないようなので、自分で登録した設定がどんなものかは、このインデックスを検索する必要がありそうです。&lt;/p&gt;
+&lt;h2 id=&#34;気になった点改善点&#34;&gt;気になった点・改善点？&lt;/h2&gt;
+&lt;p&gt;気になった点があったので。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Rewriterのエンドポイントは、登録・更新・削除のみ対応しており、登録したものの確認は直接インデックスを見に行くしかなさそうです（&lt;a href=&#34;https://github.com/querqy/querqy-elasticsearch/issues/10&#34;&gt;Issueは作られてた&lt;/a&gt;）。&lt;/li&gt;
+&lt;li&gt;[要検証]書き換えられたクエリがどんなものか？は残念ながら確認できなそうで、&lt;code&gt;_validate/query&lt;/code&gt;で最終的なLuceneレベルのクエリで確認するしかなさそう？&lt;/li&gt;
+&lt;li&gt;スキーマ側で定義したものと、Querqyで定義したものの兼ね合いがどういう形になるのか？などを気にする必要があるのが注意点かも。組み合わせたときの副作用などがどんなことになりそうか？が予測がつきにくそう。&lt;/li&gt;
+&lt;li&gt;Rewriterの定義自体のテストはどうしたものか？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;とりあえず、ざっとドキュメントを見ながらメモを取った感じです。
+設定などの記述が独自のものなので、そこに慣れていく必要がありそうです（特にルールの改行の部分とか）。
+次は実際にどんな感じで使えそうか、既存の仕組みとの違いは？みたいなところをもう少し見ていきたいとおもいます。&lt;/p&gt;
+&lt;h2 id=&#34;参考文献&#34;&gt;参考文献&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/querqy/querqy&#34;&gt;querqy/querqy： Query preprocessor for Java-based search engines (Querqy Core and Solr implementation)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.querqy.org/querqy/index.html&#34;&gt;Getting started with Querqy — querqy.org documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>Elasticsearchの新しいJavaクライアント</title>
       <link>https://blog.johtani.info/blog/2022/06/13/new-elasticsearch-java-client/</link>
