@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Querqyの調査（その１）" />
-    <meta property="og:title" content="Querqyの調査（その１）" />
-    <meta property="twitter:title" content="Querqyの調査（その１）" />
+    <meta name="title" content="Querqyの調査（その2：アーキテクチャ）" />
+    <meta property="og:title" content="Querqyの調査（その2：アーキテクチャ）" />
+    <meta property="twitter:title" content="Querqyの調査（その2：アーキテクチャ）" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Querqyの調査（その１）-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Querqyの調査（その2：アーキテクチャ）-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2022/07/20/intro-querqy/">
+    <link rel="canonical" href="/blog/2022/07/20/querqy-architecture/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 
@@ -162,7 +162,7 @@
                         </a>
                         
                     </div>
-                    <h1>Querqyの調査（その１）</h1>
+                    <h1>Querqyの調査（その2：アーキテクチャ）</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -200,149 +200,60 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#なにもの">なにもの？</a></li>
-    <li><a href="#インストール">インストール</a></li>
-    <li><a href="#どうやって使うの">どうやって使うの？</a></li>
-    <li><a href="#どんな書き換えができるの">どんな書き換えができるの？</a>
-      <ul>
-        <li><a href="#common-rules-rewriter">Common Rules Rewriter</a></li>
-        <li><a href="#replace-rewriter">Replace Rewriter</a></li>
-        <li><a href="#word-break-rewriter">Word Break Rewriter</a></li>
-        <li><a href="#number-unit-rewriter">Number-Unit Rewriter</a></li>
-        <li><a href="#shingle-rewriter">Shingle Rewriter</a></li>
-        <li><a href="#ルールはどこに保存されるの">ルールはどこに保存されるの？</a></li>
-      </ul>
-    </li>
-    <li><a href="#気になった点改善点">気になった点・改善点？</a></li>
+    <li><a href="#githubのリポジトリ">GitHubのリポジトリ</a></li>
+    <li><a href="#esプラグイン">Esプラグイン</a></li>
+    <li><a href="#lucene向けライブラリ">Lucene向けライブラリ</a></li>
+    <li><a href="#コアライブラリ">コアライブラリ</a></li>
     <li><a href="#まとめ">まとめ</a></li>
-    <li><a href="#参考文献">参考文献</a></li>
   </ul>
 </nav>
                 
-                <p><a href="https://github.com/querqy/querqy">Querqyというクエリのリライト用のプラグイン</a>があるのでどんなものかを調べてみました。とりあえずは概要をドキュメントから追いかけてみた感じです。対応しているのはSolrとElasticsearch（以降、Es）になります。手元にはEsの環境があるのでそちらで試してみました。</p>
-<h2 id="なにもの">なにもの？</h2>
-<p>EsやSolrのプラグインで、ルールやパラメータを利用して、クエリの書き換えをEsやSolr側で行えるプラグインです。
-なお、本記事ではEsのプラグインを説明します。
-今回はドキュメントを読みながらメモを取った感じなので、詳細については<a href="https://docs.querqy.org/querqy/index.html">公式ドキュメント</a>を見ていただくのが良いかと。
-手元では動作させてみましたが、今回の記事ではざっとメモを取っただけになります。</p>
-<h2 id="インストール">インストール</h2>
-<p>Esのpluginコマンドでインストール可能ですが、Mavenにアップロードされているバージョンは限定的なので、必要に応じて自分でビルドする必要があります。
-対応しているかは、<a href="https://docs.querqy.org/querqy/index.html#installation">公式ドキュメントのInstallation</a>のプルダウンが参考になります。</p>
-<h2 id="どうやって使うの">どうやって使うの？</h2>
-<p>Query DSLに<code>querqy</code>というクエリが追加されるので、あとはドキュメントをもとにクエリを組み立てるクエリを書いていきます。
-すると、プラグインが指定されたルールに従い、EsのQueryに書き換え、実際の検索が実行して結果が返ってきます。
-普通に<code>match</code>などの既存のQueryと同レベルのものになるので、既存のEsのクエリと組み合わせた使い方もできるようです。</p>
-<p>サンプルとして紹介されている短めのクエリ（このクエリではルールによるクエリの書き換えはない）。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">GET</span> <span style="color:#a6e22e">ecommerce</span><span style="color:#f92672">/</span><span style="color:#ae81ff">_</span><span style="color:#a6e22e">search</span>
-{
-   <span style="color:#e6db74">&#34;query&#34;</span><span style="color:#f92672">:</span> {
-       <span style="color:#e6db74">&#34;querqy&#34;</span><span style="color:#f92672">:</span> {
-           <span style="color:#e6db74">&#34;matching_query&#34;</span><span style="color:#f92672">:</span> {
-               <span style="color:#e6db74">&#34;query&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;notebook&#34;</span>
-           },
-           <span style="color:#e6db74">&#34;query_fields&#34;</span><span style="color:#f92672">:</span> [ <span style="color:#e6db74">&#34;title^3.0&#34;</span>, <span style="color:#e6db74">&#34;brand^2.1&#34;</span>, <span style="color:#e6db74">&#34;short_description&#34;</span>]
-       }
-   }
-}
-</code></pre></div><p>また、書き換え（Rewriter）の設定をElasticsearchに対して保存できるエンドポイント<code>_querqy/rewriter</code>が用意されています。</p>
-<p>Synonymの書き換えを行なうサンプル（後述するCommon Rules Rewriterの設定）。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">PUT</span>  <span style="color:#f92672">/</span><span style="color:#ae81ff">_</span><span style="color:#a6e22e">querqy</span><span style="color:#f92672">/</span><span style="color:#a6e22e">rewriter</span><span style="color:#f92672">/</span><span style="color:#a6e22e">common_rules</span>
-{
-    <span style="color:#e6db74">&#34;class&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;querqy.elasticsearch.rewriter.SimpleCommonRulesRewriterFactory&#34;</span>,
-    <span style="color:#e6db74">&#34;config&#34;</span><span style="color:#f92672">:</span> {
-        <span style="color:#e6db74">&#34;rules&#34;</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;notebook =&gt;\nSYNONYM: laptop&#34;</span>
-    }
-}
-</code></pre></div><h2 id="どんな書き換えができるの">どんな書き換えができるの？</h2>
-<p>用意されているRewriterは2022年7月時点では次のようなものになります（がんばれば、Javaで実装すれば自作もできそう）。</p>
+                <p>今回はQuerqyのElasticsearchのプラグインがどんなつくりになっているか？をちょっとだけ調べてみました。
+SolrでもElasticsearchでも使えるという形なので、どんなつくりになっているのかな？と思ったのが発端です。</p>
+<h2 id="githubのリポジトリ">GitHubのリポジトリ</h2>
+<p>GitHubにリポジトリが公開されています。
+2つのリポジトリに分かれています。</p>
 <ul>
-<li>Common Rules Rewriter</li>
-<li>Replace Rewriter</li>
-<li>Number Unit Rewriter</li>
-<li>Word Break Rewriter</li>
+<li><a href="https://github.com/querqy/querqy-elasticsearch">Es向けのプラグイン</a></li>
+<li><a href="https://github.com/querqy/querqy">コアのライブラリ</a></li>
 </ul>
-<p>また、複数のRewriterをチェインして使うこともできる。記述した順番で適用されます。
-それぞれのRewriterについて簡単にメモを。</p>
-<h3 id="common-rules-rewriter">Common Rules Rewriter</h3>
-<p>シノニム、結果のブースト、フィルター、結果に対して追加情報を付与したりできます。</p>
-<p><code>rules</code>にルールを記載していきます。
-以下のようなフォーマットになっています。
-クエリが入力に合致したら、ルールが適用される形です。プロパティは後述しますが、ルールの適用する順序などをハンドリングするために使用します。</p>
-<pre><code>入力 =&gt; 
-  ルール
-  ルール
-  @プロパティ
-  @プロパティ
-</code></pre><h4 id="入力部分に関する書式">入力部分に関する書式</h4>
-<p>ルールの左辺に該当する部分で、クエリに入力された文字列がマッチするかどうかで、右辺のルールを適用するかがきまります。</p>
+<p>どちらもJavaのライブラリで、ビルドシステムとしてはMavenを利用しています。
+コアのライブラリのリポジトリにはさらに、以下の2つが存在しています。</p>
 <ul>
-<li>入力の一致の条件は次のような感じです。
-<ul>
-<li>完全一致、前方一致、後方一致の使い分けが可能。ダブルクォート<code>&quot;</code>で制御</li>
-<li>デフォルトでは、大文字小文字の区別なし（後述するオプションで変更可能）</li>
-<li>単語の末尾にワイルドカード<code>*</code>で1文字以上にマッチ。入力の最後にだけ利用可能</li>
+<li>lucene向けライブラリ（Solr向けのモジュールもこちらに含まれる）</li>
+<li>コアライブラリ</li>
 </ul>
-</li>
-</ul>
-<h4 id="書き換えの命令ルール">書き換えの命令（ルール）</h4>
-<p>右辺に利用できる命令で、次のようなものがあります。</p>
-<h5 id="synonym">SYNONYM</h5>
-<p>同義語展開するための命令です。Synonym Token Filterとの違いは、複数のルールを同時に適用できます。
-フィールドに依存しない設定なのでメンテナンスが楽になるとのこと。
-ただし、双方向の設定はないため、例えば&quot;personal computer&quot;と&quot;pc&quot;の場合、2つの設定を個別に定義する必要があります。
-また、ステミングなどには未対応なので、&ldquo;personal computers&quot;も対応する場合はこれも追加する必要があります。
-類義語ごとに重みを変えることが可能になっています。同列ではなく、同義語のスコアを下げるなどで、リコールを増加させつつ、入力語のスコアを上位にすると行ったことが可能です。</p>
-<h5 id="updown">UP/DOWN</h5>
-<p>入力文字列がマッチした場合に、追加のクエリを正か負のブーストをしつつ追加できます。
-例えば、「iphone」と検索された場合に、「apple」もクエリとして追加しつつスコアをブーストし、「case」のクエリをスコアを下げるように追加できます。
-これにより、アクセサリーではなく本体が検索結果の上位に出てくるような仕組みを提供できます。</p>
-<h5 id="filter">FILTER</h5>
-<p>UP/DOWNではクエリとして追加されていたが、こちらはフィルターとして追加されます（＝スコアで調整ではなく、結果から除外される）。</p>
-<h5 id="delete">DELETE</h5>
-<p>クエリからキーワードを削除できます。
-単語自体をそのまま削除することも、入力された単語に合わせて他の単語を削除することもできます。</p>
-<h5 id="decorate">DECORATE</h5>
-<p>2022年7月時点でEsでは利用不可で、Solrのみで利用可能です（なので読み飛ばしました）。</p>
-<h4 id="プロパティ">プロパティ</h4>
-<p>各ルールの設定にタグをつけられるような機能です。
-このプロパティを利用して、ルールのソートやフィルタリングなどが可能になります。
-複数のルールにクエリがマッチした場合に、優先度が最高のものだけを適用したり、プロパティに特定の値を持っているものだけを採用したりできます。
-なお、プロパティは命令のあとに記述する必要があります（パーサーの関係かな？）。</p>
-<h3 id="replace-rewriter">Replace Rewriter</h3>
-<p>クエリタームの置き換え用のRewriterです。クエリの正規化処理として、他のRewriterの前処理に利用したりできます。
-サンプルではタイポの修正などに利用したり、不要な語の除去などがあげてありました。</p>
-<h3 id="word-break-rewriter">Word Break Rewriter</h3>
-<p>クエリトークンを分解・結合します。
-たとえばドイツ語は、複合語と呼ばれる個別の意味の単語を結合した1つの単語を持っているため、個別の意味に分解して検索すると便利なことがあります。
-そういった単語を辞書を基にして分割できるようにする機能です。
-辞書とは実際のインデックスのタームディクショナリのことと思われます（<strong>要調査</strong>。どのインデックスのフィールドを指し示すのかなど、設定とドキュメントではよくわからない）。
-なお、利用可能な形態素解析を基にした実装はドイツ語のみとなっており、また、分解の時には形態素解析を考慮しますが結合時には考慮しません。</p>
-<h3 id="number-unit-rewriter">Number-Unit Rewriter</h3>
-<p>クエリの数値と単位を判別し、対象となるフィールドにマッチさせます。範囲での一致や完全一致やブーストが可能です。
-単位をもとにして、特定のフィールドに対する数値のクエリに書き換えることができます。</p>
-<h3 id="shingle-rewriter">Shingle Rewriter</h3>
-<p>Solrのみで利用可能なので読み飛ばしました。</p>
-<h3 id="ルールはどこに保存されるの">ルールはどこに保存されるの？</h3>
-<p><code>.querqy</code>というインデックスが内部で作成され、そこに保存されます（<a href="https://docs.querqy.org/querqy/elasticsearch-plugin-configuration.html">公式ドキュメントより</a>）。
-（ちなみに、<a href="https://github.com/querqy/querqy-elasticsearch/blob/master/src/main/resources/querqy-mapping.json">Mappingはこんな感じ</a>みたいです）。
-現状、プラグインでは設定したRewriterの取得ができないようなので、自分で登録した設定がどんなものかは、このインデックスを検索する必要がありそうです。</p>
-<h2 id="気になった点改善点">気になった点・改善点？</h2>
-<p>気になった点があったので。</p>
-<ul>
-<li>Rewriterのエンドポイントは、登録・更新・削除のみ対応しており、登録したものの確認は直接インデックスを見に行くしかなさそうです（<a href="https://github.com/querqy/querqy-elasticsearch/issues/10">Issueは作られてた</a>）。</li>
-<li>[要検証]書き換えられたクエリがどんなものか？は残念ながら確認できなそうで、<code>_validate/query</code>で最終的なLuceneレベルのクエリで確認するしかなさそう？</li>
-<li>スキーマ側で定義したものと、Querqyで定義したものの兼ね合いがどういう形になるのか？などを気にする必要があるのが注意点かも。組み合わせたときの副作用などがどんなことになりそうか？が予測がつきにくそう。</li>
-<li>Rewriterの定義自体のテストはどうしたものか？</li>
-</ul>
+<p>pom.xmlを読んだところ、次のような依存関係になっています（それ以外にも使ってるライブラリはあるけど）。</p>
+<pre><code>Esプラグイン -&gt; Lucene向けライブラリ -&gt; コアライブラリ
+</code></pre><h2 id="esプラグイン">Esプラグイン</h2>
+<p>Es向けのエンドポイントの実装、Esのクエリの組み立てを行なっています。
+Rewriterの実装については、Lucene向けライブラリ、コアライブラリを利用する形になります。</p>
+<p>querqy用のQueryBuilderを実装しており、EsがクエリをパースするタイミングでRewriterなどを呼び出してクエリの書き換えを行う仕組みです。
+なお、Es向けのクエリの組み立てと書きましたが、ほとんどLuceneのクエリの組み立てになっています（そりゃそうだ）。
+実際にquerqyのクエリ組み立て処理を行っているのは、Lucene向けライブラリのQueryParsingControllerになります。
+いくつかのRewriterは、生のEsクエリをルールなどとして登録することができるようになっています。
+これらのクエリのパースをEs側にやらせる処理の部分もこちらで定義されている感じです。</p>
+<p>そのほかに、ドキュメントには記載がないエンドポイントが2つ用意されていました。
+インデックスに登録してあるRewriterの設定を各ノードでキャッシュする仕組みがあって、そのキャッシュの操作（クリア、リロード）用みたいです。
+これらは、Rewriterの追加、削除のアクションの内部で呼び出されているので、ユーザー側で呼び出す必要はなさそうです。</p>
+<h2 id="lucene向けライブラリ">Lucene向けライブラリ</h2>
+<p>Luceneに関連する処理がまとめられています。
+Es内部ではLuceneを使って検索処理が行なわれるため、Luceneのクエリを組み立てる必要があります。
+querqyとしてLuceneのクエリを組み立てるときに必要なクラスがこのライブラリに含まれています。</p>
+<p>また、Word Break Rewriterの実装はコアライブラリではなくこちらのライブラリに実装されています。
+これは、Luceneのタームディクショナリを活用したRewriterになっているため、Lucene必須となっているからのようです。
+（まだちゃんと実装を見ていないので、どんな活用の仕方をしているのかまではわかっていませんが。。。）</p>
+<h2 id="コアライブラリ">コアライブラリ</h2>
+<p>Rewriterの設定のパース処理、クエリのリライト処理の実装がまとめられています。
+querqyのクエリが、Rewriterの処理に基づいて、querqyとして定義されたクエリのモデルに一旦変換される作りになっています。
+Lucene向けライブラリやEs向けプラグインはこの内部のクエリモデルになったものをもとに、Lucene向けのクエリに書き換えていくというながれになっています。</p>
 <h2 id="まとめ">まとめ</h2>
-<p>とりあえず、ざっとドキュメントを見ながらメモを取った感じです。
-設定などの記述が独自のものなので、そこに慣れていく必要がありそうです（特にルールの改行の部分とか）。
-次は実際にどんな感じで使えそうか、既存の仕組みとの違いは？みたいなところをもう少し見ていきたいとおもいます。</p>
-<h2 id="参考文献">参考文献</h2>
-<ul>
-<li><a href="https://github.com/querqy/querqy">querqy/querqy： Query preprocessor for Java-based search engines (Querqy Core and Solr implementation)</a></li>
-<li><a href="https://docs.querqy.org/querqy/index.html">Getting started with Querqy — querqy.org documentation</a></li>
-</ul>
+<p>ざっくりですが、どんな構成なのかを見てみました。
+Esのプラグインとなっているのですが、プラグインではなく、外部に出すことってできるのかな？と思いつつ、なんとなくソースを読んでみました。
+パターンとしては、Lucene向けのクエリからEs向けのクエリを組み立てるとかの無駄な努力が必要になる気もするけど。。。
+Luceneを使っていない検索エンジンに対しては、コアライブラリをもとに、それぞれの検索エンジンむけのクエリを組み立てる仕組みを作る形になると思います。
+その際、Rewriterの設定を保持する仕組み、querqyが置き換えたクエリのマッピングができるか？といった点を考える必要がありそうです。
+デバッグとかするときに、EsのクエリDSLのJSONとして見れるといいなぁと思ってたけど、そんなことできるかなぁ？</p>
 
 
                 
@@ -351,15 +262,10 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2022/06/15/ttend-berlin-buzzwords-online/" data-toggle="tooltip" data-placement="top" title="今年もオンラインでBerlin Buzzwordsに参加した">&larr;
+                        <a href="/blog/2022/07/20/intro-querqy/" data-toggle="tooltip" data-placement="top" title="Querqyの調査（その１）">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="/blog/2022/07/20/querqy-architecture/" data-toggle="tooltip" data-placement="top" title="Querqyの調査（その2：アーキテクチャ）">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 

@@ -7,7 +7,63 @@
     <description>Recent content on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Wed, 20 Jul 2022 11:52:43 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 20 Jul 2022 16:04:10 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Querqyの調査（その2：アーキテクチャ）</title>
+      <link>https://blog.johtani.info/blog/2022/07/20/querqy-architecture/</link>
+      <pubDate>Wed, 20 Jul 2022 16:04:10 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/07/20/querqy-architecture/</guid>
+      <description>今回はQuerqyのElasticsearchのプラグインがどんなつくりになっているか？をちょっとだけ調べてみました。 SolrでもElast</description>
+      <content:encoded>&lt;p&gt;今回はQuerqyのElasticsearchのプラグインがどんなつくりになっているか？をちょっとだけ調べてみました。
+SolrでもElasticsearchでも使えるという形なので、どんなつくりになっているのかな？と思ったのが発端です。&lt;/p&gt;
+&lt;h2 id=&#34;githubのリポジトリ&#34;&gt;GitHubのリポジトリ&lt;/h2&gt;
+&lt;p&gt;GitHubにリポジトリが公開されています。
+2つのリポジトリに分かれています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/querqy/querqy-elasticsearch&#34;&gt;Es向けのプラグイン&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/querqy/querqy&#34;&gt;コアのライブラリ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;どちらもJavaのライブラリで、ビルドシステムとしてはMavenを利用しています。
+コアのライブラリのリポジトリにはさらに、以下の2つが存在しています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;lucene向けライブラリ（Solr向けのモジュールもこちらに含まれる）&lt;/li&gt;
+&lt;li&gt;コアライブラリ&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;pom.xmlを読んだところ、次のような依存関係になっています（それ以外にも使ってるライブラリはあるけど）。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Esプラグイン -&amp;gt; Lucene向けライブラリ -&amp;gt; コアライブラリ
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;esプラグイン&#34;&gt;Esプラグイン&lt;/h2&gt;
+&lt;p&gt;Es向けのエンドポイントの実装、Esのクエリの組み立てを行なっています。
+Rewriterの実装については、Lucene向けライブラリ、コアライブラリを利用する形になります。&lt;/p&gt;
+&lt;p&gt;querqy用のQueryBuilderを実装しており、EsがクエリをパースするタイミングでRewriterなどを呼び出してクエリの書き換えを行う仕組みです。
+なお、Es向けのクエリの組み立てと書きましたが、ほとんどLuceneのクエリの組み立てになっています（そりゃそうだ）。
+実際にquerqyのクエリ組み立て処理を行っているのは、Lucene向けライブラリのQueryParsingControllerになります。
+いくつかのRewriterは、生のEsクエリをルールなどとして登録することができるようになっています。
+これらのクエリのパースをEs側にやらせる処理の部分もこちらで定義されている感じです。&lt;/p&gt;
+&lt;p&gt;そのほかに、ドキュメントには記載がないエンドポイントが2つ用意されていました。
+インデックスに登録してあるRewriterの設定を各ノードでキャッシュする仕組みがあって、そのキャッシュの操作（クリア、リロード）用みたいです。
+これらは、Rewriterの追加、削除のアクションの内部で呼び出されているので、ユーザー側で呼び出す必要はなさそうです。&lt;/p&gt;
+&lt;h2 id=&#34;lucene向けライブラリ&#34;&gt;Lucene向けライブラリ&lt;/h2&gt;
+&lt;p&gt;Luceneに関連する処理がまとめられています。
+Es内部ではLuceneを使って検索処理が行なわれるため、Luceneのクエリを組み立てる必要があります。
+querqyとしてLuceneのクエリを組み立てるときに必要なクラスがこのライブラリに含まれています。&lt;/p&gt;
+&lt;p&gt;また、Word Break Rewriterの実装はコアライブラリではなくこちらのライブラリに実装されています。
+これは、Luceneのタームディクショナリを活用したRewriterになっているため、Lucene必須となっているからのようです。
+（まだちゃんと実装を見ていないので、どんな活用の仕方をしているのかまではわかっていませんが。。。）&lt;/p&gt;
+&lt;h2 id=&#34;コアライブラリ&#34;&gt;コアライブラリ&lt;/h2&gt;
+&lt;p&gt;Rewriterの設定のパース処理、クエリのリライト処理の実装がまとめられています。
+querqyのクエリが、Rewriterの処理に基づいて、querqyとして定義されたクエリのモデルに一旦変換される作りになっています。
+Lucene向けライブラリやEs向けプラグインはこの内部のクエリモデルになったものをもとに、Lucene向けのクエリに書き換えていくというながれになっています。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ざっくりですが、どんな構成なのかを見てみました。
+Esのプラグインとなっているのですが、プラグインではなく、外部に出すことってできるのかな？と思いつつ、なんとなくソースを読んでみました。
+パターンとしては、Lucene向けのクエリからEs向けのクエリを組み立てるとかの無駄な努力が必要になる気もするけど。。。
+Luceneを使っていない検索エンジンに対しては、コアライブラリをもとに、それぞれの検索エンジンむけのクエリを組み立てる仕組みを作る形になると思います。
+その際、Rewriterの設定を保持する仕組み、querqyが置き換えたクエリのマッピングができるか？といった点を考える必要がありそうです。
+デバッグとかするときに、EsのクエリDSLのJSONとして見れるといいなぁと思ってたけど、そんなことできるかなぁ？&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>Querqyの調査（その１）</title>
       <link>https://blog.johtani.info/blog/2022/07/20/intro-querqy/</link>
