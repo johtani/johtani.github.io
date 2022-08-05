@@ -7,7 +7,89 @@
     <description>Recent content in hugo on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Fri, 21 Feb 2020 12:04:00 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/hugo/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 05 Aug 2022 17:59:14 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/hugo/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Hugoをアップデートした</title>
+      <link>https://blog.johtani.info/blog/2022/08/05/upgrade-hugo-accidentally/</link>
+      <pubDate>Fri, 05 Aug 2022 17:59:14 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/08/05/upgrade-hugo-accidentally/</guid>
+      <description>Hugoを0.84から0.92にアップデートをする際に、これまでのブログ記事やレイアウトファイルを修正したので個人的にメモを残しておきます。</description>
+      <content:encoded>&lt;p&gt;Hugoを0.84から0.92にアップデートをする際に、これまでのブログ記事やレイアウトファイルを修正したので個人的にメモを残しておきます。&lt;/p&gt;
+&lt;h2 id=&#34;なんでアップデート&#34;&gt;なんでアップデート？&lt;/h2&gt;
+&lt;p&gt;うっかり魔がさして、メインのWSL2のUbuntuを20.04から22.04にアップグレードしました。。。
+新規に22.04を落としてきて移行ではなく。
+皆さんはまねしないほうがいいですよ！
+アップデートした後にGitの環境がおかしくなったりと大変でした。
+WSL2のUbuntuではHugoでブログのビルド、いろんな確認のためのElasticsearchの起動、個人的なプログラムとかを書く環境として利用しています。&lt;/p&gt;
+&lt;p&gt;で、Ubuntuを上げたところ無事（？）Hugoもアップデートされたわけです。
+最初はGitでfetchが出来なくなって修正していましたが、そのほかの動作確認を行なう段階でHugoでブログがビルドできなくなっていることが判明しました。&lt;/p&gt;
+&lt;h2 id=&#34;バージョンアップに伴う修正&#34;&gt;バージョンアップに伴う修正&lt;/h2&gt;
+&lt;p&gt;hugoコマンドを実行すると、いくつかのERRORとWARNが出力されました。
+次のようなものです。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;hugo v0.92.2+extended linux/amd64 BuildDate=2022-02-23T16:47:50Z VendorInfo=ubuntu:0.92.2-1
+ERROR 2022/08/05 13:22:32 Page.URL is deprecated and will be removed in Hugo 0.93.0. Use .Permalink or .RelPermalink. If what you want is the front matter URL value, use .Params.url
+WARN 2022/08/05 13:22:32 The &amp;quot;tweet&amp;quot; shortcode will soon require two named parameters: user and id. See &amp;quot;/home/johtani/blog_generator/content/post/2020/2020-12-04-build_corne_choc.md:46:1&amp;quot;
+...
+ERROR 2022/08/05 13:22:33 Failed to get JSON resource &amp;quot;https://publish.twitter.com/oembed?dnt=fa...
+If you feel that this should not be logged as an ERROR, you can ignore it by adding this to your site config:
+ignoreErrors = [&amp;quot;error-remote-getjson&amp;quot;]
+ERROR 2022/08/05 18:44:11 Page.UniqueID is deprecated and will be removed in Hugo 0.93.0. Use .File.UniqueID
+ERROR 2022/08/05 18:44:11 Page.Dir is deprecated and will be removed in Hugo 0.93.0. Use .File.Dir
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;pageurlなどがdeprecatedに&#34;&gt;Page.URLなどがdeprecatedに&lt;/h3&gt;
+&lt;p&gt;最初と最後2行のERRORがこちらになります。
+どうやら、Pageオブジェクトの変数に変更があったようです（まだdeprecatedであり、存在はしていそう？）。
+レイアウト（テンプレート）ファイルで「Previous Post」や「Next Post」といったリンクを作ったり、
+&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/troduce-algolia/#%E4%BB%8A%E5%BE%8C%E3%81%AE%E8%AA%B2%E9%A1%8C&#34;&gt;Algoliaに登録するためのJSONファイルを生成するところ&lt;/a&gt;でURL文字列を取得するために参照していました。&lt;/p&gt;
+&lt;p&gt;ログ出力でどのように変更すればよいのか？という記載があるので便利ですね。
+ただ、どのファイルにこの記述があるのかはログに出てなかったので少しだけ苦労しました。&lt;/p&gt;
+&lt;p&gt;実際には「UniqueID」という文字列でディレクトリ内を検索してあたりを付けた感じです。
+利用させていただいているテーマ（&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite&#34;&gt;Clean White&lt;/a&gt;）がすでにアップデートに対応されていたのでそちらが参考になりました。&lt;/p&gt;
+&lt;p&gt;いくつか、テーマをもとに修正したテンプレートがlayoutsディレクトリにあったので、それらを修正した形です（参考のリンクはテーマのファイルになります）。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;.URL&lt;/code&gt;を&lt;code&gt;.Permalink&lt;/code&gt;に変更（参考：&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/layouts/_default/single.html#L91&#34;&gt;single.html&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.UniqueID&lt;/code&gt;を&lt;code&gt;.File.UniqueID&lt;/code&gt;に変更（参考：&lt;a href=&#34;https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/layouts/_default/list.algolia.json#L6-L7&#34;&gt;list.algolia.json&lt;/a&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;tweetのshortcodeの引数が増えた&#34;&gt;tweetのshortcodeの引数が増えた&lt;/h3&gt;
+&lt;p&gt;これまでは以下のようにIDだけで良かったのですが、&lt;code&gt;user&lt;/code&gt;と&lt;code&gt;id&lt;/code&gt;という2つの引数が必須になるという変更が入ったようです。&lt;/p&gt;
+&lt;p&gt;変更前：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;Sofleの電池モジュールをボタン電池から単4電池用に差し替えた。 &lt;a href=&#34;https://t.co/TUizwr2qmw&#34;&gt;pic.twitter.com/TUizwr2qmw&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1449214872143609860?ref_src=twsrc%5Etfw&#34;&gt;October 16, 2021&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;変更後：&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;Sofleの電池モジュールをボタン電池から単4電池用に差し替えた。 &lt;a href=&#34;https://t.co/TUizwr2qmw&#34;&gt;pic.twitter.com/TUizwr2qmw&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1449214872143609860?ref_src=twsrc%5Etfw&#34;&gt;October 16, 2021&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;WARNにはファイル名、行番号が出力されていたので、1つずつ修正していきました。
+結構な量があったので、地味に大変でした、
+公開しているブログを見ながら、該当するツイートを見つけては&lt;code&gt;user&lt;/code&gt;を指定していく部分が特に。
+自分のツイート以外もブログに貼っていたので画一的には対処できなくて。。。&lt;/p&gt;
+&lt;p&gt;なにかプログラムで機械的に対応ができたかもなぁ。&lt;/p&gt;
+&lt;h3 id=&#34;鍵付きツイートによるエラー&#34;&gt;鍵付きツイートによるエラー&lt;/h3&gt;
+&lt;p&gt;tweetのshortcode対応を行なった後でもビルドがエラーになっており、次のようなエラーが消えないままでした（エラーの一部は省略しています）。
+（幸いにも）1つのツイートだけ、ブログ記事を書いた後で鍵付きになってしまった方のツイートがあったようで、ツイート用のJSONが取得できなくてエラーになっていました。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ERROR 2022/08/05 13:22:33 Failed to get JSON resource &amp;quot;https://publish.twitter.com/oembed?dnt=fa...
+If you feel that this should not be logged as an ERROR, you can ignore it by adding this to your site config:
+ignoreErrors = [&amp;quot;error-remote-getjson&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;こちらもログに対処方法が出ています。
+&lt;code&gt;config.toml&lt;/code&gt;に&lt;code&gt;ignoreErrors = [&amp;quot;error-remote-getjson&amp;quot;]&lt;/code&gt;を追加すれば、エラーが出力されなくなりビルドも成功するようになります。
+ただ、tweet以外でもエラーが出る可能性がありそうで、その場合に、ブログに書いたつもりが一部が出力されないまま公開されそうな気がします。
+なので、今回は&lt;code&gt;config.toml&lt;/code&gt;に該当の設定を追加するのではなく、ブログ記事から該当のツイートを消す対応をしました。
+幸いにも、ツイートを消してもブログ記事自体には影響がありませんでした。&lt;/p&gt;
+&lt;h3 id=&#34;hugo_buildlockファイルが生成される&#34;&gt;.hugo_build.lockファイルが生成される&lt;/h3&gt;
+&lt;p&gt;これは、エラーではないのですがgit addしようとした際に、ファイルが増えていたのでどういったファイルなのかを調べました。
+0.89.0から追加されたロックファイルのようです（参考：&lt;a href=&#34;https://gohugo.io/news/0.89.0-relnotes/#notes&#34;&gt;0.89.0のリリースノート&lt;/a&gt;）。
+こちらは特に保管する必要もなさそうなので.gitignoreに追加して対処しました。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、気軽にUbuntuをアップグレードしないほうがいいですね。。。
+期せずしてHugoのアップグレードができたのは良かったかもなｗ&lt;/p&gt;
+&lt;h2 id=&#34;参考&#34;&gt;参考&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://zenn.dev/ryuu/articles/upgrade-ubuntu2204-wsl&#34;&gt;【WSL2】Ubuntu 20.04.4 LTS を 22.04 LTS へアップグレードした&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>ブログ移行日記(その5) - Jugemのブログを移行</title>
       <link>https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/</link>
