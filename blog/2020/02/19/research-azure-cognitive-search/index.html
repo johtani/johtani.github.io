@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Azure Cognitive Searchでインデックスを作って検索-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Azure Cognitive Searchでインデックスを作って検索 | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2020/02/19/research-azure-cognitive-search/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -237,7 +238,7 @@
 ですが、今回はn-gram(n=2)のAnalyzerを利用したかったので、GUIではなくAPIでインデックスを作成しました。
 <a href="https://docs.microsoft.com/ja-jp/azure/search/index-add-custom-analyzers">カスタムアナライザー</a>を利用する場合、REST APIを利用しなければ行けないということになっています。
 n-gramのAnalyzerを含むインデックス生成のREST APIは以下のとおりです。こちらを実行することで、インデックスが作成されます(JSONの記述ミスなどがある場合はエラーが返ってきます)。</p>
-<pre><code>@host = &lt;サーチのサービス名&gt;.search.windows.net
+<pre tabindex="0"><code>@host = &lt;サーチのサービス名&gt;.search.windows.net
 @api-key = &lt;APIキー&gt;
 
 ###
@@ -317,7 +318,7 @@ Tokenizerごとにオプションがあり、NGramTokenizerの場合は、<code>
 <a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/test-analyzer">APIの仕様のページもありました</a>。
 「<code>アナライザーの挙動はどんな感じ？</code>」という文字列が、作成したインデックスの定義したアナライザー<code>bi_gram_analyzer</code>により、
 どのように分割されるかを確認するAPIの呼び出しは以下のとおりです。</p>
-<pre><code>###
+<pre tabindex="0"><code>###
 POST https://{{host}}/indexes/ngram-test/analyze?api-version=2019-05-06
 Content-Type: application/json
 api-key: {{api-key}}
@@ -328,7 +329,7 @@ api-key: {{api-key}}
 }
 
 </code></pre><p>レスポンスはこんな形です。ヘッダ部分は省略してあります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
   <span style="color:#f92672">&#34;@odata.context&#34;</span>: <span style="color:#e6db74">&#34;https://{{host}}.search.windows.net/$metadata#Microsoft.Azure.Search.V2019_05_06.AnalyzeResult&#34;</span>,
   <span style="color:#f92672">&#34;tokens&#34;</span>: [
     {
@@ -432,7 +433,7 @@ api-key: {{api-key}}
 今回は単純に登録するだけなので、<code>upload</code>を指定しました。
 ほかにも<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/addupdate-or-delete-documents#document-actions">いくつかアクションが用意されています。</a>用途に合わせて指定する感じになります。
 <code>id</code>、<code>ngram</code>はそれぞれフィールド名です。ドキュメントに登録したい値を記述します。</p>
-<pre><code>
+<pre tabindex="0"><code>
 POST https://{{host}}/indexes/ngram-test/docs/index?api-version=2019-05-06
 Content-Type: application/json
 api-key: {{api-key}}
@@ -461,7 +462,7 @@ api-key: {{api-key}}
 <code>any</code>の場合、Googleの検索と同様に、どれかの単語が入っているドキュメントが対象に、<code>all</code>の場合すべての単語が含まれるドキュメントだけがたいしょうになるといった形です。</p>
 <p><code>queryType=full</code>の場合はLuceneの構文でクエリがかけます。Elasticsearchの<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html">Query String Query</a>みたいな形です。</p>
 <p>簡単なサンプルは次のような感じです。このサンプル</p>
-<pre><code>
+<pre tabindex="0"><code>
 POST https://{{host}}/indexes/multi-field-test/docs/search?api-version=2019-05-06
 Content-Type: application/json
 api-key: {{api-key}}
@@ -499,21 +500,22 @@ Luceneのアナライザーとマイクロソフトのアナライザーのど�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/02/10/explore-search-system/" data-toggle="tooltip" data-placement="top" title="「検索システム探訪」したいな=&gt;やりました">&larr;
+                        <a href="https://blog.johtani.info/blog/2020/02/10/explore-search-system/" data-toggle="tooltip" data-placement="top" title="「検索システム探訪」したいな=&gt;やりました">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2020/02/21/import-jugem-posts/" data-toggle="tooltip" data-placement="top" title="ブログ移行日記(その5) - Jugemのブログを移行">Next
+                        <a href="https://blog.johtani.info/blog/2020/02/21/import-jugem-posts/" data-toggle="tooltip" data-placement="top" title="ブログ移行日記(その5) - Jugemのブログを移行">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -534,6 +536,7 @@ Luceneのアナライザーとマイクロソフトのアナライザーのど�
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

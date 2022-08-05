@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>日本語Wikipediaをインデクシング（Kuromojiバージョン）-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>日本語Wikipediaをインデクシング（Kuromojiバージョン） | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2013/09/03/ja-wikipedia-with-kuromoji/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -223,22 +224,22 @@
 <p>ElasticSearchのpluginコマンドはJavaで実装されています。（<a href="https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/plugins/PluginManager.java#L315">org.elasticsearch.plugins.PluginManager</a>）
 プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。</p>
 <p>ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。</p>
-<pre><code>./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+<pre tabindex="0"><code>./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
 </code></pre><h2 id="elasticsearch-analysis-kuromojiのインストール">elasticsearch-analysis-kuromojiのインストール</h2>
 <p>WikipediaのデータをKuromojiを使って、形態素解析ベースの転置インデックスを作成していきます。
 まずは、Kuromojiを利用するために、<a href="https://github.com/elasticsearch/elasticsearch-analysis-kuromoji">Analysisプラグイン</a>のインストールです。
 ElasticSearchのバージョンに対応したプラグインのバージョンがあります。（プラグインのページに対応したバージョンの記載あり）
 今回はElasticSearchの0.90.3を利用しているため、1.5.0をインストールします。</p>
-<pre><code>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+<pre tabindex="0"><code>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
 </code></pre><p>インストール後は再起動しておきます。
 なお、Kuromojiを利用して、Wikipediaのデータを登録するばあい、デフォルトの設定では、ヒープが足りなくなるおそれがあります。
 ElasticSearchの起動時に以下のオプションを指定して、最大ヒープサイズを2Gとしておきます。</p>
-<pre><code>export ES_HEAP_SIZE=2g;./bin/elasticsearch
+<pre tabindex="0"><code>export ES_HEAP_SIZE=2g;./bin/elasticsearch
 </code></pre><h2 id="indexの作成デフォルトでkuromojiのanalyzerを利用する">Indexの作成（デフォルトでKuromojiのAnalyzerを利用する）</h2>
 <p>Wikipediaのデータを登録する際に、Kuromojiのアナライザを利用したいのが今回の趣旨でした。
 一番ラクな方法として、Wikipediaデータのインデックスの設定として、デフォルトのアナライザをKuromojiにしてしまいます。
 （きちんと設計する場合は、必要に応じてフィールドごとに指定しましょう）</p>
-<pre><code>curl -XPUT 'localhost:9200/ja-wikipedia-kuromoji' -d '{
+<pre tabindex="0"><code>curl -XPUT 'localhost:9200/ja-wikipedia-kuromoji' -d '{
     &quot;settings&quot;: {
         &quot;analysis&quot;: {
             &quot;analyzer&quot;: {
@@ -254,7 +255,7 @@ ElasticSearchの起動時に以下のオプションを指定して、最大ヒ�
 <h2 id="riverの実行">Riverの実行</h2>
 <p>前回と一緒です。
 インデックス名（<strong>_river/&lt;インデックス名&gt;/_meta</strong>）だけは、先ほど作成した「<code>ja-wikipedia-kuromoji</code>」に変更してください。</p>
-<pre><code>curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d '
+<pre tabindex="0"><code>curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d '
 {
     &quot;type&quot; : &quot;wikipedia&quot;,
     &quot;wikipedia&quot; : {
@@ -278,21 +279,22 @@ Uni-gramだと、転置インデックスのボキャブラリも単語に対し
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2013/08/30/hold-first-elasticsearch-meetup-in-japan/" data-toggle="tooltip" data-placement="top" title="第1回ElasticSearch勉強会を開催しました！ #elasticsearchjp">&larr;
+                        <a href="https://blog.johtani.info/blog/2013/08/30/hold-first-elasticsearch-meetup-in-japan/" data-toggle="tooltip" data-placement="top" title="第1回ElasticSearch勉強会を開催しました！ #elasticsearchjp">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2013/09/12/question-river-wikipedia/" data-toggle="tooltip" data-placement="top" title="elasticsearch-river-wikipediaの疑問点">Next
+                        <a href="https://blog.johtani.info/blog/2013/09/12/question-river-wikipedia/" data-toggle="tooltip" data-placement="top" title="elasticsearch-river-wikipediaの疑問点">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -313,6 +315,7 @@ Uni-gramだと、転置インデックスのボキャブラリも単語に対し
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

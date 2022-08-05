@@ -895,7 +895,7 @@ Solr勉強会へのコンタクトお待ちしてます！ｗ&lt;/p&gt;
 &lt;h2 id=&#34;起動方法&#34;&gt;起動方法&lt;/h2&gt;
 &lt;p&gt;exampleディレクトリの下にexample-schemalessというディレクトリが新設されています。
 ここに、スキーマレスモード用の設定がされているファイルが入っているので、こちらを利用します。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;cd $SOLR/example
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;cd $SOLR/example
 java -Dsolr.solr.home=example-schemaless/solr -jar start.jar
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ログにいくつかWARNが出ますが、影響の内パス設定ミスなので無視してOKです。&lt;/p&gt;
 &lt;p&gt;最初に定義されているフィールドは「id」と「_version_」のみになります。（Schema Browserなどで確認できます。あ、REST APIでもいいですね。&lt;a href=&#34;http://localhost:8983/solr/schema/fields&#34;&gt;http://localhost:8983/solr/schema/fields&lt;/a&gt;）&lt;/p&gt;
@@ -903,13 +903,13 @@ java -Dsolr.solr.home=example-schemaless/solr -jar start.jar
 &lt;p&gt;さて、フィールドを追加してみます。
 PUTを利用すると1フィールドの追加が可能です。
 「fugatext」というフィールド名でフィールドを追加しています。今のところJSONのみ対応みたいです。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H &#39;Content-Type: application/json&#39; -d &#39;{&amp;quot;type&amp;quot;:&amp;quot;text_ja&amp;quot;,&amp;quot;stored&amp;quot;:false,&amp;quot;multiValued&amp;quot;:true}&#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H &#39;Content-Type: application/json&#39; -d &#39;{&amp;quot;type&amp;quot;:&amp;quot;text_ja&amp;quot;,&amp;quot;stored&amp;quot;:false,&amp;quot;multiValued&amp;quot;:true}&#39;
 {
   &amp;quot;responseHeader&amp;quot;:{
     &amp;quot;status&amp;quot;:0,
     &amp;quot;QTime&amp;quot;:18}}
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;追加できたかどうかもREST APIで取得してみます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ curl http://localhost:8983/solr/schema/fields
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl http://localhost:8983/solr/schema/fields
 {
   &amp;quot;responseHeader&amp;quot;:{
     &amp;quot;status&amp;quot;:0,
@@ -934,7 +934,7 @@ PUTを利用すると1フィールドの追加が可能です。
       &amp;quot;uniqueKey&amp;quot;:true}]}
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;追加できました。
 ちなみに、同じフィールド名を追加しようとするとエラーが帰ってきます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H &#39;Content-Type: application/json&#39; -d &#39;{&amp;quot;type&amp;quot;:&amp;quot;text_ja&amp;quot;,&amp;quot;stored&amp;quot;:false,&amp;quot;multiValued&amp;quot;:true}&#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H &#39;Content-Type: application/json&#39; -d &#39;{&amp;quot;type&amp;quot;:&amp;quot;text_ja&amp;quot;,&amp;quot;stored&amp;quot;:false,&amp;quot;multiValued&amp;quot;:true}&#39;
 {
   &amp;quot;responseHeader&amp;quot;:{
     &amp;quot;status&amp;quot;:400,
@@ -946,7 +946,7 @@ PUTを利用すると1フィールドの追加が可能です。
 &lt;p&gt;example-schemalessのsolrconfig.xmlは以下の設定が通常のexampleとは異なるようです。&lt;/p&gt;
 &lt;h4 id=&#34;schemafactoryの設定&#34;&gt;schemaFactoryの設定&lt;/h4&gt;
 &lt;p&gt;schemaをAPIから変更可能にする設定です。これまでの変更しない設定の場合は&lt;code&gt;ClassicIndexSchemaFactory&lt;/code&gt;を指定します。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;...
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;...
   &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;schemaFactory&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;class=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ManagedIndexSchemaFactory&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;
     &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;bool&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mutable&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;true&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/bool&amp;gt;&lt;/span&gt;
     &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;str&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;name=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;managedSchemaResourceName&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;managed-schema&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/str&amp;gt;&lt;/span&gt;
@@ -954,7 +954,7 @@ PUTを利用すると1フィールドの追加が可能です。
 ...
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h4 id=&#34;updatechainの設定&#34;&gt;update.chainの設定&lt;/h4&gt;
 &lt;p&gt;更新処理（update関連のリクエストハンドラ「/update」とか）には次のような設定が追加されていました。（1006行目あたり）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;  &amp;lt;requestHandler name=&amp;quot;/update&amp;quot; class=&amp;quot;solr.UpdateRequestHandler&amp;quot;&amp;gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  &amp;lt;requestHandler name=&amp;quot;/update&amp;quot; class=&amp;quot;solr.UpdateRequestHandler&amp;quot;&amp;gt;
     &amp;lt;!-- See below for information on defining 
          updateRequestProcessorChains that can be used by name 
          on each Update Request
@@ -965,7 +965,7 @@ PUTを利用すると1フィールドの追加が可能です。
   &amp;lt;/requestHandler&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;「add-unknown-fields-to-the-schema」というupdate.chainが指定されています。このchainの定義自体は1669行目くらいに存在します。
 （長い。。。）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;  &amp;lt;!-- Add unknown fields to the schema 
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  &amp;lt;!-- Add unknown fields to the schema 
   
        An example field type guessing update processor that will
        attempt to parse string-typed field values as Booleans, Longs,
@@ -1042,9 +1042,9 @@ PUTを利用すると1フィールドの追加が可能です。
 &lt;p&gt;起動時には定義されてないフィールドをもったデータを登録してみます。
 boolean型で試してみることに。以下のデータを管理画面のデータ登録画面から登録します。（http://localhost:8983/solr/#/collection1/documents）
 （タイトルでbooleanってわかりにくいですが）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;{&amp;quot;id&amp;quot;:&amp;quot;change.me&amp;quot;,&amp;quot;title&amp;quot;:true, &amp;quot;price&amp;quot;:1.25, &amp;quot;fuga&amp;quot;:&amp;quot;100,200&amp;quot;}
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{&amp;quot;id&amp;quot;:&amp;quot;change.me&amp;quot;,&amp;quot;title&amp;quot;:true, &amp;quot;price&amp;quot;:1.25, &amp;quot;fuga&amp;quot;:&amp;quot;100,200&amp;quot;}
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;エラーは出ません。で、またフィールド一覧を取得すると。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ curl http://localhost:8983/solr/schema/fields
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl http://localhost:8983/solr/schema/fields
 {
   &amp;quot;responseHeader&amp;quot;:{
     &amp;quot;status&amp;quot;:0,
@@ -1568,7 +1568,7 @@ SolrCloud内でレプリカの更新などに使ってるのかなぁと（そ�
 部分更新を行うにはつぎのような形のデータを投げると部分更新が可能です。
 （JSONでの更新のサンプルについては、&lt;a href=&#34;http://solr.pl/en/2012/07/09/solr-4-0-partial-documents-update/&#34;&gt;こちらの記事&lt;/a&gt;を参考にしてください。）
 ####XMLのサンプル（partial_update.xmlというファイルで保存する）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;&amp;lt;add&amp;amp;gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;lt;add&amp;amp;gt;
 &amp;lt;doc&amp;amp;gt;
   &amp;lt;field name=&amp;quot;id&amp;quot;&amp;amp;gt;VS1GB400C3&amp;lt;/field&amp;amp;gt;
   &amp;lt;field name=&amp;quot;_version_&amp;quot;&amp;amp;gt;バージョン番号&amp;lt;/field&amp;amp;gt;
@@ -1581,7 +1581,7 @@ SolrCloud内でレプリカの更新などに使ってるのかなぁと（そ�
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上記サンプルのうち、&lt;b&gt;バージョン番号&lt;/b&gt;の部分は、現在Solrに登録してある値を指定します。（Solrの管理画面で検索すれば表示されます。）
 上記ファイルを「SOLR_HOME/example/exampledocs」に保存し、同フォルダにてつぎのコマンドを実行すると、部分更新されるのがわかります。
 Solrに更新であるというフィールドがわかるように、fieldタグにupdateという属性を指定してあります。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 java -Durl=http://localhost:8983/solr/update?versions=on -Dout=yes -jar post.jar partial_update.xml
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ちなみに、上記post.jarのオプションで、「-Durl」「-Dout」を追加してあります。
 「-Durl」はverions=onというパラメータを追加したいためです。
@@ -1676,12 +1676,12 @@ Solr勉強会第６回で、&lt;a href=&#34;http://www.slideshare.net/KojiSekigu
 &lt;p&gt;SynonymFilterFactoryの属性「&lt;span style=&#34;color:#FF0000&#34;&gt;tokenizerFactory&lt;/span&gt;」に関連する話です。
 （&lt;a href=&#34;http://www.amazon.co.jp/exec/obidos/ASIN/4774141755/johtani-22/ref=nosim/&#34;&gt;「Apache Solr入門」&lt;/a&gt;の36-37ページに記載があります。）&lt;/p&gt;
 &lt;p&gt;SynonymFilterFactoryでは、類義語設定ファイルを読み込む際に利用するTokenizerFactoryを「tokenizerFactory」という属性で指定できます。（以下は書籍の記述を抜粋）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
   &amp;lt;filter class=&amp;quot;sold.SynonymFilterFactory&amp;quot; synonyms=&amp;quot;synonyms.txt&amp;quot; ... tokenizerFactory=&amp;quot;solrbook.analysis.SenTokenizerFactory&amp;quot;/&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;このように、TokenizerFactoryが指定できます。&lt;/p&gt;
 &lt;p&gt;ただ、&lt;a href=&#34;http://johtani.jugem.jp/?eid=76&#34;&gt;こちらの記事&lt;/a&gt;で書いたように、
 Solr 3.6.0のexampleのschema.xmlではCJKのフィールドは次のように設定されています。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
     &amp;lt;!-- CJK bigram (see text_ja for a Japanese configuration using morphological analysis) --&amp;gt;
     &amp;lt;fieldType name=&amp;quot;text_cjk&amp;quot; class=&amp;quot;solr.TextField&amp;quot; positionIncrementGap=&amp;quot;100&amp;quot;&amp;gt;
       &amp;lt;analyzer&amp;gt;
@@ -1833,7 +1833,7 @@ lucene-gosenを利用して形態素解析を体験するための手順は次�
 &lt;p&gt;jarファイル（&lt;a href=&#34;http://lucene-gosen.googlecode.com/files/lucene-gosen-2.0.0-ipadic.jar&#34;&gt;lucene-gosen-2.0.0-ipadic.jar&lt;/a&gt;）をダウンロードして、$SOLR/example/solr/lib（libディレクトリがない場合は作成）にコピーします。
 コピーが終わりましたら、次のように$SOLR/exampleディレクトリでSolrを起動します。
 （-Dsen.homeは必要なし）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 $ java -jar start.jar
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あとは、書籍の記述にしたがって管理画面のAnalysis画面で動作を確認します。
 ほぼ、図1-6と同じ結果になっていると思います。
@@ -2493,11 +2493,11 @@ after this point, one should be able to kill the node and start it up again and 
 &lt;h3 id=&#34;partitioning&#34;&gt;&lt;strong&gt;Partitioning&lt;/strong&gt;&lt;/h3&gt;
 &lt;p&gt;クラスタは固定されたmax_hash_value＝「N」が設定されます。
 max_hash_valueは1000のような大きな値が設定されます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 hash = hash_function(doc.getKey()) % N
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ハッシュ値の範囲がパーティションに割り当てられ、ZooKeeperに保存されます。
 次の例のような形で、パーティションに対して範囲が設定されます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 range  : partition
 ------  ----------
 0 - 99 : 1
@@ -2510,7 +2510,7 @@ range  : partition
 &lt;p&gt;max_hash_valueは必ずしも必要ではありません。各shardはいずれにしろハッシュ値の範囲持っているので、完全な32 bitsハッシュを使うこともできます。
 設定可能なmax_hash_valueを利用しないで、クライアントからの値をもとにハッシュ値を作ることができます。
 例えば、電子メールの検索アプリでは次のようにハッシュ関数を作ることができます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 (hash(user_id)&amp;lt;&amp;lt;24) | (hash(message_id)&amp;gt;&amp;gt;&amp;gt;8)
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ユーザIDから8bitのハッシュコードの先頭8ビットを利用することで、任意のユーザのメールがクラスタの同じ256番目（のノード？）にあるのを保証します。検索時はこの情報をもとにクラスタのその部分への問い合わせだけで情報が得られます。&lt;/p&gt;
 &lt;p&gt;おそらく、私たちは最大値から最小値をカバーする範囲を表現するのにハッシュ空間を輪（固定のハッシュではなく）とみなしたいです。（？？？円状のハッシュ空間とすることで、クラスタ内のノード数の増減に耐えられるようにするよということかな？）&lt;/p&gt;
@@ -2567,11 +2567,11 @@ range  : partition
 &lt;/ul&gt;
 &lt;h3 id=&#34;partitioning-1&#34;&gt;&lt;strong&gt;Partitioning&lt;/strong&gt;&lt;/h3&gt;
 &lt;p&gt;The cluster is configured with a fixed max_hash_value (which is set to a fairly large value, say 1000) ‘N’. Each document’s hash is calculated as:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 hash = hash_function(doc.getKey()) % N
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Ranges of hash values are assigned to partitions and stored in Zookeeper. For example we may have a
 range to partition mapping as follows&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 range  : partition
 ------  ----------
 0 - 99 : 1
@@ -2581,7 +2581,7 @@ range  : partition
 &lt;p&gt;The hash function is pluggable. It can accept a document and return a consistent &amp;amp; positive integer hash value. The system provides a default hash function which uses the content of a configured, required &amp;amp; immutable field (default is unique_key field) to calculate hash values.&lt;/p&gt;
 &lt;h4 id=&#34;using-full-hash-range-1&#34;&gt;&lt;strong&gt;Using full hash range&lt;/strong&gt;&lt;/h4&gt;
 &lt;p&gt;Alternatively, there need not be any max_hash_value - the full 32 bits of the hash can be used since each shard will have a range of hash values anyway. Avoiding a configurable max_hash_value makes things easier on clients wanting related hash values next to each other. For example, in an email search application, one could construct a hashcode as follows:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 (hash(user_id)&amp;lt;&amp;lt;24) | (hash(message_id)&amp;gt;&amp;gt;&amp;gt;8)
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;By deriving the top 8 bits of the hashcode from the user_id, it guarantees that any users emails are in the same 256th portion of the cluster. At search time, this information can be used to only query that portion of the cluster.&lt;/p&gt;
 &lt;p&gt;We probably also want to view the hash space as a ring (as is done with consistent hashing) in order to express ranges that wrap (cross from the maximum value to the minimum value).&lt;/p&gt;

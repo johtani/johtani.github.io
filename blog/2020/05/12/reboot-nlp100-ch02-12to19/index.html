@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>第2章の12から19まで(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>第2章の12から19まで(言語処理100本ノック2020) | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2020/05/12/reboot-nlp100-ch02-12to19/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -221,21 +222,21 @@
 <p>ちなみに、標準入力から受け取る処理は書いてないです。
 出力に関してはファイル分割、保存と支持があるもの以外は文字列として取り出すところで終わっています。</p>
 <h2 id="12-1列目をcol1txtに2列目をcol2txtに保存">12. 1列目をcol1.txtに，2列目をcol2.txtに保存</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_column</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_column</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
     <span style="color:#66d9ef">let</span> input_f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
     <span style="color:#66d9ef">let</span> read_buf <span style="color:#f92672">=</span> BufReader::new(input_f);
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
         .write(<span style="color:#66d9ef">true</span>)
         .create(<span style="color:#66d9ef">true</span>)
         .open(output_file_name)
-        .expect(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
+        .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
     read_buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
         Ok(line) <span style="color:#f92672">=&gt;</span> {
             <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
-            writeln<span style="color:#f92672">!</span>(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, columns[num]);
+            writeln!(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, columns[num]);
             output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
         }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error &#34;</span>),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error &#34;</span>),
     });
 }
 </code></pre></div><p>13で出力結果を利用するので入力として出力ファイル名も受け取るようにしました。
@@ -244,50 +245,50 @@
 <p>あとは、出力先ファイルが存在しない場合だけ<code>open</code>するように<code>OpenOptions</code>を利用してみています。</p>
 <p><code>flush</code>を呼び出すべきなのかどうか?を調べないとな。。。</p>
 <h2 id="13-col1txtとcol2txtをマージ">13. col1.txtとcol2.txtをマージ</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">merge_files</span>(col1_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col2_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">merge_files</span>(col1_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col2_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
     <span style="color:#66d9ef">let</span> col1_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col1_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
     <span style="color:#66d9ef">let</span> col2_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col2_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
         .write(<span style="color:#66d9ef">true</span>)
         .create(<span style="color:#66d9ef">true</span>)
         .open(output_file_name)
-        .expect(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
+        .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
     col1_buf
         .lines()
         .zip(col2_buf.lines())
         .for_each(<span style="color:#f92672">|</span>(col1, col2)<span style="color:#f92672">|</span> {
             <span style="color:#66d9ef">let</span> col1 <span style="color:#f92672">=</span> col1.expect(<span style="color:#e6db74">&#34;parse error col1&#34;</span>);
             <span style="color:#66d9ef">let</span> col2 <span style="color:#f92672">=</span> col2.expect(<span style="color:#e6db74">&#34;parse error col2&#34;</span>);
-            writeln<span style="color:#f92672">!</span>(output_f, <span style="color:#e6db74">&#34;{}\t{}&#34;</span>, col1, col2);
+            writeln!(output_f, <span style="color:#e6db74">&#34;{}\t{}&#34;</span>, col1, col2);
             output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
         });
 }
 </code></pre></div><p>2つのファイル名を入力として受け取り、タブでくっつけて出力します。
 <code>zip</code>を利用することで、2つのイテレーターを同時に回しています。</p>
 <h2 id="14-先頭からn行を出力">14. 先頭からN行を出力</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">head</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">head</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
     <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> head <span style="color:#f92672">=</span> String::new();
     buf.lines().take(lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        head.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
+        head.push_str(format!(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
     });
     <span style="color:#66d9ef">return</span> head;
 }
 </code></pre></div><p>イテレーターのメソッドに<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.take"><code>take</code></a>があります。
 これを利用することで、引数に指定した数のエレメントが取得できるので、これでheadが実現できます。</p>
 <h2 id="15-末尾のn行を出力">15. 末尾のN行を出力</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tail</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tail</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
     <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tail <span style="color:#f92672">=</span> String::new();
     <span style="color:#66d9ef">let</span> line_count <span style="color:#f92672">=</span> word_count(input_file_name);
     buf.lines().skip(line_count <span style="color:#f92672">-</span> lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        tail.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
+        tail.push_str(format!(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
     });
     <span style="color:#66d9ef">return</span> tail;
 }
 </code></pre></div><p>tailの場合は少し複雑で、11で作成した行数をカウントするメソッドで総行数を取り出し、そこから引数で指定された行数を引き算した数(=出力しない行数)を、イテレーターの<code>skip</code>メソッドの引数に渡しています。これにより、指定された数のエレメントをスキップしたあとの処理がかけます。</p>
 <h2 id="16-ファイルをn分割する">16. ファイルをN分割する</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">split_files</span>(
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">split_files</span>(
     input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
     num: <span style="color:#66d9ef">usize</span>,
     output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
@@ -300,7 +301,7 @@
 
     <span style="color:#66d9ef">let</span> output_files: Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> create_file_vec(output_file_prefix, num, output_file_suffix);
 
-    println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;split file each {} lines.&#34;</span>, lines_in_file);
+    println!(<span style="color:#e6db74">&#34;split file each {} lines.&#34;</span>, lines_in_file);
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> buf.lines();
 
     <span style="color:#66d9ef">for</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#66d9ef">in</span> output_files {
@@ -309,7 +310,7 @@
             <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> lines.next();
             <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Some(line_rs) <span style="color:#f92672">=</span> line {
                 <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ok(line_str) <span style="color:#f92672">=</span> line_rs {
-                    writeln<span style="color:#f92672">!</span>(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, line_str);
+                    writeln!(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, line_str);
                 }
             }
             current <span style="color:#f92672">=</span> current <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
@@ -320,13 +321,13 @@
 
 <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">create_file_vec</span>(output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_suffix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> {
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> files <span style="color:#f92672">=</span> Vec::with_capacity(num);
-    <span style="color:#66d9ef">for</span> i <span style="color:#66d9ef">in</span> <span style="color:#ae81ff">0</span>..num {
-        <span style="color:#66d9ef">let</span> output_file_name <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}{}{}&#34;</span>, output_file_prefix, i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, output_file_suffix);
+    <span style="color:#66d9ef">for</span> i <span style="color:#66d9ef">in</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">..</span>num {
+        <span style="color:#66d9ef">let</span> output_file_name <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;{}{}{}&#34;</span>, output_file_prefix, i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, output_file_suffix);
         <span style="color:#66d9ef">let</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
             .write(<span style="color:#66d9ef">true</span>)
             .create(<span style="color:#66d9ef">true</span>)
             .open(output_file_name.as_str())
-            .expect(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
+            .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
         files.push(output_f);
     }
     <span style="color:#66d9ef">return</span> files;
@@ -337,7 +338,7 @@
 <p>ファイルオブジェクトのベクトルの要素を元にしたfor文を回しつつ、それぞれのファイルに必要な行数を出力している処理になっています。</p>
 <p>総行数が<code>N</code>で割り切れない場合に<code>ceil</code>で切り上げした行数にするというちょっとした処理を入れてあります。</p>
 <h2 id="17-１列目の文字列の異なり">17. １列目の文字列の異なり</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">count_uniq_words</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col: <span style="color:#66d9ef">usize</span>) -&gt; <span style="color:#66d9ef">usize</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">count_uniq_words</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col: <span style="color:#66d9ef">usize</span>) -&gt; <span style="color:#66d9ef">usize</span> {
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> words <span style="color:#f92672">=</span> HashSet::new();
     <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
     buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
@@ -345,13 +346,13 @@
             <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
             words.insert(columns[col].to_string());
         }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error &#34;</span>),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error &#34;</span>),
     });
     <span style="color:#66d9ef">return</span> words.len();
 }
 </code></pre></div><p><code>HashSet</code>を利用することでユニーク性を担保して、最後はHashSetの数を数え上げれば終了です。</p>
 <h2 id="18-各行を3コラム目の数値の降順にソート">18. 各行を3コラム目の数値の降順にソート</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_col3</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_col3</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines: <span style="color:#a6e22e">BTreeSet</span><span style="color:#f92672">&lt;</span>Line<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> BTreeSet::new();
     <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
     buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
@@ -364,11 +365,11 @@
             };
             lines.insert(line);
         }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error&#34;</span>),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error&#34;</span>),
     });
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
     lines.iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        sorted.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.line).as_str());
+        sorted.push_str(format!(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.line).as_str());
     });
 
     <span style="color:#66d9ef">return</span> sorted;
@@ -406,7 +407,7 @@
 この構造体をBTeeSetに格納していき、イテレーターで回すことで、ソートされた状態にしてあります。
 同一数値の場合は行の降順でソートできるようにOrdを実装してあります。</p>
 <h2 id="19-各行の1コラム目の文字列の出現頻度を求め出現頻度の高い順に並べる">19. 各行の1コラム目の文字列の出現頻度を求め，出現頻度の高い順に並べる</h2>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_frequency</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_frequency</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> names: <span style="color:#a6e22e">HashMap</span><span style="color:#f92672">&lt;</span>String, <span style="color:#66d9ef">u32</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> HashMap::new();
     <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
     buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
@@ -416,7 +417,7 @@
             <span style="color:#66d9ef">let</span> count <span style="color:#f92672">=</span> names.entry(name_str).or_insert(<span style="color:#ae81ff">0</span>);
             <span style="color:#f92672">*</span>count <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>;
         }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;parse error&#34;</span>),
+        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error&#34;</span>),
     });
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted_names: Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> names.iter().collect();
@@ -429,7 +430,7 @@
         }
     });
     sorted_names.iter().for_each(<span style="color:#f92672">|</span>(name, count)<span style="color:#f92672">|</span> {
-        sorted.push_str(format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{} {}\n&#34;</span>, count, name).as_str());
+        sorted.push_str(format!(<span style="color:#e6db74">&#34;{} {}\n&#34;</span>, count, name).as_str());
     });
     <span style="color:#66d9ef">return</span> sorted;
 }
@@ -452,21 +453,22 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/05/08/rebootnlp100-ch02-10to11/" data-toggle="tooltip" data-placement="top" title="第2章の10から11まで(言語処理100本ノック2020)">&larr;
+                        <a href="https://blog.johtani.info/blog/2020/05/08/rebootnlp100-ch02-10to11/" data-toggle="tooltip" data-placement="top" title="第2章の10から11まで(言語処理100本ノック2020)">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2020/05/14/chap9-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第9章">Next
+                        <a href="https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第9章">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -487,6 +489,7 @@
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

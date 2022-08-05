@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>stream2esと複数データの登録-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>stream2esと複数データの登録 | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2014/04/24/usage-stream2es/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -229,8 +230,8 @@
 <h2 id="bulk-apiって">Bulk APIって？</h2>
 <p>ElasticsearchはURLにアクセスしてデータを登録できます。
 基本的には次のように1件毎の登録になります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">$</span> <span style="color:#960050;background-color:#1e0010">curl</span> <span style="color:#960050;background-color:#1e0010">-XPUT</span> <span style="color:#960050;background-color:#1e0010">http://localhost:</span><span style="color:#ae81ff">9200</span><span style="color:#960050;background-color:#1e0010">/bookshop/books/</span><span style="color:#ae81ff">1</span> <span style="color:#960050;background-color:#1e0010">-d</span>
-<span style="color:#960050;background-color:#1e0010">&#39;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">$</span> <span style="color:#960050;background-color:#1e0010">curl</span> <span style="color:#960050;background-color:#1e0010">-XPUT</span> <span style="color:#960050;background-color:#1e0010">http:</span><span style="color:#75715e">//localhost:9200/bookshop/books/1 -d
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">&#39;</span>
 {
   <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">1</span>,
   <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>,
@@ -240,12 +241,12 @@
 </code></pre></div><p>これでもいいのですが、大量のデータを登録するときは、Elasticsearch側での効率が悪いです。
 そこで、Elasticsearchは大量データを登録するために<a href="http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk">Bulk API</a>というものを用意しています。</p>
 <p>これは、次のような形式のJSONを作ってデータを登録します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{ <span style="color:#f92672">&#34;index&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;bookshop&#34;</span>, <span style="color:#f92672">&#34;_type&#34;</span> : <span style="color:#e6db74">&#34;books&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span> } }
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{ <span style="color:#f92672">&#34;index&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;bookshop&#34;</span>, <span style="color:#f92672">&#34;_type&#34;</span> : <span style="color:#e6db74">&#34;books&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span> } }
 { <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">1</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3024</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>}
 { <span style="color:#f92672">&#34;index&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;bookshop&#34;</span>, <span style="color:#f92672">&#34;_type&#34;</span> : <span style="color:#e6db74">&#34;books&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;2&#34;</span> } }
 { <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">2</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;Introduction of Apache Solr&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3888</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;gihyo&#34;</span>}
 </code></pre></div><p>これは、次のような構成になっています。</p>
-<pre><code>コマンド
+<pre tabindex="0"><code>コマンド
 データ
 コマンド
 データ
@@ -260,21 +261,21 @@
 Java 7がインストールされていれば、ダウンロードしてくれば動作せることができます。</p>
 <h3 id="インストール">インストール</h3>
 <p>公式ページに載っている方法そのままです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -O download.elasticsearch.org/stream2es/stream2es; chmod +x stream2es
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -O download.elasticsearch.org/stream2es/stream2es; chmod +x stream2es
 </code></pre></div><p>実行したディレクトリにコマンドがコピーされます。
 あとは、コマンドを実行すればOKです。</p>
 <h3 id="実行">実行</h3>
 <p>データは次のような形式で<code>sample.json</code>に保存してあるとします。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{ <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">1</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3024</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>}
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{ <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">1</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;ElasticSearch Server Japanese Edition&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3024</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;KADOKAWA&#34;</span>}
 { <span style="color:#f92672">&#34;book_id&#34;</span> : <span style="color:#ae81ff">2</span>, <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;Introduction of Apache Solr&#34;</span>, <span style="color:#f92672">&#34;price&#34;</span> : <span style="color:#ae81ff">3888</span>, <span style="color:#f92672">&#34;publisher&#34;</span> : <span style="color:#e6db74">&#34;gihyo&#34;</span>}
 </code></pre></div><p>先ほどの<code>Bulk API</code>で利用したJSONよりも、スッキリしていますね。
 1行1ドキュメント1JSONです。</p>
 <p>あとは、次のコマンドを実行するだけです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ./stream2es stdin --target http://localhost:9200/bookshop/books &lt; sample.json
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ./stream2es stdin --target http://localhost:9200/bookshop/books &lt; sample.json
 </code></pre></div><p>ファイルをstream2esに流し込んで、stream2esが1行ずつパースして、Elasticsearchに投げ込んでくれます。</p>
 <p>登録されたデータは次のようになります。
 IDは自動で付与されています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;bookstore&#34;</span>,
    <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;books&#34;</span>,
    <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;0Hvy4IJCRkKrvGb4Dgam_w&#34;</span>,
@@ -301,7 +302,7 @@ IDは自動で付与されています。</p>
    }
 }
 </code></pre></div><p>せっかく、<code>book_id</code>があるんだし、<code>_id</code>をインデックスの設定に指定します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -XDELETE http://localhost:9200/bookshop
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ curl -XDELETE http://localhost:9200/bookshop
 $ curl -XPUT http://localhost:9200/bookshop -d <span style="color:#e6db74">&#39;
 </span><span style="color:#e6db74">{
 </span><span style="color:#e6db74">  &#34;mappings&#34;: {
@@ -313,7 +314,7 @@ $ curl -XPUT http://localhost:9200/bookshop -d <span style="color:#e6db74">&#39;
 </span><span style="color:#e6db74">  }
 </span><span style="color:#e6db74">}&#39;</span>
 </code></pre></div><p>あとは、登録すれば<code>book_id</code>が<code>_id</code>に採用されます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;bookshop&#34;</span>,
    <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;books&#34;</span>,
    <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;1&#34;</span>,
@@ -341,7 +342,7 @@ $ curl -XPUT http://localhost:9200/bookshop -d <span style="color:#e6db74">&#39;
 }
 </code></pre></div><h3 id="複数ファイル">複数ファイル</h3>
 <p>ディレクトリに複数のJSONファイルが有った場合は、次のようなコマンドでOK</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat sample_data/*.json |./stream2es stdin --target http://localhost:9200/bookshop/books
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ cat sample_data/*.json |./stream2es stdin --target http://localhost:9200/bookshop/books
 </code></pre></div><p>まぁ、<code>cat</code>して流してるだけですが。。。</p>
 <h3 id="ダメだったケース">ダメだったケース</h3>
 <ul>
@@ -380,21 +381,22 @@ ElasticsearchからデータをScrollで読み出しつつ、別のElasticsearch
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2014/04/21/hold-on-4th-elasticsearch-jp/" data-toggle="tooltip" data-placement="top" title="第4回Elasticsearch勉強会を開催しました。#elasticsearchjp">&larr;
+                        <a href="https://blog.johtani.info/blog/2014/04/21/hold-on-4th-elasticsearch-jp/" data-toggle="tooltip" data-placement="top" title="第4回Elasticsearch勉強会を開催しました。#elasticsearchjp">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/" data-toggle="tooltip" data-placement="top" title="elasticsearch-kopfの紹介（aliases画面）">Next
+                        <a href="https://blog.johtani.info/blog/2014/05/04/intro-elasticsearch-kopf-alias-percolator/" data-toggle="tooltip" data-placement="top" title="elasticsearch-kopfの紹介（aliases画面）">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -415,6 +417,7 @@ ElasticsearchからデータをScrollで読み出しつつ、別のElasticsearch
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

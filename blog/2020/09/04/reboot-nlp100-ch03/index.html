@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>第3章終了(言語処理100本ノック2020)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>第3章終了(言語処理100本ノック2020) | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2020/09/04/reboot-nlp100-ch03/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -235,7 +236,7 @@
 もっと巨大なファイルの場合は個別のJSONに対する処理を
 <code>buf.lines().map()</code>のmapのなかで実行する形にすると思います。
 gzipのファイルを開くのに<code>flate2</code>というクレート(ライブラリ)を利用しました。便利なのは、<code>BufReader</code>に<code>lines()</code>というメソッドがあるところですかね。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_ndjson_from_gzip</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
     <span style="color:#66d9ef">let</span> f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found?&#34;</span>);
     <span style="color:#66d9ef">let</span> gz <span style="color:#f92672">=</span> GzDecoder::new(f);
@@ -248,7 +249,7 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
 <code>serde</code>自体は様々なデータ形式(JSON、YAMLなど)をパースするためのフレームワークです。今回はJSONなので、<code>serde_json</code>の実装を利用しています。
 また、JSON文字列から構造体にデシリアライズするのを簡単にできるように構造体に<code>#[derive(Deserialize)]</code>をつけています。
 あとは、<code>let article: Article = serde_json::from_str(json.as_str())</code>という処理を実行すればserde_jsonがJSONをパースして構造体に変換してくれます。形式がわかっているJSONの扱いはこれが楽ですね。変数に型を明記してあるので、型の推論もしてくれてるようです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Deserialize)]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Deserialize)]</span>
 <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Article</span> {
     title: String,
     text: String,
@@ -257,7 +258,7 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
 <span style="color:#75715e">// ch03-20. JSONデータの読み込み
 </span><span style="color:#75715e">// https://serde.rs/
 </span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, target_title: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Article<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> results <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> results <span style="color:#f92672">=</span> vec![];
     <span style="color:#66d9ef">let</span> ndjson <span style="color:#f92672">=</span> extract_ndjson_from_gzip(input_file_name);
     <span style="color:#66d9ef">for</span> json <span style="color:#66d9ef">in</span> ndjson {
         <span style="color:#66d9ef">let</span> article: <span style="color:#a6e22e">Article</span> <span style="color:#f92672">=</span> serde_json::from_str(json.as_str()).expect(<span style="color:#e6db74">&#34;json parse error&#34;</span>);
@@ -271,10 +272,10 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
 <h3 id="正規表現">正規表現</h3>
 <p>正規表現用のクレート<code>regex</code>がRustに用意されています。<code>Regex::new(正規表現)</code>で、正規表現をコンパイルし、あとは、この構造体のメソッドを利用して文字列を処理していきます。
 問題では、マッチするかどうか、マッチした一部の文字列を抜き出す、不要なタグを削除するといった処理を正規表現で行いました(Rust書くよりも正規表現の書き方とかを調べるのに大半の時間をもっていかれてます。。。)。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
 <span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_category_lines</span>(article: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Article</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
     <span style="color:#66d9ef">let</span> re <span style="color:#f92672">=</span> Regex::new(<span style="color:#e6db74">r&#34;\[\[Category:(.*)\]\]&#34;).expect(&#34;syntax error in regex&#34;</span>);
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> vec<span style="color:#f92672">!</span>[];
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> vec![];
     article.lines_from_text().iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
         <span style="color:#66d9ef">if</span> re.is_match(line) {
             lines.push(line.to_string());
@@ -289,10 +290,10 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
 ちょっと長いけど、APIコールしている箇所はこんな形です。</p>
 <p>この関数には<code>async</code>とついています。非同期処理の関数です。内部で2回ほど(リクエスト送信の結果待ちとレスポンスのパース待ち)<code>.await</code>があります。</p>
 <p><code>client</code>に<code>.get(URL)</code>や<code>query(&amp;[])</code>といったメソッドが用意されているので、URLやクエリパラメータを用意して<code>send()</code>でリクエスト送信します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
 <span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">call_api</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Result<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> {
     <span style="color:#66d9ef">let</span> client <span style="color:#f92672">=</span> reqwest::Client::new();
-    <span style="color:#66d9ef">let</span> file_name2 <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;File:{}&#34;</span>, file_name);
+    <span style="color:#66d9ef">let</span> file_name2 <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;File:{}&#34;</span>, file_name);
     <span style="color:#75715e">//let mut file_name2 = file_name.to_string().replace(&#34; &#34;, &#34;_&#34;);
 </span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> query <span style="color:#f92672">=</span> [
         (<span style="color:#e6db74">&#34;action&#34;</span>, <span style="color:#e6db74">&#34;query&#34;</span>),
@@ -319,21 +320,21 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
                     Err(error) <span style="color:#f92672">=&gt;</span> Err(error.to_string()),
                 }
             }
-            _ <span style="color:#f92672">=&gt;</span> Err(String::from(format<span style="color:#f92672">!</span>(
+            _ <span style="color:#f92672">=&gt;</span> Err(String::from(format!(
                 <span style="color:#e6db74">&#34;Status code is {}.&#34;</span>,
                 response.status()
             ))),
         },
         Err(error) <span style="color:#f92672">=&gt;</span> {
-            <span style="color:#66d9ef">let</span> error_msg <span style="color:#f92672">=</span> format<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;Error occurred... {:?}&#34;</span>, error);
-            println<span style="color:#f92672">!</span>(<span style="color:#e6db74">&#34;{}&#34;</span>, error_msg.as_str());
+            <span style="color:#66d9ef">let</span> error_msg <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;Error occurred... {:?}&#34;</span>, error);
+            println!(<span style="color:#e6db74">&#34;{}&#34;</span>, error_msg.as_str());
             Err(error_msg)
         }
     }
 }
 </code></pre></div><p>あとは、呼び出し元で非同期の処理を実行するために、<code>tokio</code>というクレートを利用しています。
 <code>block_on()</code>で<code>call_api()</code>の実行をして、結果が返ってくるのを待ち受けています。結果が返ってきて、問題なければ、<code>call_api</code>の戻り値<code>Result&lt;String, String&gt;</code>の左側のStringの値が取り出され、<code>get_image_url</code>の戻り値となります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
 <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_image_url</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
     <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> _rt <span style="color:#f92672">=</span> tokio::runtime::Runtime::new().expect(<span style="color:#e6db74">&#34;Fail initializing runtime&#34;</span>);
     <span style="color:#66d9ef">let</span> task <span style="color:#f92672">=</span> call_api(file_name);
@@ -353,21 +354,22 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/08/18/azure-search-with-terraform/" data-toggle="tooltip" data-placement="top" title="TerraformでAzure Cognitive Searchのクラスターを起動">&larr;
+                        <a href="https://blog.johtani.info/blog/2020/08/18/azure-search-with-terraform/" data-toggle="tooltip" data-placement="top" title="TerraformでAzure Cognitive Searchのクラスターを起動">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2020/09/07/reboot-nlp100-ch04/" data-toggle="tooltip" data-placement="top" title="第4章終了(言語処理100本ノック2020)">Next
+                        <a href="https://blog.johtani.info/blog/2020/09/07/reboot-nlp100-ch04/" data-toggle="tooltip" data-placement="top" title="第4章終了(言語処理100本ノック2020)">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -388,6 +390,7 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

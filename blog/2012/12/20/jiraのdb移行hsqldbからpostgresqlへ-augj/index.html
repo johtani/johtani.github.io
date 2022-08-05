@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>JIRAのDB移行（HSQLDBからPostgreSQLへ）#augj(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>JIRAのDB移行（HSQLDBからPostgreSQLへ）#augj(Jugemより移植) | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2012/12/20/jira%E3%81%AEdb%E7%A7%BB%E8%A1%8Chsqldb%E3%81%8B%E3%82%89postgresql%E3%81%B8-augj/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -267,24 +268,24 @@
 <p>バックアップが終わったのでJIRAを停止します。</p>
 <p>###3.  PostgreSQLのインストール（yum）
 PostgreSQLが入ってないので、yum installします。（軟弱者なので）</p>
-<pre><code>
+<pre tabindex="0"><code>
 yum install postgresql-server
 </code></pre><p>####initdbで四苦八苦
 PostgreSQLはインストールしただけでは起動できません。なので、初期化をします。
 yumでインストールしたPostgreSQLだとつぎのコマンドでinitdbできるようです。（これが罠でした）</p>
-<pre><code>
+<pre tabindex="0"><code>
 service postgresql initdb
 </code></pre><p>このコマンドでinitdbすると、encodingが指定できませんでした。（私がしらないだけという話も。。。）
 encodingを指定できていないと、このあと4.を実行するときにエラーが出ました。（これも回避方法あるのかも。）
 ということで、結局、昔とった杵柄なやり方でinitdbコマンドで&ndash;encoding=UTF8 &ndash;no-localeを指定しました。</p>
-<pre><code>
+<pre tabindex="0"><code>
 initdb --encoding=UTF8 --no-locale -D/var/lib/pgsql/data
 service postgresql start
 </code></pre><p>これで初期化が完了するので、PostgreSQLを起動します。</p>
 <p>###4.  JIRA用DBとユーザの作成</p>
 <hr>
 <p>まずは、ユーザの作成。そして、DB作成</p>
-<pre><code>
+<pre tabindex="0"><code>
 createuser jirauser
 createdb -E UNICODE jiradb
 </code></pre><p>テーブルなど作成しません。あとの処理がやってくれます。</p>
@@ -292,7 +293,7 @@ createdb -E UNICODE jiradb
 <hr>
 <p>warじゃないJIRAをインストールした場合はすでに入ってるみたいです。
 ここを見るとわかります。JIRA Installation Directoryの下のlibですかね。</p>
-<pre><code>
+<pre tabindex="0"><code>
 /opt/atlassian/jira/lib
 </code></pre><p>###<del>6.  マニュアルでPostgreSQLの接続設定（あれ、これいらないのか。）</del></p>
 <hr>
@@ -307,12 +308,12 @@ createdb -E UNICODE jiradb
 場所はここ。
 中身はdbcpとかのデータソースの設定に似てました。
 今は、HSQLDBのJDBCドライバが記載されてました。</p>
-<pre><code>
+<pre tabindex="0"><code>
 rm /var/atlassian/application-data/jira/dbconfig.xml
 </code></pre><p>###8.  JIRAの起動</p>
 <hr>
 <p>7.のファイルを消したあとにJIRAを起動します。</p>
-<pre><code>
+<pre tabindex="0"><code>
 service jira start
 </code></pre><p>###9.  JIRAにアクセスとDB接続設定</p>
 <hr>
@@ -379,21 +380,22 @@ safariの拡張もあるんですが、ページ全体のスクリーンショ�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2012/12/11/%E7%AC%AC%E4%B8%80%E5%9B%9E-jetbrains%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97-jbugj-%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/" data-toggle="tooltip" data-placement="top" title="第一回 JetBrainsユーザーグループ #jbugj に参加してきました(Jugemより移植)">&larr;
+                        <a href="https://blog.johtani.info/blog/2012/12/11/%E7%AC%AC%E4%B8%80%E5%9B%9E-jetbrains%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97-jbugj-%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/" data-toggle="tooltip" data-placement="top" title="第一回 JetBrainsユーザーグループ #jbugj に参加してきました(Jugemより移植)">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2012/12/31/%E4%BB%8A%E5%B9%B4%E3%81%AE%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A%E3%81%A8%E6%9D%A5%E5%B9%B4%E3%81%AE%E6%8A%B1%E8%B2%A02012/" data-toggle="tooltip" data-placement="top" title="今年の振り返りと来年の抱負（2012）(Jugemより移植)">Next
+                        <a href="https://blog.johtani.info/blog/2012/12/31/%E4%BB%8A%E5%B9%B4%E3%81%AE%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A%E3%81%A8%E6%9D%A5%E5%B9%B4%E3%81%AE%E6%8A%B1%E8%B2%A02012/" data-toggle="tooltip" data-placement="top" title="今年の振り返りと来年の抱負（2012）(Jugemより移植)">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -414,6 +416,7 @@ safariの拡張もあるんですが、ページ全体のスクリーンショ�
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

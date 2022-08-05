@@ -42,7 +42,7 @@ VMのネットワーク設定や、インスタンス名？などを指定でき
 &lt;code&gt;ssh search01.vm.local&lt;/code&gt;でVMにログインした場合は&lt;code&gt;/home/vagrant&lt;/code&gt;にログインしており、この場所でファイルを作ってもPuppetがエラーを吐いたためです。&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;と思ったのですが&lt;/strong&gt;、あれ？これひょっとしてVagrantfileがあるところにディレクトリとファイル作ると勝手にVMにコピーしてくれるんですか？destroyして、upしたら、ファイルが勝手にコピーされてる。ひょっとして、&lt;code&gt;/vagrant&lt;/code&gt;ってディレクトリはVagrantfileがあるディレクトリを共有してたりするのかな？そのうち、Vagrantについても調べてみようかな。&lt;/p&gt;
 &lt;h3 id=&#34;その２ネットワーク周り&#34;&gt;その２：ネットワーク周り&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;curl http://192.168.10.114:9200/
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl http://192.168.10.114:9200/
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;をホストOSから実行してみましたがうまく行きませんでした。。。
 ネットワーク周りの設定だと思うんですが。
 少なくとも「sshによるログイン」「ping」コマンドの応答は返ってきてます。&lt;/p&gt;
@@ -51,9 +51,9 @@ VMのネットワーク設定や、インスタンス名？などを指定でき
 service止めたら大正解でした。まぁ、そうですよね。基本ですよね。。。&lt;/p&gt;
 &lt;p&gt;ということで、Puppetがよくわかっていませんが、ググって変更してみました。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;manifests/search.app&lt;/code&gt;に以下を追加&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;include iptables
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;include iptables
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;roles/iptables/manifests/init.pp&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;class iptables {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;class iptables {
   service { &#39;iptables&#39;:
     enable =&amp;gt; false,
     ensure =&amp;gt; stopped,
@@ -64,7 +64,7 @@ service止めたら大正解でした。まぁ、そうですよね。基本で�
 &lt;p&gt;と、書いてるそばから、元記事が修正されてしまいましたｗ&lt;/p&gt;
 &lt;h2 id=&#34;クラスタ編変更点&#34;&gt;クラスタ編（変更点）&lt;/h2&gt;
 &lt;p&gt;クラスタを組むときに、追加でプラグインを入れたので&lt;code&gt;roles/search/manifests/init.pp&lt;/code&gt;は次のようにしました。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;class search {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;class search {
   class { &#39;elasticsearch&#39;:
     package_url =&amp;gt; &#39;https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.0.0.RC2.noarch.rpm&#39;,
     java_install =&amp;gt; true,

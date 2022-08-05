@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>validate APIの利用-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>validate APIの利用 | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2014/10/27/how-to-use-validate-api/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -227,7 +228,7 @@
 <p>そんな時に便利なAPIとして用意されているのが<a href="http://www.elasticsearch.org/guide/ep/elasticsearch/reference/current/search-validate.html">validate API</a>です。</p>
 <h2 id="利用方法">利用方法</h2>
 <p>APIが用意されています。</p>
-<pre><code>http://ホスト名:ポート番号/インデックス名/タイプ名/_validate/query
+<pre tabindex="0"><code>http://ホスト名:ポート番号/インデックス名/タイプ名/_validate/query
 </code></pre><p><code>インデックス名</code>や<code>タイプ名</code>は省略可能ですが、マッピングが異なると思うので、タイプ名まで指定するほうが良いと思います。
 上記のAPIに対してクエリを送信するだけです。</p>
 <h3 id="クエリの確認">クエリの確認</h3>
@@ -235,14 +236,14 @@
 検索クエリを組み立てていて、エラーが出るとします。
 ※このクエリは<code>match_all</code>のところを<code>match_al</code>と、<code>l</code>が1文字足りないクエリになっています。</p>
 <p><em><strong>検索クエリのリクエスト（エラーあり）</strong></em></p>
-<pre><code>GET pref_aggs/_search
+<pre tabindex="0"><code>GET pref_aggs/_search
 {
   &quot;query&quot;: {
     &quot;match_al&quot;: {}
   }
 }
 </code></pre><p><em><strong>実行結果のレスポンス</strong></em></p>
-<pre><code>{
+<pre tabindex="0"><code>{
    &quot;error&quot;: &quot;SearchPhaseExecutionException[Failed to execute phase [query], all shards failed; shardFailures {[rwkb01chTZq2V7FD0Tlwrw][pref_aggs][0]: SearchParseException[[pref_aggs][0]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n  \&quot;query\&quot;: {\n    \&quot;match_al\&quot;: { }\n  }\n}\n]]]; nested: QueryParsingException[[pref_aggs] No query registered for [match_al]]; }{[rwkb01chTZq2V7FD0Tlwrw][pref_aggs][1]: SearchParseException[[pref_aggs][1]: from[-1],size[-1]: Parse Failure [Failed to parse source [{\n  \&quot;query\&quot;: {\n    \&quot;match_al\&quot;: { }\n  }\n}\n]]]; nested: QueryParsingException[[pref_aggs] No query registered for [match_al]]; }]&quot;,
    &quot;status&quot;: 400
 }
@@ -250,14 +251,14 @@
 <p>そこで、<code>validate API</code>を利用します。
 リクエスト先を<code>/_search</code>から<code>/_validate/query</code>に変更します。</p>
 <p><em><strong>validate API</strong></em></p>
-<pre><code>GET pref_aggs/_validate/query
+<pre tabindex="0"><code>GET pref_aggs/_validate/query
 {
   &quot;query&quot;: {
     &quot;match_al&quot;: {}
   }
 }
 </code></pre><p><em><strong>validate APIのレスポンス</strong></em></p>
-<pre><code>{
+<pre tabindex="0"><code>{
    &quot;valid&quot;: false,
    &quot;_shards&quot;: {
       &quot;total&quot;: 1,
@@ -272,10 +273,10 @@
 その場合は、<code>explain</code>というパラメータを追加します。
 （正しくは<code>explain=true</code>を追加しますが、<code>=true</code>を省略可能です。）</p>
 <p><em><strong>validate API(explainあり、クエリ自体は省略)</strong></em></p>
-<pre><code>GET pref_aggs/_validate/query?explain
+<pre tabindex="0"><code>GET pref_aggs/_validate/query?explain
 {...}
 </code></pre><p><em><strong>validate APIのレスポンス</strong></em></p>
-<pre><code>{
+<pre tabindex="0"><code>{
    &quot;valid&quot;: false,
    &quot;_shards&quot;: {
       &quot;total&quot;: 1,
@@ -295,14 +296,14 @@
 今回のエラーは、<code>match_all</code>が正しいクエリですの、<em><code>match_al</code>というクエリは登録されていないというエラー</em>でした。
 では、クエリを修正して実行しましょう。</p>
 <p><em><strong>validate API(エラー無し)</strong></em></p>
-<pre><code>GET pref_aggs/_validate/query?explain
+<pre tabindex="0"><code>GET pref_aggs/_validate/query?explain
 {
   &quot;query&quot;: {
     &quot;match_all&quot;: {}
   }
 }
 </code></pre><p><em><strong>validate APIのレスポンス</strong></em></p>
-<pre><code>{
+<pre tabindex="0"><code>{
    &quot;valid&quot;: true,
    &quot;_shards&quot;: {
       &quot;total&quot;: 1,
@@ -325,7 +326,7 @@
 思ったとおりに検索にヒットしない場合があって、困ったことはないですか？
 フィールドに指定されたアナライザによっては、単語を変形したりするものが存在します。</p>
 <p><em><strong>サンプルマッピング</strong></em></p>
-<pre><code>PUT /validate_sample
+<pre tabindex="0"><code>PUT /validate_sample
 {
   &quot;mappings&quot;: {
     &quot;several_analyzer&quot;: {
@@ -340,7 +341,7 @@
 </code></pre><p>例えば、このように<code>kuromoji</code>、<code>english</code>、デフォルト(<code>standard</code>)アナライザを利用したマッピングがあるとします。
 このフィールドに対して<code>powerful</code>という単語で検索したとします。</p>
 <p><em><strong>validate API</strong></em></p>
-<pre><code>GET /validate_sample/_validate/query?explain
+<pre tabindex="0"><code>GET /validate_sample/_validate/query?explain
 {
   &quot;query&quot;: {
     &quot;multi_match&quot;: {
@@ -351,7 +352,7 @@
 }
 </code></pre><p>この場合、レスポンスは次のとおりです。</p>
 <p><em><strong>validate APIのレスポンス</strong></em></p>
-<pre><code>{
+<pre tabindex="0"><code>{
    &quot;valid&quot;: true,
    &quot;_shards&quot;: {
       &quot;total&quot;: 1,
@@ -372,7 +373,7 @@
 また、<code>powerful</code>を<code>秋葉原</code>といった日本語に変更して実行すると次のようになります。
 日本語は<code>standard</code>アナライザなどでは、1文字ずつ区切られてしまうことがわかります。</p>
 <p><em><strong>validate APIのレスポンス</strong></em></p>
-<pre><code>{
+<pre tabindex="0"><code>{
    &quot;valid&quot;: true,
    &quot;_shards&quot;: {
       &quot;total&quot;: 1,
@@ -417,21 +418,22 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2014/10/15/versioning-of-sonatype/" data-toggle="tooltip" data-placement="top" title="Sonatypeのバージョン番号で困ったので">&larr;
+                        <a href="https://blog.johtani.info/blog/2014/10/15/versioning-of-sonatype/" data-toggle="tooltip" data-placement="top" title="Sonatypeのバージョン番号で困ったので">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2014/11/06/elasticsearch-1-4-0-ja/" data-toggle="tooltip" data-placement="top" title="Elasticsearch 1.4.0および1.3.5リリース（日本語訳）">Next
+                        <a href="https://blog.johtani.info/blog/2014/11/06/elasticsearch-1-4-0-ja/" data-toggle="tooltip" data-placement="top" title="Elasticsearch 1.4.0および1.3.5リリース（日本語訳）">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -452,6 +454,7 @@
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

@@ -208,7 +208,7 @@ Rustで形態素解析をしたいという人がどのくらいいるかはわ�
 &lt;/ul&gt;
 &lt;p&gt;あとは、実行したあとに構造体をダンプするとメトリクスが出力されます。&lt;/p&gt;
 &lt;h3 id=&#34;レジストリの用意&#34;&gt;レジストリの用意&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Default, Debug, Serialize)]&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Default, Debug, Serialize)]&lt;/span&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;NekoParser&lt;/span&gt; {
     metric_reg: &lt;span style=&#34;color:#a6e22e&#34;&gt;NekoParserMetricRegistry&lt;/span&gt;,
 }
@@ -226,8 +226,8 @@ Rustで形態素解析をしたいという人がどのくらいいるかはわ�
 なお、メソッドごとに&lt;code&gt;#[measure(ErrorCount)]&lt;/code&gt;といったかたちで個別にメトリクスを指定することも可能です。
 今回はお試しということもあり、すべて&lt;code&gt;#[measure]&lt;/code&gt;だけになっています。
 アノテーションを付けただけで、メソッド自体を変更はしていません。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[metered(registry = NekoParserMetricRegistry, registry_expr = self.metric_reg, visibility = pub(self))]&lt;/span&gt;
-&lt;span style=&#34;color:#75715e&#34;&gt;#[measure([ResponseTime, Throughput]&lt;/span&gt;)]
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[metered(registry = NekoParserMetricRegistry, registry_expr = self.metric_reg, visibility = pub(self))]&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;#[measure([ResponseTime, Throughput])]&lt;/span&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; NekoParser {
     &lt;span style=&#34;color:#75715e&#34;&gt;#[measure]&lt;/span&gt;
     &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;load_and_parse_neko&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) {
@@ -243,7 +243,7 @@ Rustで形態素解析をしたいという人がどのくらいいるかはわ�
 
     &lt;span style=&#34;color:#75715e&#34;&gt;#[measure]&lt;/span&gt;
     &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;output_tokens&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self, tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;, buf: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;mut&lt;/span&gt; File) {
-        writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(buf, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, serde_json::to_string(tokens).unwrap())
+        writeln!(buf, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, serde_json::to_string(tokens).unwrap())
             .expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during output json&amp;#34;&lt;/span&gt;);
     }
 
@@ -285,7 +285,7 @@ Rustで形態素解析をしたいという人がどのくらいいるかはわ�
 &lt;p&gt;最後に出力結果をJSON形式の文字列にしてから出力しました。
 &lt;code&gt;let serialized ... println!(&amp;quot;{}&amp;quot;, serialized);&lt;/code&gt;という形です。
 簡単ですね!&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[cfg(test)]&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[cfg(test)]&lt;/span&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;mod&lt;/span&gt; tests {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;use&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;crate&lt;/span&gt;::chapter04::answer::NekoParser;
     &lt;span style=&#34;color:#66d9ef&#34;&gt;use&lt;/span&gt; std::path::Path;
@@ -294,15 +294,15 @@ Rustで形態素解析をしたいという人がどのくらいいるかはわ�
         &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; parser &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; NekoParser::default();
         parser.load_and_parse_neko();
         &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; serialized &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; serde_json::to_string(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;parser).unwrap();
-        println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, serialized);
-        assert&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(Path::new(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;./data/chap04/neko.txt.lindera.json&amp;#34;&lt;/span&gt;).exists());
+        println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, serialized);
+        assert!(Path::new(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;./data/chap04/neko.txt.lindera.json&amp;#34;&lt;/span&gt;).exists());
     }
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;出力結果&#34;&gt;出力結果&lt;/h3&gt;
 &lt;p&gt;ここまで紹介したものの実行結果は次のような形でした。
 レスポンスタイム、スループットともに、最小、最大、99パーセンタイルなどを出力してくれます。
 出力はメソッド名ごとにくくられているのでとても便利です。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
     &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;metric_reg&amp;#34;&lt;/span&gt;: {
         &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;load_and_parse_neko&amp;#34;&lt;/span&gt;: {
             &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;response_time&amp;#34;&lt;/span&gt;: {
@@ -390,7 +390,7 @@ Rustで形態素解析をしたいという人がどのくらいいるかはわ�
 &lt;p&gt;&lt;code&gt;metered&lt;/code&gt;の導入時にわかりにくいコンパイルエラーが出たので備忘録として残しておきます。
 (下からコンパイルエラーを読んでしまうくせがあったのが問題なのですが。。。)
 エラーメッセージは次のとおりです。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;error[E0412]: cannot find type `ResponseTime` in this scope
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;error[E0412]: cannot find type `ResponseTime` in this scope
   --&amp;gt; src/chapter04/answer.rs:13:12
    |
 13 | #[measure([ResponseTime, Throughput])]
@@ -446,7 +446,7 @@ error[E0283]: type annotations needed
 &lt;h3 id=&#34;形態素解析&#34;&gt;形態素解析&lt;/h3&gt;
 &lt;p&gt;もとの&lt;code&gt;neko.txt&lt;/code&gt;が文章が1行ごとになっているので、そのまま1行ずつ読みならが、形態素解析していきます。読み込みの部分は3章とあまり変わらないので割愛します。
 以下は、形態素解析の処理と形態素解析結果用の構造体です。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Clone, Debug, Serialize, Deserialize)]&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Clone, Debug, Serialize, Deserialize)]&lt;/span&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Token&lt;/span&gt; {
     surface: String,
     base: String,
@@ -461,7 +461,7 @@ error[E0283]: type annotations needed
 &lt;li&gt;品詞細分類1（pos1）&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;code&gt;derive&lt;/code&gt;でSerialize、Deserializeを付与しているのは、形態素解析の結果をJSON文字列として保存し、あとのそれぞれの課題で読み出すためにserde_jsonを利用するためです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenize&lt;/span&gt;(line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenize&lt;/span&gt;(line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; tokenizer &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lindera::tokenizer::Tokenizer::new(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;normal&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; lindera_tokens &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; tokenizer.tokenize(line);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tokens &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lindera_tokens
@@ -499,15 +499,15 @@ error[E0283]: type annotations needed
 &lt;p&gt;形態素解析の結果はJSONで保存しました。
 もとのファイルが1文が1行になっていたので、
 1行を読み込み、形態素解析し、それをVecで取り出して、1行1配列JSONの形で保存するようにしてあります。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;output_tokens&lt;/span&gt;(tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;, buf: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;mut&lt;/span&gt; File) {
-    writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(buf, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, serde_json::to_string(tokens).unwrap()).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during output json&amp;#34;&lt;/span&gt;);
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;output_tokens&lt;/span&gt;(tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;, buf: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;mut&lt;/span&gt; File) {
+    writeln!(buf, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, serde_json::to_string(tokens).unwrap()).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during output json&amp;#34;&lt;/span&gt;);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;serde_json::to_string&lt;/code&gt;に&lt;code&gt;Vec&amp;lt;Token&amp;gt;&lt;/code&gt;を渡しているだけですが、構造体に&lt;code&gt;derive&lt;/code&gt;をつけているのでよしなにやってくれます(便利ー)。&lt;/p&gt;
 &lt;h3 id=&#34;jsonの読み込み処理&#34;&gt;JSONの読み込み処理&lt;/h3&gt;
 &lt;p&gt;1行1JSONの読み込み処理です。
 今回も3章のように読み込みながら、各文章ごとの形態素解析結果に対して処理を実施するために、処理を実行するための&lt;code&gt;trait&lt;/code&gt;を&lt;code&gt;Command&lt;/code&gt;として用意し、それぞれの問題で形態素解析結果に対して処理を書くような実装にしました。また、設問37で「猫」と共起している単語を処理するという課題があるので、文章に「猫」が入っているものだけを処理できるようにするための&lt;code&gt;Filter&lt;/code&gt;も用意し、これをJSONの読み込み処理のイテレータの&lt;code&gt;filter&lt;/code&gt;にわたすようにしています。
 特にフィルタリングが必要ない場合ように、&lt;code&gt;NonFilter&lt;/code&gt;を予め実装済みです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Command {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Command {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self, tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;);
 }
 
@@ -540,12 +540,12 @@ error[E0283]: type annotations needed
         });
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;output_tokens&lt;/code&gt;では&lt;code&gt;serde_json::to_string&lt;/code&gt;を呼び出してましたが、読み込みでは、&lt;code&gt;serde_json::from_str&lt;/code&gt;を使うと構造体にしてくれます。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;parse_line_json&lt;/span&gt;(line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;parse_line_json&lt;/span&gt;(line: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; serde_json::from_str(line).unwrap();
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、設問ごとに&lt;code&gt;Command&lt;/code&gt;トレイトを実装していく形です。
 たとえば、32.の動詞の原形を出力する場合は次のようになります。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;ExtractVerbBase&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;ExtractVerbBase&lt;/span&gt; {
     out: &lt;span style=&#34;color:#a6e22e&#34;&gt;File&lt;/span&gt;,
 }
 &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Command &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; ExtractVerbBase {
@@ -554,8 +554,8 @@ error[E0283]: type annotations needed
             .iter()
             .filter(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; token.pos &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;動詞&amp;#34;&lt;/span&gt;)
             .for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-                writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(self.out, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, token.base).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during writeln&amp;#34;&lt;/span&gt;);
-                println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, token.base);
+                writeln!(self.out, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, token.base).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during writeln&amp;#34;&lt;/span&gt;);
+                println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, token.base);
             })
     }
 }
@@ -563,9 +563,9 @@ error[E0283]: type annotations needed
 &lt;h3 id=&#34;34-名詞の連接&#34;&gt;34. 名詞の連接&lt;/h3&gt;
 &lt;p&gt;「名詞の連接（連続して出現する名詞）を最長一致で抽出せよ．」という課題だったのですが、最初は読み間違えて、名詞の連接の最も長いものだけを出力するようにしてました。。。
 やっぱり、出力結果とかのサンプルは用意しといてほしいなぁ。。。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Command &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; ExtractMaxConjunctionNoun {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Command &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; ExtractMaxConjunctionNoun {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;execute&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self, tokens: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Token&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;) {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; nouns &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[];
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; nouns &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec![];
         &lt;span style=&#34;color:#75715e&#34;&gt;// TODO 参照保持でどうにかしたいけどなぁ。
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        tokens.iter().map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; token.clone()).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;token&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
             &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; token.pos &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;名詞&amp;#34;&lt;/span&gt; {
@@ -574,7 +574,7 @@ error[E0283]: type annotations needed
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; nouns.len() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; {
                     self.buffer.push(nouns.clone());
                 }
-                nouns &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[]
+                nouns &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec![]
             }
         });
     }
@@ -587,13 +587,13 @@ error[E0283]: type annotations needed
 その生成したVecに値でソートし、その後Iteratorから最初の10件を取得して表示する方法にしました。&lt;/p&gt;
 &lt;p&gt;ソートして取り出すという処理がついでにかかっています。。。
 &lt;a href=&#34;https://doc.rust-lang.org/std/collections/struct.BinaryHeap.html&#34;&gt;BinaryHeap&lt;/a&gt;がなにか使えそうな気もしたのですが、いい方法が思いつきませんでした。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_top10&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self) {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;print_top10&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; self) {
         &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; key_values: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;String, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;
             self.terms_count.iter().collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;String, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
         key_values.sort_by(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;x, y&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; y.&lt;span style=&#34;color:#ae81ff&#34;&gt;1.&lt;/span&gt;cmp(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;x.&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;));
         key_values.iter().take(&lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt;).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;(key, value)&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-            writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self.out, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}, {}&amp;#34;&lt;/span&gt;, key, value).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during writeln&amp;#34;&lt;/span&gt;);
-            println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}, {}&amp;#34;&lt;/span&gt;, key, value);
+            writeln!(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self.out, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}, {}&amp;#34;&lt;/span&gt;, key, value).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during writeln&amp;#34;&lt;/span&gt;);
+            println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}, {}&amp;#34;&lt;/span&gt;, key, value);
         });
     }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
@@ -631,7 +631,7 @@ Kibana/Esに食わせて見てみるのもありかなぁ?&lt;/p&gt;
 もっと巨大なファイルの場合は個別のJSONに対する処理を
 &lt;code&gt;buf.lines().map()&lt;/code&gt;のmapのなかで実行する形にすると思います。
 gzipのファイルを開くのに&lt;code&gt;flate2&lt;/code&gt;というクレート(ライブラリ)を利用しました。便利なのは、&lt;code&gt;BufReader&lt;/code&gt;に&lt;code&gt;lines()&lt;/code&gt;というメソッドがあるところですかね。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_ndjson_from_gzip&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found?&amp;#34;&lt;/span&gt;);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; gz &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; GzDecoder::new(f);
@@ -644,7 +644,7 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
 &lt;code&gt;serde&lt;/code&gt;自体は様々なデータ形式(JSON、YAMLなど)をパースするためのフレームワークです。今回はJSONなので、&lt;code&gt;serde_json&lt;/code&gt;の実装を利用しています。
 また、JSON文字列から構造体にデシリアライズするのを簡単にできるように構造体に&lt;code&gt;#[derive(Deserialize)]&lt;/code&gt;をつけています。
 あとは、&lt;code&gt;let article: Article = serde_json::from_str(json.as_str())&lt;/code&gt;という処理を実行すればserde_jsonがJSONをパースして構造体に変換してくれます。形式がわかっているJSONの扱いはこれが楽ですね。変数に型を明記してあるので、型の推論もしてくれてるようです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Deserialize)]&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#[derive(Deserialize)]&lt;/span&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Article&lt;/span&gt; {
     title: String,
     text: String,
@@ -653,7 +653,7 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
 &lt;span style=&#34;color:#75715e&#34;&gt;// ch03-20. JSONデータの読み込み
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// https://serde.rs/
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;load_json&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, target_title: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Article&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; results &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[];
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; results &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec![];
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; ndjson &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; extract_ndjson_from_gzip(input_file_name);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; json &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; ndjson {
         &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; article: &lt;span style=&#34;color:#a6e22e&#34;&gt;Article&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; serde_json::from_str(json.as_str()).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;json parse error&amp;#34;&lt;/span&gt;);
@@ -667,10 +667,10 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
 &lt;h3 id=&#34;正規表現&#34;&gt;正規表現&lt;/h3&gt;
 &lt;p&gt;正規表現用のクレート&lt;code&gt;regex&lt;/code&gt;がRustに用意されています。&lt;code&gt;Regex::new(正規表現)&lt;/code&gt;で、正規表現をコンパイルし、あとは、この構造体のメソッドを利用して文字列を処理していきます。
 問題では、マッチするかどうか、マッチした一部の文字列を抜き出す、不要なタグを削除するといった処理を正規表現で行いました(Rust書くよりも正規表現の書き方とかを調べるのに大半の時間をもっていかれてます。。。)。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_category_lines&lt;/span&gt;(article: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Article&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; re &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Regex::new(&lt;span style=&#34;color:#e6db74&#34;&gt;r&amp;#34;\[\[Category:(.*)\]\]&amp;#34;).expect(&amp;#34;syntax error in regex&amp;#34;&lt;/span&gt;);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; lines &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;[];
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; lines &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; vec![];
     article.lines_from_text().iter().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
         &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; re.is_match(line) {
             lines.push(line.to_string());
@@ -685,10 +685,10 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
 ちょっと長いけど、APIコールしている箇所はこんな形です。&lt;/p&gt;
 &lt;p&gt;この関数には&lt;code&gt;async&lt;/code&gt;とついています。非同期処理の関数です。内部で2回ほど(リクエスト送信の結果待ちとレスポンスのパース待ち)&lt;code&gt;.await&lt;/code&gt;があります。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;client&lt;/code&gt;に&lt;code&gt;.get(URL)&lt;/code&gt;や&lt;code&gt;query(&amp;amp;[])&lt;/code&gt;といったメソッドが用意されているので、URLやクエリパラメータを用意して&lt;code&gt;send()&lt;/code&gt;でリクエスト送信します。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;call_api&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Result&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String, String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; client &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; reqwest::Client::new();
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; file_name2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;File:{}&amp;#34;&lt;/span&gt;, file_name);
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; file_name2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;File:{}&amp;#34;&lt;/span&gt;, file_name);
     &lt;span style=&#34;color:#75715e&#34;&gt;//let mut file_name2 = file_name.to_string().replace(&amp;#34; &amp;#34;, &amp;#34;_&amp;#34;);
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; query &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; [
         (&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;action&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;query&amp;#34;&lt;/span&gt;),
@@ -715,21 +715,21 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
                     Err(error) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Err(error.to_string()),
                 }
             }
-            _ &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Err(String::from(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(
+            _ &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; Err(String::from(format!(
                 &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Status code is {}.&amp;#34;&lt;/span&gt;,
                 response.status()
             ))),
         },
         Err(error) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
-            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; error_msg &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error occurred... {:?}&amp;#34;&lt;/span&gt;, error);
-            println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, error_msg.as_str());
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; error_msg &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error occurred... {:?}&amp;#34;&lt;/span&gt;, error);
+            println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, error_msg.as_str());
             Err(error_msg)
         }
     }
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、呼び出し元で非同期の処理を実行するために、&lt;code&gt;tokio&lt;/code&gt;というクレートを利用しています。
 &lt;code&gt;block_on()&lt;/code&gt;で&lt;code&gt;call_api()&lt;/code&gt;の実行をして、結果が返ってくるのを待ち受けています。結果が返ってきて、問題なければ、&lt;code&gt;call_api&lt;/code&gt;の戻り値&lt;code&gt;Result&amp;lt;String, String&amp;gt;&lt;/code&gt;の左側のStringの値が取り出され、&lt;code&gt;get_image_url&lt;/code&gt;の戻り値となります。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;get_image_url&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; _rt &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; tokio::runtime::Runtime::new().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Fail initializing runtime&amp;#34;&lt;/span&gt;);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; task &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; call_api(file_name);
@@ -779,7 +779,7 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
 &lt;/ul&gt;
 &lt;h3 id=&#34;ヒープのデータを指すboxtを使用する&#34;&gt;ヒープのデータを指すBox&lt;T&gt;を使用する&lt;/h3&gt;
 &lt;p&gt;これはコンパイルエラー。&lt;code&gt;let y&lt;/code&gt;のタイミングで借用してるので、書き換えでエラーになる。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;fn main() {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() {
     let mut x = 5;
     let y = &amp;amp;x;
 
@@ -790,7 +790,7 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
     assert_eq!(6, *y);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;こっちはOK。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;fn main() {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() {
     let mut x = 5; // in stack
     let y = Box::new(x); // in heap
 
@@ -801,7 +801,7 @@ JSONをパースして構造体&lt;code&gt;Article&lt;/code&gt;にデシリア�
     assert_eq!(6, *y);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;余談:コンパイラが変なワーニングを出してくれた。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;use std::ops::Deref;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;use std::ops::Deref;
 
 impl&amp;lt;T, Z&amp;gt; Deref for MyBox&amp;lt;T, Z&amp;gt; {
     type Target = T;
@@ -842,7 +842,7 @@ fn main() {
 &lt;ul&gt;
 &lt;li&gt;これ、ここで作ったConsのリストを追っかけるためのサンプルも書いてほしい。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;#[derive(Debug)]
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;#[derive(Debug)]
 enum List {
     Cons(i32, Rc&amp;lt;List&amp;gt;),
     Nil,
@@ -993,7 +993,7 @@ fn main() {
 &lt;p&gt;少しだけ気になったので、動作確認したのは次の実装です。&lt;/p&gt;
 &lt;p&gt;トレイトで宣言されている関数と構造体が独自に実装する関数の名前がかぶるとどうなるのかという実験です。
 構造体独自のメソッドが優先される感じになりそう。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Tweet&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Tweet&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; username: String,
     &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; content: String,
     &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; reply: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
@@ -1003,24 +1003,24 @@ fn main() {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String;
     &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
         &lt;span style=&#34;color:#75715e&#34;&gt;// {}さんからもっと読む
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(Read more from {}...)&amp;#34;&lt;/span&gt;, self.summarize_author())
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(Read more from {}...)&amp;#34;&lt;/span&gt;, self.summarize_author())
     }
 }
 &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Tweet {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
-        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge {}&amp;#34;&lt;/span&gt;, self.username)
+        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge {}&amp;#34;&lt;/span&gt;, self.username)
     }
     &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;to_string&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
-        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fuga&amp;#34;&lt;/span&gt;)
+        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fuga&amp;#34;&lt;/span&gt;)
     }
 }
 &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Summary &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Tweet {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
-        format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@{}&amp;#34;&lt;/span&gt;, self.username)
+        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@{}&amp;#34;&lt;/span&gt;, self.username)
     }
 }
 &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;T: &lt;span style=&#34;color:#a6e22e&#34;&gt;Summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;(hoge: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;T&lt;/span&gt;) {
-    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, hoge.summarize_author());
+    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, hoge.summarize_author());
 }
 &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tweet &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Tweet {
@@ -1029,9 +1029,9 @@ fn main() {
         reply: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
         retweet: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
     };
-    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, tweet.summarize_author());
+    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, tweet.summarize_author());
     summary(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet);
-    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, Summary::summarize_author(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet));
+    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, Summary::summarize_author(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet));
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;ライフタイムで参照を有効化する&#34;&gt;ライフタイムで参照を有効化する&lt;/h3&gt;
 &lt;p&gt;言われてみればそうですが、プログラマが色々考えないとまぁ、行けないんですねという感想。&lt;/p&gt;
@@ -1106,21 +1106,21 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 &lt;p&gt;ちなみに、標準入力から受け取る処理は書いてないです。
 出力に関してはファイル分割、保存と支持があるもの以外は文字列として取り出すところで終わっています。&lt;/p&gt;
 &lt;h2 id=&#34;12-1列目をcol1txtに2列目をcol2txtに保存&#34;&gt;12. 1列目をcol1.txtに，2列目をcol2.txtに保存&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_column&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, num: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;, output_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;extract_column&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, num: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;, output_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; input_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; read_buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(input_f);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; output_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; OpenOptions::new()
         .write(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
         .create(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
         .open(output_file_name)
-        .expect(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
+        .expect(format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
     read_buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
         Ok(line) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; {
             &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; columns: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;_&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line.split(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;\t&amp;#39;&lt;/span&gt;).collect();
-            writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, columns[num]);
+            writeln!(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, columns[num]);
             output_f.flush().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during flush&amp;#34;&lt;/span&gt;);
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error &amp;#34;&lt;/span&gt;),
+        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error &amp;#34;&lt;/span&gt;),
     });
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;13で出力結果を利用するので入力として出力ファイル名も受け取るようにしました。
@@ -1129,50 +1129,50 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 &lt;p&gt;あとは、出力先ファイルが存在しない場合だけ&lt;code&gt;open&lt;/code&gt;するように&lt;code&gt;OpenOptions&lt;/code&gt;を利用してみています。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;flush&lt;/code&gt;を呼び出すべきなのかどうか?を調べないとな。。。&lt;/p&gt;
 &lt;h2 id=&#34;13-col1txtとcol2txtをマージ&#34;&gt;13. col1.txtとcol2.txtをマージ&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;merge_files&lt;/span&gt;(col1_file: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, col2_file: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, output_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;merge_files&lt;/span&gt;(col1_file: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, col2_file: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, output_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col1_buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(col1_file).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col2_buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(col2_file).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; output_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; OpenOptions::new()
         .write(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
         .create(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
         .open(output_file_name)
-        .expect(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
+        .expect(format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
     col1_buf
         .lines()
         .zip(col2_buf.lines())
         .for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;(col1, col2)&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
             &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; col1.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error col1&amp;#34;&lt;/span&gt;);
             &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; col2 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; col2.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error col2&amp;#34;&lt;/span&gt;);
-            writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\t{}&amp;#34;&lt;/span&gt;, col1, col2);
+            writeln!(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\t{}&amp;#34;&lt;/span&gt;, col1, col2);
             output_f.flush().expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error during flush&amp;#34;&lt;/span&gt;);
         });
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;2つのファイル名を入力として受け取り、タブでくっつけて出力します。
 &lt;code&gt;zip&lt;/code&gt;を利用することで、2つのイテレーターを同時に回しています。&lt;/p&gt;
 &lt;h2 id=&#34;14-先頭からn行を出力&#34;&gt;14. 先頭からN行を出力&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;head&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, lines: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; String {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;head&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, lines: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; head &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
     buf.lines().take(lines).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        head.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;)).as_str());
+        head.push_str(format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;)).as_str());
     });
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; head;
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;イテレーターのメソッドに&lt;a href=&#34;https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.take&#34;&gt;&lt;code&gt;take&lt;/code&gt;&lt;/a&gt;があります。
 これを利用することで、引数に指定した数のエレメントが取得できるので、これでheadが実現できます。&lt;/p&gt;
 &lt;h2 id=&#34;15-末尾のn行を出力&#34;&gt;15. 末尾のN行を出力&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tail&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, lines: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; String {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tail&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, lines: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; tail &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; line_count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; word_count(input_file_name);
     buf.lines().skip(line_count &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; lines).for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        tail.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;)).as_str());
+        tail.push_str(format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;)).as_str());
     });
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; tail;
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;tailの場合は少し複雑で、11で作成した行数をカウントするメソッドで総行数を取り出し、そこから引数で指定された行数を引き算した数(=出力しない行数)を、イテレーターの&lt;code&gt;skip&lt;/code&gt;メソッドの引数に渡しています。これにより、指定された数のエレメントをスキップしたあとの処理がかけます。&lt;/p&gt;
 &lt;h2 id=&#34;16-ファイルをn分割する&#34;&gt;16. ファイルをN分割する&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;split_files&lt;/span&gt;(
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;split_files&lt;/span&gt;(
     input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;,
     num: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;,
     output_file_prefix: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;,
@@ -1185,7 +1185,7 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; output_files: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;File&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; create_file_vec(output_file_prefix, num, output_file_suffix);
 
-    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;split file each {} lines.&amp;#34;&lt;/span&gt;, lines_in_file);
+    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;split file each {} lines.&amp;#34;&lt;/span&gt;, lines_in_file);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; lines &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; buf.lines();
 
     &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; output_f &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; output_files {
@@ -1194,7 +1194,7 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
             &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; line &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lines.next();
             &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; Some(line_rs) &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line {
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; Ok(line_str) &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line_rs {
-                    writeln&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, line_str);
+                    writeln!(output_f, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, line_str);
                 }
             }
             current &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; current &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
@@ -1205,13 +1205,13 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 
 &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;create_file_vec&lt;/span&gt;(output_file_prefix: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, num: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;, output_file_suffix: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;File&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; files &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Vec::with_capacity(num);
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; i &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;..num {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; output_file_name &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}{}{}&amp;#34;&lt;/span&gt;, output_file_prefix, i &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, output_file_suffix);
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; i &lt;span style=&#34;color:#66d9ef&#34;&gt;in&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;..&lt;/span&gt;num {
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; output_file_name &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}{}{}&amp;#34;&lt;/span&gt;, output_file_prefix, i &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;, output_file_suffix);
         &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; output_f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; OpenOptions::new()
             .write(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
             .create(&lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;)
             .open(output_file_name.as_str())
-            .expect(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
+            .expect(format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;can&amp;#39;t open file[{}] with write option&amp;#34;&lt;/span&gt;, output_file_name).as_str());
         files.push(output_f);
     }
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; files;
@@ -1222,7 +1222,7 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 &lt;p&gt;ファイルオブジェクトのベクトルの要素を元にしたfor文を回しつつ、それぞれのファイルに必要な行数を出力している処理になっています。&lt;/p&gt;
 &lt;p&gt;総行数が&lt;code&gt;N&lt;/code&gt;で割り切れない場合に&lt;code&gt;ceil&lt;/code&gt;で切り上げした行数にするというちょっとした処理を入れてあります。&lt;/p&gt;
 &lt;h2 id=&#34;17-１列目の文字列の異なり&#34;&gt;17. １列目の文字列の異なり&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;count_uniq_words&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, col: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;count_uniq_words&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;, col: &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; words &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; HashSet::new();
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
     buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
@@ -1230,13 +1230,13 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
             &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; columns: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;_&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; line_str.split(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;\t&amp;#39;&lt;/span&gt;).collect();
             words.insert(columns[col].to_string());
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error &amp;#34;&lt;/span&gt;),
+        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error &amp;#34;&lt;/span&gt;),
     });
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; words.len();
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;HashSet&lt;/code&gt;を利用することでユニーク性を担保して、最後はHashSetの数を数え上げれば終了です。&lt;/p&gt;
 &lt;h2 id=&#34;18-各行を3コラム目の数値の降順にソート&#34;&gt;18. 各行を3コラム目の数値の降順にソート&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sort_on_col3&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sort_on_col3&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; lines: &lt;span style=&#34;color:#a6e22e&#34;&gt;BTreeSet&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Line&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BTreeSet::new();
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
     buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
@@ -1249,11 +1249,11 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
             };
             lines.insert(line);
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;),
+        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;),
     });
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; sorted &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
     lines.iter().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        sorted.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.line).as_str());
+        sorted.push_str(format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}\n&amp;#34;&lt;/span&gt;, line.line).as_str());
     });
 
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; sorted;
@@ -1291,7 +1291,7 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 この構造体をBTeeSetに格納していき、イテレーターで回すことで、ソートされた状態にしてあります。
 同一数値の場合は行の降順でソートできるようにOrdを実装してあります。&lt;/p&gt;
 &lt;h2 id=&#34;19-各行の1コラム目の文字列の出現頻度を求め出現頻度の高い順に並べる&#34;&gt;19. 各行の1コラム目の文字列の出現頻度を求め，出現頻度の高い順に並べる&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sort_on_frequency&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;sort_on_frequency&lt;/span&gt;(input_file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; names: &lt;span style=&#34;color:#a6e22e&#34;&gt;HashMap&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String, &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; HashMap::new();
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(File::open(input_file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;));
     buf.lines().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;line&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;match&lt;/span&gt; line {
@@ -1301,7 +1301,7 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
             &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; count &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; names.entry(name_str).or_insert(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;);
             &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;count &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;;
         }
-        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;),
+        Err(_) &lt;span style=&#34;color:#f92672&#34;&gt;=&amp;gt;&lt;/span&gt; panic!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;parse error&amp;#34;&lt;/span&gt;),
     });
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; sorted &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; sorted_names: Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;String, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; names.iter().collect();
@@ -1314,7 +1314,7 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
         }
     });
     sorted_names.iter().for_each(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;(name, count)&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
-        sorted.push_str(format&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{} {}\n&amp;#34;&lt;/span&gt;, count, name).as_str());
+        sorted.push_str(format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{} {}\n&amp;#34;&lt;/span&gt;, count, name).as_str());
     });
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; sorted;
 }
@@ -1359,13 +1359,13 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 &lt;p&gt;で、コマンドを&lt;code&gt;man&lt;/code&gt;で調べつつやりました、macOS上で。
 これがまたいくつか罠があったので書き残しておきます(自分が知らないだけかもしれないので、おかしいところがあったらツッコミお願いします。)。&lt;/p&gt;
 &lt;h3 id=&#34;sedコマンドでのタブの扱い&#34;&gt;&lt;code&gt;sed&lt;/code&gt;コマンドでのタブの扱い&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;## sed command for macOS. If using Linux, use &amp;#34;\t&amp;#34; for tab character&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;## sed command for macOS. If using Linux, use &amp;#34;\t&amp;#34; for tab character&lt;/span&gt;
 cat $INPUT_FILE_NAME | sed -e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/	/ /g&amp;#39;&lt;/span&gt; &amp;gt; $OUTPUT_DIR/11_sed.txt
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;\t&lt;/code&gt;で行けると思ったのですが、うまく動きませんでした。&lt;code&gt;&amp;lt;tab&amp;gt;&lt;/code&gt;みたいな書き方もあると思うのですが、これも駄目で、結局タブ文字をそのまま打ち込みました。。。
 これ、めんどくさくないですか???
 ちなみに、ターミナルで動作確認して、GitHubにあげてあるシェルファイルにコピペしてたのですが、CLionに貼り付けたらタブ文字がスペースに変換されてしまってて20分くらい悩みました。。。&lt;/p&gt;
 &lt;h3 id=&#34;splitコマンドに-nオプションがない&#34;&gt;&lt;code&gt;split&lt;/code&gt;コマンドに&lt;code&gt;-n&lt;/code&gt;オプションがない&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;
 LINES&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;cat $OUTPUT_DIR/10.txt&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;
 SPLIT_LINES&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;echo $LINES/$N | bc&lt;span style=&#34;color:#e6db74&#34;&gt;`&lt;/span&gt;
 split -a &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; -l $SPLIT_LINES $INPUT_FILE_NAME $OUTPUT_DIR/16_
@@ -1376,7 +1376,7 @@ macOSがBSD系だからっぽいです。
 &lt;p&gt;ってことで、2章のそれぞれの課題の正解ファイルの生成はこれでできたはずです。&lt;/p&gt;
 &lt;h2 id=&#34;10-行数のカウント&#34;&gt;10. 行数のカウント&lt;/h2&gt;
 &lt;p&gt;&lt;code&gt;wc -l&lt;/code&gt;ですね。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// ch02-10 行数のカウント
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// ch02-10 行数のカウント
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;word_count&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;usize&lt;/span&gt; {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; buf &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; BufReader::new(f);
@@ -1385,7 +1385,7 @@ macOSがBSD系だからっぽいです。
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ファイルを読み込んで行数を数えます。
 文字列として読み込んで改行コードの数を数えるというのもありかな?と思いましたが、Rustの&lt;code&gt;BufReader&lt;/code&gt;に&lt;code&gt;lines()&lt;/code&gt;という行のイテレータ?が取れることがわかったので、それでカウントを取りました。&lt;/p&gt;
 &lt;h2 id=&#34;11-タブをスペースに置換&#34;&gt;11. タブをスペースに置換&lt;/h2&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// ch02-11 タブをスペースに置換
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// ch02-11 タブをスペースに置換
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tab_2_space&lt;/span&gt;(file_name: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; f &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; File::open(file_name).expect(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;file not found&amp;#34;&lt;/span&gt;);
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; contents&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::new();
@@ -1416,13 +1416,13 @@ Rustのコードを書く前に、Unixコマンドの処理に結構悩みまし
 &lt;p&gt;前回は&lt;a href=&#34;https://blog.johtani.info/blog/2020/04/09/reboot-nlp100-ch01-03to05/&#34;&gt;こちら&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;とっくに終わってたのに、ブログ書いてなかった。。。&lt;/p&gt;
 &lt;h3 id=&#34;08-暗号文&#34;&gt;08. 暗号文&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;cipher&lt;/span&gt;(text: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;cipher&lt;/span&gt;(text: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; String::from_iter(text.chars().map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;x&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
         &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; x.is_ascii_alphanumeric() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; x.is_lowercase() {
             &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; b &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; [&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;];
             x.encode_utf8(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; b);
             b[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;219&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; b[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;];
-            char::from(b[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;])
+            &lt;span style=&#34;color:#66d9ef&#34;&gt;char&lt;/span&gt;::from(b[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;])
         } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
             x
         }
@@ -1435,20 +1435,20 @@ Rustのコードを書く前に、Unixコマンドの処理に結構悩みまし
 文字種の判別のメソッドが用意されているのは便利ですね。&lt;/p&gt;
 &lt;p&gt;なんかもうちょっとスマートにできないのかな?と思いつつ動いたのでこれになってます。&lt;/p&gt;
 &lt;h3 id=&#34;09-typoglycemia&#34;&gt;09. Typoglycemia&lt;/h3&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;typoglycemia&lt;/span&gt;(text: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;typoglycemia&lt;/span&gt;(text: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt;) -&amp;gt; String {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; text
         .split_whitespace()
         .map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;word&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; {
             &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; word.len() &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt; {
                 word.to_string()
             } &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; {
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; original &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; word.chars().collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;char&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; original &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; word.chars().collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;char&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; first &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; original.get(&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;).unwrap();
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; last &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; original.last().unwrap();
-                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; typo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; original[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;..original.len() &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]
+                &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; typo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; original[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;..&lt;/span&gt;original.len() &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]
                     .iter()
                     .map(&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;x&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; x.clone())
-                    .collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;char&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
+                    .collect::&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Vec&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;char&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&lt;/span&gt;();
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; rng &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; thread_rng();
                 typo.shuffle(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; rng);
                 &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;mut&lt;/span&gt; typo &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::from_iter(typo.iter());
@@ -1836,7 +1836,7 @@ Rustっぽく、&lt;code&gt;return&lt;/code&gt;を省略してみました。
 &lt;li&gt;最初の引数は必ず&lt;code&gt;self&lt;/code&gt;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;impl&lt;/code&gt;は構造体とは別の場所に書く = Javaのクラスとは違う&lt;/li&gt;
 &lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Rectangle&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Rectangle&lt;/span&gt; {
     width: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
     height: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
 }
@@ -1872,26 +1872,26 @@ Rustっぽく、&lt;code&gt;return&lt;/code&gt;を省略してみました。
 &lt;/ul&gt;
 &lt;h4 id=&#34;実験&#34;&gt;実験&lt;/h4&gt;
 &lt;p&gt;スコープとかどうなりそう?って実験もしてみた。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
     &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Hoge {
         &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
     }
 
     &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Hoge &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; String {
         &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) {
-            println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hogehoge {}&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
+            println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hogehoge {}&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
         }
     }
     &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge&amp;#34;&lt;/span&gt;);
     c.trim();
-    println&lt;span style=&#34;color:#f92672&#34;&gt;!&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, fuga(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;c));
+    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, fuga(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;c));
 }
 
 &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;fuga&lt;/span&gt;(d: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;String) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt; {
     d.trim()
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力はこんな感じ&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;hogehoge hoge
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;hogehoge hoge
 hoge
 &lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
 &lt;p&gt;気になったのは以下の点。そのうち分かるようになってくるのかな。&lt;/p&gt;
@@ -1920,7 +1920,7 @@ hoge
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;drop&lt;/code&gt;関数ってのがあって、明示的に呼ぶことも可能。次のような感じで。2つ目の&lt;code&gt;println!&lt;/code&gt;はエラーになる。sがもう無いのに借用しようとしてるから。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;fn main() {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() {
     let mut s = String::from(&amp;quot;hello&amp;quot;);
     s.push_str(&amp;quot;, world!&amp;quot;);
     println!(&amp;quot;{}&amp;quot;, s);
@@ -1930,7 +1930,7 @@ hoge
 &lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
 &lt;li&gt;ムーブ - shallow copyではない。以下の2行目がムーブ。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;let s1 = String::from(&amp;quot;hello&amp;quot;);
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let s1 = String::from(&amp;quot;hello&amp;quot;);
 let s2 = s1;
 
 println!(&amp;quot;{}, world!&amp;quot;, s1);
@@ -1963,7 +1963,7 @@ println!(&amp;quot;{}, world!&amp;quot;, s1);
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;let mut s = String::from(&amp;quot;hello&amp;quot;);
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let mut s = String::from(&amp;quot;hello&amp;quot;);
 
 {
     let r1 = &amp;amp;mut s;
@@ -1974,7 +1974,7 @@ let r2 = &amp;amp;mut s;
 &lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
 &lt;li&gt;ダングリング参照はテスト書くときとかにやってるかも。。。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;fn dangle() -&amp;gt; &amp;amp;String { // dangleはStringへの参照を返す
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn dangle() -&amp;gt; &amp;amp;String { // dangleはStringへの参照を返す
 
     let s = String::from(&amp;quot;hello&amp;quot;); // sは新しいString
 
@@ -2053,7 +2053,7 @@ let r2 = &amp;amp;mut s;
 &lt;li&gt;&lt;code&gt;let ... match&lt;/code&gt;で変数への束縛でmatchが使えるのは便利(これまで知らなかったので、変数宣言して条件つけて束縛する処理書いてた)。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3 id=&#34;シャドーイング&#34;&gt;シャドーイング?&lt;/h3&gt;
-&lt;pre&gt;&lt;code&gt;fn main() {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() {
     let x = 5;
 
     let x = x + 1;
@@ -2063,7 +2063,7 @@ let r2 = &amp;amp;mut s;
     println!(&amp;quot;The value of x is: {}&amp;quot;, x);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;とか&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;let spaces = &amp;quot;   &amp;quot;;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let spaces = &amp;quot;   &amp;quot;;
 let spaces = spaces.len();
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;みたいに、同一変数名を使い回せること。再代入ではない&lt;/p&gt;
 &lt;h2 id=&#34;3章&#34;&gt;3章&lt;/h2&gt;
@@ -2086,7 +2086,7 @@ let spaces = spaces.len();
 &lt;/ul&gt;
 &lt;h3 id=&#34;おまけ&#34;&gt;おまけ&lt;/h3&gt;
 &lt;p&gt;フィボナッチ数列計算してみろというのがまとめにあったので。こんな感じでいいのかな?&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;fn calc_fibonacci(n: usize) -&amp;gt; usize {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn calc_fibonacci(n: usize) -&amp;gt; usize {
     if n == 0 {
         return 0;
     } else if n==1 {
@@ -2159,19 +2159,19 @@ let spaces = spaces.len();
 &lt;li&gt;rustfmt&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;フォーマッター。デフォルトでフォーマット機能が付いてるの便利ですね。言語として決まってると、プロジェクトごとに悩まなくていいってのがありますし。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-zsh&#34; data-lang=&#34;zsh&#34;&gt;rustfmt ファイル名
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-zsh&#34; data-lang=&#34;zsh&#34;&gt;rustfmt ファイル名
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;という形で使えるみたい。
 プロジェクトごとだと&lt;code&gt;cargo fmt&lt;/code&gt;のほうが楽そうかな。&lt;/p&gt;
 &lt;ol start=&#34;2&#34;&gt;
 &lt;li&gt;標準ライブラリAPIドキュメントをブラウザで閲覧&lt;/li&gt;
 &lt;/ol&gt;
-&lt;pre&gt;&lt;code&gt;rustup doc --std
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;rustup doc --std
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これでデフォルトブラウザでRustの公式ドキュメントが開きます。
 しかもローカルファイルだからサクサク。検索バーもついてて便利です。&lt;/p&gt;
 &lt;ol start=&#34;3&#34;&gt;
 &lt;li&gt;エラーのドキュメントを閲覧&lt;/li&gt;
 &lt;/ol&gt;
-&lt;pre&gt;&lt;code&gt;rustc --explain 308
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;rustc --explain 308
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;コンパイル時にエラーが出たときに、&lt;code&gt;error[E0308]&lt;/code&gt;のようにコンソールに出てきます。
 ヒントも出てくるのですが、詳細が上記のコマンドで読めるみたいです。&lt;/p&gt;
 </content:encoded>
@@ -2212,21 +2212,21 @@ let spaces = spaces.len();
 &lt;p&gt;&lt;code&gt;rustup&lt;/code&gt;ではデフォルト設定のままではなく、&lt;code&gt;PATH&lt;/code&gt;変数の書き換えだけはしない形でインストールを行いました。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;PATH&lt;/code&gt;変数は&lt;code&gt;.zshrc&lt;/code&gt;ファイルで変更したかったためです(&lt;code&gt;rustup&lt;/code&gt;コマンドに変更して貰う場合は&lt;code&gt;.profile&lt;/code&gt;などのファイルが変更されそうだったため)。&lt;/p&gt;
 &lt;p&gt;インストールが終わったあとに&lt;code&gt;.zshrc&lt;/code&gt;に以下の行を追加しました。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;### For Rust env
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;### For Rust env
 source $HOME/.cargo/env
 &lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;疑問点&#34;&gt;疑問点&lt;/h2&gt;
 &lt;p&gt;ここまで読んだ疑問点です。&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;code&gt;cargo new hello&lt;/code&gt;したあとに&lt;code&gt;main.rs&lt;/code&gt;に以下の&lt;code&gt;main()&lt;/code&gt;関数が出来上がっている!?&lt;/li&gt;
 &lt;/ol&gt;
-&lt;pre&gt;&lt;code&gt;fn main() {
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() {
     println!(&amp;quot;Hello, world!&amp;quot;);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;驚きましたが、&lt;code&gt;cargo new hoge&lt;/code&gt;ってやっても、おなじ&lt;code&gt;main.rs&lt;/code&gt;ができてました。デフォルトで出来上がるんですね。どんな超能力!?と思ってしまいましたw&lt;/p&gt;
 &lt;ol start=&#34;2&#34;&gt;
 &lt;li&gt;&lt;code&gt;cargo new hello&lt;/code&gt;して出来上がった&lt;code&gt;Cargo.toml&lt;/code&gt;に著者名が入力されていた。&lt;/li&gt;
 &lt;/ol&gt;
-&lt;pre&gt;&lt;code&gt;authors = [&amp;quot;Jun Ohtani &amp;lt;メアド&amp;gt;&amp;quot;]
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;authors = [&amp;quot;Jun Ohtani &amp;lt;メアド&amp;gt;&amp;quot;]
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;なんで?と思いました。まだ解明してないです。
 本を読んでいけばわかるかな?&lt;/p&gt;
 &lt;ul&gt;

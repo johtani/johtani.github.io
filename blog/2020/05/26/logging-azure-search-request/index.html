@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Azure Cognitive Searchのリクエストのロギング-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Azure Cognitive Searchのリクエストのロギング | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2020/05/26/logging-azure-search-request/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -241,7 +242,7 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
 <p>これは、.NET FrameworkのHttpのAPIに存在するクラスで、HTTPのクライアントがHTTPの送受信時に、処理を挟むことができる機能です。フレームワーク側で、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.logging.logginghttpmessagehandler?view=dotnet-plat-ext-3.1&amp;viewFallbackFrom=netframework-4.8">LoggingHttpMessaggeHandler</a>というクラスを用意してくれていましたが、残念ながらこちらは、リクエストとレスポンスのヘッダのみをロギングするクラスでした。
 ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには<code>Microsoft.Extensions.Logging</code>の<code>ILogger</code>を使用します。</p>
 <p>また、Azure Cognitive SearchのSDK側に違う問題点もありました。<a href="https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method">チュートリアルにあるように</a>、検索するときには、SDKは次のような使い方を想定しています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">        <span style="color:#75715e">// Create a service and index client.
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">        <span style="color:#75715e">// Create a service and index client.
 </span><span style="color:#75715e"></span>        <span style="color:#ae81ff">_</span>serviceClient = <span style="color:#66d9ef">new</span> SearchServiceClient(searchServiceName, <span style="color:#66d9ef">new</span> SearchCredentials(queryApiKey));
         <span style="color:#ae81ff">_</span>indexClient = <span style="color:#ae81ff">_</span>serviceClient.Indexes.GetClient(<span style="color:#e6db74">&#34;hotels&#34;</span>);
 </code></pre></div><p>インデックス用のクライアントを取得するために、<code>GetClient(インデックス名)</code>というメソッドを使用します。この<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_"><code>GetClient</code>メソッドのバリエーション</a>として、DelegatingHandlerを受け取るメソッドがないのです。。。</p>
@@ -252,7 +253,7 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
 </ol>
 <p>以上の2つを実装し、アプリケーション側から2で作成したGetClientを呼び出すことで、リクエストをボディも含めてログ出力することが可能になります。以下は実装例です。</p>
 <p>CustomHttpMessageHandlerクラス。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System;
 <span style="color:#66d9ef">using</span> System.Collections.Generic;
 <span style="color:#66d9ef">using</span> System.Diagnostics;
 <span style="color:#66d9ef">using</span> System.Net.Http;
@@ -376,7 +377,7 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
     }
 }
 </code></pre></div><p>GetClientの実装</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">
         <span style="color:#66d9ef">private</span> ISearchIndexClient GetClient(<span style="color:#66d9ef">string</span> indexName, <span style="color:#66d9ef">params</span> DelegatingHandler[] handlers)
         {
             <span style="color:#66d9ef">var</span> rootHandler = <span style="color:#ae81ff">_</span>searchServiceClient.HttpMessageHandlers.OfType&lt;HttpClientHandler&gt;().SingleOrDefault();
@@ -391,7 +392,7 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
             <span style="color:#66d9ef">return</span> indexClient;
         }
 </code></pre></div><p>出力されるログ例</p>
-<pre><code>2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06
+<pre tabindex="0"><code>2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06
 client-request-id: be02140f-3a07-48cc-b018-d8aa5e819bc3
 Accept-Language: en-US
 Accept: application/json; odata.metadata=none
@@ -421,11 +422,11 @@ Content-Type: application/json; charset=utf-8
 <p>実際に<code>SendRequest</code>メソッドに送られたものに対して何かしらの処理を行うのは、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.iserviceclienttracinginterceptor?view=azure-dotnet"><code>IServiceClientTracingIntercepter</code></a>インターフェースを実装したクラスになります。
 このインターフェースの実装が<a href="https://www.nuget.org/packages/Microsoft.Rest.ClientRuntime.Log4Net/">Log4Net</a>に存在します。Log4Netを利用している場合は、これを活用すれば楽ができます。</p>
 <p>実際に<code>ServiceClientTracing</code>を有効にするには、以下の2行を呼び出すだけです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">ServiceClientTracing.IsEnabled = <span style="color:#66d9ef">true</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">ServiceClientTracing.IsEnabled = <span style="color:#66d9ef">true</span>;
 ServiceClientTracing.AddTracingInterceptor(<span style="color:#66d9ef">new</span> Log4NetTracingInterceptor());
 </code></pre></div><p>あとは、Rest.ClientRuntimeがよしなにやってくれます。
 1とは異なり、トレースログなので、リクエストのボディについても出力してくれます。</p>
-<pre><code>2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
+<pre tabindex="0"><code>2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
 instance: Microsoft.Azure.Search.DocumentsProxyOperations
 method: SearchPost
 parameters: {searchRequest=Microsoft.Azure.Search.Models.SearchRequest,clientRequestId=,cancellationToken=System.Threading.CancellationToken}
@@ -478,7 +479,7 @@ Azure?.NET?のアプリケーションパフォーマンスモニタリングの
 <p>ただ、Application Insightsのデフォルトの機能では、URL程度の情報だけが送信されます(<a href="https://blog.shibayan.jp/entry/20190405/1554459340">参考:しばやんさんのブログ</a>)</p>
 <p>こちらも拡張機能が用意されており、ITelemetryInitializerのインターフェースを実装したクラスを用意することで、独自の情報をApplication Insightsに出力することが可能となります。詳細については<a href="https://blog.shibayan.jp/entry/20190405/1554459340">しばやんさんのブログ</a>を参考にしてもらうのが良いかと。</p>
 <p>Httpリクエストを出力する実装例は次のとおりです。ただ、ちょっとうまく行かないパターンがあったので、コメントアウトとして残してあったりします(なんでだろう?)</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System.Collections.Generic;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System.Collections.Generic;
 <span style="color:#66d9ef">using</span> System.Net.Http;
 <span style="color:#66d9ef">using</span> System.Net.Http.Headers;
 <span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Channel;
@@ -545,7 +546,7 @@ Azure?.NET?のアプリケーションパフォーマンスモニタリングの
 <p>これまでは、リクエストボディを出力する方法を考えていましたが、Azure Cognitive Search側の診断ログを有効にすると、リクエストボディで送信したものが、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#properties-schema">Azure Cognitive Search側で、クエリパラーメータとして、診断ログに出力</a>されます(診断ログの<code>Query_s</code>)。</p>
 <p>あとは、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#query-log-information">Azureのコンソール</a>で当該時間のログを見ればよいだけです。以下は出力されたログの一部です。Description_sにはURLのパスが記載されています。</p>
 <p>診断ログ例(一部)</p>
-<pre><code>Description_s      POST /indexes('multi-field-test')/docs/search.post.search
+<pre tabindex="0"><code>Description_s      POST /indexes('multi-field-test')/docs/search.post.search
 Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&amp;queryType=Simple&amp;$count=false
 </code></pre><h4 id="メリットデメリット-3">メリット、デメリット</h4>
 <p>アプリケーション側に手を入れる必要がなのでお手軽です。
@@ -566,21 +567,22 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/05/22/watching-azure-cognirive-search-session-at-ms-build/" data-toggle="tooltip" data-placement="top" title="Microsoft Build(2020)のAzure Cognirive Searchのセッションを見たのでメモ">&larr;
+                        <a href="https://blog.johtani.info/blog/2020/05/22/watching-azure-cognirive-search-session-at-ms-build/" data-toggle="tooltip" data-placement="top" title="Microsoft Build(2020)のAzure Cognirive Searchのセッションを見たのでメモ">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2020/05/28/chap10-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第10章">Next
+                        <a href="https://blog.johtani.info/blog/2020/05/28/chap10-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第10章">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -601,6 +603,7 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

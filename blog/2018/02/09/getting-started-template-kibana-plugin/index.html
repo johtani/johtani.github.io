@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Analyze UIとKibanaのプラグインの作成方法（第2回）-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Analyze UIとKibanaのプラグインの作成方法（第2回） | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2018/02/09/getting-started-template-kibana-plugin/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -231,10 +232,10 @@
 <p>開発環境として、Kibanaが必要です。Kibanaのプラグインを作るので。
 手順などは<a href="https://github.com/elastic/kibana/blob/6.2/CONTRIBUTING.md#contributing-code">KibanaのCONTRIBUTING.md</a>に記載があります。
 ということで、まずはKibanaのリポジトリをCloneします。</p>
-<pre><code>cd PLUGIN_DEV_DIR
+<pre tabindex="0"><code>cd PLUGIN_DEV_DIR
 git clone git@github.com:elastic/kibana.git
 </code></pre><p>このままだと、masterブランチなので、開発したい対象のKibanaのバージョンのブランチもしくはタグをcloneします。今回は6.2.1向けということで、次のようになります。</p>
-<pre><code>git checkout v6.2.1
+<pre tabindex="0"><code>git checkout v6.2.1
 </code></pre><p>これで、ソースが6.2.1向けになりました。</p>
 <h2 id="2-nodejsの環境を用意する">2. Node.jsの環境を用意する</h2>
 <p>Node.jsをインストールします。
@@ -243,14 +244,14 @@ Kibanaのリポジトリに<code>.node-version</code>というファイルがあ
 Kibanaが使用しているNode.jsを利用できるようにします。ローカルでは<a href="https://github.com/creationix/nvm#installation">nvm</a>利用してインストールしました。後から、切り替えが可能だからです。
 nvm自体のインストールについては<a href="https://github.com/creationix/nvm">nvmのサイト</a>をご覧ください。
 nvmがインストールできたら、次のコマンドで、Kibanaが使用しているバージョンをインストールします。</p>
-<pre><code>cd kibana
+<pre tabindex="0"><code>cd kibana
 nvm install &quot;$(cat .node-version)&quot;
 </code></pre><p>すでにnvmを利用している場合などは、Kibana起動時にKibanaのバージョンに合わせたNode.jsに切り替えるようにしてください。</p>
 <h2 id="3-kibanaを起動できるようにする">3. Kibanaを起動できるようにする</h2>
 <p>Kibanaでは<a href="https://yarnpkg.com/lang/en/">yarn</a>というjavascript向けのパッケージマネージャーを利用して起動やビルドなどを行います。まずはyarnをインストールします。<a href="https://github.com/elastic/kibana/pull/15485">最近npmからyarnに切り替えた</a>ようです。
 私はMacだったので、<a href="https://yarnpkg.com/en/docs/install">brewでインストール</a>しました。
 インストールできたら、次のコマンドを実行します。</p>
-<pre><code>yarn
+<pre tabindex="0"><code>yarn
 </code></pre><p>これにより、package.jsonから必要なライブラリなどをダウンロードして来てくれます。
 問題なければ「✨  Done in 439.30s.」というような表示がされます（結構時間かかりますね）。
 では、Kibanaを起動できるか確認してみましょう。
@@ -258,16 +259,16 @@ nvm install &quot;$(cat .node-version)&quot;
 Kibanaのpackage.jsonの中にはElasticsearchを起動するためのスクリプトも用意されています。実際には<a href="https://gruntjs.com">grunt</a>を利用してタスクを実行しているようです。Elasticsearchの起動にはJavaが必要になります。
 今回は6.2.1なので、JDK 8以降がインストールされている必要があります。
 こちらはインストールされているものとします。</p>
-<pre><code>yarn elasticsearch
+<pre tabindex="0"><code>yarn elasticsearch
 </code></pre><p>で起動できます。</p>
-<pre><code>&gt;&gt; Started 1 Elasticsearch nodes.
+<pre tabindex="0"><code>&gt;&gt; Started 1 Elasticsearch nodes.
 </code></pre><p>という表示が出てればOKです。
 次にKibanaです。別のTerminalを起動して、以下のコマンドで起動できます。</p>
-<pre><code>yarn start
+<pre tabindex="0"><code>yarn start
 </code></pre><p>これだけです。</p>
-<pre><code>server    log   [06:58:56.930] [info][listening] Server running at http://localhost:5603
+<pre tabindex="0"><code>server    log   [06:58:56.930] [info][listening] Server running at http://localhost:5603
 </code></pre><p>この辺りが出てればKibanaのServerは起動済みです。また、Elasticsearchに接続できていれば、次のログが出ているはずです。</p>
-<pre><code>server    log   [07:02:18.010] [info][status][plugin:elasticsearch@6.2.1] Status changed from red to green - Ready
+<pre tabindex="0"><code>server    log   [07:02:18.010] [info][status][plugin:elasticsearch@6.2.1] Status changed from red to green - Ready
 </code></pre><p>Elasticsearch接続用のKibanaのプラグインの状態になります。
 これで、Kibanaの環境が整ったことが確認できました。
 もちろん、Elasticsearchに関しては、yarnで起動せずに、tar.gzなどでダウンロードして来たElasticsearchを起動しておき、アクセスするといったことも可能です。プラグインなどをElasticsearchにもいれてテストしたい場合などはそちらの方が便利かもしれません。</p>
@@ -276,23 +277,23 @@ Kibanaのpackage.jsonの中にはElasticsearchを起動するためのスクリ�
 Kibanaのプラグイン作成むけに、テンプレートが作られています。<a href="https://sao.js.org">sao.js</a>というGitHubのリポジトリやnpmのパッケージをテンプレートとして使うことができるツールを利用してプラグインのプロジェクト（リポジトリ）を作成します。
 実際にテンプレートとなるリポジトリは<a href="https://github.com/elastic/template-kibana-plugin">template-kibana-plugin</a>になります。
 まずはSaoのインストールです。</p>
-<pre><code>npm install -g sao
+<pre tabindex="0"><code>npm install -g sao
 </code></pre><p>プラグインのテンプレートのページには上記のようにnpmを利用したインストール方法になっていますが、次のようにyarnでも可能です。</p>
-<pre><code>yarn global add sao
+<pre tabindex="0"><code>yarn global add sao
 </code></pre><p>これで、saoがインストールできました。</p>
 <h2 id="5-テンプレートによるプロジェクトファイルの生成">5. テンプレートによるプロジェクトファイルの生成</h2>
 <p>あとは、テンプレートを元にプロジェクトを作成します。
 <code>PLUGIN_DEV_DIR</code>ディレクトリ配下に、kibanaと同じ階層で作成するプラグイン用のディレクトリを作成します。</p>
-<pre><code>mkdir simple-sample-kibana-plugin
+<pre tabindex="0"><code>mkdir simple-sample-kibana-plugin
 </code></pre><p>以下のような構成になります。</p>
-<pre><code>kibana                      simple-sample-kibana-plugin
+<pre tabindex="0"><code>kibana                      simple-sample-kibana-plugin
 </code></pre><p>次にテンプレートを適用していきます。</p>
-<pre><code>cd simple-sample-kibana-plugin
+<pre tabindex="0"><code>cd simple-sample-kibana-plugin
 sao kibana-plugin@7.2.4
 </code></pre><p>2行目がsaoを利用してプロジェクトを作成しているコマンドになります。
 すると、次のような質問が出て来ます。
 これらに答えるとプロジェクトに必要なファイル（package.jsonやREADME.mdなど）に入力した情報を適用したものを作ってくれます。</p>
-<pre><code>? Name of your plugin?
+<pre tabindex="0"><code>? Name of your plugin?
 ? Provide a short description
 ? What Kibana version are you targeting?
 ? Should an app component be generated?
@@ -300,7 +301,7 @@ sao kibana-plugin@7.2.4
 ? Should an hack component be generated?
 ? Should a server API be generated?
 </code></pre><p>実際に答えた内容はこちら。</p>
-<pre><code>? Name of your plugin? simple-sample-kibana-plugin
+<pre tabindex="0"><code>? Name of your plugin? simple-sample-kibana-plugin
 ? Provide a short description Sample plugin for explaining how to make kibana app
 ? What Kibana version are you targeting? 6.2.1
 ? Should an app component be generated? Yes
@@ -316,9 +317,9 @@ Descriptionについてはわかりやすいものを入力しましょう。
 ただし、<code>translation</code>については現在はテンプレートで作成したままのファイルが入っており、実際には利用してないです。</p>
 <p>完了したら、プラグインのサンプル入りのプロジェクトが完成です。
 もう一度、Elasticsearchを立ち上げて、プラグインのプロジェクトからKibanaを起動してアクセスしてみます。まずは、<code>PLUGIN_DEV_DIR/kibana</code>ディレクトリの下で、Elasticsearchを起動します。</p>
-<pre><code>yarn elasticsearch
+<pre tabindex="0"><code>yarn elasticsearch
 </code></pre><p>次に、<code>PLUGIN_DEV_DIR/simple-sample-kibana-plugin</code>ディレクトリの下で、以下のコマンドを実行し、プラグインが入った状態のKibanaを起動します。</p>
-<pre><code>yarn start
+<pre tabindex="0"><code>yarn start
 </code></pre><p>問題なく起動すれば、ブラウザでアクセスすると次のような画面が表示されるはずです。</p>
 
 <link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
@@ -343,21 +344,22 @@ Descriptionについてはわかりやすいものを入力しましょう。
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2018/01/19/how-to-make-kibana-plugin-example-analysis-ui/" data-toggle="tooltip" data-placement="top" title="Analyze UIとKibanaのプラグインの作成方法（第1回）">&larr;
+                        <a href="https://blog.johtani.info/blog/2018/01/19/how-to-make-kibana-plugin-example-analysis-ui/" data-toggle="tooltip" data-placement="top" title="Analyze UIとKibanaのプラグインの作成方法（第1回）">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2018/02/14/start-nlp100-with-rust/" data-toggle="tooltip" data-placement="top" title="言語処理100本ノックはじめました(Rust)">Next
+                        <a href="https://blog.johtani.info/blog/2018/02/14/start-nlp100-with-rust/" data-toggle="tooltip" data-placement="top" title="言語処理100本ノックはじめました(Rust)">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -378,6 +380,7 @@ Descriptionについてはわかりやすいものを入力しましょう。
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

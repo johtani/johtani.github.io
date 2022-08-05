@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>elasticsearch-extended-analyzeを公開？-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>elasticsearch-extended-analyzeを公開？ | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2013/11/14/release-elasticsearch-extended-analyze-0-dot-5/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -217,7 +218,7 @@
 <p>プラグインの開発はしいてたのですが、やっぱりpluginコマンドでインストール出来ないと使ってもらえないよなということで、勉強会も終わったのでちょっと調べてました。</p>
 <h2 id="プラグインコマンド">プラグインコマンド</h2>
 <p>コマンドが用意されてますが、実態はJavaで実装されてて、通常はこんなかんじでプラグインをインストールします。</p>
-<pre><code>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.6.0
+<pre tabindex="0"><code>./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.6.0
 </code></pre><p>この「<code>elasticsearch/elasticsearch-analysis-kuromoji/1.6.0</code>」という文字列ですが、「<code>ユーザ名/リポジトリ名/バージョン</code>」という意味になります。</p>
 <p>で、ダウンロードするURLは以下のものの中から選ばれます。</p>
 <ul>
@@ -236,13 +237,13 @@ maven、sonatypeについては、Mavenのリポジトリにリリースする�
 <p>せっかくGithubだし、せっかくMavenなんだしなんか、pom.xmlに便利な設定したらコマンド一発でリリースできるんじゃない？という甘い気持ちで<strike>調査した</strike>ググったらそれっぽい記事が見つかりました。
 「<a href="http://www.kanasansoft.com/weblab/2009/11/integration_between_maven_and_github.html">MavenとGitHubの連携</a>」って記事です。<br>
 で、pom.xmlの設定にも他のプラグインを真似してコピペしたものに<code>&lt;scm&gt;</code>ってタグがあったなぁと。このコマンドでついでにGithubにアップロードできるんじゃないの？ということで、試してみました。</p>
-<pre><code>mvn release:prepare
+<pre tabindex="0"><code>mvn release:prepare
 </code></pre><p>このコマンドを叩くと、記事にあるとおりにいくつか質問をされます。
 タグについては、<code>プロジェクト名-バージョン番号</code>という文字列がデフォルトだと指定されているので、<code>v0.5</code>と変更して実施してみると、Githubのreleaseにv0.5ってのができてるじゃないですか。<br>
 ※<code>plugin</code>コマンドはGithubを見に行く時に次のファイルをダウンロードしに行きます。</p>
-<pre><code>https://github.com/ユーザ名/リポジトリ名/archive/vバージョン名.zip
+<pre tabindex="0"><code>https://github.com/ユーザ名/リポジトリ名/archive/vバージョン名.zip
 </code></pre><p>やった！と思い、早速pluginコマンドを実行してみましたが、エラーが出ました。。。</p>
-<pre><code>Trying https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip...
+<pre tabindex="0"><code>Trying https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip...
 Downloading ...DONE
 Installed johtani/elasticsearch-extended-analyze/0.5 into /Users/johtani/projects/tmp/ess_env/second_node/elasticsearch-0.90.7/plugins/extended-analyze
 Usage:
@@ -262,7 +263,7 @@ github.comのページでアップロードしてしまおうと。</p>
 <p>「release」というタブをクリックすると、画面からアップロードできるようになります。<br>
 zipファイルを作ってアップロードしました。（zipファイル自体は<code>mvn package</code>コマンドを実行したら<code>target/release</code>というディレクトリに作成されてる）</p>
 <p>これで行けるだろということで、またpluginコマンドを実行すると</p>
-<pre><code>Trying https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip...
+<pre tabindex="0"><code>Trying https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip...
 Downloading ...DONE
 Installed johtani/elasticsearch-extended-analyze/0.5 into /Users/johtani/projects/tmp/ess_env/second_node/elasticsearch-0.90.7/plugins/extended-analyze
 Usage:
@@ -274,9 +275,9 @@ Message:
 </code></pre><p>あれ？同じエラー？なんで？jar入りのzipファイルアップロードしたのに？？？</p>
 <p>と。で、<code>https://github.com/johtani/elasticsearch-extended-analyze/releases</code>にreleaseのページができてたので見てみると、あら。
 アップロードしたファイルについては次のようなURLになってるじゃないですか。</p>
-<pre><code>https://github.com/johtani/elasticsearch-extended-analyze/releases/download/v0.5/v0.5.zip
+<pre tabindex="0"><code>https://github.com/johtani/elasticsearch-extended-analyze/releases/download/v0.5/v0.5.zip
 </code></pre><p>で、よく見ると「Source code(zip)」というボタンもあるぞ？このリンクは？</p>
-<pre><code>https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip
+<pre tabindex="0"><code>https://github.com/johtani/elasticsearch-extended-analyze/archive/v0.5.zip
 </code></pre><p>。。。あぁ。そうですか。そういうことですか。理解してない私が悪いんですねと。</p>
 <h2 id="結論">結論？</h2>
 <p>ということで、とりあえず、releaseにjar入りファイルはアップロードできた（手動で）ので
@@ -292,21 +293,22 @@ Message:
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2013/11/12/elasticsearch-japan-user-meetup-no2/" data-toggle="tooltip" data-placement="top" title="第2回elasticsearch勉強会を開催しました！ #elasticsearchjp">&larr;
+                        <a href="https://blog.johtani.info/blog/2013/11/12/elasticsearch-japan-user-meetup-no2/" data-toggle="tooltip" data-placement="top" title="第2回elasticsearch勉強会を開催しました！ #elasticsearchjp">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2013/11/26/introduction-to-solr-new-edition/" data-toggle="tooltip" data-placement="top" title="改訂版Solr入門を執筆しました">Next
+                        <a href="https://blog.johtani.info/blog/2013/11/26/introduction-to-solr-new-edition/" data-toggle="tooltip" data-placement="top" title="改訂版Solr入門を執筆しました">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -327,6 +329,7 @@ Message:
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

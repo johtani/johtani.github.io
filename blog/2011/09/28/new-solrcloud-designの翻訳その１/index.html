@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>New SolrCloud Designの翻訳（その１）(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>New SolrCloud Designの翻訳（その１）(Jugemより移植) | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2011/09/28/new-solrcloud-design%E3%81%AE%E7%BF%BB%E8%A8%B3%E3%81%9D%E3%81%AE%EF%BC%91/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -286,11 +287,11 @@
 <h3 id="partitioning"><strong>Partitioning</strong></h3>
 <p>クラスタは固定されたmax_hash_value＝「N」が設定されます。
 max_hash_valueは1000のような大きな値が設定されます。</p>
-<pre><code>
+<pre tabindex="0"><code>
 hash = hash_function(doc.getKey()) % N
 </code></pre><p>ハッシュ値の範囲がパーティションに割り当てられ、ZooKeeperに保存されます。
 次の例のような形で、パーティションに対して範囲が設定されます。</p>
-<pre><code>
+<pre tabindex="0"><code>
 range  : partition
 ------  ----------
 0 - 99 : 1
@@ -303,7 +304,7 @@ range  : partition
 <p>max_hash_valueは必ずしも必要ではありません。各shardはいずれにしろハッシュ値の範囲持っているので、完全な32 bitsハッシュを使うこともできます。
 設定可能なmax_hash_valueを利用しないで、クライアントからの値をもとにハッシュ値を作ることができます。
 例えば、電子メールの検索アプリでは次のようにハッシュ関数を作ることができます。</p>
-<pre><code>
+<pre tabindex="0"><code>
 (hash(user_id)&lt;&lt;24) | (hash(message_id)&gt;&gt;&gt;8)
 </code></pre><p>ユーザIDから8bitのハッシュコードの先頭8ビットを利用することで、任意のユーザのメールがクラスタの同じ256番目（のノード？）にあるのを保証します。検索時はこの情報をもとにクラスタのその部分への問い合わせだけで情報が得られます。</p>
 <p>おそらく、私たちは最大値から最小値をカバーする範囲を表現するのにハッシュ空間を輪（固定のハッシュではなく）とみなしたいです。（？？？円状のハッシュ空間とすることで、クラスタ内のノード数の増減に耐えられるようにするよということかな？）</p>
@@ -360,11 +361,11 @@ range  : partition
 </ul>
 <h3 id="partitioning-1"><strong>Partitioning</strong></h3>
 <p>The cluster is configured with a fixed max_hash_value (which is set to a fairly large value, say 1000) ‘N’. Each document’s hash is calculated as:</p>
-<pre><code>
+<pre tabindex="0"><code>
 hash = hash_function(doc.getKey()) % N
 </code></pre><p>Ranges of hash values are assigned to partitions and stored in Zookeeper. For example we may have a
 range to partition mapping as follows</p>
-<pre><code>
+<pre tabindex="0"><code>
 range  : partition
 ------  ----------
 0 - 99 : 1
@@ -374,7 +375,7 @@ range  : partition
 <p>The hash function is pluggable. It can accept a document and return a consistent &amp; positive integer hash value. The system provides a default hash function which uses the content of a configured, required &amp; immutable field (default is unique_key field) to calculate hash values.</p>
 <h4 id="using-full-hash-range-1"><strong>Using full hash range</strong></h4>
 <p>Alternatively, there need not be any max_hash_value - the full 32 bits of the hash can be used since each shard will have a range of hash values anyway. Avoiding a configurable max_hash_value makes things easier on clients wanting related hash values next to each other. For example, in an email search application, one could construct a hashcode as follows:</p>
-<pre><code>
+<pre tabindex="0"><code>
 (hash(user_id)&lt;&lt;24) | (hash(message_id)&gt;&gt;&gt;8)
 </code></pre><p>By deriving the top 8 bits of the hashcode from the user_id, it guarantees that any users emails are in the same 256th portion of the cluster. At search time, this information can be used to only query that portion of the cluster.</p>
 <p>We probably also want to view the hash space as a ring (as is done with consistent hashing) in order to express ranges that wrap (cross from the maximum value to the minimum value).</p>
@@ -393,21 +394,22 @@ range  : partition
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2011/09/27/hadoop-conference-japan-2011-fall%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/" data-toggle="tooltip" data-placement="top" title="Hadoop Conference Japan 2011 Fallに参加してきました。(Jugemより移植)">&larr;
+                        <a href="https://blog.johtani.info/blog/2011/09/27/hadoop-conference-japan-2011-fall%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/" data-toggle="tooltip" data-placement="top" title="Hadoop Conference Japan 2011 Fallに参加してきました。(Jugemより移植)">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2011/10/04/new-solrcloud-design%E3%81%AE%E7%BF%BB%E8%A8%B3%E3%81%9D%E3%81%AE2/" data-toggle="tooltip" data-placement="top" title="New SolrCloud Designの翻訳（その2）(Jugemより移植)">Next
+                        <a href="https://blog.johtani.info/blog/2011/10/04/new-solrcloud-design%E3%81%AE%E7%BF%BB%E8%A8%B3%E3%81%9D%E3%81%AE2/" data-toggle="tooltip" data-placement="top" title="New SolrCloud Designの翻訳（その2）(Jugemより移植)">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -428,6 +430,7 @@ range  : partition
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

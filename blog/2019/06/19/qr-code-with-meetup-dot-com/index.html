@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>勉強会の受付自作？アプリ？HTMLについて-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>勉強会の受付自作？アプリ？HTMLについて | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2019/06/19/qr-code-with-meetup-dot-com/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -247,7 +248,7 @@ QRコード生成の仕組みを紹介してみようかと。</p>
 </div>
 
 <p>この時のプレビューのURLをQRコードのURLとして使いたいので、このURLをQRコード表示のHTMLに埋め込みます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
   <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">obj</span> <span style="color:#f92672">=</span> {
     <span style="color:#e6db74">&#34;entry.1744035444&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">id</span>,
     <span style="color:#e6db74">&#34;entry.2031666715&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">name</span>
@@ -301,7 +302,7 @@ Elasticsearch勉強会の場合は、私のドメインにwwwをつけた&quot;h
 <p>OAuth2のURLには、<a href="https://www.meetup.com/ja-JP/meetup_api/auth/#oauth2implicit">Implicit Flow</a>を利用します。
 これで、リダイレクト先のHTMLにトークンがわたるので、Meetup APIにこのトークンが使えるようになります。</p>
 <p>認証用のURLはこちらです。このURLを参加者宛のメールに入れて毎回送信しています。</p>
-<pre><code>https://secure.meetup.com/ja-JP/oauth2/authorize?response_type=token&amp;redirect_uri=&lt;QRコード表示HTMLのURL&gt;&amp;client_id=&lt;コンシューマーキー&gt;
+<pre tabindex="0"><code>https://secure.meetup.com/ja-JP/oauth2/authorize?response_type=token&amp;redirect_uri=&lt;QRコード表示HTMLのURL&gt;&amp;client_id=&lt;コンシューマーキー&gt;
 </code></pre><p>参加者はこのリンクをクリックすることで、次のような画面が出てきます。
 ログインしていない場合はLog in画面が表示され、まずはログインを促されます。</p>
 
@@ -317,11 +318,11 @@ Elasticsearch勉強会の場合は、私のドメインにwwwをつけた&quot;h
 
 <p>で、Allowをクリックすれば、<code>redirect_uri</code>に指定されているページが表示されるわけです。</p>
 <p>QRコード表示用のHTMLでは、次のAPIを使用して、ログインしているユーザーの情報を取得してきています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">getMemberId</span>() {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">getMemberId</span>() {
   <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">getJSON</span>(<span style="color:#e6db74">&#39;https://api.meetup.com/2/member/self/?only=id,name&amp;access_token=&#39;</span><span style="color:#f92672">+</span> <span style="color:#a6e22e">getToken</span>(), <span style="color:#a6e22e">displayQRCode</span>);
 }
 </code></pre></div><p>ここで取れた値が、先ほどの「2. Google Formの準備」で説明したコードの<code>data</code>の部分に渡ってくるわけです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
   <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">obj</span> <span style="color:#f92672">=</span> {
     <span style="color:#e6db74">&#34;entry.1744035444&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">id</span>,
     <span style="color:#e6db74">&#34;entry.2031666715&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">name</span>
@@ -330,7 +331,7 @@ Elasticsearch勉強会の場合は、私のドメインにwwwをつけた&quot;h
 }
 </code></pre></div><h3 id="4-qrコードの表示">4. QRコードの表示</h3>
 <p>あとは、<a href="https://github.com/jeromeetienne/jquery-qrcode"><code>jquery.qrcode.min.js</code></a>を使用してURLを表示するだけです。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">displayQRCode</span>(<span style="color:#a6e22e">data</span>) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">displayQRCode</span>(<span style="color:#a6e22e">data</span>) {
   <span style="color:#a6e22e">$</span>(<span style="color:#e6db74">&#39;#qrcode&#39;</span>).<span style="color:#a6e22e">qrcode</span>({<span style="color:#a6e22e">width</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">128</span>,<span style="color:#a6e22e">height</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">128</span>, <span style="color:#a6e22e">text</span><span style="color:#f92672">:</span><span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>)});
 }
 </code></pre></div><p>サイズとURLを指定するだけですね。</p>
@@ -352,21 +353,22 @@ QRコードを持ってきた方がすんなり受付を通過できるように
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2019/04/26/meetup-organizer-drinkup/" data-toggle="tooltip" data-placement="top" title="勉強会運営座談会ってのをやってみた">&larr;
+                        <a href="https://blog.johtani.info/blog/2019/04/26/meetup-organizer-drinkup/" data-toggle="tooltip" data-placement="top" title="勉強会運営座談会ってのをやってみた">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2019/10/10/review-es-next-step-2/" data-toggle="tooltip" data-placement="top" title="Elasticsearch NEXT STEP 2を頂きました">Next
+                        <a href="https://blog.johtani.info/blog/2019/10/10/review-es-next-step-2/" data-toggle="tooltip" data-placement="top" title="Elasticsearch NEXT STEP 2を頂きました">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -387,6 +389,7 @@ QRコードを持ってきた方がすんなり受付を通過できるように
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

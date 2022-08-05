@@ -26,7 +26,7 @@
 &lt;p&gt;Riverの設定関連は実装したRiverクラス（ここでは、WikipediaRiverクラス）のコンストラクタで、設定値の読み取りなどの記述を記載します。
 このコンストラクタが、&lt;code&gt;_river/hogehoge/_meta&lt;/code&gt;をPUTした時のJSONを元にElasticSearchから呼ばれて、Riverのインスタンスが作成されます。（たぶん、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/river/RiversService.java&#34;&gt;このへんがその処理&lt;/a&gt;だと思う。。。このあたりはまた今度）&lt;/p&gt;
 &lt;p&gt;実際のRiverの処理はWikipediaRiverクラスのstart()メソッド内部に記述されています。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
     &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;start&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
         logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;starting wikipedia stream&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
         &lt;span style=&#34;color:#66d9ef&#34;&gt;try&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
@@ -70,7 +70,7 @@ bulkSize以上の件数がバルクのリクエストに貯まった時だけ、
 このため、スレッドが回っている間は、bulkSize以上のデータが貯まらないと、インデックスへの登録は行われないわけです。&lt;/p&gt;
 &lt;p&gt;次に、このスレッドを止めるには、前々回書いたように、_riverにPUTした、Riverの設定をDELETEするしかありません。（あとは、ElasticSearchを停止するとかでしょうか。）&lt;/p&gt;
 &lt;p&gt;で、DELETEが実行される呼ばれるのが、&lt;code&gt;WikipediaRiver&lt;/code&gt;クラスの&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L135&#34;&gt;&lt;code&gt;close()&lt;/code&gt;メソッド&lt;/a&gt;です。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;
     &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
     &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;close&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
         logger&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;info&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;closing wikipedia river&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
@@ -138,22 +138,22 @@ Riverの仕組みが結構スッキリしています。
 &lt;p&gt;ElasticSearchのpluginコマンドはJavaで実装されています。（&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/plugins/PluginManager.java#L315&#34;&gt;org.elasticsearch.plugins.PluginManager&lt;/a&gt;）
 プラグインのダウンロードには、java.net.URL.openConnection()から取得URLConnectionを使用しています。&lt;/p&gt;
 &lt;p&gt;ですので、pluginのインストールを行う際に、Proxy環境にある場合は以下のようにコマンドを実行します。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;./bin/plugin -DproxyPort=ポート番号 -DproxyHost=ホスト名 -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
 &lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;elasticsearch-analysis-kuromojiのインストール&#34;&gt;elasticsearch-analysis-kuromojiのインストール&lt;/h2&gt;
 &lt;p&gt;WikipediaのデータをKuromojiを使って、形態素解析ベースの転置インデックスを作成していきます。
 まずは、Kuromojiを利用するために、&lt;a href=&#34;https://github.com/elasticsearch/elasticsearch-analysis-kuromoji&#34;&gt;Analysisプラグイン&lt;/a&gt;のインストールです。
 ElasticSearchのバージョンに対応したプラグインのバージョンがあります。（プラグインのページに対応したバージョンの記載あり）
 今回はElasticSearchの0.90.3を利用しているため、1.5.0をインストールします。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;./bin/plugin -i elasticsearch/elasticsearch-analysis-kuromoji/1.5.0
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;インストール後は再起動しておきます。
 なお、Kuromojiを利用して、Wikipediaのデータを登録するばあい、デフォルトの設定では、ヒープが足りなくなるおそれがあります。
 ElasticSearchの起動時に以下のオプションを指定して、最大ヒープサイズを2Gとしておきます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;export ES_HEAP_SIZE=2g;./bin/elasticsearch
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;export ES_HEAP_SIZE=2g;./bin/elasticsearch
 &lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;indexの作成デフォルトでkuromojiのanalyzerを利用する&#34;&gt;Indexの作成（デフォルトでKuromojiのAnalyzerを利用する）&lt;/h2&gt;
 &lt;p&gt;Wikipediaのデータを登録する際に、Kuromojiのアナライザを利用したいのが今回の趣旨でした。
 一番ラクな方法として、Wikipediaデータのインデックスの設定として、デフォルトのアナライザをKuromojiにしてしまいます。
 （きちんと設計する場合は、必要に応じてフィールドごとに指定しましょう）&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -XPUT &#39;localhost:9200/ja-wikipedia-kuromoji&#39; -d &#39;{
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPUT &#39;localhost:9200/ja-wikipedia-kuromoji&#39; -d &#39;{
     &amp;quot;settings&amp;quot;: {
         &amp;quot;analysis&amp;quot;: {
             &amp;quot;analyzer&amp;quot;: {
@@ -169,7 +169,7 @@ ElasticSearchの起動時に以下のオプションを指定して、最大ヒ�
 &lt;h2 id=&#34;riverの実行&#34;&gt;Riverの実行&lt;/h2&gt;
 &lt;p&gt;前回と一緒です。
 インデックス名（&lt;strong&gt;_river/&amp;lt;インデックス名&amp;gt;/_meta&lt;/strong&gt;）だけは、先ほど作成した「&lt;code&gt;ja-wikipedia-kuromoji&lt;/code&gt;」に変更してください。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d &#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d &#39;
 {
     &amp;quot;type&amp;quot; : &amp;quot;wikipedia&amp;quot;,
     &amp;quot;wikipedia&amp;quot; : {
@@ -206,7 +206,7 @@ ElasticSearchには&lt;a href=&#34;https://github.com/elasticsearch/elasticsearc
 最新版でRiver動かないなぁとつぶやいた影響かどうかはわかりませんが、2013/08/19に最新版のElasticSearchで動作するプラグインが公開されました。&lt;/p&gt;
 &lt;p&gt;まずはインストールです。
 HPにも書いてありますが、以下のコマンドを実行すればインストールされます。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;$ ./bin/plugin -install elasticsearch/elasticsearch-river-wikipedia/1.2.0
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;$ ./bin/plugin -install elasticsearch/elasticsearch-river-wikipedia/1.2.0
 -&amp;gt; Installing elasticsearch/elasticsearch-river-wikipedia/1.2.0...
 Trying http://download.elasticsearch.org/elasticsearch/elasticsearch-river-wikipedia/elasticsearch-river-wikipedia-1.2.0.zip...
 Downloading ..........DONE
@@ -217,7 +217,7 @@ Installed river-wikipedia into /opt/elasticsearch/plugins/river-wikipedia
 手元に日本語Wikipediaのダンプファイルがあるものとします。（&lt;a href=&#34;http://ja.wikipedia.org/wiki/Wikipedia:%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89&#34;&gt;ダウンロードはWikipediaデータベースダウンロード&lt;/a&gt;のページにあるpages-articles.xml.bz2のファイルです）&lt;/p&gt;
 &lt;p&gt;ファイルを指定してインデクシングするには、つぎのcurlコマンドを実行します。
 コマンドを実行するとすぐにインデクシングが始まりますので注意が必要です。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia/_meta -d &#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia/_meta -d &#39;
 {
     &amp;quot;type&amp;quot; : &amp;quot;wikipedia&amp;quot;,
     &amp;quot;wikipedia&amp;quot; : {
@@ -232,7 +232,7 @@ Installed river-wikipedia into /opt/elasticsearch/plugins/river-wikipedia
 例では、bz2を解凍したファイルを指定していますが、bz2のままのファイルでもOKです。&lt;/p&gt;
 &lt;p&gt;上記コマンドを実行すると、&lt;code&gt;_river&lt;/code&gt;というインデックスにつぎのようなエントリが増えています。
 (&lt;code&gt;curl -XGET &#39;localhost:9200/_river/ja-wikipedia/_search?pretty&lt;/code&gt;)&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;took&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_shards&amp;#34;&lt;/span&gt;: {
@@ -281,9 +281,9 @@ Installed river-wikipedia into /opt/elasticsearch/plugins/river-wikipedia
 &lt;h2 id=&#34;riverの停止&#34;&gt;Riverの停止&lt;/h2&gt;
 &lt;p&gt;日本語Wikipediaは結構サイズが大きく、手元のAirでインデクシングするのに30分程度かかりました。（bz2圧縮されていないファイルで、何もしていない状態）&lt;/p&gt;
 &lt;p&gt;途中でRiverを停止したくなった場合は、以下のcurlコマンドを実行します。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ curl -XDELETE &#39;localhost:9200/_river/ja-wikipedia&#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ curl -XDELETE &#39;localhost:9200/_river/ja-wikipedia&#39;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;先ほど設定した&lt;code&gt;_river/ja-wikipedia&lt;/code&gt;の情報を削除すると、エントリが削除されたのを検知してRiverが停止します。ログにはつぎのようなメッセージが表示されます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;[2013-08-26 18:26:50,130][INFO ][cluster.metadata         ] [Blitzschlag, Baron Von] [[_river]] remove_mapping [ja-wikipedia]
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[2013-08-26 18:26:50,130][INFO ][cluster.metadata         ] [Blitzschlag, Baron Von] [[_river]] remove_mapping [ja-wikipedia]
 [2013-08-26 18:26:50,130][INFO ][river.wikipedia          ] [Blitzschlag, Baron Von] [wikipedia][ja-wikipedia] closing wikipedia river
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Riverを停止してもそれまでインデクシングされたデータは検索できます。
 データはちょっとだけで良いという場合は、先ほどの&lt;code&gt;_river&lt;/code&gt;のデータを削除してください。
@@ -296,7 +296,7 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
 &lt;p&gt;ということは、データが欠落しているような気がするのでRiverの作りの問題なのか、ElasticSearchの問題なのかはちょっと調べてみないとわからないなと。&lt;/p&gt;
 &lt;h3 id=&#34;マッピング&#34;&gt;マッピング&lt;/h3&gt;
 &lt;p&gt;出来上がったインデックスのマッピング（Solrでいうスキーマみたいなもの）は次のようになっています。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;ja-wikipedia&amp;#34;&lt;/span&gt;: {
       &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;page&amp;#34;&lt;/span&gt;: {
          &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;properties&amp;#34;&lt;/span&gt;: {
@@ -332,7 +332,7 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
 また、マッピングタイプはデフォルトで「page」というタイプになっています。&lt;/p&gt;
 &lt;h2 id=&#34;検索&#34;&gt;検索&lt;/h2&gt;
 &lt;p&gt;先ほどのマッピングを元に検索すればOKです。例えばつぎのような感じです。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -XPOST &#39;localhost:9200/ja-wikipedia/_search?pretty&#39; -d &#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPOST &#39;localhost:9200/ja-wikipedia/_search?pretty&#39; -d &#39;
 {
     &amp;quot;size&amp;quot; : 3,
     &amp;quot;script_fields&amp;quot;: {
@@ -348,7 +348,7 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
     }
 }&#39;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;結果はこんな感じ。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;{
    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;took&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;51&lt;/span&gt;,
    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;_shards&amp;#34;&lt;/span&gt;: {

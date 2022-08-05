@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Logstashを使ったElasticsearchの再インデックス（日本語訳）-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Logstashを使ったElasticsearchの再インデックス（日本語訳） | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2015/05/26/reindex-elasticsearch-with-logstash-ja/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -230,7 +231,7 @@
 <p>ではやってみましょう。</p>
 <h2 id="古いクラスタ">古いクラスタ</h2>
 <p>elasticsearch 1.5.2 はすでにダウンロード済みとして、<code>localhost:9200</code>で<code>old</code>という名前のクラスタを起動します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/elasticsearch --cluster.name<span style="color:#f92672">=</span>old
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/elasticsearch --cluster.name<span style="color:#f92672">=</span>old
 </code></pre></div><p>クラスタに<code>person</code>という名前のインデックスが存在します。
 これは、5シャードで、100万件のドキュメントを持っています。</p>
 
@@ -247,20 +248,20 @@
 <h2 id="新しいクラスタ">新しいクラスタ</h2>
 <p>次に新しいクラスタを起動します。
 <code>localhost:9201</code>で<code>new</code>という名前のクラスタを起動します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/elasticsearch --cluster.name<span style="color:#f92672">=</span>new
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/elasticsearch --cluster.name<span style="color:#f92672">=</span>new
 </code></pre></div><p>こちらは、空です。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9201/person&#34;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9201/person&#34;</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;error&#34;</span>: <span style="color:#e6db74">&#34;IndexMissingException[[person] missing]&#34;</span>,
    <span style="color:#f92672">&#34;status&#34;</span>: <span style="color:#ae81ff">404</span>
 }
 </code></pre></div><h2 id="logstashのインストール">Logstashのインストール</h2>
 <p>次に、Logstash 1.5.0をダウンロードして、インストールします。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wget http://download.elastic.co/logstash/logstash/logstash-1.5.0.tar.gz
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">wget http://download.elastic.co/logstash/logstash/logstash-1.5.0.tar.gz
 tar xzf logstash-1.5.0.tar.gz
 cd logstash-1.5.0
 </code></pre></div><p>logstashの設定ファイル<code>logstash.conf</code>を次のように設定します。</p>
-<pre><code>input {
+<pre tabindex="0"><code>input {
   # We read from the &quot;old&quot; cluster
   elasticsearch {
     hosts =&gt; [ &quot;localhost&quot; ]
@@ -289,11 +290,11 @@ output {
 }
 </code></pre><h2 id="実行と修正">実行と修正</h2>
 <p>実行します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/logstash -f logstash.conf
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/logstash -f logstash.conf
 </code></pre></div><h3 id="ドキュメントのチェックと修正">ドキュメントのチェックと修正</h3>
 <p>何が起きたでしょう？</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9200/person/person/AU1wqyQWZJKU8OibfxgH&#34;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9200/person/person/AU1wqyQWZJKU8OibfxgH&#34;</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;person&#34;</span>,
    <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;person&#34;</span>,
    <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;AU1wqyQWZJKU8OibfxgH&#34;</span>,
@@ -328,8 +329,8 @@ output {
    }
 }
 </code></pre></div><p>もう一方のクラスタと比較してみましょう。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9201/person/person/AU1wqyQWZJKU8OibfxgH&#34;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9201/person/person/AU1wqyQWZJKU8OibfxgH&#34;</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;_index&#34;</span>: <span style="color:#e6db74">&#34;person&#34;</span>,
    <span style="color:#f92672">&#34;_type&#34;</span>: <span style="color:#e6db74">&#34;person&#34;</span>,
    <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;AU1wqyQWZJKU8OibfxgH&#34;</span>,
@@ -367,7 +368,7 @@ output {
 }
 </code></pre></div><p>Logstashは<code>@version</code>と<code>@timestamp</code>フィールドを追加してしました。
 これらを除去したいので、<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html">Mutate filter plugin</a>の<a href="http://www.elastic.co/guide/en/logstash/current/plugins-filters-mutate.html#plugins-filters-mutate-remove_field"><code>remove_field</code></a>を使います。</p>
-<pre><code>filter {
+<pre tabindex="0"><code>filter {
   mutate {
     remove_field =&gt; [ &quot;@timestamp&quot;, &quot;@version&quot; ]
   }
@@ -377,8 +378,8 @@ output {
 それらを新しいクラスタに直接投入しています。
 しかし、logstashはマッピングについてはケアしていません。</p>
 <p>古いマッピングと新しいマッピングを比較するために、マッピングを取得してみましょう。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9200/person/person/_mapping&#34;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9200/person/person/_mapping&#34;</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;person&#34;</span>: {
       <span style="color:#f92672">&#34;mappings&#34;</span>: {
          <span style="color:#f92672">&#34;person&#34;</span>: {
@@ -455,8 +456,8 @@ output {
       }
    }
 }
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9201/person/person/_mapping&#34;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XGET <span style="color:#e6db74">&#34;http://localhost:9201/person/person/_mapping&#34;</span>
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;person&#34;</span>: {
       <span style="color:#f92672">&#34;mappings&#34;</span>: {
          <span style="color:#f92672">&#34;person&#34;</span>: {
@@ -530,10 +531,10 @@ output {
    }
 }
 </code></pre></div><p>これにより、いくつかの相違を発見できます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"> <span style="color:#e6db74">&#34;location&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"> <span style="color:#e6db74">&#34;location&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
     <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;geo_point&#34;</span>
  }
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"> <span style="color:#e6db74">&#34;location&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"> <span style="color:#e6db74">&#34;location&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> {
     <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;double&#34;</span>
  }
 </code></pre></div><p>データをインデックスする「前」に、実際に利用したいマッピングでインデックスを作成しておくことで、
@@ -542,7 +543,7 @@ output {
 また、インデックスの設定を新しく定義することもできます。
 デフォルトでは、Elasticsearchは5つのシャードと各シャードに対して1つのレプリカを作成します。
 しかし、この時点でもう一度変更することが可能です。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XDELETE <span style="color:#e6db74">&#34;http://localhost:9201/person&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">curl -XDELETE <span style="color:#e6db74">&#34;http://localhost:9201/person&#34;</span>
 curl -XPUT <span style="color:#e6db74">&#34;http://localhost:9201/person&#34;</span> -d<span style="color:#e6db74">&#39;
 </span><span style="color:#e6db74">{
 </span><span style="color:#e6db74">  &#34;settings&#34;: {
@@ -625,7 +626,7 @@ curl -XPUT <span style="color:#e6db74">&#34;http://localhost:9201/person/person/
 </span><span style="color:#e6db74">  }
 </span><span style="color:#e6db74">}&#39;</span>
 </code></pre></div><p>さて、もう一度再インデックスしましょう！</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/logstash -f logstash.conf
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">bin/logstash -f logstash.conf
 </code></pre></div>
 
 <div class="box" >
@@ -639,7 +640,7 @@ curl -XPUT <span style="color:#e6db74">&#34;http://localhost:9201/person/person/
 
 <h2 id="インデックスやタイプ名の変更">インデックスやタイプ名の変更</h2>
 <p>もちろん、インデックス名やタイプ名、IDを変更したい場合も変更が可能です！:)</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">  <span style="color:#960050;background-color:#1e0010">elasticsearch</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">  <span style="color:#960050;background-color:#1e0010">elasticsearch</span> {
     <span style="color:#960050;background-color:#1e0010">host</span> <span style="color:#960050;background-color:#1e0010">=&gt;</span> <span style="color:#f92672">&#34;localhost&#34;</span>
     <span style="color:#960050;background-color:#1e0010">port</span> <span style="color:#960050;background-color:#1e0010">=&gt;</span> <span style="color:#e6db74">&#34;9201&#34;</span>
     <span style="color:#960050;background-color:#1e0010">protocol</span> <span style="color:#960050;background-color:#1e0010">=&gt;</span> <span style="color:#e6db74">&#34;http&#34;</span>
@@ -655,21 +656,22 @@ curl -XPUT <span style="color:#e6db74">&#34;http://localhost:9201/person/person/
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2015/05/21/join-the-conversation-ja/" data-toggle="tooltip" data-placement="top" title="discuss.elastic.co にぜひ参加を">&larr;
+                        <a href="https://blog.johtani.info/blog/2015/05/21/join-the-conversation-ja/" data-toggle="tooltip" data-placement="top" title="discuss.elastic.co にぜひ参加を">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2015/06/02/10th-elasticsearch-jp/" data-toggle="tooltip" data-placement="top" title="第10回Elasticsearch勉強会を開催しました。#elasticsearchjp">Next
+                        <a href="https://blog.johtani.info/blog/2015/06/02/10th-elasticsearch-jp/" data-toggle="tooltip" data-placement="top" title="第10回Elasticsearch勉強会を開催しました。#elasticsearchjp">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -690,6 +692,7 @@ curl -XPUT <span style="color:#e6db74">&#34;http://localhost:9201/person/person/
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

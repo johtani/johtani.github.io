@@ -38,7 +38,7 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
 &lt;p&gt;これは、.NET FrameworkのHttpのAPIに存在するクラスで、HTTPのクライアントがHTTPの送受信時に、処理を挟むことができる機能です。フレームワーク側で、&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.logging.logginghttpmessagehandler?view=dotnet-plat-ext-3.1&amp;amp;viewFallbackFrom=netframework-4.8&#34;&gt;LoggingHttpMessaggeHandler&lt;/a&gt;というクラスを用意してくれていましたが、残念ながらこちらは、リクエストとレスポンスのヘッダのみをロギングするクラスでした。
 ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには&lt;code&gt;Microsoft.Extensions.Logging&lt;/code&gt;の&lt;code&gt;ILogger&lt;/code&gt;を使用します。&lt;/p&gt;
 &lt;p&gt;また、Azure Cognitive SearchのSDK側に違う問題点もありました。&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method&#34;&gt;チュートリアルにあるように&lt;/a&gt;、検索するときには、SDKは次のような使い方を想定しています。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;// Create a service and index client.
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;// Create a service and index client.
 &lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;serviceClient = &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchServiceClient(searchServiceName, &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; SearchCredentials(queryApiKey));
         &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;indexClient = &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;serviceClient.Indexes.GetClient(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hotels&amp;#34;&lt;/span&gt;);
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;インデックス用のクライアントを取得するために、&lt;code&gt;GetClient(インデックス名)&lt;/code&gt;というメソッドを使用します。この&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_&#34;&gt;&lt;code&gt;GetClient&lt;/code&gt;メソッドのバリエーション&lt;/a&gt;として、DelegatingHandlerを受け取るメソッドがないのです。。。&lt;/p&gt;
@@ -49,7 +49,7 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
 &lt;/ol&gt;
 &lt;p&gt;以上の2つを実装し、アプリケーション側から2で作成したGetClientを呼び出すことで、リクエストをボディも含めてログ出力することが可能になります。以下は実装例です。&lt;/p&gt;
 &lt;p&gt;CustomHttpMessageHandlerクラス。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Collections.Generic;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Diagnostics;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http;
@@ -173,7 +173,7 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
     }
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;GetClientの実装&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;
         &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; ISearchIndexClient GetClient(&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt; indexName, &lt;span style=&#34;color:#66d9ef&#34;&gt;params&lt;/span&gt; DelegatingHandler[] handlers)
         {
             &lt;span style=&#34;color:#66d9ef&#34;&gt;var&lt;/span&gt; rootHandler = &lt;span style=&#34;color:#ae81ff&#34;&gt;_&lt;/span&gt;searchServiceClient.HttpMessageHandlers.OfType&amp;lt;HttpClientHandler&amp;gt;().SingleOrDefault();
@@ -188,7 +188,7 @@ SDKの&lt;a href=&#34;https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azur
             &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; indexClient;
         }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力されるログ例&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06
 client-request-id: be02140f-3a07-48cc-b018-d8aa5e819bc3
 Accept-Language: en-US
 Accept: application/json; odata.metadata=none
@@ -218,11 +218,11 @@ Content-Type: application/json; charset=utf-8
 &lt;p&gt;実際に&lt;code&gt;SendRequest&lt;/code&gt;メソッドに送られたものに対して何かしらの処理を行うのは、&lt;a href=&#34;https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.iserviceclienttracinginterceptor?view=azure-dotnet&#34;&gt;&lt;code&gt;IServiceClientTracingIntercepter&lt;/code&gt;&lt;/a&gt;インターフェースを実装したクラスになります。
 このインターフェースの実装が&lt;a href=&#34;https://www.nuget.org/packages/Microsoft.Rest.ClientRuntime.Log4Net/&#34;&gt;Log4Net&lt;/a&gt;に存在します。Log4Netを利用している場合は、これを活用すれば楽ができます。&lt;/p&gt;
 &lt;p&gt;実際に&lt;code&gt;ServiceClientTracing&lt;/code&gt;を有効にするには、以下の2行を呼び出すだけです。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;ServiceClientTracing.IsEnabled = &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;ServiceClientTracing.IsEnabled = &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;;
 ServiceClientTracing.AddTracingInterceptor(&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Log4NetTracingInterceptor());
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、Rest.ClientRuntimeがよしなにやってくれます。
 1とは異なり、トレースログなので、リクエストのボディについても出力してくれます。&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
 instance: Microsoft.Azure.Search.DocumentsProxyOperations
 method: SearchPost
 parameters: {searchRequest=Microsoft.Azure.Search.Models.SearchRequest,clientRequestId=,cancellationToken=System.Threading.CancellationToken}
@@ -275,7 +275,7 @@ Azure?.NET?のアプリケーションパフォーマンスモニタリングの
 &lt;p&gt;ただ、Application Insightsのデフォルトの機能では、URL程度の情報だけが送信されます(&lt;a href=&#34;https://blog.shibayan.jp/entry/20190405/1554459340&#34;&gt;参考:しばやんさんのブログ&lt;/a&gt;)&lt;/p&gt;
 &lt;p&gt;こちらも拡張機能が用意されており、ITelemetryInitializerのインターフェースを実装したクラスを用意することで、独自の情報をApplication Insightsに出力することが可能となります。詳細については&lt;a href=&#34;https://blog.shibayan.jp/entry/20190405/1554459340&#34;&gt;しばやんさんのブログ&lt;/a&gt;を参考にしてもらうのが良いかと。&lt;/p&gt;
 &lt;p&gt;Httpリクエストを出力する実装例は次のとおりです。ただ、ちょっとうまく行かないパターンがあったので、コメントアウトとして残してあったりします(なんでだろう?)&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Collections.Generic;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-C#&#34; data-lang=&#34;C#&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Collections.Generic;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; System.Net.Http.Headers;
 &lt;span style=&#34;color:#66d9ef&#34;&gt;using&lt;/span&gt; Microsoft.ApplicationInsights.Channel;
@@ -342,7 +342,7 @@ Azure?.NET?のアプリケーションパフォーマンスモニタリングの
 &lt;p&gt;これまでは、リクエストボディを出力する方法を考えていましたが、Azure Cognitive Search側の診断ログを有効にすると、リクエストボディで送信したものが、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#properties-schema&#34;&gt;Azure Cognitive Search側で、クエリパラーメータとして、診断ログに出力&lt;/a&gt;されます(診断ログの&lt;code&gt;Query_s&lt;/code&gt;)。&lt;/p&gt;
 &lt;p&gt;あとは、&lt;a href=&#34;https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#query-log-information&#34;&gt;Azureのコンソール&lt;/a&gt;で当該時間のログを見ればよいだけです。以下は出力されたログの一部です。Description_sにはURLのパスが記載されています。&lt;/p&gt;
 &lt;p&gt;診断ログ例(一部)&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Description_s      POST /indexes(&#39;multi-field-test&#39;)/docs/search.post.search
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Description_s      POST /indexes(&#39;multi-field-test&#39;)/docs/search.post.search
 Query_s            ?api-version=2019-05-06&amp;amp;searchMode=Any&amp;amp;search=azure&amp;amp;queryType=Simple&amp;amp;$count=false
 &lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&#34;メリットデメリット-3&#34;&gt;メリット、デメリット&lt;/h4&gt;
 &lt;p&gt;アプリケーション側に手を入れる必要がなのでお手軽です。

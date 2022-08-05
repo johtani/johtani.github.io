@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>ZipkinのReadmeを読んでる（クライアント周りについて）(Jugemより移植)-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>ZipkinのReadmeを読んでる（クライアント周りについて）(Jugemより移植) | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2012/06/15/zipkin%E3%81%AEreadme%E3%82%92%E8%AA%AD%E3%82%93%E3%81%A7%E3%82%8B%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E5%91%A8%E3%82%8A%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -206,21 +207,21 @@
 （誤訳とかおかしいだろというツッコミ大歓迎です。）
 あとで、リンク貼ったり絵を入れたりするかもしれませんが、とりあえず。</p>
 <p><b>◯アーキテクチャ（<a href="https://github.com/twitter/zipkin/raw/master/doc/architecture-0.png">図はこちら</a>）</b></p>
-<pre><code>
+<pre tabindex="0"><code>
 　・対象とするサービスからScribeでデータを収集し、ZipkinのCollectorに投げる
 　・CollectorはCassandraにデータを格納
 　・WebUIからはQueryでCassandraに問い合わせを行なってデータ取得
 　・Scripe、CollectorはZookeeperと連携している（妄想）
 
 </code></pre><p><b>◯計測用ライブラリ（<a href="https://github.com/twitter/zipkin/raw/master/doc/architecture-1.png">図はこちら。</a>図のSと書かれた青い箱）</b></p>
-<pre><code>
+<pre tabindex="0"><code>
 　・各ホストの計測用ライブラリがトレースデータを集めてZipkinに送信する。
 　・ホストは他のサービスへリクエストを飛ばすときに、リクエストにトレース用のIDを付与してます
 　　こうすることで、データをあとで、束ねることが可能となります。
 
 </code></pre><p><b>◯計測ライブラリの利用方法</b>
 <b>　・<a href="https://github.com/twitter/finagle">Finagle</a></b></p>
-<pre><code>
+<pre tabindex="0"><code>
 　　JVMのための非同期ネットワークスタックである。
 　　それは、JVMベース言語（JavaやScalaなど）で非同期RPCのクライアント・サーバを構築するのに利用できる。
 　
@@ -229,49 +230,49 @@
 
 　ScalaでFinagleサーバをセットアップするのはつぎのようなコードになります。
 </code></pre><p>　トレースを追加するには、<a href="https://github.com/twitter/finagle/tree/master/finagle-zipkin">finagle-zipkin</a>を追加して、ServerBuilderのtraceFactory関数を呼ぶだけです。</p>
-<pre><code>
+<pre tabindex="0"><code>
 ServerBuilder()
   .codec(ThriftServerFramedCodec())
   .bindTo(serverAddr)
   .name(&quot;servicename&quot;)
   .tracerFactory(ZipkinTracer())
   .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
-</code></pre><pre><code>
+</code></pre><pre tabindex="0"><code>
 　クライアント側も同様です。
 　上記のようにサンプリングしたリクエストにZipkinトレーサーを指定することで
 　自動的にトレースできるようになります。
 　サービスやホストでのリクエストの開始と終了を記録できます。
 
 　さらに付加的な情報を記録したい場合は、つぎのようなコードを追加します。
-</code></pre><pre><code>
+</code></pre><pre tabindex="0"><code>
 Trace.record(&quot;starting that extremely expensive computation&quot;)
-</code></pre><pre><code>
+</code></pre><pre tabindex="0"><code>
 
 　上記コードは、上記コードが実行された時間に文字列を付加できます。
 　キーバリュー情報を付加したい場合は次のようになります。
-</code></pre><pre><code>
+</code></pre><pre tabindex="0"><code>
 Trace.recordBinary(&quot;http.response.code&quot;, &quot;500&quot;)
 </code></pre><p><b>　Ruby Thrift</b></p>
-<pre><code>
+<pre tabindex="0"><code>
 　リクエストのトレースに利用できるgemもあります。
 　リクエストに対してトレースIDを生成し、リクエストに付与し、トレーサーにプッシュするのにRackHandlerのgemを利用できます。
 </code></pre><p>　トレーサをトレースするサンプルは<a href="https://github.com/twitter/zipkin/blob/master/zipkin-web/config/application.rb">zipkin-web</a>を参照。</p>
 <p>　Rubyからトレースクライアントをコールするのに、<a href="https://github.com/twitter/thrift_client">Twitter Ruby Thrift client</a>を使います。
 　つぎのようなコードを書きます。</p>
-<pre><code>
+<pre tabindex="0"><code>
 client = ThriftClient.new(SomeService::Client, '127.0.0.1:1234')
 client_id = FinagleThrift::ClientId.new(:name =&gt; &quot;service_example.sample_environment&quot;)
 FinagleThrift.enable_tracing!(client, client_id), &quot;service_name&quot;)
 </code></pre><p><b>　<a href="https://github.com/twitter/querulous?PHPSESSID=2fb5ece17b7c5b72b57b7aed4a21ae1f">Querulous</a></b></p>
-<pre><code>
+<pre tabindex="0"><code>
 　QuerulousはScala用のSQLデータベースのインタフェースライブラリです。
 　SQLクエリの実行のタイミング情報をトレースに追加できます。
 </code></pre><p><b>　<a href="https://github.com/twitter/cassie?PHPSESSID=2fb5ece17b7c5b72b57b7aed4a21ae1f">Cassie</a></b></p>
-<pre><code>
+<pre tabindex="0"><code>
 　CassieはFinagleベースのCassandraクライアントライブラリです。
 　CassieのトレーサーはFinagleの例とほぼ一緒ですが、
 　CassieではKeyspaceBuilderに設定します。
-</code></pre><pre><code>
+</code></pre><pre tabindex="0"><code>
 cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
 </code></pre><p>とりあえず、ここまで。___
 <span style="color:#FF0000">2012/06/22 リンクを貼って体裁を修正</span></p>
@@ -283,21 +284,22 @@ cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2012/06/14/autogeneratephrasequeries%E3%81%AE%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E5%80%A4%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/" data-toggle="tooltip" data-placement="top" title="autoGeneratePhraseQueriesのデフォルト値について(Jugemより移植)">&larr;
+                        <a href="https://blog.johtani.info/blog/2012/06/14/autogeneratephrasequeries%E3%81%AE%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E5%80%A4%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/" data-toggle="tooltip" data-placement="top" title="autoGeneratePhraseQueriesのデフォルト値について(Jugemより移植)">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2012/06/16/zipkin%E3%81%AEreadme%E8%AA%AD%E3%82%93%E3%81%A7%E3%82%8B%E3%81%9D%E3%81%AE%EF%BC%92%E6%AE%8B%E3%82%8A/" data-toggle="tooltip" data-placement="top" title="ZipkinのReadme読んでる（その２、残り）(Jugemより移植)">Next
+                        <a href="https://blog.johtani.info/blog/2012/06/16/zipkin%E3%81%AEreadme%E8%AA%AD%E3%82%93%E3%81%A7%E3%82%8B%E3%81%9D%E3%81%AE%EF%BC%92%E6%AE%8B%E3%82%8A/" data-toggle="tooltip" data-placement="top" title="ZipkinのReadme読んでる（その２、残り）(Jugemより移植)">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -318,6 +320,7 @@ cluster.keyspace(keyspace).tracerFactory(ZipkinTracer())
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

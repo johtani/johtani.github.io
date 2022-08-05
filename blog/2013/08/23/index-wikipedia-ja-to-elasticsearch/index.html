@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>ElasticSearchにプラグインで日本語Wikipediaデータを入れてみました-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>ElasticSearchにプラグインで日本語Wikipediaデータを入れてみました | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -229,7 +230,7 @@ ElasticSearchには<a href="https://github.com/elasticsearch/elasticsearch-river
 最新版でRiver動かないなぁとつぶやいた影響かどうかはわかりませんが、2013/08/19に最新版のElasticSearchで動作するプラグインが公開されました。</p>
 <p>まずはインストールです。
 HPにも書いてありますが、以下のコマンドを実行すればインストールされます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">$ ./bin/plugin -install elasticsearch/elasticsearch-river-wikipedia/1.2.0
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">$ ./bin/plugin -install elasticsearch/elasticsearch-river-wikipedia/1.2.0
 -&gt; Installing elasticsearch/elasticsearch-river-wikipedia/1.2.0...
 Trying http://download.elasticsearch.org/elasticsearch/elasticsearch-river-wikipedia/elasticsearch-river-wikipedia-1.2.0.zip...
 Downloading ..........DONE
@@ -240,7 +241,7 @@ Installed river-wikipedia into /opt/elasticsearch/plugins/river-wikipedia
 手元に日本語Wikipediaのダンプファイルがあるものとします。（<a href="http://ja.wikipedia.org/wiki/Wikipedia:%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89">ダウンロードはWikipediaデータベースダウンロード</a>のページにあるpages-articles.xml.bz2のファイルです）</p>
 <p>ファイルを指定してインデクシングするには、つぎのcurlコマンドを実行します。
 コマンドを実行するとすぐにインデクシングが始まりますので注意が必要です。</p>
-<pre><code>curl -XPUT localhost:9200/_river/ja-wikipedia/_meta -d '
+<pre tabindex="0"><code>curl -XPUT localhost:9200/_river/ja-wikipedia/_meta -d '
 {
     &quot;type&quot; : &quot;wikipedia&quot;,
     &quot;wikipedia&quot; : {
@@ -255,7 +256,7 @@ Installed river-wikipedia into /opt/elasticsearch/plugins/river-wikipedia
 例では、bz2を解凍したファイルを指定していますが、bz2のままのファイルでもOKです。</p>
 <p>上記コマンドを実行すると、<code>_river</code>というインデックスにつぎのようなエントリが増えています。
 (<code>curl -XGET 'localhost:9200/_river/ja-wikipedia/_search?pretty</code>)</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;took&#34;</span>: <span style="color:#ae81ff">5</span>,
    <span style="color:#f92672">&#34;timed_out&#34;</span>: <span style="color:#66d9ef">false</span>,
    <span style="color:#f92672">&#34;_shards&#34;</span>: {
@@ -304,9 +305,9 @@ Installed river-wikipedia into /opt/elasticsearch/plugins/river-wikipedia
 <h2 id="riverの停止">Riverの停止</h2>
 <p>日本語Wikipediaは結構サイズが大きく、手元のAirでインデクシングするのに30分程度かかりました。（bz2圧縮されていないファイルで、何もしていない状態）</p>
 <p>途中でRiverを停止したくなった場合は、以下のcurlコマンドを実行します。</p>
-<pre><code>$ curl -XDELETE 'localhost:9200/_river/ja-wikipedia'
+<pre tabindex="0"><code>$ curl -XDELETE 'localhost:9200/_river/ja-wikipedia'
 </code></pre><p>先ほど設定した<code>_river/ja-wikipedia</code>の情報を削除すると、エントリが削除されたのを検知してRiverが停止します。ログにはつぎのようなメッセージが表示されます。</p>
-<pre><code>[2013-08-26 18:26:50,130][INFO ][cluster.metadata         ] [Blitzschlag, Baron Von] [[_river]] remove_mapping [ja-wikipedia]
+<pre tabindex="0"><code>[2013-08-26 18:26:50,130][INFO ][cluster.metadata         ] [Blitzschlag, Baron Von] [[_river]] remove_mapping [ja-wikipedia]
 [2013-08-26 18:26:50,130][INFO ][river.wikipedia          ] [Blitzschlag, Baron Von] [wikipedia][ja-wikipedia] closing wikipedia river
 </code></pre><p>Riverを停止してもそれまでインデクシングされたデータは検索できます。
 データはちょっとだけで良いという場合は、先ほどの<code>_river</code>のデータを削除してください。
@@ -319,7 +320,7 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
 <p>ということは、データが欠落しているような気がするのでRiverの作りの問題なのか、ElasticSearchの問題なのかはちょっと調べてみないとわからないなと。</p>
 <h3 id="マッピング">マッピング</h3>
 <p>出来上がったインデックスのマッピング（Solrでいうスキーマみたいなもの）は次のようになっています。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;ja-wikipedia&#34;</span>: {
       <span style="color:#f92672">&#34;page&#34;</span>: {
          <span style="color:#f92672">&#34;properties&#34;</span>: {
@@ -355,7 +356,7 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
 また、マッピングタイプはデフォルトで「page」というタイプになっています。</p>
 <h2 id="検索">検索</h2>
 <p>先ほどのマッピングを元に検索すればOKです。例えばつぎのような感じです。</p>
-<pre><code>curl -XPOST 'localhost:9200/ja-wikipedia/_search?pretty' -d '
+<pre tabindex="0"><code>curl -XPOST 'localhost:9200/ja-wikipedia/_search?pretty' -d '
 {
     &quot;size&quot; : 3,
     &quot;script_fields&quot;: {
@@ -371,7 +372,7 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
     }
 }'
 </code></pre><p>結果はこんな感じ。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
    <span style="color:#f92672">&#34;took&#34;</span>: <span style="color:#ae81ff">51</span>,
    <span style="color:#f92672">&#34;timed_out&#34;</span>: <span style="color:#66d9ef">false</span>,
    <span style="color:#f92672">&#34;_shards&#34;</span>: {
@@ -433,21 +434,22 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2013/08/02/morphlines-loadsolr/" data-toggle="tooltip" data-placement="top" title="MorphlinesのloadSolrをちょっとだけ調べてみた">&larr;
+                        <a href="https://blog.johtani.info/blog/2013/08/02/morphlines-loadsolr/" data-toggle="tooltip" data-placement="top" title="MorphlinesのloadSolrをちょっとだけ調べてみた">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2013/08/30/hold-first-elasticsearch-meetup-in-japan/" data-toggle="tooltip" data-placement="top" title="第1回ElasticSearch勉強会を開催しました！ #elasticsearchjp">Next
+                        <a href="https://blog.johtani.info/blog/2013/08/30/hold-first-elasticsearch-meetup-in-japan/" data-toggle="tooltip" data-placement="top" title="第1回ElasticSearch勉強会を開催しました！ #elasticsearchjp">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -468,6 +470,7 @@ bulkのサイズを10000で指定してインデックスしたので、切れ�
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 

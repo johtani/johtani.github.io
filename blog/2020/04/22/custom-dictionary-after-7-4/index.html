@@ -34,28 +34,27 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Kuromojiのカスタム辞書をインデックスの設定で指定-@johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Kuromojiのカスタム辞書をインデックスの設定で指定 | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/blog/2020/04/22/custom-dictionary-after-7-4/">
 
-    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
-
+    
+    
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hux-blog.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
 
     
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
 
-    
     
     <script src="/js/jquery.min.js"></script>
 
@@ -72,7 +71,9 @@
 
 
 
+
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
     <div class="container-fluid">
         
         <div class="navbar-header page-scroll">
@@ -91,7 +92,7 @@
             <div class="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li>
-                        <a href="/">Home</a>
+                        <a href="/">All Posts</a>
                     </li>
                     
                         
@@ -103,7 +104,7 @@
 
                     
 		    <li>
-                        <a href="/search">SEARCH <img src="/img/search.png" height="15" style="cursor: pointer;" alt="Search"></a>
+                        <a href="/search"><i class="fa fa-search"></i></a>
 		    </li>
                     
                 </ul>
@@ -214,7 +215,7 @@
 <p><a href="https://www.elastic.co/guide/en/elasticsearch/plugins/7.4/analysis-kuromoji-tokenizer.html#analysis-kuromoji-tokenizer">やり方はドキュメントに記載</a>があります。</p>
 <p>トークナイザーの設定をインデックスの設定に記述しますが、このときに
 <code>user_dictionary_rules</code>という設定を利用することでカスタム辞書を指定できます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">custom_dic_sample</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">custom_dic_sample</span>
 {
   <span style="color:#f92672">&#34;settings&#34;</span>: {
     <span style="color:#f92672">&#34;index&#34;</span>: {
@@ -241,13 +242,13 @@
 </code></pre></div><p>辞書の内部は<code>&quot;単語,出てきてほしい単語列(スペース区切り),読みの単語列(スペース区切り),品詞名&quot;</code>になります。配列で設定可能で、複数の単語を登録したい場合は、カンマ区切りで登録していきます(上記例では2つの単語を登録しています)。</p>
 <h2 id="_analyzeを利用して設定の確認">_analyzeを利用して設定の確認</h2>
 <p>実際に上記の設定がうまく動作するかは<code>_analyze</code>のエンドポイントを利用します。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">custom_dic_sample/_analyze</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">custom_dic_sample/_analyze</span>
 {
   <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;グランベリーパークがオープンしました。&#34;</span>,
   <span style="color:#f92672">&#34;analyzer&#34;</span>: <span style="color:#e6db74">&#34;my_analyzer&#34;</span>
 }
 </code></pre></div><p>出力は以下のようになります。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
   <span style="color:#f92672">&#34;tokens&#34;</span> : [
     {
       <span style="color:#f92672">&#34;token&#34;</span> : <span style="color:#e6db74">&#34;グランベリー&#34;</span>,
@@ -281,7 +282,7 @@
   ]
 }
 </code></pre></div><p>ちなみに、デフォルトの<code>kuromoji</code>を利用した場合は、<code>グランベリーパーク</code>が1単語として出力されます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">_analyze</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">_analyze</span>
 {
   <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;グランベリーパークがオープンしました。&#34;</span>,
   <span style="color:#f92672">&#34;analyzer&#34;</span>: <span style="color:#e6db74">&#34;kuromoji&#34;</span>
@@ -308,7 +309,7 @@
 }
 </code></pre></div><p>これで、カスタム辞書を使用することで<code>グランベリー</code>で検索された場合に、<code>グランベリーパーク</code>もヒットするという仕組みです。</p>
 <p><code>_analyze</code>は<code>explain</code>というパラメータも持っており、こちらを利用することで、単語の品詞情報なども取得できます。これを使うことで、実際に設定がきちんと動作しているかの確認に利用できます。</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">custom_dic_sample/_analyze</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">custom_dic_sample/_analyze</span>
 {
   <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;グランベリーパークがオープンしました。&#34;</span>,
   <span style="color:#f92672">&#34;analyzer&#34;</span>: <span style="color:#e6db74">&#34;my_analyzer&#34;</span>,
@@ -366,21 +367,22 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="/blog/2020/04/16/chap8-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第8章">&larr;
+                        <a href="https://blog.johtani.info/blog/2020/04/16/chap8-rust-the-book/" data-toggle="tooltip" data-placement="top" title="Rust the book - 第8章">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="/blog/2020/04/27/note-updating-dictionary/" data-toggle="tooltip" data-placement="top" title="辞書の更新についての注意点">Next
+                        <a href="https://blog.johtani.info/blog/2020/04/27/note-updating-dictionary/" data-toggle="tooltip" data-placement="top" title="辞書の更新についての注意点">Next
                             Post &rarr;</a>
                     </li>
                     
                 </ul>
 
                 
-<div id="disqus-comment"></div>
 
+
+<div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
     var disqus_config = function () {
@@ -401,6 +403,7 @@
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 <a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
 
 
 
