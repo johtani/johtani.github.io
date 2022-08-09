@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="日本語用オートコンプリートのためのAnalyzer" />
+    <meta property="og:title" content="日本語用オートコンプリートのためのAnalyzer" />
+    <meta property="twitter:title" content="日本語用オートコンプリートのためのAnalyzer" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>日本語用オートコンプリートのためのAnalyzer | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2022/08/09/japanese-auto-completion/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                    </div>
+                    <h1>日本語用オートコンプリートのためのAnalyzer</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Tuesday, August 9, 2022
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#どういうもの">どういうもの？</a></li>
+    <li><a href="#オートコンプリートとは">オートコンプリートとは？</a>
+      <ul>
+        <li><a href="#何がなんで追加されたの">何がなんで追加されたの？</a></li>
+      </ul>
+    </li>
+    <li><a href="#動かし方">動かし方</a>
+      <ul>
+        <li><a href="#インストールとインデックスの用意">インストールとインデックスの用意</a></li>
+        <li><a href="#サンプルデータ">サンプルデータ</a></li>
+        <li><a href="#インデックス">インデックス</a></li>
+        <li><a href="#動作確認">動作確認</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+    <li><a href="#参考資料">参考資料</a></li>
+  </ul>
+</nav>
+                
+                <p>風のうわさで、日本語用のオートコンプリートのためのTokenFilterとAnalyzerがLuceneに取り込まれたと聞きました（<a href="https://issues.apache.org/jira/browse/LUCENE-10102">LUCENE-10102</a>）。
+Elasticsearchでも使えるかなぁ？ということで調べたところ（調べた？聞いた？）、どうやら8.1から利用できるようになっている（<a href="https://github.com/elastic/elasticsearch/pull/81858">GitHub Issue #81858</a>）みたいです（まだ、公式ドキュメントには記載がないのですが）。</p>
+<p>ということで、こんな感じで使えるよというのを試してみました。</p>
+<h2 id="どういうもの">どういうもの？</h2>
+<p>日本語入力方法を考慮したオートコンプリート用のトークンを生成してくれるTokenFilterと、
+それをLuceneのSuggesterで動くようにしたAnalyzerが用意されています。
+Elasticsearchでは、Kuromojiプラグインにそれらを使えるようになっています（バージョン8.1.0以降）。
+KuromojiTokenizerと一緒に利用する前提の仕組みとなります。</p>
+<h2 id="オートコンプリートとは">オートコンプリートとは？</h2>
+<p>検索窓などでキー入力をしていると、入力した文字で始まる単語の一覧が現れることがあると思います。
+あの機能がオートコンプリートと呼ばれるものです。search-as-you-typeとも呼ばれることもあります。
+（<a href="https://www.lambdanote.com/collections/ir-system/products/ir-system">検索ペンギン本にも書いてあるので興味のある方はぜひ！（ステマ）</a>）
+入力された文字列を含むパターンもありますが、今回紹介するものは入力された文字で始まる単語を見つけてくる機能になります。</p>
+<h3 id="何がなんで追加されたの">何がなんで追加されたの？</h3>
+<p>日本語の入力方法は、かな入力の人もいればローマ字入力の人もいます。
+ですので、オートコンプリートでの入力として、「しゃ」という入力が来る場合もあれば、「sha」というローマ字入力途中のものが来る場合もあります。
+これらを考慮したトークンの扱いができるように、
+<a href="https://lucene.apache.org/core/9_0_0/analysis/kuromoji/org/apache/lucene/analysis/ja/JapaneseCompletionFilter.html">JapaneseCompletionFilterというクラス</a>が追加されています。
+内部的にはKuromojiTokenizerでトークンに分割された後に、もともとのトークンと同じポジションで読みをローマ字にしたものを出力します。
+<a href="https://lucene.apache.org/core/9_0_0/analysis/kuromoji/org/apache/lucene/analysis/ja/JapaneseCompletionAnalyzer.html">JapaneseCompletionAnalyzer</a>は上記Filterをすぐに使えるようにしたAnalyzerです。</p>
+<h2 id="動かし方">動かし方</h2>
+<p>百聞は一見に如かずということで、Elasticsearchでの使い方を見たほうが分かりやすいので、簡単に動かしてみることにします。</p>
+<h3 id="インストールとインデックスの用意">インストールとインデックスの用意</h3>
+<p>Elasticsearch（8.1以上）とKuromojiのプラグインをインストールします（今回試したのは8.3.1）。</p>
+<h3 id="サンプルデータ">サンプルデータ</h3>
+<p>なにかいいデータはないものか？と思っていたところ夏休みだというのを思い出しました。
+夏休みといえば読書感想文だ、ということで、書籍のタイトルがいいかもなと。
+青空文庫の著者名と書籍のタイトルの一覧を見つけたのでそちらのデータを使って試してみました。</p>
+<h4 id="csv-to-json">CSV to JSON</h4>
+<p>CSVファイルは最後の参考にある青空文庫のページから、「公開中　作家別作品一覧：全て(CSV形式、zip圧縮）」をダウンロードしたものを利用しました。
+CSVファイルだったので、jqコマンドで必要な部分だけをNDJSONの形でとりあえずファイルに出力します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">cat list_person_all_utf8.csv | tr -d <span style="color:#e6db74">&#39;&#34;&#39;</span> | jq -c -R <span style="color:#e6db74">&#39;split(&#34;,&#34;) | {&#34;auth_id&#34;: .[0] | tonumber, &#34;author&#34;: .[1], &#34;id&#34;: .[2] , &#34;title&#34;: .[3], &#34;suggest_ja&#34;: [.[3], .[1]]}&#39;</span>
+</code></pre></div><p>次のようなJSONが1行ずつ出力されます。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">{<span style="color:#e6db74">&#34;auth_id&#34;</span><span style="color:#f92672">:</span><span style="color:#ae81ff">1257</span>,<span style="color:#e6db74">&#34;author&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;アーヴィング ワシントン&#34;</span>,<span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;056078&#34;</span>,<span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;駅伝馬車&#34;</span>,<span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span>[<span style="color:#e6db74">&#34;駅伝馬車&#34;</span>,<span style="color:#e6db74">&#34;アーヴィング ワシントン&#34;</span>]}
+</code></pre></div><p><code>suggest_ja</code>がオートコンプリートの対象となるデータになります。今回は著作と著者にしてみました。
+あとは次に紹介するスキーマでインデックスを作成して、適当なプログラムを使ってBulkでElasticsearchに登録しましょう（私は<a href="https://github.com/johtani/bulk2es-rs">個人作のツール</a>で入れました）。</p>
+<h3 id="インデックス">インデックス</h3>
+<p>オートコンプリート用のSuggesterを利用するための特殊なフィールド（<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html#completion-suggester-mapping">completion</a>）を利用したフィールドを用意します。
+ちなみに、今回は<a href="https://issues.apache.org/jira/browse/LUCENE-10102">LUCENE-10102</a>に記載があった設定をそのまま使わせていただきました。
+そのほかのフィールドは今回は特に必要はないのでおまけです。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">PUT</span> <span style="color:#a6e22e">aozora_index</span>
+{
+  <span style="color:#e6db74">&#34;mappings&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;properties&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;completion&#34;</span>,
+        <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;japanese_completion_index&#34;</span>,
+        <span style="color:#e6db74">&#34;search_analyzer&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;japanese_completion_query&#34;</span>,
+        <span style="color:#e6db74">&#34;preserve_separators&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>,
+        <span style="color:#e6db74">&#34;preserve_position_increments&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+        <span style="color:#e6db74">&#34;max_input_length&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">50</span>
+      },
+      
+      <span style="color:#e6db74">&#34;auth_id&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;long&#34;</span>
+      },
+      <span style="color:#e6db74">&#34;author&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;text&#34;</span>,
+        <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span> {
+          <span style="color:#e6db74">&#34;keyword&#34;</span><span style="color:#f92672">:</span> {
+            <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;keyword&#34;</span>,
+            <span style="color:#e6db74">&#34;ignore_above&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">256</span>
+          }
+        },
+        <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;kuromoji&#34;</span>
+      },
+      <span style="color:#e6db74">&#34;author_id&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;integer&#34;</span>
+      },
+      <span style="color:#e6db74">&#34;id&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;integer&#34;</span>
+      },
+      <span style="color:#e6db74">&#34;title&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;text&#34;</span>,
+        <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span> {
+          <span style="color:#e6db74">&#34;keyword&#34;</span><span style="color:#f92672">:</span> {
+            <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;keyword&#34;</span>,
+            <span style="color:#e6db74">&#34;ignore_above&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">256</span>
+          }
+        },
+        <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;kuromoji&#34;</span>
+      }
+    }
+  },
+  <span style="color:#e6db74">&#34;settings&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;index&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;number_of_shards&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;1&#34;</span>,
+      <span style="color:#e6db74">&#34;analysis&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;analyzer&#34;</span><span style="color:#f92672">:</span> {
+          <span style="color:#e6db74">&#34;japanese_completion_index&#34;</span><span style="color:#f92672">:</span> {
+            <span style="color:#e6db74">&#34;mode&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;index&#34;</span>,
+            <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;kuromoji_completion&#34;</span>
+          },
+          <span style="color:#e6db74">&#34;japanese_completion_query&#34;</span><span style="color:#f92672">:</span> {
+            <span style="color:#e6db74">&#34;mode&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;query&#34;</span>,
+            <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;kuromoji_completion&#34;</span>
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre></div><h3 id="動作確認">動作確認</h3>
+<p>ここまでで、インデックスとデータの用意ができました。
+オートコンプリートを実現するためにはElasticsearchのSuggesterという機能の、<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html#completion-suggester">Completion Suggester</a>を利用します。検索の仕方が通常のものとは少し異なります。
+ちなみに、速度重視のためにインメモリで動いているとの記載がドキュメントにあります。</p>
+<h4 id="completion-suggesterのクエリ">Completion Suggesterのクエリ</h4>
+<p>Suggester用のクエリがあるのでこちらを使います。
+例えば、「wagah」という入力がある時に、サジェストする内容を取得するには次のようなリクエストになります。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">GET</span> <span style="color:#a6e22e">aozora_index</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_search</span>
+{
+  <span style="color:#e6db74">&#34;suggest&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;title-suggest&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;prefix&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;wagah&#34;</span>,
+      <span style="color:#e6db74">&#34;completion&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;field&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;suggest_ja&#34;</span>
+      }
+    }
+  },
+  <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;title&#34;</span>, <span style="color:#e6db74">&#34;author&#34;</span>]
+}
+</code></pre></div><ol>
+<li>最初の「suggest」がsuggest用のパラメータを意味しています。</li>
+<li>次の「title-suggest」は好きな名前をつけられます。レスポンスにこの名前がついた配列がサジェストの結果になります（同時に3. 複数suggestを呼び出せるので、対応した結果が分かるように名前が付けられます）。</li>
+<li>「prefix」に入力の文字列を渡します。</li>
+<li>「completion」がsuggesterのタイプの指定です。今回はCompletion Suggesterなので「completion」を指定します。その中に「field」でcompletionに利用するフィールド名を指定します。先ほどのスキーマでcompletionタイプを指定したフィールドです。今回は「suggest_ja」になります。</li>
+<li>「_source」は結果を見やすくするために、ヒットしたデータの一部だけ取得するオプションです。</li>
+</ol>
+<p>すると、次のような結果が返ってきます。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">{
+  <span style="color:#e6db74">&#34;took&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+  <span style="color:#e6db74">&#34;timed_out&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>,
+  <span style="color:#e6db74">&#34;_shards&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;total&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+    <span style="color:#e6db74">&#34;successful&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+    <span style="color:#e6db74">&#34;skipped&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+    <span style="color:#e6db74">&#34;failed&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>
+  },
+  <span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;total&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+      <span style="color:#e6db74">&#34;relation&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;eq&#34;</span>
+    },
+    <span style="color:#e6db74">&#34;max_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>,
+    <span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#f92672">:</span> []
+  },
+  <span style="color:#e6db74">&#34;suggest&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;title-suggest&#34;</span><span style="color:#f92672">:</span> [
+      {
+        <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;wagah&#34;</span>,
+        <span style="color:#e6db74">&#34;offset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+        <span style="color:#e6db74">&#34;length&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">5</span>,
+        <span style="color:#e6db74">&#34;options&#34;</span><span style="color:#f92672">:</span> [
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;『吾輩は猫である』中篇自序&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;002671&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;『吾輩は猫である』中篇自序&#34;</span>,
+                <span style="color:#e6db74">&#34;夏目 漱石&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;わが俳諧修業&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;003771&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;わが俳諧修業&#34;</span>,
+                <span style="color:#e6db74">&#34;芥川 竜之介&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;わが母をおもう&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;003997&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;わが母をおもう&#34;</span>,
+                <span style="color:#e6db74">&#34;宮本 百合子&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;わが母を語る&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;049723&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;わが母を語る&#34;</span>,
+                <span style="color:#e6db74">&#34;上村 松園&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;吾輩は猫である&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;000789&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;吾輩は猫である&#34;</span>,
+                <span style="color:#e6db74">&#34;夏目 漱石&#34;</span>
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre></div><ol>
+<li>「suggest」の「title-suggest」がCompletion Suggesterのレスポンスになります。</li>
+<li>最初の「text」は入力の「prefix」の値です。「offset」、「length」もこの文字に関する情報なので特に気にしなくてもいいかと。</li>
+<li>「options」がサジェストされた内容になります。それぞれの「text」がサジェストされた文字列になります。「suggest_ja」には著作と著者名を入れましたが、今回は著作が「text」に帰ってきていることがわかります。</li>
+</ol>
+<p>次に著者名でもやってみましょう。
+「太宰」という入力が来たものとしてリクエストを投げます。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">GET</span> <span style="color:#a6e22e">aozora_index</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_search</span>
+{
+  <span style="color:#e6db74">&#34;explain&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>, 
+  <span style="color:#e6db74">&#34;suggest&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;title-suggest&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;prefix&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰&#34;</span>,
+      <span style="color:#e6db74">&#34;completion&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;field&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;suggest_ja&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div><p>レスポンスは次のようになります。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">{
+  <span style="color:#e6db74">&#34;took&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+  <span style="color:#e6db74">&#34;timed_out&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>,
+  <span style="color:#e6db74">&#34;_shards&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;total&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+    <span style="color:#e6db74">&#34;successful&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+    <span style="color:#e6db74">&#34;skipped&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+    <span style="color:#e6db74">&#34;failed&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>
+  },
+  <span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;total&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+      <span style="color:#e6db74">&#34;relation&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;eq&#34;</span>
+    },
+    <span style="color:#e6db74">&#34;max_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>,
+    <span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#f92672">:</span> []
+  },
+  <span style="color:#e6db74">&#34;suggest&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;title-suggest&#34;</span><span style="color:#f92672">:</span> [
+      {
+        <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰&#34;</span>,
+        <span style="color:#e6db74">&#34;offset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+        <span style="color:#e6db74">&#34;length&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>,
+        <span style="color:#e6db74">&#34;options&#34;</span><span style="color:#f92672">:</span> [
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰 治&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;000236&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;ア、秋&#34;</span>,
+                <span style="color:#e6db74">&#34;太宰 治&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰 治&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;001572&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;I can speak&#34;</span>,
+                <span style="color:#e6db74">&#34;太宰 治&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰 治&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;001578&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;愛と美について&#34;</span>,
+                <span style="color:#e6db74">&#34;太宰 治&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰 治&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;046597&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;青森&#34;</span>,
+                <span style="color:#e6db74">&#34;太宰 治&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰 治&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;004357&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;青森&#34;</span>,
+                <span style="color:#e6db74">&#34;太宰 治&#34;</span>
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre></div><p>先ほどとは異なり、「options」の中の個々の「text」はすべて「太宰 治」になってしまいました。
+登録したデータは著作の一覧ですが、「suggest_ja」には著作と著者名を入れたためです。
+これでは、実際に検索窓に実装したときに同じものが並んでしまいます。
+こんな時のためのオプション「skip_duplicates」が用意されています。
+先ほどのリクエストに「&ldquo;skip_duplicates&rdquo;: true」を追加します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">GET</span> <span style="color:#a6e22e">aozora_index</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_search</span>
+{
+  <span style="color:#e6db74">&#34;explain&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>, 
+  <span style="color:#e6db74">&#34;suggest&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;title-suggest&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;prefix&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰&#34;</span>,
+      <span style="color:#e6db74">&#34;completion&#34;</span><span style="color:#f92672">:</span> {
+        <span style="color:#e6db74">&#34;field&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;suggest_ja&#34;</span>,
+        <span style="color:#e6db74">&#34;skip_duplicates&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>
+      }
+    }
+  },
+  <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;suggest_ja&#34;</span>]
+}
+</code></pre></div><p>するとレスポンスは次のように変化します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">{
+  <span style="color:#e6db74">&#34;took&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+  <span style="color:#e6db74">&#34;timed_out&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>,
+  <span style="color:#e6db74">&#34;_shards&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;total&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+    <span style="color:#e6db74">&#34;successful&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+    <span style="color:#e6db74">&#34;skipped&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+    <span style="color:#e6db74">&#34;failed&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>
+  },
+  <span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;total&#34;</span><span style="color:#f92672">:</span> {
+      <span style="color:#e6db74">&#34;value&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+      <span style="color:#e6db74">&#34;relation&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;eq&#34;</span>
+    },
+    <span style="color:#e6db74">&#34;max_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">null</span>,
+    <span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#f92672">:</span> []
+  },
+  <span style="color:#e6db74">&#34;suggest&#34;</span><span style="color:#f92672">:</span> {
+    <span style="color:#e6db74">&#34;title-suggest&#34;</span><span style="color:#f92672">:</span> [
+      {
+        <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰&#34;</span>,
+        <span style="color:#e6db74">&#34;offset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+        <span style="color:#e6db74">&#34;length&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">2</span>,
+        <span style="color:#e6db74">&#34;options&#34;</span><span style="color:#f92672">:</span> [
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰 治&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;000236&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;ア、秋&#34;</span>,
+                <span style="color:#e6db74">&#34;太宰 治&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰治との一日&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;042582&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;太宰治との一日&#34;</span>,
+                <span style="color:#e6db74">&#34;豊島 与志雄&#34;</span>
+              ]
+            }
+          },
+          {
+            <span style="color:#e6db74">&#34;text&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;太宰治情死考&#34;</span>,
+            <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aozora_index&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;043137&#34;</span>,
+            <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+              <span style="color:#e6db74">&#34;suggest_ja&#34;</span><span style="color:#f92672">:</span> [
+                <span style="color:#e6db74">&#34;太宰治情死考&#34;</span>,
+                <span style="color:#e6db74">&#34;坂口 安吾&#34;</span>
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre></div><p>「options」は3つに減り、重複していないことがわかります。
+「text」が同じ場合は最初に出てきたものを返すようです（注意：結果から観測しているだけで、実装はまだ見ていません）。
+（なお、今回は説明を省きますが、入力データでスコアを指定することも可能になっています）。
+そのほかにもCompletion Suggesterにはいくつか仕組みが用意されているのですが、それはまた今度にでも。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、Luceneコミッターの打田さんに感謝です。
+便利な仕組みが簡単に使えるようになるのはとてもありがたいですね。</p>
+<p>まずは簡単にどういうものかとどうやって使うのかを記事にしてみました。
+中の動きや、注意点、これまでとの違いなどは次の記事にしようと思います。
+そういえば、公式ドキュメントにはまだ出てきてないな、それを書こうと思ってついでに動かしてみたんだけど、追加するのはまた後日かな。。。</p>
+<h2 id="参考資料">参考資料</h2>
+<ul>
+<li><a href="https://www.aozora.gr.jp/index_pages/person_all.html">青空文庫 - 公開中　作家リスト：全て</a></li>
+<li><a href="https://issues.apache.org/jira/browse/LUCENE-10102">［LUCENE-10102］ Add JapaneseCompletionFilter for Input Method-aware auto-completion - ASF JIRA</a></li>
+<li><a href="https://github.com/elastic/elasticsearch/pull/81858">Expose Japanese completion filter to kuromoji analysis plugin by mocobeta · Pull Request #81858 · elastic/elasticsearch</a></li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html#completion-suggester">Suggesters | Elasticsearch Guide ［8.3］ | Elastic</a></li>
+</ul>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="https://blog.johtani.info/blog/2022/08/05/upgrade-hugo-accidentally/" data-toggle="tooltip" data-placement="top" title="Hugoをアップデートした">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+
+
+<div id="disqus-comment"></div>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/berlin-buzzwords" title="berlin-buzzwords">
+                            berlin-buzzwords
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/conference" title="conference">
+                            conference
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/java" title="java">
+                            java
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/paper" title="paper">
+                            paper
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/search" title="search">
+                            search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2022
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
+
+</body>
+</html>

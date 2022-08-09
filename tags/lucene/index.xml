@@ -7,7 +7,446 @@
     <description>Recent content in Lucene on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Thu, 25 Jun 2020 11:01:58 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/lucene/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 09 Aug 2022 16:00:02 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/lucene/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>日本語用オートコンプリートのためのAnalyzer</title>
+      <link>https://blog.johtani.info/blog/2022/08/09/japanese-auto-completion/</link>
+      <pubDate>Tue, 09 Aug 2022 16:00:02 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/08/09/japanese-auto-completion/</guid>
+      <description>風のうわさで、日本語用のオートコンプリートのためのTokenFilterとAnalyzerがLuceneに取り込まれたと聞きました（LUCE</description>
+      <content:encoded>&lt;p&gt;風のうわさで、日本語用のオートコンプリートのためのTokenFilterとAnalyzerがLuceneに取り込まれたと聞きました（&lt;a href=&#34;https://issues.apache.org/jira/browse/LUCENE-10102&#34;&gt;LUCENE-10102&lt;/a&gt;）。
+Elasticsearchでも使えるかなぁ？ということで調べたところ（調べた？聞いた？）、どうやら8.1から利用できるようになっている（&lt;a href=&#34;https://github.com/elastic/elasticsearch/pull/81858&#34;&gt;GitHub Issue #81858&lt;/a&gt;）みたいです（まだ、公式ドキュメントには記載がないのですが）。&lt;/p&gt;
+&lt;p&gt;ということで、こんな感じで使えるよというのを試してみました。&lt;/p&gt;
+&lt;h2 id=&#34;どういうもの&#34;&gt;どういうもの？&lt;/h2&gt;
+&lt;p&gt;日本語入力方法を考慮したオートコンプリート用のトークンを生成してくれるTokenFilterと、
+それをLuceneのSuggesterで動くようにしたAnalyzerが用意されています。
+Elasticsearchでは、Kuromojiプラグインにそれらを使えるようになっています（バージョン8.1.0以降）。
+KuromojiTokenizerと一緒に利用する前提の仕組みとなります。&lt;/p&gt;
+&lt;h2 id=&#34;オートコンプリートとは&#34;&gt;オートコンプリートとは？&lt;/h2&gt;
+&lt;p&gt;検索窓などでキー入力をしていると、入力した文字で始まる単語の一覧が現れることがあると思います。
+あの機能がオートコンプリートと呼ばれるものです。search-as-you-typeとも呼ばれることもあります。
+（&lt;a href=&#34;https://www.lambdanote.com/collections/ir-system/products/ir-system&#34;&gt;検索ペンギン本にも書いてあるので興味のある方はぜひ！（ステマ）&lt;/a&gt;）
+入力された文字列を含むパターンもありますが、今回紹介するものは入力された文字で始まる単語を見つけてくる機能になります。&lt;/p&gt;
+&lt;h3 id=&#34;何がなんで追加されたの&#34;&gt;何がなんで追加されたの？&lt;/h3&gt;
+&lt;p&gt;日本語の入力方法は、かな入力の人もいればローマ字入力の人もいます。
+ですので、オートコンプリートでの入力として、「しゃ」という入力が来る場合もあれば、「sha」というローマ字入力途中のものが来る場合もあります。
+これらを考慮したトークンの扱いができるように、
+&lt;a href=&#34;https://lucene.apache.org/core/9_0_0/analysis/kuromoji/org/apache/lucene/analysis/ja/JapaneseCompletionFilter.html&#34;&gt;JapaneseCompletionFilterというクラス&lt;/a&gt;が追加されています。
+内部的にはKuromojiTokenizerでトークンに分割された後に、もともとのトークンと同じポジションで読みをローマ字にしたものを出力します。
+&lt;a href=&#34;https://lucene.apache.org/core/9_0_0/analysis/kuromoji/org/apache/lucene/analysis/ja/JapaneseCompletionAnalyzer.html&#34;&gt;JapaneseCompletionAnalyzer&lt;/a&gt;は上記Filterをすぐに使えるようにしたAnalyzerです。&lt;/p&gt;
+&lt;h2 id=&#34;動かし方&#34;&gt;動かし方&lt;/h2&gt;
+&lt;p&gt;百聞は一見に如かずということで、Elasticsearchでの使い方を見たほうが分かりやすいので、簡単に動かしてみることにします。&lt;/p&gt;
+&lt;h3 id=&#34;インストールとインデックスの用意&#34;&gt;インストールとインデックスの用意&lt;/h3&gt;
+&lt;p&gt;Elasticsearch（8.1以上）とKuromojiのプラグインをインストールします（今回試したのは8.3.1）。&lt;/p&gt;
+&lt;h3 id=&#34;サンプルデータ&#34;&gt;サンプルデータ&lt;/h3&gt;
+&lt;p&gt;なにかいいデータはないものか？と思っていたところ夏休みだというのを思い出しました。
+夏休みといえば読書感想文だ、ということで、書籍のタイトルがいいかもなと。
+青空文庫の著者名と書籍のタイトルの一覧を見つけたのでそちらのデータを使って試してみました。&lt;/p&gt;
+&lt;h4 id=&#34;csv-to-json&#34;&gt;CSV to JSON&lt;/h4&gt;
+&lt;p&gt;CSVファイルは最後の参考にある青空文庫のページから、「公開中　作家別作品一覧：全て(CSV形式、zip圧縮）」をダウンロードしたものを利用しました。
+CSVファイルだったので、jqコマンドで必要な部分だけをNDJSONの形でとりあえずファイルに出力します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;cat list_person_all_utf8.csv | tr -d &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;&amp;#39;&lt;/span&gt; | jq -c -R &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;split(&amp;#34;,&amp;#34;) | {&amp;#34;auth_id&amp;#34;: .[0] | tonumber, &amp;#34;author&amp;#34;: .[1], &amp;#34;id&amp;#34;: .[2] , &amp;#34;title&amp;#34;: .[3], &amp;#34;suggest_ja&amp;#34;: [.[3], .[1]]}&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;次のようなJSONが1行ずつ出力されます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;{&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;auth_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1257&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;author&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;アーヴィング ワシントン&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;056078&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;駅伝馬車&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt;[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;駅伝馬車&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;アーヴィング ワシントン&amp;#34;&lt;/span&gt;]}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;suggest_ja&lt;/code&gt;がオートコンプリートの対象となるデータになります。今回は著作と著者にしてみました。
+あとは次に紹介するスキーマでインデックスを作成して、適当なプログラムを使ってBulkでElasticsearchに登録しましょう（私は&lt;a href=&#34;https://github.com/johtani/bulk2es-rs&#34;&gt;個人作のツール&lt;/a&gt;で入れました）。&lt;/p&gt;
+&lt;h3 id=&#34;インデックス&#34;&gt;インデックス&lt;/h3&gt;
+&lt;p&gt;オートコンプリート用のSuggesterを利用するための特殊なフィールド（&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html#completion-suggester-mapping&#34;&gt;completion&lt;/a&gt;）を利用したフィールドを用意します。
+ちなみに、今回は&lt;a href=&#34;https://issues.apache.org/jira/browse/LUCENE-10102&#34;&gt;LUCENE-10102&lt;/a&gt;に記載があった設定をそのまま使わせていただきました。
+そのほかのフィールドは今回は特に必要はないのでおまけです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;PUT&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;aozora_index&lt;/span&gt;
+{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mappings&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;properties&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;completion&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analyzer&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese_completion_index&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;search_analyzer&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese_completion_query&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;preserve_separators&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;preserve_position_increments&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;max_input_length&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;50&lt;/span&gt;
+      },
+      
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;auth_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;long&amp;#34;&lt;/span&gt;
+      },
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;author&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fields&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;keyword&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;keyword&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ignore_above&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;256&lt;/span&gt;
+          }
+        },
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analyzer&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kuromoji&amp;#34;&lt;/span&gt;
+      },
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;author_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;integer&amp;#34;&lt;/span&gt;
+      },
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;integer&amp;#34;&lt;/span&gt;
+      },
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fields&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;keyword&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;keyword&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ignore_above&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;256&lt;/span&gt;
+          }
+        },
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analyzer&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kuromoji&amp;#34;&lt;/span&gt;
+      }
+    }
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;settings&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;number_of_shards&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analysis&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;analyzer&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese_completion_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mode&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kuromoji_completion&amp;#34;&lt;/span&gt;
+          },
+          &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;japanese_completion_query&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mode&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;query&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;type&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kuromoji_completion&amp;#34;&lt;/span&gt;
+          }
+        }
+      }
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;動作確認&#34;&gt;動作確認&lt;/h3&gt;
+&lt;p&gt;ここまでで、インデックスとデータの用意ができました。
+オートコンプリートを実現するためにはElasticsearchのSuggesterという機能の、&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html#completion-suggester&#34;&gt;Completion Suggester&lt;/a&gt;を利用します。検索の仕方が通常のものとは少し異なります。
+ちなみに、速度重視のためにインメモリで動いているとの記載がドキュメントにあります。&lt;/p&gt;
+&lt;h4 id=&#34;completion-suggesterのクエリ&#34;&gt;Completion Suggesterのクエリ&lt;/h4&gt;
+&lt;p&gt;Suggester用のクエリがあるのでこちらを使います。
+例えば、「wagah」という入力がある時に、サジェストする内容を取得するには次のようなリクエストになります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;GET&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;aozora_index&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;_search&lt;/span&gt;
+{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title-suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;prefix&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;wagah&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;completion&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;
+      }
+    }
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;author&amp;#34;&lt;/span&gt;]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;最初の「suggest」がsuggest用のパラメータを意味しています。&lt;/li&gt;
+&lt;li&gt;次の「title-suggest」は好きな名前をつけられます。レスポンスにこの名前がついた配列がサジェストの結果になります（同時に3. 複数suggestを呼び出せるので、対応した結果が分かるように名前が付けられます）。&lt;/li&gt;
+&lt;li&gt;「prefix」に入力の文字列を渡します。&lt;/li&gt;
+&lt;li&gt;「completion」がsuggesterのタイプの指定です。今回はCompletion Suggesterなので「completion」を指定します。その中に「field」でcompletionに利用するフィールド名を指定します。先ほどのスキーマでcompletionタイプを指定したフィールドです。今回は「suggest_ja」になります。&lt;/li&gt;
+&lt;li&gt;「_source」は結果を見やすくするために、ヒットしたデータの一部だけ取得するオプションです。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;すると、次のような結果が返ってきます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;took&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_shards&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;successful&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;skipped&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;failed&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;relation&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;eq&amp;#34;&lt;/span&gt;
+    },
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;max_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; []
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title-suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+      {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;wagah&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;offset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;length&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;options&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;『吾輩は猫である』中篇自序&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;002671&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;『吾輩は猫である』中篇自序&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;夏目 漱石&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;わが俳諧修業&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;003771&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;わが俳諧修業&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;芥川 竜之介&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;わが母をおもう&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;003997&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;わが母をおもう&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;宮本 百合子&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;わが母を語る&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;049723&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;わが母を語る&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;上村 松園&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;吾輩は猫である&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;000789&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;吾輩は猫である&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;夏目 漱石&amp;#34;&lt;/span&gt;
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;「suggest」の「title-suggest」がCompletion Suggesterのレスポンスになります。&lt;/li&gt;
+&lt;li&gt;最初の「text」は入力の「prefix」の値です。「offset」、「length」もこの文字に関する情報なので特に気にしなくてもいいかと。&lt;/li&gt;
+&lt;li&gt;「options」がサジェストされた内容になります。それぞれの「text」がサジェストされた文字列になります。「suggest_ja」には著作と著者名を入れましたが、今回は著作が「text」に帰ってきていることがわかります。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;次に著者名でもやってみましょう。
+「太宰」という入力が来たものとしてリクエストを投げます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;GET&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;aozora_index&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;_search&lt;/span&gt;
+{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;explain&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;, 
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title-suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;prefix&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;completion&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;
+      }
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;レスポンスは次のようになります。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;took&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_shards&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;successful&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;skipped&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;failed&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;relation&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;eq&amp;#34;&lt;/span&gt;
+    },
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;max_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; []
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title-suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+      {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;offset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;length&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;options&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;000236&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ア、秋&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;001572&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;I can speak&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;001578&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;愛と美について&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;046597&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;青森&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;004357&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;青森&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;先ほどとは異なり、「options」の中の個々の「text」はすべて「太宰 治」になってしまいました。
+登録したデータは著作の一覧ですが、「suggest_ja」には著作と著者名を入れたためです。
+これでは、実際に検索窓に実装したときに同じものが並んでしまいます。
+こんな時のためのオプション「skip_duplicates」が用意されています。
+先ほどのリクエストに「&amp;ldquo;skip_duplicates&amp;rdquo;: true」を追加します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;GET&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;aozora_index&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;_search&lt;/span&gt;
+{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;explain&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;, 
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title-suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;prefix&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰&amp;#34;&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;completion&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;field&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;skip_duplicates&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+      }
+    }
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;]
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;するとレスポンスは次のように変化します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;{
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;took&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;timed_out&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_shards&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;successful&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;skipped&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;failed&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;total&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;value&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;relation&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;eq&amp;#34;&lt;/span&gt;
+    },
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;max_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;null&lt;/span&gt;,
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hits&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; []
+  },
+  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title-suggest&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+      {
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰&amp;#34;&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;offset&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;length&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;,
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;options&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;000236&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ア、秋&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰 治&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰治との一日&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;042582&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰治との一日&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;豊島 与志雄&amp;#34;&lt;/span&gt;
+              ]
+            }
+          },
+          {
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;text&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰治情死考&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_index&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;aozora_index&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;043137&amp;#34;&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_score&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;,
+            &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;_source&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+              &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;suggest_ja&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;太宰治情死考&amp;#34;&lt;/span&gt;,
+                &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;坂口 安吾&amp;#34;&lt;/span&gt;
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;「options」は3つに減り、重複していないことがわかります。
+「text」が同じ場合は最初に出てきたものを返すようです（注意：結果から観測しているだけで、実装はまだ見ていません）。
+（なお、今回は説明を省きますが、入力データでスコアを指定することも可能になっています）。
+そのほかにもCompletion Suggesterにはいくつか仕組みが用意されているのですが、それはまた今度にでも。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、Luceneコミッターの打田さんに感謝です。
+便利な仕組みが簡単に使えるようになるのはとてもありがたいですね。&lt;/p&gt;
+&lt;p&gt;まずは簡単にどういうものかとどうやって使うのかを記事にしてみました。
+中の動きや、注意点、これまでとの違いなどは次の記事にしようと思います。
+そういえば、公式ドキュメントにはまだ出てきてないな、それを書こうと思ってついでに動かしてみたんだけど、追加するのはまた後日かな。。。&lt;/p&gt;
+&lt;h2 id=&#34;参考資料&#34;&gt;参考資料&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.aozora.gr.jp/index_pages/person_all.html&#34;&gt;青空文庫 - 公開中　作家リスト：全て&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://issues.apache.org/jira/browse/LUCENE-10102&#34;&gt;［LUCENE-10102］ Add JapaneseCompletionFilter for Input Method-aware auto-completion - ASF JIRA&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/elastic/elasticsearch/pull/81858&#34;&gt;Expose Japanese completion filter to kuromoji analysis plugin by mocobeta · Pull Request #81858 · elastic/elasticsearch&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/reference/current/search-suggesters.html#completion-suggester&#34;&gt;Suggesters | Elasticsearch Guide ［8.3］ | Elastic&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>luceneutil - Analyzer性能テストへのkuromojiの追加</title>
       <link>https://blog.johtani.info/blog/2020/06/25/analyzer-perf-test-with-luceneutil/</link>
