@@ -7,7 +7,104 @@
     <description>Recent content on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Wed, 10 Aug 2022 11:50:02 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 09 Dec 2022 01:15:25 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ElasticsearchのアーキテクチャとStateless / Serverless</title>
+      <link>https://blog.johtani.info/blog/2022/12/09/open-search-serverless/</link>
+      <pubDate>Fri, 09 Dec 2022 01:15:25 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/12/09/open-search-serverless/</guid>
+      <description>本記事は情報検索・検索技術 Advent Calendar 2022の9日目の記事です。 だいぶ間が空いてしまいましたが、日本語のオートコンプリートに関する記事の続きです。</description>
+      <content:encoded>&lt;p&gt;本記事は&lt;a href=&#34;https://adventar.org/calendars/7389&#34;&gt;情報検索・検索技術 Advent Calendar 2022&lt;/a&gt;の9日目の記事です。&lt;/p&gt;
+&lt;p&gt;だいぶ間が空いてしまいましたが、日本語のオートコンプリートに関する記事の続きです。
+という感じで、Suggesterのデータ構造とか仕組みを書こうと思っていたのですが、思ったよりも調べないといけないことが多くて挫折しました。。。
+（これの続きは年末年始で調べて書くはず？）&lt;/p&gt;
+&lt;p&gt;ということで、代わりにElasticsearch/OpenSearchのアーキテクチャの変更に関してさらっとまとめて&lt;del&gt;お茶を濁して&lt;/del&gt;みようと思います。&lt;/p&gt;
+&lt;h2 id=&#34;発端はelasticon-tokyo&#34;&gt;発端はElasticON Tokyo？&lt;/h2&gt;
+&lt;p&gt;先週の11月30日に、Elasticのオフラインイベントである&lt;a href=&#34;https://www.elasticon.com/event/d10b9524-5bd9-4355-aa2e-f01b63580506/summary&#34;&gt;ElasticON Tokyo&lt;/a&gt;が開催され参加しました。
+参加しようと思ったのは、10月の頭にElasticのブログで公開された「&lt;a href=&#34;https://www.elastic.co/jp/blog/stateless-your-new-state-of-find-with-elasticsearch&#34;&gt;Stateless — your new state of find with Elasticsearch&lt;/a&gt;」というアーキテクチャの変更がきっかけです。&lt;/p&gt;
+&lt;p&gt;
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://static-www.elastic.co/v3/assets/bltefdd0b53724fa2ce/blt61f8925587f3cb80/633d97a8033663117f4ed723/blog-elastic-stateless-1.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://static-www.elastic.co/v3/assets/bltefdd0b53724fa2ce/blt61f8925587f3cb80/633d97a8033663117f4ed723/blog-elastic-stateless-1.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+（図はElasticのブログから引用）&lt;/p&gt;
+&lt;p&gt;ElasticsearchはLuceneのインデックスを分散したシステムとしてスケールアウトできるようにするという目的でリリースされました。
+インデックスをシャードという単位で複数のElasticsearchのノードにデータを保存し、レプリカを作ることで分散する仕組みを実装していました。
+Elasticsearchでは、インデックスのレプリカは、作成したインデックスを定期的にコピーするのではなく、登録するデータがElasticsearchのクラスターにやってきた時に、
+データ自体をコピー先にも配り、プライマリーやレプリカとなるシャードがあるノード上でそれぞれインデックスに登録する処理を行うという処理の流れです（&lt;a href=&#34;https://www.elastic.co/guide/en/elasticsearch/guide/current/distrib-write.html&#34;&gt;古いけど、わかりやすい説明はこちら&lt;/a&gt;）。
+この場合、インデックスにデータを登録する処理（転置インデックスのデータ構造に変換する処理など）は、レプリカの数だけ同じ処理がクラスター上で発生します。&lt;/p&gt;
+&lt;p&gt;この基本的なアーキテクチャをもとに、保持するデータの鮮度（新しいデータのほうが検索頻度が高い、インデックス登録する時はマシンは多く、古くなったデータが入ったインデックスはコストが低いマシンになど）などを元に、クラスター内のノードの特性を異なるものが混在するような複雑な仕組みを作ってきました。
+いろいろなデータの持ち方などで多くのデータなどを保持できるようにしてきたのですが、クラスター全体としては、検索の負荷のピークをさばけるような構成を基本的に保持しておくというかんがえです。&lt;/p&gt;
+&lt;p&gt;ただ、昨今は必要に応じてスケールアウト（リクエストが増えたりデータ量が増えた時）、スケールイン（夜中は利用者が少ないからクラスターを小さくしたい時）できるような仕組みのほうが求められています。
+そこで、発表されたのが上記のブログであり、上図の新しいアーキテクチャです。
+計算処理（データを登録、検索する処理）とストレージを分離し、さらに登録する処理と検索する処理も分離した構成です。
+このようなアーキテクチャにすることで、登録処理の演算コストがレプリカごとに必要ではなくなり、検索の部分だけだったり、登録の部分だけをスケールアウト・インできるような自由度が手に入ります。
+また、ストレージ部分でレプリカを担保（S3とかのオブジェクトストレージで冗長性を担保）できれば、レプリカのストレージコストも必要なくなります。&lt;/p&gt;
+&lt;p&gt;というブログが発表されたのですが、詳細などはまだよくわからなかったのでElasticON Tokyoに参加して詳しい話が聞けるのかなぁと期待していました。&lt;/p&gt;
+&lt;h2 id=&#34;参加当日の朝のびっくりするニュース&#34;&gt;参加当日の朝のびっくりするニュース&lt;/h2&gt;
+&lt;p&gt;11月30日の朝に起きて、出かけようかと思っていたところに、AWSのre:Inventで発表された&lt;a href=&#34;https://aws.amazon.com/jp/blogs/aws/preview-amazon-opensearch-serverless-run-search-and-analytics-workloads-without-managing-clusters/&#34;&gt;ニュース&lt;/a&gt;が舞い込んできました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ほー（まだタイトルしか読んでない）&lt;a href=&#34;https://t.co/KK22duaBNH&#34;&gt;https://t.co/KK22duaBNH&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1597738114113753089?ref_src=twsrc%5Etfw&#34;&gt;November 29, 2022&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;Amazon OpenSearchがServerlessオプションを発表というニュースです。
+（Amazon OpenSearchとは、AWSがElasticsearchをフォークして始めた検索エンジンで、Amazon OpenSearch Serviceというのは、AWSがそれをSaaSとして提供しているものです）&lt;/p&gt;
+&lt;p&gt;まぁ、気になりますよね、「Serverless」ってキーワードに。
+ElasticON Tokyoに向かう電車でブログを読んだり、どんな仕組みかを調べたので、それを簡単にまとめておきます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;プレビュー段階（Tokyoリージョンではもう試せる）&lt;/li&gt;
+&lt;li&gt;これまでのAmazon OpenSearch Serviceとは別（オンザフライで移行はできない？）&lt;/li&gt;
+&lt;li&gt;「コレクション」という単位でクラスターを管理（スケールインとかアウトとか）&lt;/li&gt;
+&lt;li&gt;コレクションにはタイプがあり、タイムシリーズ（ログとか）か検索のユースケースなのかで使い分ける（&lt;a href=&#34;https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-overview.html#serverless-usecase&#34;&gt;公式ドキュメント&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;インデックス処理と検索処理で計算ユニット（OCU）が別々にスケールできる（下図）&lt;/li&gt;
+&lt;li&gt;作成されたインデックスはAmazon S3に保存され、そこで冗長性は担保される。（下図）&lt;/li&gt;
+&lt;li&gt;検索処理のユニットはS3のデータをローカルに持ってきて処理をできる&lt;/li&gt;
+&lt;li&gt;データ登録とかのAPIは基本的にServerlessかどうかで違いはなさそう(これまで通りのクライアントでアクセスとかで競う)&lt;/li&gt;
+&lt;li&gt;設定した範囲でいいかんじにスケールアウトインしてくれそう（ほんとかな？）&lt;/li&gt;
+&lt;li&gt;もちろん、&lt;a href=&#34;https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-overview.html#serverless-limitations&#34;&gt;いくつか制限がある&lt;/a&gt;（サポートしてないプラグインとか操作もある）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+
+&lt;div class=&#34;box&#34; &gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://docs.aws.amazon.com/images/opensearch-service/latest/developerguide/images/Serverless.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://docs.aws.amazon.com/images/opensearch-service/latest/developerguide/images/Serverless.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+（図はAWSのドキュメントより引用）&lt;/p&gt;
+&lt;p&gt;発表時のブログでは詳しくはわからないのですが、&lt;a href=&#34;https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-overview.html#serverless-process&#34;&gt;公式ドキュメント&lt;/a&gt;ではさらに詳しく説明がありました。
+こちらを読むほうが仕組みがわかると思います。
+今後もどんどんドキュメントは充実していくんだろうなと。今ならまだサクッと読める量ですｗ&lt;/p&gt;
+&lt;p&gt;ただ、「サーバーレス」という定義が私はよくわかりませんでした。
+&lt;a href=&#34;https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-overview.html#serverless-pricing&#34;&gt;公式ドキュメントを読む&lt;/a&gt;とコレクションを作ると少なくとも4つのOCUが起動しているみたいで課金されると記載があります。&lt;/p&gt;
+&lt;p&gt;まぁ、Elasticの発表と同様に、これまでは最大負荷の時を元にクラスターを維持せずとも、より柔軟に検索だけ、登録処理だけを一時的にスケールできるとコストを下げられそうですね。
+すぐに誰かが使ってみたブログなどを出してくれると思うので、細かな使用感などはそのうちわかってくるかと。&lt;/p&gt;
+&lt;h2 id=&#34;今後は&#34;&gt;今後は？&lt;/h2&gt;
+&lt;p&gt;ElasticもAWSも考え方の基本となっているのは、Berlin BuzzwordsでAmazonのMikeさん（Luceneのコミッター）が&lt;a href=&#34;https://2019.berlinbuzzwords.de/19/session/e-commerce-search-scale-apache-lucene-tm.html&#34;&gt;2019年に発表されたもの&lt;/a&gt;だと思っています。
+アーキテクチャの変更がどんな影響が出るかはわからないですが、少なくとも検索のユースケースでよりスケールアウトしやすくなるだろうなと。
+どちらもSaaSとしての仕組みとして提供するので、検索エンジンそのものの機能として公開されるかはわからないです。
+ですが、そのほかの検索エンジンも出てきていますし、今後も検索エンジンから目をはなせないです。
+今回は残念ながら触っていませんが、時間を見つけて使ってみたいです（Elasticも早く出してくれないかなー）&lt;/p&gt;
+&lt;p&gt;ということで、当初の予定とは違うブログになってしまいました。。。
+技術的な深い話はまたどこかで。。。&lt;/p&gt;
+&lt;h2 id=&#34;参考文献&#34;&gt;参考文献&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.elastic.co/jp/blog/stateless-your-new-state-of-find-with-elasticsearch&#34;&gt;Stateless — your new state of find with Elasticsearch | Elastic Blog&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://aws.amazon.com/jp/blogs/aws/preview-amazon-opensearch-serverless-run-search-and-analytics-workloads-without-managing-clusters/&#34;&gt;Preview： Amazon OpenSearch Serverless – Run Search and Analytics Workloads without Managing Clusters | AWS News Blog&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=EkkzSLstSAE&amp;amp;list=PLq-odUc2x7i9-bGb8F8ytYBfCAzcmpaUe&amp;amp;t=2s&#34;&gt;Berlin Buzzwords 2019： Michael Sokolov &amp;amp; Mike McCandless–E-Commerce search at scale on Apache Lucene - YouTube&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>ローマ字入力のゆれと読み（JapaneseCompletionAnalyzerその2）</title>
       <link>https://blog.johtani.info/blog/2022/08/10/jp-auto-completion-2/</link>
