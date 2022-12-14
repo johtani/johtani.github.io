@@ -7,7 +7,136 @@
     <description>Recent content in misc on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Wed, 29 Dec 2021 22:28:24 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/misc/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 15 Dec 2022 00:05:58 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/misc/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>仕事中のBGM環境</title>
+      <link>https://blog.johtani.info/blog/2022/12/15/music-server-on-mac-mini/</link>
+      <pubDate>Thu, 15 Dec 2022 00:05:58 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2022/12/15/music-server-on-mac-mini/</guid>
+      <description>PySpaアドベントカレンダーの12/15のエントリーです。昨日はtaichiさんでした（？）。 今年はDIYではなく、PCにまつわる話を。 仕</description>
+      <content:encoded>&lt;p&gt;PySpaアドベントカレンダーの12/15のエントリーです。昨日はtaichiさんでした（？）。
+今年はDIYではなく、PCにまつわる話を。&lt;/p&gt;
+&lt;h2 id=&#34;仕事中はbgmが基本&#34;&gt;仕事中はBGMが基本&lt;/h2&gt;
+&lt;p&gt;フリーランスを始めて（2020年初頭）からすぐに、自宅で仕事をする情勢になりました。
+打合せをしていないとき、カンファレンスの発表などの動画を見ていないときは基本的にBGMをかけて作業をしています。
+音源としては、CDなどから音楽ファイルにしたり、AmazonやSonyのサイトで購入した音楽ファイルなどがNASにあります。&lt;/p&gt;
+&lt;h3 id=&#34;今年10月までの環境&#34;&gt;今年10月までの環境&lt;/h3&gt;
+&lt;p&gt;2020年の後半に次のような環境を構築して今年の10月まで使っていました。&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;ほー（まだタイトルしか読んでない）&lt;a href=&#34;https://t.co/KK22duaBNH&#34;&gt;https://t.co/KK22duaBNH&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1597738114113753089?ref_src=twsrc%5Etfw&#34;&gt;November 29, 2022&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://kodi.tv/&#34;&gt;KODI&lt;/a&gt;と呼ばれるマルチメディアセンター？のようなソフトで、それを動かす最小限のOSとして、&lt;a href=&#34;https://wiki.libreelec.tv/&#34;&gt;LibreELEC&lt;/a&gt;が公開されています。
+これをラズパイ4に入れて、NASからファイルをSSDにコピーしてそれをラズパイに接続して音楽を聞いていました。
+毎回ラズパイの画面を見に行くのも面倒なので、再生などの操作には&lt;a href=&#34;https://play.google.com/store/apps/details?id=org.xbmc.kore&#34;&gt;Android用のKodiのリモコンアプリ&lt;/a&gt;を使っていました。&lt;/p&gt;
+&lt;p&gt;場所も取らないのでよかったのですが、使っているといくつか問題点が。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;時々調子悪（音が出ない、リモコンからつながらない、無反応など）くなって、ラズパイ再起動&lt;/li&gt;
+&lt;li&gt;音楽ファイルを購入して増えた時に、外付けSSDを取り外してPCでコピーしたり&lt;/li&gt;
+&lt;li&gt;スマホじゃないと再生できない（PCのクライアントもあったのかもだけど調べてなかった）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;ubuntu-on-mac-mini&#34;&gt;Ubuntu on Mac mini&lt;/h2&gt;
+&lt;p&gt;10月に模様替えをして、2012年製のMac Miniが宙ぶらりんになりました。
+さすがに古いしメインマシンがWindowsになっているのもあり、macOSである必要も特にないので、Ubuntu 22.04を入れて何かに使えるのでは？と。
+また、1TBのSSDに内臓ディスクを乗せ換えていたのもあり、音楽再生に使ってみようということに。
+なので、Kodiの環境で困っていた点も考慮して、ほしい機能を元にちょっと探してみました。&lt;/p&gt;
+&lt;h3 id=&#34;音楽再生-on-ubuntu&#34;&gt;音楽再生 on Ubuntu&lt;/h3&gt;
+&lt;p&gt;音楽再生でほしい要件としては次のようなものです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ubuntuで音楽再生できるソフト（あたりまえ）&lt;/li&gt;
+&lt;li&gt;PCから操作したい（できればブラウザ）&lt;/li&gt;
+&lt;li&gt;音楽ファイルの更新（ローカルでもいいけどNASからもってきたり）&lt;/li&gt;
+&lt;li&gt;日本語の曲情報も表示&lt;/li&gt;
+&lt;li&gt;対象音楽ファイルが豊富（そんなに制限があるものはないだろうなぁ）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;上記の要件をもとに適当にググって見つけてきたのが&lt;a href=&#34;https://owntone.github.io/owntone-server/&#34;&gt;OwnTone&lt;/a&gt;というソフトでした。&lt;/p&gt;
+&lt;h3 id=&#34;owntone&#34;&gt;OwnTone&lt;/h3&gt;
+&lt;p&gt;OwnToneの説明は公式サイトを見ていただくとして、OwnToneにしてよかったなというのが以下の点です。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;インストールが簡単（&lt;a href=&#34;https://owntone.github.io/owntone-server/installation/#quick-version-for-debianubuntu-users&#34;&gt;apt-getでインストールできる&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://owntone.github.io/owntone-server/library/#supported-formats&#34;&gt;サポートフォーマットが豊富&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Web UIがついてる（ブラウザで見えるし、スマホでもOK。どのブラウザから見ても今の状況も分かる）&lt;/li&gt;
+&lt;li&gt;簡単だけど検索できる&lt;/li&gt;
+&lt;li&gt;プレイリスト対応（ファイルパスを入れるだけ）&lt;/li&gt;
+&lt;li&gt;サムネイルとかも出てくる（どうやってんだろう？ｗ）&lt;/li&gt;
+&lt;li&gt;AirPlayで再生できる（AVアンプを利用しており、そこにAirPlayで再生できてる）&lt;/li&gt;
+&lt;li&gt;OSS（まだソースは見たことないですがｗ）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;再生画面例&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:600&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20221215/music-play.jpg&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20221215/music-play.jpg&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;やっぱ検索も気になるよね？&lt;/p&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;ja&#34; dir=&#34;ltr&#34;&gt;日本語も検索できるな。 &lt;a href=&#34;https://t.co/EF6WHkJKli&#34;&gt;pic.twitter.com/EF6WHkJKli&lt;/a&gt;&lt;/p&gt;&amp;mdash; Jun Ohtani (@johtani) &lt;a href=&#34;https://twitter.com/johtani/status/1582736512583860225?ref_src=twsrc%5Etfw&#34;&gt;October 19, 2022&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;とりあえず、インストールして画面もすぐに出て操作も簡単で、便利な世の中になったなーと感動しましたｗ&lt;/p&gt;
+&lt;p&gt;ただ、音がヘッドフォン端子に刺したアナログ出力先のスピーカーではなく、本体のスピーカーで最初はなってしまいましたｗｗ&lt;br/&gt;
+Linuxの音周りが全然わかってない問題が発覚。&lt;/p&gt;
+&lt;p&gt;幸い、先週の&lt;a href=&#34;https://aodag.dev/posts/2022-12-09-mpd/&#34;&gt;Pyspa Advent Calendarのエントリーを書いていたaodag先生&lt;/a&gt;に助言をいただき、alsamixerで音の設定を見たところ、ヘッドフォン端子がミュートされていたので、ミュートを外して無事再生できました。
+インストール当初はYAMAHAのアクティブスピーカーにJust Mixer経由でヘッドフォン端子（アナログ）で出力して音楽再生をしていました。
+今は（この記事を書いてる現時点で）、AVアンプのAirPlayにOwnToneから音を流している形で聞いています（便利なんだけど、当初の想定とは異なる、理由は後述）。&lt;/p&gt;
+&lt;h3 id=&#34;ファイルのコピーとか&#34;&gt;ファイルのコピーとか&lt;/h3&gt;
+&lt;p&gt;さて、上にも書きましたが、NASにバックアップもかねて音楽ファイルを保存してあります。
+新しく買ったファイルもここに置くようになっています。
+OwnToneのMac MiniからNASをネットワーク経由で見に行くのもいいのですが、できればローカルにあったほうがネットに影響も出ないなと。&lt;/p&gt;
+&lt;p&gt;ということで、定期的にNASをウォッチしてMac Miniにファイルをコピーするようなプログラム（Bashスクリプト）を書いてみました。
+毎回購入後に手で実行もめんどくさいので毎日夜中にcron実行するような設定になっています。&lt;/p&gt;
+&lt;p&gt;スクリプトの中身は次のような感じです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;findコマンドで特定の日時（最近コピーしたファイルの日付）以降(&lt;code&gt;-newermt&lt;/code&gt;オプション)のファイルのリスト（音楽ファイルの拡張子に限定）を取得&lt;/li&gt;
+&lt;li&gt;取得したリストをもとに以下の操作
+&lt;ul&gt;
+&lt;li&gt;ファイルをコピー&lt;/li&gt;
+&lt;li&gt;コピーしたファイルをコピーした日付のプレイリストを作って入れる（プレイリストはパスだけ書けばOK）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mp4&lt;/code&gt;形式だと聞けない端末もあるので、&lt;code&gt;soundconverter&lt;/code&gt;コマンドで&lt;code&gt;mp3&lt;/code&gt;に変換してNASに戻す&lt;/li&gt;
+&lt;li&gt;最新のファイルの日付を保存（次回のfindコマンド）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;ファイルがあったら、&lt;a href=&#34;https://owntone.github.io/owntone-server/json-api/#trigger-rescan&#34;&gt;OwnToneの再読み込みのエンドポイント&lt;/a&gt;を&lt;code&gt;curl&lt;/code&gt;でキック&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;NASはSambaでマウントして、見えるようにしてあります。
+やっぱり、自動化便利ですねぇ。
+気に入った曲を買ってNASに入れとけば聞けるようになるのは本当に便利。&lt;/p&gt;
+&lt;p&gt;他にもスマートプレイリストとかもあるので、活用しないとな。&lt;/p&gt;
+&lt;h2 id=&#34;今後の課題&#34;&gt;今後の課題&lt;/h2&gt;
+&lt;p&gt;さて、すごく便利になったのですが、課題も残っています。&lt;/p&gt;
+&lt;h3 id=&#34;音声出力問題&#34;&gt;音声出力問題&lt;/h3&gt;
+&lt;p&gt;アナログ出力はaodag先生の助言ですぐに解決したのですが、takabowから譲り受けたAVアンプを導入してから実は音の出力がうまくいっていません。&lt;/p&gt;
+&lt;p&gt;HDMI、光端子出力でAVアンプにつなごうとしたのですが、私のUbuntu力（Linux力？）が全然不足しているのでうまくいっていません。ググりつつ、HDMI、光出力で&lt;code&gt;amixer&lt;/code&gt;というコマンドで音声ファイルを鳴らすところまでは行ったのですが、OwnToneに設定するとうまくいかない状況です。
+結局、解決してないのですが、AVアンプのAirPlayのレシーバー経由で音楽再生ができてしまったので、とりあえずAirPlayで運用することにしました。時間を見つけてaodag先生の記事を読み直して再チャレンジしないとな（けど、鳴ってるしなぁ、音ｗ）。&lt;/p&gt;
+&lt;h3 id=&#34;文字化け問題&#34;&gt;文字化け問題&lt;/h3&gt;
+&lt;p&gt;これは、OwnToneというよりはもともとあった問題です。
+古い音楽ファイルだったり、Wav形式のファイルなど、様々な形式のファイルを持っています。
+音楽サーバーとは別に、音楽ファイルの検索をできるようにしつつ、付加的な情報（Wikimediaなどのデータとか）を付与して、検索できるようにしてみようと思い、音楽ファイルからメタデータを抜き出して、ElasticのApp Searchにいれるデータを作るツールを書いたりしています。
+この時にも文字化けに遭遇しました。&lt;/p&gt;
+&lt;p&gt;様々な音楽ファイルにはメタデータを付与することができる仕様が決まっています（&lt;a href=&#34;https://ja.wikipedia.org/wiki/ID3%E3%82%BF%E3%82%B0&#34;&gt;ID3タグ - Wikipedia&lt;/a&gt;など）。
+ただ、文字コードの情報が入っていなかったり、デフォルトとは違う文字コードでデータを付与したファイルがあったり、いろいろな原因で文字化けしているものがあります。
+昨年Amazonで購入したmp3の中にも文字化けしているものもあったりします。Wavファイルに付与されたタグなどは、容赦なくShift-JISだったりしますが、読み込むソフトはUTF-8で読もうとしたり。。。&lt;/p&gt;
+&lt;p&gt;検索サーバーにデータを抜き出して入れるツールを書いているときは、元のファイルを変更することなく、抜き出す時点でいくつかの文字化けに対応した処理を書いたのですが、今回のOwnToneで曲を流すと結局、元のファイルをきれいにしないとダメだということに気づきました（すぐわかるだろ。。。）&lt;/p&gt;
+&lt;p&gt;ということで、書いている途中のツールをもとに、根本的な文字化けのファイルのメタデータをきれいにするプログラムを書かないといけないなぁと。&lt;/p&gt;
+&lt;p&gt;ちなみに、メタデータの抜き出しにはJavaでプログラムを書いており、&lt;a href=&#34;https://jthink.net/jaudiotagger/index.jsp&#34;&gt;JAudiotagger&lt;/a&gt;というライブラリを利用しています。
+Pythonや他のJavaのライブラリを試そうとしたのですが、文字コードが決め打ちで抜かれているものが多く、ライブラリから読みだした時点ですでにどうしようもない状態のものが多いといった問題からこのライブラリにたどり着きました（まぁ、まだちゃんとしたものができていないんですけどね）。&lt;/p&gt;
+&lt;h3 id=&#34;検索サーバー&#34;&gt;検索サーバー&lt;/h3&gt;
+&lt;p&gt;OwnToneのUIはブラウザでうごきます。
+検索窓もついています。
+が、先ほども書いたように、他にもデータを追加して、いろんな検索をしてみたいなぁと（ドラマに使われてたとか、CMにつかわれてたとかとか）。
+検索が好きでいろいろとやってるので、その辺も遊んでみたいなぁと思っているところです（実際、ElasticのApp SearchにWikidataから生成した類義語を入れてみたりしている）。&lt;/p&gt;
+&lt;p&gt;こうやってブログにしてしまったので、課題をつぶしていなかったら、Twitterなどでつついてくださいｗ&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;構成図とかは書かなかったですが、OwnToneを使うと簡単にWeb UIが入った音楽サーバーが使えるようになって、仕事がはかどりますよという記事でした。
+他にもこれに関するネタを募集してますので、コメントもらえるとうれしいです（Twitterでメンションも大歓迎）。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>2021年かって良かったもの</title>
       <link>https://blog.johtani.info/blog/2021/12/29/best-buy-2021/</link>
