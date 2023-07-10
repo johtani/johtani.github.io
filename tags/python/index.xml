@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
+  <channel>
+    <title>python on @johtaniの日記 3rd</title>
+    <link>https://blog.johtani.info/tags/python/</link>
+    <description>Recent content in python on @johtaniの日記 3rd</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja</language>
+    <lastBuildDate>Mon, 10 Jul 2023 10:55:48 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>pre-commitとvenvとPyCharm（困ったな？）</title>
+      <link>https://blog.johtani.info/blog/2023/07/10/pre-commit-and-python/</link>
+      <pubDate>Mon, 10 Jul 2023 10:55:48 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2023/07/10/pre-commit-and-python/</guid>
+      <description>最近、趣味（検索エンジンに関する趣味プロジェクト）でPythonのプログラムを書き始めました。 きちんとPythonのプログラムをプロジェクト</description>
+      <content:encoded>&lt;p&gt;最近、趣味（&lt;a href=&#34;https://github.com/johtani/search-research&#34;&gt;検索エンジンに関する趣味プロジェクト&lt;/a&gt;）でPythonのプログラムを書き始めました。&lt;/p&gt;
+&lt;p&gt;きちんとPythonのプログラムをプロジェクトとして書いたことがないので、
+Pythonのプロジェクトのディレクトリ構成などを手探りで進めているところです。
+コードのフォーマットとかもやらないとなぁ？と知り合いのいるSlackでつぶやいたところ、gitのpre-commitフェーズで&lt;code&gt;black&lt;/code&gt;などのフォーマットやスタイルを修正してくれるツールを実行する方法を教えてもらいました（PRまで送ってもらえたのでありがたい）。&lt;/p&gt;
+&lt;p&gt;で、pre-commit周りの設定などを変えている段階で遭遇した問題点についてログを残しておこうと重いブログを書いています。
+残念ながら現時点では解決してないんですけどね。。。&lt;/p&gt;
+&lt;h2 id=&#34;手元の環境&#34;&gt;手元の環境&lt;/h2&gt;
+&lt;p&gt;簡単に環境を書いておくとこんな感じです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Windows上のPyCharmを開発で使用&lt;/li&gt;
+&lt;li&gt;プロジェクトのディレクトリはWSL2のUbuntu上&lt;/li&gt;
+&lt;li&gt;Python、gitはUbuntuのものを利用&lt;/li&gt;
+&lt;li&gt;プロジェクトのルートディレクトリにある&lt;code&gt;.venv&lt;/code&gt;にvenvでPythonの仮想環境を作成してある&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;問題点&#34;&gt;問題点&lt;/h2&gt;
+&lt;p&gt;遭遇した&lt;code&gt;pre-commit&lt;/code&gt;の問題点は次の通りです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;pre-commitの設定で&lt;code&gt;repo:local&lt;/code&gt;でローカルのプロジェクトにインストールしたコマンドを利用するように変更&lt;/li&gt;
+&lt;li&gt;すると、PyCharmでコミットすると、&lt;code&gt;black&lt;/code&gt;などのコマンドが見つからない&lt;/li&gt;
+&lt;li&gt;ターミナルでコミットするときはきちんと動作する&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;色々調べて試行錯誤した結果、現在は&lt;code&gt;repo:local&lt;/code&gt;でのローカルコマンドを使用する方法はあきらめました。
+移行は、作業記録みたいなものです。どういう流れでpre-commitを取り込み、ローカルに切り替え、切り戻したかという話です。&lt;/p&gt;
+&lt;h2 id=&#34;pre-commitとpre-commit&#34;&gt;pre-commitとpre-commit&lt;/h2&gt;
+&lt;p&gt;最初に少し戸惑ったのは、&lt;code&gt;pre-commit&lt;/code&gt;というツールと&lt;code&gt;git&lt;/code&gt;の&lt;code&gt;pre-commitフック&lt;/code&gt;です。
+gitのpre-commitのフックのために作られたPython製の&lt;code&gt;pre-commit&lt;/code&gt;というツールがあります。&lt;/p&gt;
+&lt;p&gt;このPython製のツールを利用することで、プロジェクトに&lt;code&gt;.pre-commit-config.yaml&lt;/code&gt;という設定ファイルを置けば設定に記述されたツールをgit commitのタイミングで実行してくれます。
+実際には、&lt;code&gt;pre-commit&lt;/code&gt;というツールの初期設定のタイミングで&lt;code&gt;pre-commit install&lt;/code&gt;というコマンドを実行して
+&lt;code&gt;.git/hooks/pre-commit&lt;/code&gt;というスクリプトが生成されます。
+gitコマンドはcommitされた時に（commit前のフェーズ）でこのスクリプトを実行し、そこで&lt;code&gt;.pre-commit-config.yaml&lt;/code&gt;が参照されています。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;.pre-commit-config.yaml&lt;/code&gt;の記述は次のようなものになります（最初にもらったPRより）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;repos:
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        args: [&amp;quot;--line-length&amp;quot;, &amp;quot;120&amp;quot;, &amp;quot;.&amp;quot;]
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: [&amp;quot;--profile&amp;quot;, &amp;quot;black&amp;quot;, &amp;quot;--filter-files&amp;quot;, &amp;quot;--multi-line&amp;quot;, &amp;quot;3&amp;quot;]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.4.1
+    hooks:
+      - id: mypy
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;実際に、PRを取り込んで動かしてみたところ、&lt;code&gt;black&lt;/code&gt;などが動いて行末のスーペースの除去や未使用のimportについて指摘をしてくれました。
+便利だなと思ったのですが、ここで疑問が。&lt;/p&gt;
+&lt;p&gt;今回は対象とするプロジェクトは&lt;code&gt;poetry&lt;/code&gt;で依存パッケージの管理を行っています。
+今回、上記を動かすために&lt;code&gt;poetry&lt;/code&gt;に追加されたものは&lt;code&gt;pre-commit&lt;/code&gt;だけでした。
+「あれ？&lt;code&gt;black&lt;/code&gt;とかはどこにあって、どうやって動いてるんだ？」という疑問が出てきます。
+コンフィグファイルにはパスなどの記載をせず、それぞれのgithubリポジトリの記載とバージョンがあるからです。&lt;/p&gt;
+&lt;h2 id=&#34;pre-commitが使用するツールのインストール先&#34;&gt;pre-commitが使用するツールのインストール先&lt;/h2&gt;
+&lt;p&gt;調べてみたところ、どうやらホームディレクトリにある&lt;code&gt;.cache/pre-commit&lt;/code&gt;に&lt;code&gt;black&lt;/code&gt;などのコマンドが見つかりました。
+&lt;code&gt;pre-commit&lt;/code&gt;ツールが設定ファイルを基に、必要なコマンドをgithubからダウンロードしてきて実行時に利用しているようです。
+pre-commitは便利なのだけど、せっかくPythonのプロジェクトだしそれぞれのツールはpoetryでpyproject.tomlでバージョンや設定を管理したほうがすっきりするのではないか？ということで、少し調べてみました。&lt;/p&gt;
+&lt;p&gt;同じようなことを考えている方がブログを残していてくれました（&lt;a href=&#34;https://rcmdnk.com/blog/2023/02/07/computer-python/&#34;&gt;Pythonレポジトリ用のpre-commit環境を整える&lt;/a&gt;）。
+設定をpyproject.tomlに移行し、そのあと、ローカルのpetryで&lt;code&gt;black&lt;/code&gt;などのコマンド類をインストールして利用する設定に書き換えています。
+先人の肩に乗っかって、手元で同じように&lt;code&gt;pre-commit&lt;/code&gt;の設定ファイルの&lt;code&gt;repo&lt;/code&gt;を&lt;code&gt;local&lt;/code&gt;に書き換えていき（&lt;a href=&#34;https://github.com/johtani/search-research/commit/565f5ad84bf1006659047c8d23014b5b0502b03a&#34;&gt;その時のコミット&lt;/a&gt;）、ターミナルで&lt;code&gt;poetry run pre-commit run -a&lt;/code&gt;で動作確認できました。&lt;/p&gt;
+&lt;h2 id=&#34;pycharmでコミットしたらエラー&#34;&gt;PyCharmでコミットしたらエラー&lt;/h2&gt;
+&lt;p&gt;ですが、実際に変更した状態でPyCharmからコミットしたら、コマンドが見つかりませんというエラーが出ます。。。
+WSL2のターミナルで&lt;code&gt;git commit&lt;/code&gt;した場合は問題ありません。
+どうして？となりますよね。。。。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;.git/hooks/pre-commit&lt;/code&gt;はPyCharm、ターミナルのどちらからも実行されています。
+ですが、PyCharmではblackなどが見つからないというエラーが出ました。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;.git/hooks/pre-commit&lt;/code&gt;を見てみると、python実行するためのpythonのパスはプロジェクトにある&lt;code&gt;.venv/bin/python&lt;/code&gt;を指定しています。
+デバッグのために、このスクリプトに&lt;code&gt;echo $PATH&lt;/code&gt;を差し込んで、git commitをPyCharmとターミナルからそれぞれ実行してみたところ、大きな違いがあります。&lt;/p&gt;
+&lt;p&gt;ターミナルで実行した場合は、&lt;code&gt;&amp;lt;プロジェクトのディレクトリ&amp;gt;/.venv/bin&lt;/code&gt;もPATH環境変数に存在していました。このため、&lt;code&gt;.venv/bin&lt;/code&gt;にある&lt;code&gt;black&lt;/code&gt;などを実行できています。&lt;/p&gt;
+&lt;p&gt;PyCharmはWindowsから起動しています。プロジェクトのインタプリタとしては、WSL2のUbuntuにある&lt;code&gt;.venv/bin/python&lt;/code&gt;を指定しているためもあり（？）、出力されたパスは&lt;code&gt;/mnt/c/&lt;/code&gt;などのWindowsのパスなども入っていたりしますが、&lt;code&gt;&amp;lt;プロジェクトのディレクトリ&amp;gt;/.venv/bin&lt;/code&gt;は見つかりません。&lt;/p&gt;
+&lt;p&gt;ここからはソースコードは読んでいないので憶測ですが、&lt;code&gt;.git/hooks/pre-commit&lt;/code&gt;で呼び出されている&lt;code&gt;pre-commit&lt;/code&gt;ツール（Python製）は、設定ファイルで指定されたコマンド（&lt;code&gt;black&lt;/code&gt;など）を、コマンドとして今の呼び出されたコンテキストで実行しているのではないかということです。
+実際、ターミナル上でも&lt;code&gt;source .venv/bin/activate&lt;/code&gt;を実行していない状態だとコマンドが見つからないというエラーが出ました。&lt;/p&gt;
+&lt;h2 id=&#34;対処方法は&#34;&gt;対処方法は？&lt;/h2&gt;
+&lt;p&gt;ということで、今考えられる対処方法としては次の通りです。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;.git/hooks/pre-commit&lt;/code&gt;のスクリプトを修正して、&lt;code&gt;&amp;lt;プロジェクトのディレクトリ&amp;gt;/.venv/bin&lt;/code&gt;のパスを見えるようにする&lt;/li&gt;
+&lt;li&gt;PyCharmで何かしらの設定を探す&lt;/li&gt;
+&lt;li&gt;PyCharmではgit操作しない&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;repo:local&lt;/code&gt;はあきらめて、&lt;code&gt;.pre-commit-config.yaml&lt;/code&gt;で&lt;code&gt;black&lt;/code&gt;などは管理して、&lt;code&gt;pyproject.toml&lt;/code&gt;からは除外する&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;1.ですが、&lt;code&gt;.git/hooks/pre-commit&lt;/code&gt;は&lt;code&gt;precommit intall&lt;/code&gt;を実行すると自動で生成されるスクリプトです。自分の環境で書き換えたとしても他の人が同じ環境を作るときにパッチを当てるなどをしないといけなくなります。&lt;/p&gt;
+&lt;p&gt;2.はそれらしい設定を見つけることができませんでした。&lt;/p&gt;
+&lt;p&gt;3.はめんどくさいですよね。。。ターミナルでgitのコメントを日本語で書くためにいくつか他の設定を考えないといけないです。。。&lt;/p&gt;
+&lt;p&gt;ということで、今回は4.の対処をとりました。やりたいことは、ツールや環境をそろえるのではなく、プロジェクトでやりたいことをやることなので。。。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;最終的には元に戻ってしまいました（&lt;code&gt;pyproject.toml&lt;/code&gt;に設定周りは移動した）。
+Windows環境がちょっとややこしくしてるかもな？というのと、個人のプロジェクトなのでそこまで気にしなくてもいいのでは？というのもありそうです。
+それにしても、世の中の皆さんはフォーマッターとかどのタイミングで動かしてるんだろう？とかどういう環境構築してるんだろう？とっか気になってます。
+最近だとこういうディレクトリ構造にする、こういうツールを使うと便利などあれば、コメントいただけると嬉しいです。&lt;/p&gt;
+&lt;p&gt;教えてもらったISIDのブログ（&lt;a href=&#34;https://tech.isid.co.jp/entry/2023/05/02/Dev_Container%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%82%B9%E3%83%86%E3%83%83%E3%83%97%E3%83%90%E3%82%A4%E3%82%B9%E3%83%86%E3%83%83%E3%83%97%E3%81%A7%E4%BD%9C%E3%82%8BPython%E3%82%A2%E3%83%97%E3%83%AA%E3%82%B1&#34;&gt;Dev Containerを使ってステップバイステップで作るPythonアプリケーション開発環境 - ISID テックブログ&lt;/a&gt;）も参考にさせてもらおうと思ってるところです。Pythonの環境をコンテナに移動したいなぁというのもあるので。ただ、PyCharmだからこのブログの通りには行かないけど（VS Codeに移るのも検討したほうがいいのかなぁ）。&lt;/p&gt;
+&lt;h2 id=&#34;参考サイト&#34;&gt;参考サイト&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://git-scm.com/book/ja/v2/Git-%E3%81%AE%E3%82%AB%E3%82%B9%E3%82%BF%E3%83%9E%E3%82%A4%E3%82%BA-Git-%E3%83%95%E3%83%83%E3%82%AF&#34;&gt;Git - Git フック&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://pre-commit.com/&#34;&gt;pre-commit&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://rcmdnk.com/blog/2023/02/07/computer-python/&#34;&gt;Pythonレポジトリ用のpre-commit環境を整える&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://tech.isid.co.jp/entry/2023/05/02/Dev_Container%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%82%B9%E3%83%86%E3%83%83%E3%83%97%E3%83%90%E3%82%A4%E3%82%B9%E3%83%86%E3%83%83%E3%83%97%E3%81%A7%E4%BD%9C%E3%82%8BPython%E3%82%A2%E3%83%97%E3%83%AA%E3%82%B1&#34;&gt;Dev Containerを使ってステップバイステップで作るPythonアプリケーション開発環境 - ISID テックブログ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
+  </channel>
+</rss>
