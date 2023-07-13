@@ -7,7 +7,107 @@
     <description>Recent content in python on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Mon, 10 Jul 2023 10:55:48 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 13 Jul 2023 22:15:23 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>VS CodeとDev Containerの導入（まだ途中）</title>
+      <link>https://blog.johtani.info/blog/2023/07/13/introduce-vs-code-and-dev-container/</link>
+      <pubDate>Thu, 13 Jul 2023 22:15:23 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2023/07/13/introduce-vs-code-and-dev-container/</guid>
+      <description>前回の記事で、pre-commitとPyCharmとWindowsの組み合わせで困っていることを書きました。 これについて、知り合いとチャット</description>
+      <content:encoded>&lt;p&gt;前回の記事で、&lt;code&gt;pre-commit&lt;/code&gt;と&lt;code&gt;PyCharm&lt;/code&gt;と&lt;code&gt;Windows&lt;/code&gt;の組み合わせで困っていることを書きました。
+これについて、知り合いとチャットで話をしていて、それほどPyCharmにこだわりもないよなぁということになり、
+であれば、ISIDのブログ（&lt;a href=&#34;https://tech.isid.co.jp/entry/2023/05/02/Dev_Container%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%82%B9%E3%83%86%E3%83%83%E3%83%97%E3%83%90%E3%82%A4%E3%82%B9%E3%83%86%E3%83%83%E3%83%97%E3%81%A7%E4%BD%9C%E3%82%8BPython%E3%82%A2%E3%83%97%E3%83%AA%E3%82%B1&#34;&gt;Dev Containerを使ってステップバイステップで作るPythonアプリケーション開発環境 - ISID テックブログ&lt;/a&gt;）を試してみるとすっきりするかもしれないとなり、Dev Container対応をブログを参考に行ってみました。&lt;/p&gt;
+&lt;p&gt;順を追ってブログで説明されているので、どういう仕組みなのか、どの設定が何を意味しているのか？がとてもよくわかりやすくすんなり対応することができました。&lt;/p&gt;
+&lt;p&gt;ブログの手順をなぞっているところでいくつか固有の手順や疑問点が出てきたのでブログに書き記しておきます。
+結果は、コミットしてあるものを見てください。&lt;/p&gt;
+&lt;h2 id=&#34;ブログとは違う手順&#34;&gt;ブログとは違う手順&lt;/h2&gt;
+&lt;p&gt;まずはISIDのブログとは違う点をいくつか。&lt;/p&gt;
+&lt;h3 id=&#34;venvはいったん削除&#34;&gt;.venvはいったん削除&lt;/h3&gt;
+&lt;p&gt;ブログでは新規のプロジェクトを作成していく過程で、コンテナ化した環境を作った後に&lt;code&gt;.venv&lt;/code&gt;をDockerコンテナのボリュームにして、最後に仮想環境のPythonを生成していました。
+私の場合は、すでにホストOS（実際にはWSL2のUbuntuだけど）で&lt;code&gt;.venv&lt;/code&gt;のディレクトリを作成してある状態だったので、いったん削除する必要がありました。
+すでに存在する&lt;code&gt;.venv&lt;/code&gt;がbindマウントされてしまっている状態になるため、Dockerのボリュームとの整合性が取れなくなるようです。&lt;/p&gt;
+&lt;p&gt;この作業を行う前か、途中でDev Containerを停止した状態で、&lt;code&gt;.venv&lt;/code&gt;を削除することで問題なくDockerのボリュームに仮想環境のPythonが登録されるようになります。&lt;/p&gt;
+&lt;h3 id=&#34;postcreatecommandshの呼び出し方&#34;&gt;postCreateCommand.shの呼び出し方&lt;/h3&gt;
+&lt;p&gt;ファイルに実行権限がないと、実行権限エラーが出ました。
+実行権限を与えるか、次のような記述で動くようになりました。
+今は、ファイルに実行権限をつけるのではなく、次のような記述にしていますが、何か問題あるかな？&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; &amp;quot;postCreateCommand&amp;quot;: &amp;quot;/bin/sh ./.devcontainer/postCreateCommand.sh&amp;quot;,
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;実際に動作しているログを見ると&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;/bin/sh -c /bin/sh ./.devcontainer/postCreateCommand.sh&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;となっているので、少し気持ち悪いのだけれども。。。&lt;/p&gt;
+&lt;h3 id=&#34;postcreatecommandshの追加処理&#34;&gt;postCreateCommand.shの追加処理&lt;/h3&gt;
+&lt;p&gt;今回Dev Containerを適用したプロジェクトでは、&lt;code&gt;sentencepiece&lt;/code&gt;を利用します。
+この、&lt;code&gt;sentencepiece&lt;/code&gt;を&lt;code&gt;poetry&lt;/code&gt;がインストールするタイミングで、&lt;code&gt;cmake&lt;/code&gt;を要求してきました。
+今回利用しているDocker Imageには&lt;code&gt;cmake&lt;/code&gt;は含まれていないため、以下の処理を追加しています。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;sudo apt update
+sudo apt-get install cmake -y
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;また、&lt;code&gt;rinna/japanese-clip&lt;/code&gt;も利用しているのですが、こちらは、&lt;code&gt;poetry&lt;/code&gt;で追加してインストールでは依存するパッケージがインストールされないため、&lt;code&gt;pip&lt;/code&gt;コマンドを利用するようにしています。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;pip install git+https://github.com/rinnakk/japanese-clip.git
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;コンテナイメージを作った後にやりたいことを、自由にスクリプトで書けるのは便利ですね。&lt;/p&gt;
+&lt;h3 id=&#34;pre-commitのスクリプトの再生成&#34;&gt;pre-commitのスクリプトの再生成&lt;/h3&gt;
+&lt;p&gt;こちらも、既存の環境が残っているとPythonへのパスの違いの問題が出たので、作り直しました。
+&lt;code&gt;.git/hooks/pre-commit&lt;/code&gt;のファイルを削除し、&lt;code&gt;pre-commit install&lt;/code&gt;をやったものをリポジトリにコミットしてあります。&lt;/p&gt;
+&lt;h2 id=&#34;疑問点&#34;&gt;疑問点&lt;/h2&gt;
+&lt;p&gt;作業をしていて疑問点もいくつか出てきたのでメモを残しておきます。ちなみに、これらの疑問について実際に調べるまでには至っていません。
+時間を見て解決できればなぁと（できるのか？）。&lt;/p&gt;
+&lt;h3 id=&#34;imageが2つ&#34;&gt;Imageが2つ&lt;/h3&gt;
+&lt;p&gt;Dev Containerの設定を書いた後に、コンテナをビルドすると、Docker DesktopのImagesにイメージが出来上がります。
+この時、イメージが2つできあがっています（なぜ？）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;REPOSITORY                                                                                          TAG       IMAGE ID       CREATED      SIZE
+vsc-search-research-bf04371c017c8d2f1dd5ad2529841b02e9ea1d1aaa4354c19edf53cef3f0c13b-features-uid   latest    25c7e23416ec   3 days ago   1.69GB
+vsc-search-research-bf04371c017c8d2f1dd5ad2529841b02e9ea1d1aaa4354c19edf53cef3f0c13b-features       latest    fcf9eaeb2187   3 days ago   1.69GB
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;こんな感じで、最後に&lt;code&gt;-uid&lt;/code&gt;がついているかいないかの違いです。
+実際にコンテナ起動時に利用されるのは&lt;code&gt;-uid&lt;/code&gt;がついているものになります。
+なぜ2つになっているのか、1つにする設定などがあるのか？といったところが気になるところです。&lt;/p&gt;
+&lt;h3 id=&#34;containerの名前&#34;&gt;Containerの名前&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;devcontainer.json&lt;/code&gt;の設定を書き換えて、コンテナをリビルドすると起動したコンテナの名前が自動で割り振られているようです。
+今は、&lt;code&gt;fervent_hopper&lt;/code&gt;となっています。ランダムにつけられているようなのですが、名前を付ける方法はないのかなぁ？と。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;devcontainer.json&lt;/code&gt;には&lt;code&gt;name&lt;/code&gt;というプロパティもあるのですが、この値がどこで使われているのかはよくわかっていません。
+Remote Explorerでコンテナの一覧が見えますが、ここでは、リポジトリ名が利用されているようです。&lt;/p&gt;
+&lt;h3 id=&#34;volumeのidはどこから&#34;&gt;VolumeのIDはどこから？&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;devcontainer.json&lt;/code&gt;で次のような記述で、&lt;code&gt;.venv&lt;/code&gt;のディレクトリようにDockerにボリュームを作っています。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  &amp;quot;mounts&amp;quot;: [
+    &amp;quot;source=venv-${devcontainerId},target=${containerWorkspaceFolder}/.venv,type=volume&amp;quot;
+  ],
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;実際にコンテナでマウントされている情報を見ると&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;/workspaces/search-research/.venv
+/var/lib/docker/volumes/venv-04emir9hi2caivtjunfe3l17452hkbb3hdut1qflbrn8n924ho5c/_data
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;となっています。
+&lt;code&gt;04emir9hi2caivtjunfe3l17452hkbb3hdut1qflbrn8n924ho5c&lt;/code&gt;が&lt;code&gt;devcontainerId&lt;/code&gt;に相当するのだとは思うのですが、誰がつけたものかなどがまだよくわかっていません。
+もうちょっとわかりやすいものが使えるほうが嬉しいかも？と思っていたりします。
+（複数Dev Containerを使い始めると、Docker Desktopで見ると、どのボリュームがどのDev Containerに紐づいているかがぱっと見ではわからない）&lt;/p&gt;
+&lt;h3 id=&#34;vscodeディレクトリどうしよう&#34;&gt;.vscodeディレクトリどうしよう？&lt;/h3&gt;
+&lt;p&gt;たぶん、VS Codeを触っている過程で、何かの設定をしてしまったのだとは思うのですが、
+&lt;code&gt;.vscode/settings.json&lt;/code&gt;というファイルができており、次のような内容になっています。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
+  &amp;quot;git.ignoreLimitWarning&amp;quot;: true
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;何か意味があるかも？ということで、コミットしてリポジトリに入れたのですが、いらないのかもしれないなぁと。&lt;/p&gt;
+&lt;h2 id=&#34;残作業&#34;&gt;残作業&lt;/h2&gt;
+&lt;p&gt;とりあえず、VS CodeでPython環境ができて、VS CodeのTerminalでPythonのプログラムが実行できるのはわかった段階です。
+いくつか、今後調べながらやる必要があるものが残っているのでメモとして残しておきます。&lt;/p&gt;
+&lt;h3 id=&#34;マルチコンテナ化&#34;&gt;マルチコンテナ化&lt;/h3&gt;
+&lt;p&gt;今回Dev Containerに対応したプロジェクトでは、検索エンジンもDockerのコンテナとして起動して、Pythonのプログラムから接続したいと思っています。
+となると、docker composeでいろいろと起動するほうがネットワークなどの設定も楽になるのでは？と思っているところです。
+Dev Containerのテンプレートがいくつか用意されており、その中に&lt;a href=&#34;https://github.com/devcontainers/templates/blob/main/src/postgres/README.md&#34;&gt;「Python 3 &amp;amp; PostgreSQL (postgres)」&lt;/a&gt;というのを見つけたので、このあたりが参考になるのでは？と考えているところです。&lt;/p&gt;
+&lt;h3 id=&#34;pre-commitではなく保存時にフォーマット&#34;&gt;pre-commitではなく、保存時にフォーマット&lt;/h3&gt;
+&lt;p&gt;pre-commit＋localのコマンドも動くようにはなったのですが、保存時にフォーマットなどをかける設定もISIDのブログで記載がありました。
+コミットしようとして、怒られるよりも、保存時に怒られたりするほうがいいかも？という気分になってきています。
+どこまでが切り替え可能なのか？なども見ながら対応してみようかなと。&lt;/p&gt;
+&lt;h3 id=&#34;もう少し開発してみて改善点を探っていく&#34;&gt;もう少し開発してみて改善点を探っていく&lt;/h3&gt;
+&lt;p&gt;とりあえず動いたという段階です。
+PyCharmとの違いがあるはずで（たとえば、git周りのGUIの違いとか）、そのあたりでどんな違いがあり、どんなものがあると嬉しいのか？といったものを調べる必要もあるかなと考えています。
+Terminalで&lt;code&gt;Ctrl+r&lt;/code&gt;がうまく使えなかったり(Auto Hot Keyで検索のショートカットに割り当ててしまっているから。。。)などもあるので、この辺も調べていきたいなと。
+Windows Terminalを使えたりするのかなぁ？&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;さて、とりあえず、VS CodeでPythonのDev Container環境を作って動くところまでは来ました。
+PyCharmを使いこなしていなかったのもあり、それほど違和感なく移行できるような気がしています。
+調べることはまだまだあるし、プログラム書くつもりが、環境を整える方向に話がずれている気もしますが、まぁ面白いのでよしとするかなぁ。
+いろいろまだまだ知らないことだらけです。。。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>pre-commitとvenvとPyCharm（困ったな？）</title>
       <link>https://blog.johtani.info/blog/2023/07/10/pre-commit-and-python/</link>
