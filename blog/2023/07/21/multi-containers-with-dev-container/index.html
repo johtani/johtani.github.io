@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="VS CodeとDev Container（docker-compose.yml対応）" />
+    <meta property="og:title" content="VS CodeとDev Container（docker-compose.yml対応）" />
+    <meta property="twitter:title" content="VS CodeとDev Container（docker-compose.yml対応）" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>VS CodeとDev Container（docker-compose.yml対応） | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2023/07/21/multi-containers-with-dev-container/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/python" title="python">
+                            python
+                        </a>
+                        
+                    </div>
+                    <h1>VS CodeとDev Container（docker-compose.yml対応）</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Friday, July 21, 2023
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#dev-containerのdocker-compose設定">Dev Containerのdocker compose設定</a>
+      <ul>
+        <li><a href="#1-dockerfileの作成">1. Dockerfileの作成</a></li>
+        <li><a href="#2-dokcer-composeymlにサービス追加">2. dokcer-compose.ymlにサービス追加</a></li>
+        <li><a href="#3-dovcontainerjsonの変更">3. dovcontainer.jsonの変更</a></li>
+        <li><a href="#4-アプリの接続文字列の書き換え">4. アプリの接続文字列の書き換え</a></li>
+      </ul>
+    </li>
+    <li><a href="#追加の変更">追加の変更</a>
+      <ul>
+        <li><a href="#サービス起動の新たな問題点">サービス起動の新たな問題点</a></li>
+      </ul>
+    </li>
+    <li><a href="#副次的な効果">副次的な効果</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p><a href="%22/blog/2023/07/13/introduce-vs-code-and-dev-container/%22">前回の記事</a>で、VS Code＋Dev Containerを導入しました。
+残課題として「マルチコンテナ化」があるという話もしました。今回はDev Containerのdocker-compose.yml対応をした話をメモとして残しておきます。
+実際、VS Code + Dev Containerに移行した後に、Esを起動してアプリからつなげるというのがうまくいかないというのがあったので対応がんばりました。。。</p>
+<h2 id="dev-containerのdocker-compose設定">Dev Containerのdocker compose設定</h2>
+<p>この記事ではすでにdocker-compose.ymlが存在している状態の話をします。
+変更する前は、devcontainer.jsonでベースのコンテナイメージの指定、マウントの設定などを行っていましたが、docker-compose.ymlにいくつかを移動しないといけません。
+対応した時の作業の流れは以下のような感じです。</p>
+<ol>
+<li>ワークスペース用のDockerfileの作成</li>
+<li>docker-compose.ymlにワークスペース用のサービスを追加</li>
+<li>devcontainer.jsonをdokcer-compose.ymlを利用する形に書き換え</li>
+<li>アプリでの接続文字列をlocalhostからdocker-compose.ymlのサービス名に変更</li>
+</ol>
+<p>参考：<a href="https://github.com/johtani/search-research/pull/17/commits/b6e75b1d641bbea74ff57d5914020929d70d2c42">対応した時のコミットです</a>。差分などはこちらをごらんください。</p>
+<p>devcontainerのリポジトリに<a href="https://github.com/microsoft/vscode-dev-containers/tree/main/containers/python-3-postgres">Python+PostgreSQLのサンプル</a>が公開されており、こちらを参考にしながら作業をしました。</p>
+<h3 id="1-dockerfileの作成">1. Dockerfileの作成</h3>
+<p>docker-compose.ymlだけでも完結するのかもしれないですが、いろいろやりたいことも出てくるかもしれないので別のファイルに切り出しました。
+といっても、コンテナのイメージはdevcontainer.jsonに記述していたものを使っています。</p>
+<pre tabindex="0"><code>ARG VARIANT=3.11-bookworm
+FROM mcr.microsoft.com/devcontainers/python:${VARIANT}
+
+ENV PYTHONUNBUFFERED 1
+ENV TZ Asia/Tokyo
+</code></pre><p><code>TZ</code>はdevcontainer.jsonで指定していたものを、こちらに移行した形になります。
+<code>PYTHONUNBUFFERED</code>は参考にしたDockerfileの記載です。標準出力・エラーをバッファリングしない指定になっています。</p>
+<h3 id="2-dokcer-composeymlにサービス追加">2. dokcer-compose.ymlにサービス追加</h3>
+<p><code>backend</code>という名前のサービスをdevcontainer（VS Code）から接続するコンテナのサービス名にしています。</p>
+<pre tabindex="0"><code>services:
+  backend:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    init: true
+    environment:
+      - TZ=Asia/Tokyo
+    command: sleep infinity
+    volumes:
+      - .:/workspace/search-research:cached
+      - venv-search-research-backend:/workspace/search-research/.venv
+...
+volumes:
+  venv-search-research-backend:
+
+</code></pre><p>1.で作成したDockerfileを利用します。docker-compose.ymlファイル自体は、プロジェクトのルートディレクトリに配置していますが、Dockerfileは<code>.devcontainer</code>ディレクトリに入れたため、<code>context</code>と<code>dockerfile</code>はこのような指定になっています。</p>
+<p><code>init</code>は、<code>devcontainer.json</code>で指定していた<code>&quot;runArgs&quot;: [&quot;--init&quot;],</code>の設定になります。</p>
+<p><code>command</code>の部分は、コンテナが起動したままにしておくための設定です。</p>
+<p><code>volumes</code>では2つのボリュームに関しての指定があります。
+1つ目の<code>/workspace...</code>は、VS Codeがコンテナにプロジェクトをマウントする場所の指定です。
+<code>devcontainer.json</code>だけを利用していた場合は意識していませんでしたが、<code>/workspace/プロジェクト名</code>というディレクトリにプロジェクトがマウントされていました。
+docker-compose.ymlを利用する場合は、明示的に指定が必要です。
+2つ目の<code>venv-...</code>は<code>.venv</code>のディレクトリをコンテナの中だけのものにする設定を移植したものになります。
+前回の記事ではコンテナIDをボリューム名に含めていましたが、こちらのほうがわかりやすいかと思い、プロジェクトの名前とサービス名をつけるようにしてみました。
+Dev Containerで起動した場合は<code>search-research_venv-search-research-backend</code>という名前がついています（最初の部分はDev Containerがつけてるのかな？）</p>
+<h3 id="3-dovcontainerjsonの変更">3. dovcontainer.jsonの変更</h3>
+<p><code>devcountainer.json</code>から呼び出すものの準備ができたので、<code>devcontainer.json</code>を書き換えます。
+<a href="https://containers.dev/implementors/json_reference/#compose-specific">公式のドキュメントとしてDocker Compose向けのプロパティが紹介されています</a>。
+変更したものは次のような形です。</p>
+<pre tabindex="0"><code>{
+  &quot;name&quot;: &quot;search-research&quot;,
+  &quot;dockerComposeFile&quot;: &quot;../docker-compose.yml&quot;,
+  &quot;service&quot;: &quot;backend&quot;,
+  &quot;workspaceFolder&quot;: &quot;/workspace/search-research&quot;,
+  &quot;postCreateCommand&quot;: &quot;/bin/sh ./.devcontainer/postCreateCommand.sh&quot;,
+  &quot;customizations&quot;: {
+...
+</code></pre><ul>
+<li>dockerComposeFile : 利用するdocker-compose.ymlのファイルパス</li>
+<li>service：VS Codeが利用するワークスペース用のサービス名</li>
+<li>workspaceFoldeer：VS Codeがコンテナに接続したときに開くフォルダのパス</li>
+</ul>
+<p>を指定します。これで、VS Codeでこのプロジェクトを開いた時に、Dev Containerがdocker-compose.ymlを使ってコンテナの起動（ビルドとか）を行ってくれます。</p>
+<h3 id="4-アプリの接続文字列の書き換え">4. アプリの接続文字列の書き換え</h3>
+<p>こちらはおまけです。
+PythonのアプリからElasticsearchに接続するときの文字列として、Dev Container化の前は、<code>http://localhost:9200</code>と指定をしていました。
+Elasticsearch用のサービス（<code>es</code>）で、ポートフォワードをしていたためです。</p>
+<p>アプリ側もコンテナ化したので、Docker Composeが名前の解決をしてくれるので、<code>http://es:9200</code>という接続文字列で接続ができるようになりました。</p>
+<p>ということで、ここまでで、VS Codeでプロジェクトを開くと、2つのコンテナ（<code>backend</code>と<code>es</code>）が起動してVS Code上でPythonアプリからEsへの接続ができるようになりました。</p>
+<h2 id="追加の変更">追加の変更</h2>
+<p>参考のプルリクでは、上記まででしたがさらにいくつかの変更をそのあとやっています。</p>
+<ul>
+<li>起動するサービスの指定(開発だけするときはEsを起動したくない)
+<ul>
+<li><code>devcontainer.json</code>で<code>runServices</code>を使って指定できます（<a href="https://containers.dev/implementors/json_reference/#compose-specific">公式ドキュメント</a>）</li>
+</ul>
+</li>
+<li>GPUをコンテナから利用できるように
+<ul>
+<li><code>devcontainer.json</code>で<code>features</code>の<code>nvidia-cuda</code>を指定し、docker-compose.ymlで<code>nvidia</code>のドライバーなどを設定することで対応しました。</li>
+<li>nvidiaが公開しているcuda対応のコンテナイメージでもよかったのですが、こちらのほうが楽そうだったという理由です。<code>features</code>とコンテナのビルド、postCreateCommandの順序などはもうちょっと勉強しないといけない気がしています。</li>
+</ul>
+</li>
+</ul>
+<p>これらの対応は<a href="https://github.com/johtani/search-research/commit/10a4741ab6fa2003f6f050864758a8176a9090cb">こちらのコミット</a>で対応しています。</p>
+<p>GPUの対応は、私個人の環境はこれでいいのですが、複数の人がこのリポジトリを使う場合はどうやって切り替えたりするんだろう？という疑問が残っています。。。
+今回はrinna/japanese-clipのモデルを使って、テキストからベクトルを生成する部分の処理のためにGPUを使いたいというモチベーションがあり、コンテナでもGPUを使えるようにしています（CPUだと時間がすごくかかる。。。）。</p>
+<h3 id="サービス起動の新たな問題点">サービス起動の新たな問題点</h3>
+<p><code>runServices</code>で起動するサービス名を指定したのはよかったのですが、Elasticsearchのサービスを起動して、データ登録や検索の確認を行おうと思った時に、EsのコンテナをVS Codeだけで起動する方法がまだわかっていません。。。
+一度コンテナをビルドした後なら、「Remote Explorer」でOther Containerというくくりで表示され、右クリックで起動や停止ができそうなのだけど、新規サービスをdocker-compose.ymlに追加した場合は、自分でターミナルなどでコンテナのビルドをしないといけないかもしれないです。もうちょっと調べてみないとなぁ。</p>
+<h2 id="副次的な効果">副次的な効果</h2>
+<p>Docker Compose対応をしたことで、前回の記事での疑問点のうち、「コンテナ名」「VolumeのID」については懸念点がなくなりました。</p>
+<p>「コンテナ名」は、docker-compose.ymlのサービス名がコンテナ起動時に名前として利用されるため、Docker Desktopで見た時などの探しにくさはなくなりました。
+ただ、「イメージ名」については、いまだに2つできています。「-uid」がつかないものの代わりに、<code>search-research-backend</code>というイメージが作られています。
+ただし、実際に利用されるのは前回の記事に書いたような<code>vsc-search-research-bf04371c017c8d2f1dd5ad2529841b02e9ea1d1aaa4354c19edf53cef3f0c13b-uid</code>という名前のイメージです。</p>
+<p>「VolumeのID」については、docker-compose.ymlのファイルで自分で名前をつけるようにしたので、コンテナのIDが利用されなくなったという次第です。
+代わりに、プロジェクト名である「search-research」という名前を直接記述しているので、変数などで置き換えたほうがいいのかも？という気がしています。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、複数のコンテナを利用するプロジェクトでVS Code+Dev Container対応ができそうだということがわかりました。
+ついでに、GPU対応もできたのでこれで、やっと他の検索エンジン対応などができる気がしています。
+（その前にpre-commitを保存時にチェックする形に変更かなぁ）
+やりたいことからちょっとずつ外れている気もするけれど、新しいことを調べるのは楽しいですね。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="https://blog.johtani.info/blog/2023/07/13/introduce-vs-code-and-dev-container/" data-toggle="tooltip" data-placement="top" title="VS CodeとDev Containerの導入（まだ途中）">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+
+
+<div id="disqus-comment"></div>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/berlin-buzzwords" title="berlin-buzzwords">
+                            berlin-buzzwords
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/conference" title="conference">
+                            conference
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/java" title="java">
+                            java
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/paper" title="paper">
+                            paper
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/python" title="python">
+                            python
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/search" title="search">
+                            search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2023
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
+
+</body>
+</html>
