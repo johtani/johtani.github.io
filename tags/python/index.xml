@@ -7,7 +7,127 @@
     <description>Recent content in python on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Thu, 13 Jul 2023 22:15:23 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 21 Jul 2023 10:13:30 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>2023 07 21 Multi Container With Dev Container</title>
+      <link>https://blog.johtani.info/blog/2023/07/21/vs-code%E3%81%A8dev-containerdocker-compose.yml%E5%AF%BE%E5%BF%9C/</link>
+      <pubDate>Fri, 21 Jul 2023 10:13:30 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2023/07/21/vs-code%E3%81%A8dev-containerdocker-compose.yml%E5%AF%BE%E5%BF%9C/</guid>
+      <description>前回の記事で、VS Code＋Dev Containerを導入しました。 残課題として「マルチコンテナ化」があるという話もしました。今回はDev C</description>
+      <content:encoded>&lt;p&gt;&lt;a href=&#34;%22/blog/2023/07/13/introduce-vs-code-and-dev-container/%22&#34;&gt;前回の記事&lt;/a&gt;で、VS Code＋Dev Containerを導入しました。
+残課題として「マルチコンテナ化」があるという話もしました。今回はDev Containerのdocker-compose.yml対応をした話をメモとして残しておきます。
+実際、VS Code + Dev Containerに移行した後に、Esを起動してアプリからつなげるというのがうまくいかないというのがあったので対応がんばりました。。。&lt;/p&gt;
+&lt;h2 id=&#34;dev-containerのdocker-compose設定&#34;&gt;Dev Containerのdocker compose設定&lt;/h2&gt;
+&lt;p&gt;この記事ではすでにdocker-compose.ymlが存在している状態の話をします。
+変更する前は、devcontainer.jsonでベースのコンテナイメージの指定、マウントの設定などを行っていましたが、docker-compose.ymlにいくつかを移動しないといけません。
+対応した時の作業の流れは以下のような感じです。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;ワークスペース用のDockerfileの作成&lt;/li&gt;
+&lt;li&gt;docker-compose.ymlにワークスペース用のサービスを追加&lt;/li&gt;
+&lt;li&gt;devcontainer.jsonをdokcer-compose.ymlを利用する形に書き換え&lt;/li&gt;
+&lt;li&gt;アプリでの接続文字列をlocalhostからdocker-compose.ymlのサービス名に変更&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;参考：&lt;a href=&#34;https://github.com/johtani/search-research/pull/17/commits/b6e75b1d641bbea74ff57d5914020929d70d2c42&#34;&gt;対応した時のコミットです&lt;/a&gt;。差分などはこちらをごらんください。&lt;/p&gt;
+&lt;p&gt;devcontainerのリポジトリに&lt;a href=&#34;https://github.com/microsoft/vscode-dev-containers/tree/main/containers/python-3-postgres&#34;&gt;Python+PostgreSQLのサンプル&lt;/a&gt;が公開されており、こちらを参考にしながら作業をしました。&lt;/p&gt;
+&lt;h3 id=&#34;1-dockerfileの作成&#34;&gt;1. Dockerfileの作成&lt;/h3&gt;
+&lt;p&gt;docker-compose.ymlだけでも完結するのかもしれないですが、いろいろやりたいことも出てくるかもしれないので別のファイルに切り出しました。
+といっても、コンテナのイメージはdevcontainer.jsonに記述していたものを使っています。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ARG VARIANT=3.11-bookworm
+FROM mcr.microsoft.com/devcontainers/python:${VARIANT}
+
+ENV PYTHONUNBUFFERED 1
+ENV TZ Asia/Tokyo
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;TZ&lt;/code&gt;はdevcontainer.jsonで指定していたものを、こちらに移行した形になります。
+&lt;code&gt;PYTHONUNBUFFERED&lt;/code&gt;は参考にしたDockerfileの記載です。標準出力・エラーをバッファリングしない指定になっています。&lt;/p&gt;
+&lt;h3 id=&#34;2-dokcer-composeymlにサービス追加&#34;&gt;2. dokcer-compose.ymlにサービス追加&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;backend&lt;/code&gt;という名前のサービスをdevcontainer（VS Code）から接続するコンテナのサービス名にしています。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;services:
+  backend:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    init: true
+    environment:
+      - TZ=Asia/Tokyo
+    command: sleep infinity
+    volumes:
+      - .:/workspace/search-research:cached
+      - venv-search-research-backend:/workspace/search-research/.venv
+...
+volumes:
+  venv-search-research-backend:
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;1.で作成したDockerfileを利用します。docker-compose.ymlファイル自体は、プロジェクトのルートディレクトリに配置していますが、Dockerfileは&lt;code&gt;.devcontainer&lt;/code&gt;ディレクトリに入れたため、&lt;code&gt;context&lt;/code&gt;と&lt;code&gt;dockerfile&lt;/code&gt;はこのような指定になっています。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;init&lt;/code&gt;は、&lt;code&gt;devcontainer.json&lt;/code&gt;で指定していた&lt;code&gt;&amp;quot;runArgs&amp;quot;: [&amp;quot;--init&amp;quot;],&lt;/code&gt;の設定になります。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;command&lt;/code&gt;の部分は、コンテナが起動したままにしておくための設定です。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;volumes&lt;/code&gt;では2つのボリュームに関しての指定があります。
+1つ目の&lt;code&gt;/workspace...&lt;/code&gt;は、VS Codeがコンテナにプロジェクトをマウントする場所の指定です。
+&lt;code&gt;devcontainer.json&lt;/code&gt;だけを利用していた場合は意識していませんでしたが、&lt;code&gt;/workspace/プロジェクト名&lt;/code&gt;というディレクトリにプロジェクトがマウントされていました。
+docker-compose.ymlを利用する場合は、明示的に指定が必要です。
+2つ目の&lt;code&gt;venv-...&lt;/code&gt;は&lt;code&gt;.venv&lt;/code&gt;のディレクトリをコンテナの中だけのものにする設定を移植したものになります。
+前回の記事ではコンテナIDをボリューム名に含めていましたが、こちらのほうがわかりやすいかと思い、プロジェクトの名前とサービス名をつけるようにしてみました。
+Dev Containerで起動した場合は&lt;code&gt;search-research_venv-search-research-backend&lt;/code&gt;という名前がついています（最初の部分はDev Containerがつけてるのかな？）&lt;/p&gt;
+&lt;h3 id=&#34;3-dovcontainerjsonの変更&#34;&gt;3. dovcontainer.jsonの変更&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;devcountainer.json&lt;/code&gt;から呼び出すものの準備ができたので、&lt;code&gt;devcontainer.json&lt;/code&gt;を書き換えます。
+&lt;a href=&#34;https://containers.dev/implementors/json_reference/#compose-specific&#34;&gt;公式のドキュメントとしてDocker Compose向けのプロパティが紹介されています&lt;/a&gt;。
+変更したものは次のような形です。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
+  &amp;quot;name&amp;quot;: &amp;quot;search-research&amp;quot;,
+  &amp;quot;dockerComposeFile&amp;quot;: &amp;quot;../docker-compose.yml&amp;quot;,
+  &amp;quot;service&amp;quot;: &amp;quot;backend&amp;quot;,
+  &amp;quot;workspaceFolder&amp;quot;: &amp;quot;/workspace/search-research&amp;quot;,
+  &amp;quot;postCreateCommand&amp;quot;: &amp;quot;/bin/sh ./.devcontainer/postCreateCommand.sh&amp;quot;,
+  &amp;quot;customizations&amp;quot;: {
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
+&lt;li&gt;dockerComposeFile : 利用するdocker-compose.ymlのファイルパス&lt;/li&gt;
+&lt;li&gt;service：VS Codeが利用するワークスペース用のサービス名&lt;/li&gt;
+&lt;li&gt;workspaceFoldeer：VS Codeがコンテナに接続したときに開くフォルダのパス&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;を指定します。これで、VS Codeでこのプロジェクトを開いた時に、Dev Containerがdocker-compose.ymlを使ってコンテナの起動（ビルドとか）を行ってくれます。&lt;/p&gt;
+&lt;h3 id=&#34;4-アプリの接続文字列の書き換え&#34;&gt;4. アプリの接続文字列の書き換え&lt;/h3&gt;
+&lt;p&gt;こちらはおまけです。
+PythonのアプリからElasticsearchに接続するときの文字列として、Dev Container化の前は、&lt;code&gt;http://localhost:9200&lt;/code&gt;と指定をしていました。
+Elasticsearch用のサービス（&lt;code&gt;es&lt;/code&gt;）で、ポートフォワードをしていたためです。&lt;/p&gt;
+&lt;p&gt;アプリ側もコンテナ化したので、Docker Composeが名前の解決をしてくれるので、&lt;code&gt;http://es:9200&lt;/code&gt;という接続文字列で接続ができるようになりました。&lt;/p&gt;
+&lt;p&gt;ということで、ここまでで、VS Codeでプロジェクトを開くと、2つのコンテナ（&lt;code&gt;backend&lt;/code&gt;と&lt;code&gt;es&lt;/code&gt;）が起動してVS Code上でPythonアプリからEsへの接続ができるようになりました。&lt;/p&gt;
+&lt;h2 id=&#34;追加の変更&#34;&gt;追加の変更&lt;/h2&gt;
+&lt;p&gt;参考のプルリクでは、上記まででしたがさらにいくつかの変更をそのあとやっています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;起動するサービスの指定(開発だけするときはEsを起動したくない)
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;devcontainer.json&lt;/code&gt;で&lt;code&gt;runServices&lt;/code&gt;を使って指定できます（&lt;a href=&#34;https://containers.dev/implementors/json_reference/#compose-specific&#34;&gt;公式ドキュメント&lt;/a&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;GPUをコンテナから利用できるように
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;devcontainer.json&lt;/code&gt;で&lt;code&gt;features&lt;/code&gt;の&lt;code&gt;nvidia-cuda&lt;/code&gt;を指定し、docker-compose.ymlで&lt;code&gt;nvidia&lt;/code&gt;のドライバーなどを設定することで対応しました。&lt;/li&gt;
+&lt;li&gt;nvidiaが公開しているcuda対応のコンテナイメージでもよかったのですが、こちらのほうが楽そうだったという理由です。&lt;code&gt;features&lt;/code&gt;とコンテナのビルド、postCreateCommandの順序などはもうちょっと勉強しないといけない気がしています。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;これらの対応は&lt;a href=&#34;https://github.com/johtani/search-research/commit/10a4741ab6fa2003f6f050864758a8176a9090cb&#34;&gt;こちらのコミット&lt;/a&gt;で対応しています。&lt;/p&gt;
+&lt;p&gt;GPUの対応は、私個人の環境はこれでいいのですが、複数の人がこのリポジトリを使う場合はどうやって切り替えたりするんだろう？という疑問が残っています。。。
+今回はrinna/japanese-clipのモデルを使って、テキストからベクトルを生成する部分の処理のためにGPUを使いたいというモチベーションがあり、コンテナでもGPUを使えるようにしています（CPUだと時間がすごくかかる。。。）。&lt;/p&gt;
+&lt;h3 id=&#34;サービス起動の新たな問題点&#34;&gt;サービス起動の新たな問題点&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;runServices&lt;/code&gt;で起動するサービス名を指定したのはよかったのですが、Elasticsearchのサービスを起動して、データ登録や検索の確認を行おうと思った時に、EsのコンテナをVS Codeだけで起動する方法がまだわかっていません。。。
+一度コンテナをビルドした後なら、「Remote Explorer」でOther Containerというくくりで表示され、右クリックで起動や停止ができそうなのだけど、新規サービスをdocker-compose.ymlに追加した場合は、自分でターミナルなどでコンテナのビルドをしないといけないかもしれないです。もうちょっと調べてみないとなぁ。&lt;/p&gt;
+&lt;h2 id=&#34;副次的な効果&#34;&gt;副次的な効果&lt;/h2&gt;
+&lt;p&gt;Docker Compose対応をしたことで、前回の記事での疑問点のうち、「コンテナ名」「VolumeのID」については懸念点がなくなりました。&lt;/p&gt;
+&lt;p&gt;「コンテナ名」は、docker-compose.ymlのサービス名がコンテナ起動時に名前として利用されるため、Docker Desktopで見た時などの探しにくさはなくなりました。
+ただ、「イメージ名」については、いまだに2つできています。「-uid」がつかないものの代わりに、&lt;code&gt;search-research-backend&lt;/code&gt;というイメージが作られています。
+ただし、実際に利用されるのは前回の記事に書いたような&lt;code&gt;vsc-search-research-bf04371c017c8d2f1dd5ad2529841b02e9ea1d1aaa4354c19edf53cef3f0c13b-uid&lt;/code&gt;という名前のイメージです。&lt;/p&gt;
+&lt;p&gt;「VolumeのID」については、docker-compose.ymlのファイルで自分で名前をつけるようにしたので、コンテナのIDが利用されなくなったという次第です。
+代わりに、プロジェクト名である「search-research」という名前を直接記述しているので、変数などで置き換えたほうがいいのかも？という気がしています。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、複数のコンテナを利用するプロジェクトでVS Code+Dev Container対応ができそうだということがわかりました。
+ついでに、GPU対応もできたのでこれで、やっと他の検索エンジン対応などができる気がしています。
+（その前にpre-commitを保存時にチェックする形に変更かなぁ）
+やりたいことからちょっとずつ外れている気もするけれど、新しいことを調べるのは楽しいですね。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>VS CodeとDev Containerの導入（まだ途中）</title>
       <link>https://blog.johtani.info/blog/2023/07/13/introduce-vs-code-and-dev-container/</link>
