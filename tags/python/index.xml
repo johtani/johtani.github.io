@@ -57,7 +57,6 @@ ENV TZ Asia/Tokyo
 ...
 volumes:
   venv-search-research-backend:
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;1.で作成したDockerfileを利用します。docker-compose.ymlファイル自体は、プロジェクトのルートディレクトリに配置していますが、Dockerfileは&lt;code&gt;.devcontainer&lt;/code&gt;ディレクトリに入れたため、&lt;code&gt;context&lt;/code&gt;と&lt;code&gt;dockerfile&lt;/code&gt;はこのような指定になっています。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;init&lt;/code&gt;は、&lt;code&gt;devcontainer.json&lt;/code&gt;で指定していた&lt;code&gt;&amp;quot;runArgs&amp;quot;: [&amp;quot;--init&amp;quot;],&lt;/code&gt;の設定になります。&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;command&lt;/code&gt;の部分は、コンテナが起動したままにしておくための設定です。&lt;/p&gt;
@@ -73,12 +72,12 @@ Dev Containerで起動した場合は&lt;code&gt;search-research_venv-search-res
 &lt;a href=&#34;https://containers.dev/implementors/json_reference/#compose-specific&#34;&gt;公式のドキュメントとしてDocker Compose向けのプロパティが紹介されています&lt;/a&gt;。
 変更したものは次のような形です。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
-  &amp;quot;name&amp;quot;: &amp;quot;search-research&amp;quot;,
-  &amp;quot;dockerComposeFile&amp;quot;: &amp;quot;../docker-compose.yml&amp;quot;,
-  &amp;quot;service&amp;quot;: &amp;quot;backend&amp;quot;,
-  &amp;quot;workspaceFolder&amp;quot;: &amp;quot;/workspace/search-research&amp;quot;,
-  &amp;quot;postCreateCommand&amp;quot;: &amp;quot;/bin/sh ./.devcontainer/postCreateCommand.sh&amp;quot;,
-  &amp;quot;customizations&amp;quot;: {
+  &amp;#34;name&amp;#34;: &amp;#34;search-research&amp;#34;,
+  &amp;#34;dockerComposeFile&amp;#34;: &amp;#34;../docker-compose.yml&amp;#34;,
+  &amp;#34;service&amp;#34;: &amp;#34;backend&amp;#34;,
+  &amp;#34;workspaceFolder&amp;#34;: &amp;#34;/workspace/search-research&amp;#34;,
+  &amp;#34;postCreateCommand&amp;#34;: &amp;#34;/bin/sh ./.devcontainer/postCreateCommand.sh&amp;#34;,
+  &amp;#34;customizations&amp;#34;: {
 ...
 &lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
 &lt;li&gt;dockerComposeFile : 利用するdocker-compose.ymlのファイルパス&lt;/li&gt;
@@ -152,7 +151,7 @@ Elasticsearch用のサービス（&lt;code&gt;es&lt;/code&gt;）で、ポート�
 &lt;p&gt;ファイルに実行権限がないと、実行権限エラーが出ました。
 実行権限を与えるか、次のような記述で動くようになりました。
 今は、ファイルに実行権限をつけるのではなく、次のような記述にしていますが、何か問題あるかな？&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; &amp;quot;postCreateCommand&amp;quot;: &amp;quot;/bin/sh ./.devcontainer/postCreateCommand.sh&amp;quot;,
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt; &amp;#34;postCreateCommand&amp;#34;: &amp;#34;/bin/sh ./.devcontainer/postCreateCommand.sh&amp;#34;,
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;実際に動作しているログを見ると&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;/bin/sh -c /bin/sh ./.devcontainer/postCreateCommand.sh&lt;/code&gt;&lt;/p&gt;
 &lt;p&gt;となっているので、少し気持ち悪いのだけれども。。。&lt;/p&gt;
@@ -187,8 +186,8 @@ vsc-search-research-bf04371c017c8d2f1dd5ad2529841b02e9ea1d1aaa4354c19edf53cef3f0
 Remote Explorerでコンテナの一覧が見えますが、ここでは、リポジトリ名が利用されているようです。&lt;/p&gt;
 &lt;h3 id=&#34;volumeのidはどこから&#34;&gt;VolumeのIDはどこから？&lt;/h3&gt;
 &lt;p&gt;&lt;code&gt;devcontainer.json&lt;/code&gt;で次のような記述で、&lt;code&gt;.venv&lt;/code&gt;のディレクトリようにDockerにボリュームを作っています。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  &amp;quot;mounts&amp;quot;: [
-    &amp;quot;source=venv-${devcontainerId},target=${containerWorkspaceFolder}/.venv,type=volume&amp;quot;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;  &amp;#34;mounts&amp;#34;: [
+    &amp;#34;source=venv-${devcontainerId},target=${containerWorkspaceFolder}/.venv,type=volume&amp;#34;
   ],
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;実際にコンテナでマウントされている情報を見ると&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;/workspaces/search-research/.venv
@@ -201,7 +200,7 @@ Remote Explorerでコンテナの一覧が見えますが、ここでは、リ�
 &lt;p&gt;たぶん、VS Codeを触っている過程で、何かの設定をしてしまったのだとは思うのですが、
 &lt;code&gt;.vscode/settings.json&lt;/code&gt;というファイルができており、次のような内容になっています。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;{
-  &amp;quot;git.ignoreLimitWarning&amp;quot;: true
+  &amp;#34;git.ignoreLimitWarning&amp;#34;: true
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;何か意味があるかも？ということで、コミットしてリポジトリに入れたのですが、いらないのかもしれないなぁと。&lt;/p&gt;
 &lt;h2 id=&#34;残作業&#34;&gt;残作業&lt;/h2&gt;
@@ -271,7 +270,7 @@ gitコマンドはcommitされた時に（commit前のフェーズ）でこの�
     rev: 23.3.0
     hooks:
       - id: black
-        args: [&amp;quot;--line-length&amp;quot;, &amp;quot;120&amp;quot;, &amp;quot;.&amp;quot;]
+        args: [&amp;#34;--line-length&amp;#34;, &amp;#34;120&amp;#34;, &amp;#34;.&amp;#34;]
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
@@ -280,7 +279,7 @@ gitコマンドはcommitされた時に（commit前のフェーズ）でこの�
     rev: 5.12.0
     hooks:
       - id: isort
-        args: [&amp;quot;--profile&amp;quot;, &amp;quot;black&amp;quot;, &amp;quot;--filter-files&amp;quot;, &amp;quot;--multi-line&amp;quot;, &amp;quot;3&amp;quot;]
+        args: [&amp;#34;--profile&amp;#34;, &amp;#34;black&amp;#34;, &amp;#34;--filter-files&amp;#34;, &amp;#34;--multi-line&amp;#34;, &amp;#34;3&amp;#34;]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.4.1
     hooks:

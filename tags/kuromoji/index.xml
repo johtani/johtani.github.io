@@ -192,10 +192,10 @@ Lucene 4.6.0では、TokenStreamというTokenizerのI/Fに変更があり、Tok
 &lt;p&gt;現時点（2013年12月19日現在）のelasticsearch-analysis-kuromojiの1.6.0にはlucene-analyzers-kuromoji-4.5.1.jarが含まれており、この部分でI/Fが異なるためエラーが発生してしまいます。
 プラグインをインストールする時点ではエラーは発生せず、実際にKuromojiのTokenizerやAnalyzerを利用するタイミングでエラーが出ます。
 以下、0.90.8にanalysis-kuromojiの1.6.0をインストールした状態で&lt;code&gt;_analyze&lt;/code&gt;を実行した時のエラー。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPOST &#39;localhost:9200/_analyze?tokenizer=kuromoji_tokenizer&amp;amp;filters=kuromoji_baseform&amp;amp;pretty&#39; -d &#39;寿司が美味しかった&#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPOST &amp;#39;localhost:9200/_analyze?tokenizer=kuromoji_tokenizer&amp;amp;filters=kuromoji_baseform&amp;amp;pretty&amp;#39; -d &amp;#39;寿司が美味しかった&amp;#39;
 {
-  &amp;quot;error&amp;quot; : &amp;quot;IllegalStateException[TokenStream contract violation: reset()/close() call missing, reset() called multiple times, or subclass does not call super.reset(). Please see Javadocs of TokenStream class for more information about the correct consuming workflow.]&amp;quot;,
-  &amp;quot;status&amp;quot; : 500
+  &amp;#34;error&amp;#34; : &amp;#34;IllegalStateException[TokenStream contract violation: reset()/close() call missing, reset() called multiple times, or subclass does not call super.reset(). Please see Javadocs of TokenStream class for more information about the correct consuming workflow.]&amp;#34;,
+  &amp;#34;status&amp;#34; : 500
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ということで、1.7.0がリリースされるのを待つか、自分で&lt;code&gt;mvn package&lt;/code&gt;してビルドする必要があります。
 他にも独自でTokenizerなどを造られている方は注意が必要かと。&lt;/p&gt;
@@ -236,32 +236,32 @@ ElasticSearchの起動時に以下のオプションを指定して、最大ヒ�
 &lt;p&gt;Wikipediaのデータを登録する際に、Kuromojiのアナライザを利用したいのが今回の趣旨でした。
 一番ラクな方法として、Wikipediaデータのインデックスの設定として、デフォルトのアナライザをKuromojiにしてしまいます。
 （きちんと設計する場合は、必要に応じてフィールドごとに指定しましょう）&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPUT &#39;localhost:9200/ja-wikipedia-kuromoji&#39; -d &#39;{
-    &amp;quot;settings&amp;quot;: {
-        &amp;quot;analysis&amp;quot;: {
-            &amp;quot;analyzer&amp;quot;: {
-                &amp;quot;default&amp;quot; : {
-                    &amp;quot;type&amp;quot; : &amp;quot;kuromoji&amp;quot;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPUT &amp;#39;localhost:9200/ja-wikipedia-kuromoji&amp;#39; -d &amp;#39;{
+    &amp;#34;settings&amp;#34;: {
+        &amp;#34;analysis&amp;#34;: {
+            &amp;#34;analyzer&amp;#34;: {
+                &amp;#34;default&amp;#34; : {
+                    &amp;#34;type&amp;#34; : &amp;#34;kuromoji&amp;#34;
                 }
             }
         }
     }
-}&#39;
+}&amp;#39;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これでkuromojiのアナライザがデフォルトで利用される形となります。
 あとは、Riverを起動して登録するだけです。&lt;/p&gt;
 &lt;h2 id=&#34;riverの実行&#34;&gt;Riverの実行&lt;/h2&gt;
 &lt;p&gt;前回と一緒です。
 インデックス名（&lt;strong&gt;_river/&amp;lt;インデックス名&amp;gt;/_meta&lt;/strong&gt;）だけは、先ほど作成した「&lt;code&gt;ja-wikipedia-kuromoji&lt;/code&gt;」に変更してください。&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d &#39;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;curl -XPUT localhost:9200/_river/ja-wikipedia-kuromoji/_meta -d &amp;#39;
 {
-    &amp;quot;type&amp;quot; : &amp;quot;wikipedia&amp;quot;,
-    &amp;quot;wikipedia&amp;quot; : {
-        &amp;quot;url&amp;quot; : &amp;quot;file:/home/johtani/src/jawiki-latest-pages-articles.xml&amp;quot;
+    &amp;#34;type&amp;#34; : &amp;#34;wikipedia&amp;#34;,
+    &amp;#34;wikipedia&amp;#34; : {
+        &amp;#34;url&amp;#34; : &amp;#34;file:/home/johtani/src/jawiki-latest-pages-articles.xml&amp;#34;
     },
-    &amp;quot;index&amp;quot; : {
-        &amp;quot;bulk_size&amp;quot; : 10000
+    &amp;#34;index&amp;#34; : {
+        &amp;#34;bulk_size&amp;#34; : 10000
     }
-}&#39;
+}&amp;#39;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あとは、インデックスされるのを待つだけです。&lt;/p&gt;
 &lt;h2 id=&#34;データ量とか&#34;&gt;データ量とか&lt;/h2&gt;
 &lt;p&gt;5.8gbになりました。Kuromojiを利用したため、形態素解析により単語にきちんとトークないずされた結果でしょう。

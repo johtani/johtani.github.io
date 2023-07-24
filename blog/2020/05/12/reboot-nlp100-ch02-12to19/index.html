@@ -222,220 +222,219 @@
 <p>ちなみに、標準入力から受け取る処理は書いてないです。
 出力に関してはファイル分割、保存と支持があるもの以外は文字列として取り出すところで終わっています。</p>
 <h2 id="12-1列目をcol1txtに2列目をcol2txtに保存">12. 1列目をcol1.txtに，2列目をcol2.txtに保存</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_column</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
-    <span style="color:#66d9ef">let</span> input_f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
-    <span style="color:#66d9ef">let</span> read_buf <span style="color:#f92672">=</span> BufReader::new(input_f);
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
-        .write(<span style="color:#66d9ef">true</span>)
-        .create(<span style="color:#66d9ef">true</span>)
-        .open(output_file_name)
-        .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
-    read_buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
-        Ok(line) <span style="color:#f92672">=&gt;</span> {
-            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
-            writeln!(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, columns[num]);
-            output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
-        }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error &#34;</span>),
-    });
-}
-</code></pre></div><p>13で出力結果を利用するので入力として出力ファイル名も受け取るようにしました。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_column</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> input_f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> read_buf <span style="color:#f92672">=</span> BufReader::new(input_f);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
+</span></span><span style="display:flex;"><span>        .write(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .create(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .open(output_file_name)
+</span></span><span style="display:flex;"><span>        .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">] with write option&#34;</span>, output_file_name).as_str());
+</span></span><span style="display:flex;"><span>    read_buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+</span></span><span style="display:flex;"><span>        Ok(line) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
+</span></span><span style="display:flex;"><span>            writeln!(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, columns[num]);
+</span></span><span style="display:flex;"><span>            output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error &#34;</span>),
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>13で出力結果を利用するので入力として出力ファイル名も受け取るようにしました。
 問題としては、1列目と2列目を別々に出力すればいいので、1回の処理で書いても良かったのですが、1回1ファイルの出力という形で実装しました(効率は悪い)。</p>
 <p>改行コードあたりを考えるのがめんどくさかったので<code>writeln!</code>マクロでファイルに書き出しています。が、普通に<code>write</code>メソッドで改行コードを追加しても良かったのかなと。</p>
 <p>あとは、出力先ファイルが存在しない場合だけ<code>open</code>するように<code>OpenOptions</code>を利用してみています。</p>
 <p><code>flush</code>を呼び出すべきなのかどうか?を調べないとな。。。</p>
 <h2 id="13-col1txtとcol2txtをマージ">13. col1.txtとcol2.txtをマージ</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">merge_files</span>(col1_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col2_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
-    <span style="color:#66d9ef">let</span> col1_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col1_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-    <span style="color:#66d9ef">let</span> col2_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col2_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
-        .write(<span style="color:#66d9ef">true</span>)
-        .create(<span style="color:#66d9ef">true</span>)
-        .open(output_file_name)
-        .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
-    col1_buf
-        .lines()
-        .zip(col2_buf.lines())
-        .for_each(<span style="color:#f92672">|</span>(col1, col2)<span style="color:#f92672">|</span> {
-            <span style="color:#66d9ef">let</span> col1 <span style="color:#f92672">=</span> col1.expect(<span style="color:#e6db74">&#34;parse error col1&#34;</span>);
-            <span style="color:#66d9ef">let</span> col2 <span style="color:#f92672">=</span> col2.expect(<span style="color:#e6db74">&#34;parse error col2&#34;</span>);
-            writeln!(output_f, <span style="color:#e6db74">&#34;{}\t{}&#34;</span>, col1, col2);
-            output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
-        });
-}
-</code></pre></div><p>2つのファイル名を入力として受け取り、タブでくっつけて出力します。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">merge_files</span>(col1_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col2_file: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, output_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> col1_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col1_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> col2_buf <span style="color:#f92672">=</span> BufReader::new(File::open(col2_file).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
+</span></span><span style="display:flex;"><span>        .write(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .create(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>        .open(output_file_name)
+</span></span><span style="display:flex;"><span>        .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">] with write option&#34;</span>, output_file_name).as_str());
+</span></span><span style="display:flex;"><span>    col1_buf
+</span></span><span style="display:flex;"><span>        .lines()
+</span></span><span style="display:flex;"><span>        .zip(col2_buf.lines())
+</span></span><span style="display:flex;"><span>        .for_each(<span style="color:#f92672">|</span>(col1, col2)<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> col1 <span style="color:#f92672">=</span> col1.expect(<span style="color:#e6db74">&#34;parse error col1&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> col2 <span style="color:#f92672">=</span> col2.expect(<span style="color:#e6db74">&#34;parse error col2&#34;</span>);
+</span></span><span style="display:flex;"><span>            writeln!(output_f, <span style="color:#e6db74">&#34;{}</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">{}&#34;</span>, col1, col2);
+</span></span><span style="display:flex;"><span>            output_f.flush().expect(<span style="color:#e6db74">&#34;Error during flush&#34;</span>);
+</span></span><span style="display:flex;"><span>        });
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>2つのファイル名を入力として受け取り、タブでくっつけて出力します。
 <code>zip</code>を利用することで、2つのイテレーターを同時に回しています。</p>
 <h2 id="14-先頭からn行を出力">14. 先頭からN行を出力</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">head</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
-    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> head <span style="color:#f92672">=</span> String::new();
-    buf.lines().take(lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        head.push_str(format!(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
-    });
-    <span style="color:#66d9ef">return</span> head;
-}
-</code></pre></div><p>イテレーターのメソッドに<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.take"><code>take</code></a>があります。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">head</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> head <span style="color:#f92672">=</span> String::new();
+</span></span><span style="display:flex;"><span>    buf.lines().take(lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        head.push_str(format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> head;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>イテレーターのメソッドに<a href="https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.take"><code>take</code></a>があります。
 これを利用することで、引数に指定した数のエレメントが取得できるので、これでheadが実現できます。</p>
 <h2 id="15-末尾のn行を出力">15. 末尾のN行を出力</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tail</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
-    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tail <span style="color:#f92672">=</span> String::new();
-    <span style="color:#66d9ef">let</span> line_count <span style="color:#f92672">=</span> word_count(input_file_name);
-    buf.lines().skip(line_count <span style="color:#f92672">-</span> lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        tail.push_str(format!(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
-    });
-    <span style="color:#66d9ef">return</span> tail;
-}
-</code></pre></div><p>tailの場合は少し複雑で、11で作成した行数をカウントするメソッドで総行数を取り出し、そこから引数で指定された行数を引き算した数(=出力しない行数)を、イテレーターの<code>skip</code>メソッドの引数に渡しています。これにより、指定された数のエレメントをスキップしたあとの処理がかけます。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tail</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, lines: <span style="color:#66d9ef">usize</span>) -&gt; String {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tail <span style="color:#f92672">=</span> String::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> line_count <span style="color:#f92672">=</span> word_count(input_file_name);
+</span></span><span style="display:flex;"><span>    buf.lines().skip(line_count <span style="color:#f92672">-</span> lines).for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        tail.push_str(format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, line.expect(<span style="color:#e6db74">&#34;parse error&#34;</span>)).as_str());
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> tail;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>tailの場合は少し複雑で、11で作成した行数をカウントするメソッドで総行数を取り出し、そこから引数で指定された行数を引き算した数(=出力しない行数)を、イテレーターの<code>skip</code>メソッドの引数に渡しています。これにより、指定された数のエレメントをスキップしたあとの処理がかけます。</p>
 <h2 id="16-ファイルをn分割する">16. ファイルをN分割する</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">split_files</span>(
-    input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
-    num: <span style="color:#66d9ef">usize</span>,
-    output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
-    output_file_suffix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
-) {
-    <span style="color:#66d9ef">let</span> total <span style="color:#f92672">=</span> word_count(input_file_name) <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">f64</span>;
-    <span style="color:#66d9ef">let</span> lines_in_file <span style="color:#f92672">=</span> total <span style="color:#f92672">/</span> num <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">f64</span>;
-    <span style="color:#66d9ef">let</span> lines_in_file <span style="color:#f92672">=</span> lines_in_file.ceil() <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">usize</span>; <span style="color:#75715e">//
-</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-
-    <span style="color:#66d9ef">let</span> output_files: Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> create_file_vec(output_file_prefix, num, output_file_suffix);
-
-    println!(<span style="color:#e6db74">&#34;split file each {} lines.&#34;</span>, lines_in_file);
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> buf.lines();
-
-    <span style="color:#66d9ef">for</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#66d9ef">in</span> output_files {
-        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> current <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
-        <span style="color:#66d9ef">while</span> current <span style="color:#f92672">&lt;</span> lines_in_file <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> {
-            <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> lines.next();
-            <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Some(line_rs) <span style="color:#f92672">=</span> line {
-                <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ok(line_str) <span style="color:#f92672">=</span> line_rs {
-                    writeln!(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, line_str);
-                }
-            }
-            current <span style="color:#f92672">=</span> current <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
-        }
-        output_f.flush().expect(<span style="color:#e6db74">&#34;error during flush&#34;</span>);
-    }
-}
-
-<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">create_file_vec</span>(output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_suffix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> files <span style="color:#f92672">=</span> Vec::with_capacity(num);
-    <span style="color:#66d9ef">for</span> i <span style="color:#66d9ef">in</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">..</span>num {
-        <span style="color:#66d9ef">let</span> output_file_name <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;{}{}{}&#34;</span>, output_file_prefix, i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, output_file_suffix);
-        <span style="color:#66d9ef">let</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
-            .write(<span style="color:#66d9ef">true</span>)
-            .create(<span style="color:#66d9ef">true</span>)
-            .open(output_file_name.as_str())
-            .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[{}] with write option&#34;</span>, output_file_name).as_str());
-        files.push(output_f);
-    }
-    <span style="color:#66d9ef">return</span> files;
-}
-</code></pre></div><p>ちょっと長いですね。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">split_files</span>(
+</span></span><span style="display:flex;"><span>    input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>    num: <span style="color:#66d9ef">usize</span>,
+</span></span><span style="display:flex;"><span>    output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>    output_file_suffix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>,
+</span></span><span style="display:flex;"><span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> total <span style="color:#f92672">=</span> word_count(input_file_name) <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">f64</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> lines_in_file <span style="color:#f92672">=</span> total <span style="color:#f92672">/</span> num <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">f64</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> lines_in_file <span style="color:#f92672">=</span> lines_in_file.ceil() <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">usize</span>; <span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> output_files: Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> create_file_vec(output_file_prefix, num, output_file_suffix);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;split file each </span><span style="color:#e6db74">{}</span><span style="color:#e6db74"> lines.&#34;</span>, lines_in_file);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> buf.lines();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#66d9ef">mut</span> output_f <span style="color:#66d9ef">in</span> output_files {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> current <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">while</span> current <span style="color:#f92672">&lt;</span> lines_in_file <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> lines.next();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Some(line_rs) <span style="color:#f92672">=</span> line {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ok(line_str) <span style="color:#f92672">=</span> line_rs {
+</span></span><span style="display:flex;"><span>                    writeln!(output_f, <span style="color:#e6db74">&#34;{}&#34;</span>, line_str);
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            current <span style="color:#f92672">=</span> current <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        output_f.flush().expect(<span style="color:#e6db74">&#34;error during flush&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">create_file_vec</span>(output_file_prefix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, num: <span style="color:#66d9ef">usize</span>, output_file_suffix: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>File<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> files <span style="color:#f92672">=</span> Vec::with_capacity(num);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#66d9ef">in</span> <span style="color:#ae81ff">0</span><span style="color:#f92672">..</span>num {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> output_file_name <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}{}{}</span><span style="color:#e6db74">&#34;</span>, output_file_prefix, i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>, output_file_suffix);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> output_f <span style="color:#f92672">=</span> OpenOptions::new()
+</span></span><span style="display:flex;"><span>            .write(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>            .create(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>            .open(output_file_name.as_str())
+</span></span><span style="display:flex;"><span>            .expect(format!(<span style="color:#e6db74">&#34;can&#39;t open file[</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">] with write option&#34;</span>, output_file_name).as_str());
+</span></span><span style="display:flex;"><span>        files.push(output_f);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> files;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>ちょっと長いですね。</p>
 <p>入力としては、分割するファイル数<code>N</code>が指定されます。まずは、<code>総行数/N</code>で各ファイルに保存されるべき行数を計算します。
 次に、2つ目の関数をつかって、必要な数のファイルオブジェクトをベクトルとして生成します。</p>
 <p>ファイルオブジェクトのベクトルの要素を元にしたfor文を回しつつ、それぞれのファイルに必要な行数を出力している処理になっています。</p>
 <p>総行数が<code>N</code>で割り切れない場合に<code>ceil</code>で切り上げした行数にするというちょっとした処理を入れてあります。</p>
 <h2 id="17-１列目の文字列の異なり">17. １列目の文字列の異なり</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">count_uniq_words</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col: <span style="color:#66d9ef">usize</span>) -&gt; <span style="color:#66d9ef">usize</span> {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> words <span style="color:#f92672">=</span> HashSet::new();
-    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
-        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
-            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
-            words.insert(columns[col].to_string());
-        }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error &#34;</span>),
-    });
-    <span style="color:#66d9ef">return</span> words.len();
-}
-</code></pre></div><p><code>HashSet</code>を利用することでユニーク性を担保して、最後はHashSetの数を数え上げれば終了です。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">count_uniq_words</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, col: <span style="color:#66d9ef">usize</span>) -&gt; <span style="color:#66d9ef">usize</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> words <span style="color:#f92672">=</span> HashSet::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+</span></span><span style="display:flex;"><span>        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
+</span></span><span style="display:flex;"><span>            words.insert(columns[col].to_string());
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error &#34;</span>),
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> words.len();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>HashSet</code>を利用することでユニーク性を担保して、最後はHashSetの数を数え上げれば終了です。</p>
 <h2 id="18-各行を3コラム目の数値の降順にソート">18. 各行を3コラム目の数値の降順にソート</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_col3</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines: <span style="color:#a6e22e">BTreeSet</span><span style="color:#f92672">&lt;</span>Line<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> BTreeSet::new();
-    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
-        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
-            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
-            <span style="color:#66d9ef">let</span> num: <span style="color:#66d9ef">u32</span> <span style="color:#f92672">=</span> columns[<span style="color:#ae81ff">2</span>].parse().expect(<span style="color:#e6db74">&#34;parse error&#34;</span>);
-            <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> Line {
-                line: <span style="color:#a6e22e">line_str</span>,
-                num,
-            };
-            lines.insert(line);
-        }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error&#34;</span>),
-    });
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
-    lines.iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        sorted.push_str(format!(<span style="color:#e6db74">&#34;{}\n&#34;</span>, line.line).as_str());
-    });
-
-    <span style="color:#66d9ef">return</span> sorted;
-}
-
-<span style="color:#75715e">#[derive(Eq)]</span>
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Line</span> {
-    line: String,
-    num: <span style="color:#66d9ef">u32</span>,
-}
-
-<span style="color:#66d9ef">impl</span> Ord <span style="color:#66d9ef">for</span> Line {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">cmp</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; <span style="color:#a6e22e">Ordering</span> {
-        <span style="color:#66d9ef">let</span> ord <span style="color:#f92672">=</span> other.num.cmp(<span style="color:#f92672">&amp;</span>self.num);
-        <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ordering::Equal <span style="color:#f92672">=</span> ord {
-            other.line.cmp(<span style="color:#f92672">&amp;</span>self.line)
-        } <span style="color:#66d9ef">else</span> {
-            ord
-        }
-    }
-}
-
-<span style="color:#66d9ef">impl</span> PartialOrd <span style="color:#66d9ef">for</span> Line {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">partial_cmp</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; Option<span style="color:#f92672">&lt;</span>Ordering<span style="color:#f92672">&gt;</span> {
-        Some(self.cmp(other))
-    }
-}
-
-<span style="color:#66d9ef">impl</span> PartialEq <span style="color:#66d9ef">for</span> Line {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">eq</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; <span style="color:#66d9ef">bool</span> {
-        self.eq(other)
-    }
-}
-</code></pre></div><p><code>Line</code>という、行の文章と第3カラム目の値をもった構造体を作成しました。そこにEq、Ord、PartialOrd、PartialEqを実装し、3カラム目での大小比較できるようにしました。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_col3</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines: <span style="color:#a6e22e">BTreeSet</span><span style="color:#f92672">&lt;</span>Line<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> BTreeSet::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+</span></span><span style="display:flex;"><span>        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> num: <span style="color:#66d9ef">u32</span> <span style="color:#f92672">=</span> columns[<span style="color:#ae81ff">2</span>].parse().expect(<span style="color:#e6db74">&#34;parse error&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> line <span style="color:#f92672">=</span> Line {
+</span></span><span style="display:flex;"><span>                line: <span style="color:#a6e22e">line_str</span>,
+</span></span><span style="display:flex;"><span>                num,
+</span></span><span style="display:flex;"><span>            };
+</span></span><span style="display:flex;"><span>            lines.insert(line);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error&#34;</span>),
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
+</span></span><span style="display:flex;"><span>    lines.iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        sorted.push_str(format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, line.line).as_str());
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> sorted;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#[derive(Eq)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Line</span> {
+</span></span><span style="display:flex;"><span>    line: String,
+</span></span><span style="display:flex;"><span>    num: <span style="color:#66d9ef">u32</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Ord <span style="color:#66d9ef">for</span> Line {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">cmp</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; <span style="color:#a6e22e">Ordering</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> ord <span style="color:#f92672">=</span> other.num.cmp(<span style="color:#f92672">&amp;</span>self.num);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ordering::Equal <span style="color:#f92672">=</span> ord {
+</span></span><span style="display:flex;"><span>            other.line.cmp(<span style="color:#f92672">&amp;</span>self.line)
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>            ord
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> PartialOrd <span style="color:#66d9ef">for</span> Line {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">partial_cmp</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; Option<span style="color:#f92672">&lt;</span>Ordering<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        Some(self.cmp(other))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> PartialEq <span style="color:#66d9ef">for</span> Line {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">eq</span>(<span style="color:#f92672">&amp;</span>self, other: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Self</span>) -&gt; <span style="color:#66d9ef">bool</span> {
+</span></span><span style="display:flex;"><span>        self.eq(other)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>Line</code>という、行の文章と第3カラム目の値をもった構造体を作成しました。そこにEq、Ord、PartialOrd、PartialEqを実装し、3カラム目での大小比較できるようにしました。
 この構造体をBTeeSetに格納していき、イテレーターで回すことで、ソートされた状態にしてあります。
 同一数値の場合は行の降順でソートできるようにOrdを実装してあります。</p>
 <h2 id="19-各行の1コラム目の文字列の出現頻度を求め出現頻度の高い順に並べる">19. 各行の1コラム目の文字列の出現頻度を求め，出現頻度の高い順に並べる</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_frequency</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> names: <span style="color:#a6e22e">HashMap</span><span style="color:#f92672">&lt;</span>String, <span style="color:#66d9ef">u32</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> HashMap::new();
-    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
-    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
-        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
-            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
-            <span style="color:#66d9ef">let</span> name_str <span style="color:#f92672">=</span> columns[<span style="color:#ae81ff">0</span>].to_string();
-            <span style="color:#66d9ef">let</span> count <span style="color:#f92672">=</span> names.entry(name_str).or_insert(<span style="color:#ae81ff">0</span>);
-            <span style="color:#f92672">*</span>count <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>;
-        }
-        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error&#34;</span>),
-    });
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted_names: Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> names.iter().collect();
-    sorted_names.sort_by(<span style="color:#f92672">|</span>(aname, acount), (bname, bcount)<span style="color:#f92672">|</span> {
-        <span style="color:#66d9ef">let</span> ord <span style="color:#f92672">=</span> bcount.cmp(acount);
-        <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ordering::Equal <span style="color:#f92672">=</span> ord {
-            bname.cmp(aname)
-        } <span style="color:#66d9ef">else</span> {
-            ord
-        }
-    });
-    sorted_names.iter().for_each(<span style="color:#f92672">|</span>(name, count)<span style="color:#f92672">|</span> {
-        sorted.push_str(format!(<span style="color:#e6db74">&#34;{} {}\n&#34;</span>, count, name).as_str());
-    });
-    <span style="color:#66d9ef">return</span> sorted;
-}
-
-</code></pre></div><p>もうすこしうまくできる気がしますが、いったんこれで。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">sort_on_frequency</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> names: <span style="color:#a6e22e">HashMap</span><span style="color:#f92672">&lt;</span>String, <span style="color:#66d9ef">u32</span><span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> HashMap::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found&#34;</span>));
+</span></span><span style="display:flex;"><span>    buf.lines().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> <span style="color:#66d9ef">match</span> line {
+</span></span><span style="display:flex;"><span>        Ok(line_str) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> columns: Vec<span style="color:#f92672">&lt;</span>_<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> line_str.split(<span style="color:#e6db74">&#39;\t&#39;</span>).collect();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> name_str <span style="color:#f92672">=</span> columns[<span style="color:#ae81ff">0</span>].to_string();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> count <span style="color:#f92672">=</span> names.entry(name_str).or_insert(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">*</span>count <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        Err(_) <span style="color:#f92672">=&gt;</span> panic!(<span style="color:#e6db74">&#34;parse error&#34;</span>),
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted <span style="color:#f92672">=</span> String::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sorted_names: Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> names.iter().collect();
+</span></span><span style="display:flex;"><span>    sorted_names.sort_by(<span style="color:#f92672">|</span>(aname, acount), (bname, bcount)<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> ord <span style="color:#f92672">=</span> bcount.cmp(acount);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#66d9ef">let</span> Ordering::Equal <span style="color:#f92672">=</span> ord {
+</span></span><span style="display:flex;"><span>            bname.cmp(aname)
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>            ord
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    sorted_names.iter().for_each(<span style="color:#f92672">|</span>(name, count)<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        sorted.push_str(format!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74"> </span><span style="color:#e6db74">{}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, count, name).as_str());
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> sorted;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>もうすこしうまくできる気がしますが、いったんこれで。
 数え上げのためにまずはHashMapに<code>第1カラムの文字列, 個数</code>という組み合わせでデータを入れていきます。
 出来上がったHashMapをタプルのベクターに変換し、変換したベクターの<code>sort_by</code>メソッドに比較用の関数を渡すことで個数の降順に並べています。同一個数の場合は文字列の降順になっています。
 で、最後に並びかわったベクターのイテレーターを使って出力しておしまいです。
@@ -471,7 +470,7 @@
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -794,6 +793,8 @@
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

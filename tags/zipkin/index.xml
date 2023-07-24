@@ -24,17 +24,14 @@
 　ScribeはFacebookにより開発されました。
 　システムの各サーバで実行できるデーモンとして作成されています。
 　ログメッセージをListenし、カテゴリごとのcorrectレシーバーに配送します。
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Zipkin collector daemon&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　トレースデータがZipkinコレクターデーモンに配送されたらvalidかどうかをチェックしてから保管し、インデックスを作成します。
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Storage&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　ストレージにはCassandraを選びました。
 　スケーラブルで、柔軟なスキーマをもっており、Twitter内部で大変使われています。
 　このコンポーネントをプラガブルにしようと試みましたが、困難なため、ここでは公開しません。
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Zipkin query daemon&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　保存、インデックスされたデータを探す方法が必要です。
@@ -87,7 +84,7 @@ bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassand
  3. cp zipkin-scribe/config/collector-dev.scala zipkin-scribe/config/collector-prod.scala
  4. cp zipkin-server/config/query-dev.scala zipkin-server/config/query-prod.scala
  5. Modify the configs above as needed. Pay particular attention to ZooKeeper and Cassandra server entries.
- 6. bin/sbt update package-dist (This downloads SBT 0.11.2 if it doesn&#39;t already exist)
+ 6. bin/sbt update package-dist (This downloads SBT 0.11.2 if it doesn&amp;#39;t already exist)
  7. scp dist/zipkin*.zip [server]
  8. ssh [server]
  9. unzip zipkin*.zip
@@ -98,11 +95,11 @@ bin/cassandra-cli -host localhost -port 9160 -f zipkin-server/src/schema/cassand
 　SBTでコレクターとクエリサービスを起動します。
 　Scribeコレクターサービスの起動方法は次の通り。
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-bin/sbt &#39;project zipkin-scribe&#39; &#39;run -f zipkin-scribe/config/collector-dev.scala&#39;
+bin/sbt &amp;#39;project zipkin-scribe&amp;#39; &amp;#39;run -f zipkin-scribe/config/collector-dev.scala&amp;#39;
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　クエリサービスは次の通り
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-bin/sbt &#39;project zipkin-server&#39; &#39;run -f zipkin-server/config/query-dev.scala&#39;
+bin/sbt &amp;#39;project zipkin-server&amp;#39; &amp;#39;run -f zipkin-server/config/query-dev.scala&amp;#39;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Zipkin UI&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　UIはRails3アプリです。
@@ -119,7 +116,6 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
   run &amp;lt;YOUR_APPLICATION&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　もし、アプリケーションのstatic assetsがRailsで提供されれば、リクエストがトレースされます。
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;##　Running a Hadoop job&lt;hr&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　ScribeからHadoopにログを保存する設定をすることも可能です。
@@ -162,7 +158,7 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
 　　デバッグのためのConsoleTracerが例としてありますが、ZipkinTracerになります。
 　　トレースデータを[ZipkinTracer](https://github.com/twitter/finagle/tree/master/finagle-zipkin)が受け取った時、Span Idにより集約されます。
 
-　4. ZipkinTracerが&amp;quot;end of span&amp;quot;イベント（&amp;quot;server received&amp;quot;アノテーションやタイムアウトのような）を受け取ると、Thrift構造としてデータを集約してScribeに送ります。もし、そのようなイベントが発生しない場合、ZipkinTracerはいつかそのデータを送信します？？？おかしい？。データ送信のための他の方法も追加します。
+　4. ZipkinTracerが&amp;#34;end of span&amp;#34;イベント（&amp;#34;server received&amp;#34;アノテーションやタイムアウトのような）を受け取ると、Thrift構造としてデータを集約してScribeに送ります。もし、そのようなイベントが発生しない場合、ZipkinTracerはいつかそのデータを送信します？？？おかしい？。データ送信のための他の方法も追加します。
 　ThriftやScribeのようなものですが、JSONやHttpかもしれません？
 
 &amp;lt;b&amp;gt;　クライアントサイド&amp;lt;/b&amp;gt;
@@ -178,7 +174,6 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
 　3. リクエスト送信前の「client send」やサーバからの返信を受信した「client receive」のようなアノテーションを生成します。
 
 　4. サーバサイドと同様に、データがZipkinにデータを送るZipkinTracerに到達します。
-
 &lt;/code&gt;&lt;/pre&gt;</content:encoded>
     </item>
     
@@ -200,13 +195,11 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
 　・CollectorはCassandraにデータを格納
 　・WebUIからはQueryでCassandraに問い合わせを行なってデータ取得
 　・Scripe、CollectorはZookeeperと連携している（妄想）
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;◯計測用ライブラリ（&lt;a href=&#34;https://github.com/twitter/zipkin/raw/master/doc/architecture-1.png&#34;&gt;図はこちら。&lt;/a&gt;図のSと書かれた青い箱）&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　・各ホストの計測用ライブラリがトレースデータを集めてZipkinに送信する。
 　・ホストは他のサービスへリクエストを飛ばすときに、リクエストにトレース用のIDを付与してます
 　　こうすることで、データをあとで、束ねることが可能となります。
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;◯計測ライブラリの利用方法&lt;/b&gt;
 &lt;b&gt;　・&lt;a href=&#34;https://github.com/twitter/finagle&#34;&gt;Finagle&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
@@ -222,7 +215,7 @@ bundle install &amp;amp;amp;&amp;amp;amp; bundle exec rails server.
 ServerBuilder()
   .codec(ThriftServerFramedCodec())
   .bindTo(serverAddr)
-  .name(&amp;quot;servicename&amp;quot;)
+  .name(&amp;#34;servicename&amp;#34;)
   .tracerFactory(ZipkinTracer())
   .build(new SomeService.FinagledService(queryService, new TBinaryProtocol.Factory()))
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
@@ -233,13 +226,13 @@ ServerBuilder()
 
 　さらに付加的な情報を記録したい場合は、つぎのようなコードを追加します。
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-Trace.record(&amp;quot;starting that extremely expensive computation&amp;quot;)
+Trace.record(&amp;#34;starting that extremely expensive computation&amp;#34;)
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 
 　上記コードは、上記コードが実行された時間に文字列を付加できます。
 　キーバリュー情報を付加したい場合は次のようになります。
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-Trace.recordBinary(&amp;quot;http.response.code&amp;quot;, &amp;quot;500&amp;quot;)
+Trace.recordBinary(&amp;#34;http.response.code&amp;#34;, &amp;#34;500&amp;#34;)
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　Ruby Thrift&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　リクエストのトレースに利用できるgemもあります。
@@ -248,9 +241,9 @@ Trace.recordBinary(&amp;quot;http.response.code&amp;quot;, &amp;quot;500&amp;quo
 &lt;p&gt;　Rubyからトレースクライアントをコールするのに、&lt;a href=&#34;https://github.com/twitter/thrift_client&#34;&gt;Twitter Ruby Thrift client&lt;/a&gt;を使います。
 　つぎのようなコードを書きます。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-client = ThriftClient.new(SomeService::Client, &#39;127.0.0.1:1234&#39;)
-client_id = FinagleThrift::ClientId.new(:name =&amp;gt; &amp;quot;service_example.sample_environment&amp;quot;)
-FinagleThrift.enable_tracing!(client, client_id), &amp;quot;service_name&amp;quot;)
+client = ThriftClient.new(SomeService::Client, &amp;#39;127.0.0.1:1234&amp;#39;)
+client_id = FinagleThrift::ClientId.new(:name =&amp;gt; &amp;#34;service_example.sample_environment&amp;#34;)
+FinagleThrift.enable_tracing!(client, client_id), &amp;#34;service_name&amp;#34;)
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;b&gt;　&lt;a href=&#34;https://github.com/twitter/querulous?PHPSESSID=2fb5ece17b7c5b72b57b7aed4a21ae1f&#34;&gt;Querulous&lt;/a&gt;&lt;/b&gt;&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 　QuerulousはScala用のSQLデータベースのインタフェースライブラリです。

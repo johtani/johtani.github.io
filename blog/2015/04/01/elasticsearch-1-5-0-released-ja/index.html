@@ -227,73 +227,72 @@
 これは、<code>has_child</code>もしくは<code>nested</code>クエリにマッチした子のドキュメントを、各親ドキュメントと一緒に返すことができます。</p>
 <p>例えば、<code>blog</code>という親ドキュメントと<code>comment</code>という子ドキュメントを持っているとします。
 この時、&ldquo;full text search&quot;というコメントを持ったブログ記事を検索したいとします。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">/my_index/blog/_search</span>
-{
-  <span style="color:#f92672">&#34;query&#34;</span>: {
-    <span style="color:#f92672">&#34;has_child&#34;</span>: {
-      <span style="color:#f92672">&#34;type&#34;</span>:       <span style="color:#e6db74">&#34;comment&#34;</span>,
-      <span style="color:#f92672">&#34;score_mode&#34;</span>: <span style="color:#e6db74">&#34;sum&#34;</span>,
-      <span style="color:#f92672">&#34;query&#34;</span>: {
-        <span style="color:#f92672">&#34;match&#34;</span>: {
-          <span style="color:#f92672">&#34;body&#34;</span>:   <span style="color:#e6db74">&#34;full text search&#34;</span>
-        }
-      }
-    }
-  }
-}
-</code></pre></div><p>上記のリクエストは、親の<code>blog</code>ドキュメントを返します。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">/my_index/blog/_search</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;query&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;has_child&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;type&#34;</span>:       <span style="color:#e6db74">&#34;comment&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;score_mode&#34;</span>: <span style="color:#e6db74">&#34;sum&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;query&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;match&#34;</span>: {
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;body&#34;</span>:   <span style="color:#e6db74">&#34;full text search&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>上記のリクエストは、親の<code>blog</code>ドキュメントを返します。
 しかし、どのコメントが関係しているのかはわかりません。
 関連しているコメントを検索して親ごとにグルーピングするために、
 少し手間のかかる2回目のクエリを実行する必要があります。</p>
 <p>Inner hitsがこれを変えてくれます。
 <code>inner_hits</code>パラメータを次のように、上記のクエリに追加するだけです！</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">/my_index/blog/_search</span>
-{
-  <span style="color:#f92672">&#34;query&#34;</span>: {
-    <span style="color:#f92672">&#34;has_child&#34;</span>: {
-      <span style="color:#f92672">&#34;type&#34;</span>:       <span style="color:#e6db74">&#34;comment&#34;</span>,
-      <span style="color:#f92672">&#34;score_mode&#34;</span>: <span style="color:#e6db74">&#34;sum&#34;</span>,
-      <span style="color:#f92672">&#34;query&#34;</span>: {
-        <span style="color:#f92672">&#34;match&#34;</span>: {
-          <span style="color:#f92672">&#34;body&#34;</span>:   <span style="color:#e6db74">&#34;full text search&#34;</span>
-        }
-      },
-      <span style="color:#f92672">&#34;inner_hits&#34;</span>: {}
-    }
-  }
-}
-
-</code></pre></div><p>検索結果の各<code>blog</code>記事に、<code>inner_hits</code>という項目があり、そこに検索にヒットしたコメントの
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">/my_index/blog/_search</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;query&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;has_child&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;type&#34;</span>:       <span style="color:#e6db74">&#34;comment&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;score_mode&#34;</span>: <span style="color:#e6db74">&#34;sum&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;query&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;match&#34;</span>: {
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">&#34;body&#34;</span>:   <span style="color:#e6db74">&#34;full text search&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;inner_hits&#34;</span>: {}
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>検索結果の各<code>blog</code>記事に、<code>inner_hits</code>という項目があり、そこに検索にヒットしたコメントの
 上位3件（デフォルト値）が返ってきます。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">...</span>
-<span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> [
-  {
-    <span style="color:#f92672">&#34;_index&#34;</span>:   <span style="color:#e6db74">&#34;my_index&#34;</span>,
-    <span style="color:#f92672">&#34;_type&#34;</span>:    <span style="color:#e6db74">&#34;blog&#34;</span>,
-    <span style="color:#f92672">&#34;_id&#34;</span>:      <span style="color:#ae81ff">1</span>,
-    <span style="color:#f92672">&#34;_score&#34;</span>:   <span style="color:#ae81ff">3.68</span>,
-    <span style="color:#f92672">&#34;_source&#34;</span>:  { <span style="color:#960050;background-color:#1e0010">...</span> },
-    <span style="color:#f92672">&#34;inner_hits&#34;</span>: {
-      <span style="color:#f92672">&#34;comment&#34;</span>: {
-        <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">16</span>,
-        <span style="color:#f92672">&#34;hits&#34;</span>: [
-          {
-            <span style="color:#f92672">&#34;_type&#34;</span>:    <span style="color:#e6db74">&#34;comment&#34;</span>,
-            <span style="color:#f92672">&#34;_id&#34;</span>:      <span style="color:#ae81ff">5</span>,
-            <span style="color:#f92672">&#34;_score&#34;</span>:   <span style="color:#ae81ff">2.79</span>,
-            <span style="color:#f92672">&#34;_source&#34;</span>: {
-              <span style="color:#f92672">&#34;body&#34;</span>:   <span style="color:#e6db74">&#34;Full text search is the bomb&#34;</span>
-            }
-          },
-          { <span style="color:#960050;background-color:#1e0010">...</span> },
-          { <span style="color:#960050;background-color:#1e0010">...</span> }
-        ]
-      }
-    }
-  }
-]
-<span style="color:#960050;background-color:#1e0010">...</span>
-</code></pre></div><p><code>inner_hits</code>部分は、第2の検索リクエストに似ています。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;hits&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> [
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;_index&#34;</span>:   <span style="color:#e6db74">&#34;my_index&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;_type&#34;</span>:    <span style="color:#e6db74">&#34;blog&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;_id&#34;</span>:      <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;_score&#34;</span>:   <span style="color:#ae81ff">3.68</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;_source&#34;</span>:  { <span style="color:#960050;background-color:#1e0010">...</span> },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;inner_hits&#34;</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;comment&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;total&#34;</span>: <span style="color:#ae81ff">16</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;hits&#34;</span>: [
+</span></span><span style="display:flex;"><span>          {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;_type&#34;</span>:    <span style="color:#e6db74">&#34;comment&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;_id&#34;</span>:      <span style="color:#ae81ff">5</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;_score&#34;</span>:   <span style="color:#ae81ff">2.79</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;_source&#34;</span>: {
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">&#34;body&#34;</span>:   <span style="color:#e6db74">&#34;Full text search is the bomb&#34;</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>          { <span style="color:#960050;background-color:#1e0010">...</span> },
+</span></span><span style="display:flex;"><span>          { <span style="color:#960050;background-color:#1e0010">...</span> }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">...</span>
+</span></span></code></pre></div><p><code>inner_hits</code>部分は、第2の検索リクエストに似ています。
 <code>size</code>や<code>from</code>パラメータを含めるくことで、挙動をカスタマイズできます。
 また、検索から想像するであろう、ページネーション、ソート、ハイライト、<code>_source</code>フィルタリングなどといった機能もサポートします。</p>
 <p>Inner hitsはparent-childおよび、<code>nested</code>ドキュメントをサポートします。
@@ -388,7 +387,7 @@ Elasticsearch 1.5.0では、これらの問題の多くに対処しています�
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -711,6 +710,8 @@ Elasticsearch 1.5.0では、これらの問題の多くに対処しています�
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

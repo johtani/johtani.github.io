@@ -242,10 +242,10 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
 <p>これは、.NET FrameworkのHttpのAPIに存在するクラスで、HTTPのクライアントがHTTPの送受信時に、処理を挟むことができる機能です。フレームワーク側で、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.http.logging.logginghttpmessagehandler?view=dotnet-plat-ext-3.1&amp;viewFallbackFrom=netframework-4.8">LoggingHttpMessaggeHandler</a>というクラスを用意してくれていましたが、残念ながらこちらは、リクエストとレスポンスのヘッダのみをロギングするクラスでした。
 ということで、リクエストボディをログに出力したい場合は独自に拡張してやる必要があります。なお、ロギングには<code>Microsoft.Extensions.Logging</code>の<code>ILogger</code>を使用します。</p>
 <p>また、Azure Cognitive SearchのSDK側に違う問題点もありました。<a href="https://docs.microsoft.com/ja-jp/azure/search/tutorial-csharp-create-first-app#add-the-runqueryasync-method">チュートリアルにあるように</a>、検索するときには、SDKは次のような使い方を想定しています。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">        <span style="color:#75715e">// Create a service and index client.
-</span><span style="color:#75715e"></span>        <span style="color:#ae81ff">_</span>serviceClient = <span style="color:#66d9ef">new</span> SearchServiceClient(searchServiceName, <span style="color:#66d9ef">new</span> SearchCredentials(queryApiKey));
-        <span style="color:#ae81ff">_</span>indexClient = <span style="color:#ae81ff">_</span>serviceClient.Indexes.GetClient(<span style="color:#e6db74">&#34;hotels&#34;</span>);
-</code></pre></div><p>インデックス用のクライアントを取得するために、<code>GetClient(インデックス名)</code>というメソッドを使用します。この<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_"><code>GetClient</code>メソッドのバリエーション</a>として、DelegatingHandlerを受け取るメソッドがないのです。。。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>        <span style="color:#75715e">// Create a service and index client.</span>
+</span></span><span style="display:flex;"><span>        _serviceClient = <span style="color:#66d9ef">new</span> SearchServiceClient(searchServiceName, <span style="color:#66d9ef">new</span> SearchCredentials(queryApiKey));
+</span></span><span style="display:flex;"><span>        _indexClient = _serviceClient.Indexes.GetClient(<span style="color:#e6db74">&#34;hotels&#34;</span>);
+</span></span></code></pre></div><p>インデックス用のクライアントを取得するために、<code>GetClient(インデックス名)</code>というメソッドを使用します。この<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.search.indexesgetclientextensions.getclient?view=azure-dotnet#Microsoft_Azure_Search_IndexesGetClientExtensions_GetClient_Microsoft_Azure_Search_IIndexesOperations_System_String_"><code>GetClient</code>メソッドのバリエーション</a>として、DelegatingHandlerを受け取るメソッドがないのです。。。</p>
 <p>ということで、DelegationHandlerを活用する方法としては、以下の2つを実装する必要があります。</p>
 <ol>
 <li>CustomなLoggingHttpMessageHandlerクラスを実装</li>
@@ -253,146 +253,146 @@ SDKの<a href="https://docs.microsoft.com/ja-jp/dotnet/api/microsoft.azure.searc
 </ol>
 <p>以上の2つを実装し、アプリケーション側から2で作成したGetClientを呼び出すことで、リクエストをボディも含めてログ出力することが可能になります。以下は実装例です。</p>
 <p>CustomHttpMessageHandlerクラス。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System;
-<span style="color:#66d9ef">using</span> System.Collections.Generic;
-<span style="color:#66d9ef">using</span> System.Diagnostics;
-<span style="color:#66d9ef">using</span> System.Net.Http;
-<span style="color:#66d9ef">using</span> System.Net.Http.Headers;
-<span style="color:#66d9ef">using</span> System.Text;
-<span style="color:#66d9ef">using</span> System.Threading;
-<span style="color:#66d9ef">using</span> System.Threading.Tasks;
-<span style="color:#66d9ef">using</span> Microsoft.Extensions.Logging;
-
-<span style="color:#66d9ef">namespace</span> AzureSearchSample
-{
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CustomLoggingHttpMessageHandler</span> : DelegatingHandler
-    {
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> ILogger <span style="color:#ae81ff">_l</span>ogger;
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">bool</span> <span style="color:#ae81ff">_l</span>ogContent = <span style="color:#66d9ef">false</span>;
-
-        <span style="color:#66d9ef">public</span> CustomLoggingHttpMessageHandler(ILogger logger, <span style="color:#66d9ef">bool</span> logContent)
-        {
-            <span style="color:#66d9ef">if</span> (logger == <span style="color:#66d9ef">null</span>)
-            {
-                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(logger));
-            }
-
-            <span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogger = logger;
-            <span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogContent = logContent;
-        }
-
-
-        <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">async</span> Task&lt;HttpResponseMessage&gt; SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            <span style="color:#66d9ef">if</span> (request == <span style="color:#66d9ef">null</span>)
-            {
-                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(request));
-            } 
-            <span style="color:#66d9ef">await</span> Log.RequestStart(<span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogger, request, <span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogContent);
-            <span style="color:#66d9ef">var</span> stopwatch = <span style="color:#66d9ef">new</span> Stopwatch();
-            HttpResponseMessage response = <span style="color:#66d9ef">await</span> <span style="color:#66d9ef">base</span>.SendAsync(request, cancellationToken).ConfigureAwait(<span style="color:#66d9ef">false</span>);
-            stopwatch.Stop();
-            <span style="color:#66d9ef">await</span> Log.RequestEnd(<span style="color:#66d9ef">this</span>.<span style="color:#ae81ff">_l</span>ogger, response, stopwatch.Elapsed);
-
-            <span style="color:#66d9ef">return</span> response;
-        }
-
-        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Log</span>
-        {
-            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EventIds</span>
-            {
-                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestStart = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">100</span>, <span style="color:#e6db74">&#34;RequestStart&#34;</span>);
-                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestEnd = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">101</span>, <span style="color:#e6db74">&#34;RequestEnd&#34;</span>);
-            }
-
-            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestStart(ILogger logger, HttpRequestMessage request, <span style="color:#66d9ef">bool</span> logContent)
-            {
-                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
-                message.AppendLine(<span style="color:#e6db74">$&#34;Sending HTTP request {request.Method} {request.RequestUri}&#34;</span>);
-                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
-                {
-                    LogHttpHeaders(message, request.Headers);
-                    <span style="color:#66d9ef">await</span> LogHttpContent(message, request.Content, logContent);
-                    logger.Log(
-                        LogLevel.Trace,
-                        EventIds.RequestStart,
-                        message,
-                        <span style="color:#66d9ef">null</span>,
-                        (state, ex) =&gt; state.ToString());
-                }
-            }
-
-            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestEnd(ILogger logger, HttpResponseMessage response, TimeSpan duration)
-            {
-                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
-                message.AppendLine(
-                    <span style="color:#e6db74">$&#34;Recieving HTTP response after {duration.TotalMilliseconds}ms - {response.StatusCode}&#34;</span>);
-                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
-                {
-                    LogHttpHeaders(message, response.Headers);
-                    <span style="color:#66d9ef">await</span> LogHttpContent(message, response.Content, <span style="color:#66d9ef">false</span>);
-                    logger.Log(
-                        LogLevel.Trace,
-                        EventIds.RequestEnd,
-                        message,
-                        <span style="color:#66d9ef">null</span>,
-                        (state, ex) =&gt; state.ToString()
-                        );
-                }
-            }
-
-            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> LogHttpHeaders(StringBuilder message, HttpHeaders headers)
-            {
-                <span style="color:#66d9ef">if</span> (headers == <span style="color:#66d9ef">null</span>) <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(headers));
-                <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>, IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> headers)
-                {
-                    <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
-                    {
-                        message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
-                    }
-                }
-            }
-
-            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task LogHttpContent(StringBuilder message, HttpContent content,
-                <span style="color:#66d9ef">bool</span> logContent)
-            {
-                <span style="color:#66d9ef">if</span> (content != <span style="color:#66d9ef">null</span>)
-                {
-                    <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> content.Headers)
-                    {
-                        <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
-                        {
-                            message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
-                        }
-                    }
-
-                    <span style="color:#66d9ef">if</span> (logContent)
-                    {
-                        <span style="color:#66d9ef">string</span> contentBody = <span style="color:#66d9ef">await</span> content.ReadAsStringAsync();
-                        message.AppendLine(contentBody);
-                    }
-                }
-            }
-        }
-    }
-}
-</code></pre></div><p>GetClientの実装</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">
-        <span style="color:#66d9ef">private</span> ISearchIndexClient GetClient(<span style="color:#66d9ef">string</span> indexName, <span style="color:#66d9ef">params</span> DelegatingHandler[] handlers)
-        {
-            <span style="color:#66d9ef">var</span> rootHandler = <span style="color:#ae81ff">_</span>searchServiceClient.HttpMessageHandlers.OfType&lt;HttpClientHandler&gt;().SingleOrDefault();
-            <span style="color:#66d9ef">var</span> indexClient =
-                <span style="color:#66d9ef">new</span> SearchIndexClient(<span style="color:#ae81ff">_</span>searchServiceClient.SearchServiceName, indexName,
-                    <span style="color:#ae81ff">_</span>searchServiceClient.SearchCredentials, rootHandler, handlers)
-                {
-                    SearchDnsSuffix = <span style="color:#ae81ff">_</span>searchServiceClient.SearchDnsSuffix
-                };
-
-            indexClient.HttpClient.Timeout = <span style="color:#ae81ff">_</span>searchServiceClient.HttpClient.Timeout;
-            <span style="color:#66d9ef">return</span> indexClient;
-        }
-</code></pre></div><p>出力されるログ例</p>
-<pre tabindex="0"><code>2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Collections.Generic;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Diagnostics;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Net.Http;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Net.Http.Headers;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Text;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Threading;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Threading.Tasks;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Microsoft.Extensions.Logging;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">namespace</span> AzureSearchSample
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CustomLoggingHttpMessageHandler</span> : DelegatingHandler
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> ILogger _logger;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">bool</span> _logContent = <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> CustomLoggingHttpMessageHandler(ILogger logger, <span style="color:#66d9ef">bool</span> logContent)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (logger == <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(logger));
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>._logger = logger;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>._logContent = logContent;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">async</span> Task&lt;HttpResponseMessage&gt; SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (request == <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(request));
+</span></span><span style="display:flex;"><span>            } 
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">await</span> Log.RequestStart(<span style="color:#66d9ef">this</span>._logger, request, <span style="color:#66d9ef">this</span>._logContent);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> stopwatch = <span style="color:#66d9ef">new</span> Stopwatch();
+</span></span><span style="display:flex;"><span>            HttpResponseMessage response = <span style="color:#66d9ef">await</span> <span style="color:#66d9ef">base</span>.SendAsync(request, cancellationToken).ConfigureAwait(<span style="color:#66d9ef">false</span>);
+</span></span><span style="display:flex;"><span>            stopwatch.Stop();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">await</span> Log.RequestEnd(<span style="color:#66d9ef">this</span>._logger, response, stopwatch.Elapsed);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> response;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Log</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EventIds</span>
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestStart = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">100</span>, <span style="color:#e6db74">&#34;RequestStart&#34;</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> EventId RequestEnd = <span style="color:#66d9ef">new</span> EventId(<span style="color:#ae81ff">101</span>, <span style="color:#e6db74">&#34;RequestEnd&#34;</span>);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestStart(ILogger logger, HttpRequestMessage request, <span style="color:#66d9ef">bool</span> logContent)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
+</span></span><span style="display:flex;"><span>                message.AppendLine(<span style="color:#e6db74">$&#34;Sending HTTP request {request.Method} {request.RequestUri}&#34;</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    LogHttpHeaders(message, request.Headers);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">await</span> LogHttpContent(message, request.Content, logContent);
+</span></span><span style="display:flex;"><span>                    logger.Log(
+</span></span><span style="display:flex;"><span>                        LogLevel.Trace,
+</span></span><span style="display:flex;"><span>                        EventIds.RequestStart,
+</span></span><span style="display:flex;"><span>                        message,
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>                        (state, ex) =&gt; state.ToString());
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task RequestEnd(ILogger logger, HttpResponseMessage response, TimeSpan duration)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                StringBuilder message = <span style="color:#66d9ef">new</span> StringBuilder();
+</span></span><span style="display:flex;"><span>                message.AppendLine(
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">$&#34;Recieving HTTP response after {duration.TotalMilliseconds}ms - {response.StatusCode}&#34;</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (logger.IsEnabled(LogLevel.Trace))
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    LogHttpHeaders(message, response.Headers);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">await</span> LogHttpContent(message, response.Content, <span style="color:#66d9ef">false</span>);
+</span></span><span style="display:flex;"><span>                    logger.Log(
+</span></span><span style="display:flex;"><span>                        LogLevel.Trace,
+</span></span><span style="display:flex;"><span>                        EventIds.RequestEnd,
+</span></span><span style="display:flex;"><span>                        message,
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>                        (state, ex) =&gt; state.ToString()
+</span></span><span style="display:flex;"><span>                        );
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> LogHttpHeaders(StringBuilder message, HttpHeaders headers)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (headers == <span style="color:#66d9ef">null</span>) <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> ArgumentNullException(nameof(headers));
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>, IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> headers)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
+</span></span><span style="display:flex;"><span>                    {
+</span></span><span style="display:flex;"><span>                        message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task LogHttpContent(StringBuilder message, HttpContent content,
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">bool</span> logContent)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (content != <span style="color:#66d9ef">null</span>)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> content.Headers)
+</span></span><span style="display:flex;"><span>                    {
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
+</span></span><span style="display:flex;"><span>                        {
+</span></span><span style="display:flex;"><span>                            message.AppendLine(<span style="color:#e6db74">$&#34;{header.Key}: {value}&#34;</span>);
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">if</span> (logContent)
+</span></span><span style="display:flex;"><span>                    {
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">string</span> contentBody = <span style="color:#66d9ef">await</span> content.ReadAsStringAsync();
+</span></span><span style="display:flex;"><span>                        message.AppendLine(contentBody);
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>GetClientの実装</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> ISearchIndexClient GetClient(<span style="color:#66d9ef">string</span> indexName, <span style="color:#66d9ef">params</span> DelegatingHandler[] handlers)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> rootHandler = _searchServiceClient.HttpMessageHandlers.OfType&lt;HttpClientHandler&gt;().SingleOrDefault();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> indexClient =
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">new</span> SearchIndexClient(_searchServiceClient.SearchServiceName, indexName,
+</span></span><span style="display:flex;"><span>                    _searchServiceClient.SearchCredentials, rootHandler, handlers)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    SearchDnsSuffix = _searchServiceClient.SearchDnsSuffix
+</span></span><span style="display:flex;"><span>                };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            indexClient.HttpClient.Timeout = _searchServiceClient.HttpClient.Timeout;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> indexClient;
+</span></span><span style="display:flex;"><span>        }
+</span></span></code></pre></div><p>出力されるログ例</p>
+<pre tabindex="0"><code>2020/04/14 19:17:53.591|TRACE|Sending HTTP request POST https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06
 client-request-id: be02140f-3a07-48cc-b018-d8aa5e819bc3
 Accept-Language: en-US
 Accept: application/json; odata.metadata=none
@@ -403,12 +403,12 @@ User-Agent: OSVersion/Darwin.19.4.0.Darwin.Kernel.Version.19.4.0.Wed.Mar.4.22.28
 User-Agent: Microsoft.Azure.Search.SearchIndexClient/10.100.19.52907
 Content-Type: application/json; charset=utf-8
 {
-  &quot;count&quot;: false,
-  &quot;facets&quot;: [],
-  &quot;queryType&quot;: &quot;simple&quot;,
-  &quot;scoringParameters&quot;: [],
-  &quot;search&quot;: &quot;azure&quot;,
-  &quot;searchMode&quot;: &quot;any&quot;
+  &#34;count&#34;: false,
+  &#34;facets&#34;: [],
+  &#34;queryType&#34;: &#34;simple&#34;,
+  &#34;scoringParameters&#34;: [],
+  &#34;search&#34;: &#34;azure&#34;,
+  &#34;searchMode&#34;: &#34;any&#34;
 }
  |AzureSearchSample.SearchService|EventId_Id=100, EventId_Name=RequestStart, EventId=RequestStart
 </code></pre><h4 id="メリットデメリット">メリット、デメリット</h4>
@@ -422,16 +422,16 @@ Content-Type: application/json; charset=utf-8
 <p>実際に<code>SendRequest</code>メソッドに送られたものに対して何かしらの処理を行うのは、<a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.rest.iserviceclienttracinginterceptor?view=azure-dotnet"><code>IServiceClientTracingIntercepter</code></a>インターフェースを実装したクラスになります。
 このインターフェースの実装が<a href="https://www.nuget.org/packages/Microsoft.Rest.ClientRuntime.Log4Net/">Log4Net</a>に存在します。Log4Netを利用している場合は、これを活用すれば楽ができます。</p>
 <p>実際に<code>ServiceClientTracing</code>を有効にするには、以下の2行を呼び出すだけです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">ServiceClientTracing.IsEnabled = <span style="color:#66d9ef">true</span>;
-ServiceClientTracing.AddTracingInterceptor(<span style="color:#66d9ef">new</span> Log4NetTracingInterceptor());
-</code></pre></div><p>あとは、Rest.ClientRuntimeがよしなにやってくれます。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span>ServiceClientTracing.IsEnabled = <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>ServiceClientTracing.AddTracingInterceptor(<span style="color:#66d9ef">new</span> Log4NetTracingInterceptor());
+</span></span></code></pre></div><p>あとは、Rest.ClientRuntimeがよしなにやってくれます。
 1とは異なり、トレースログなので、リクエストのボディについても出力してくれます。</p>
 <pre tabindex="0"><code>2020-05-26 19:09:04,058 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
 instance: Microsoft.Azure.Search.DocumentsProxyOperations
 method: SearchPost
 parameters: {searchRequest=Microsoft.Azure.Search.Models.SearchRequest,clientRequestId=,cancellationToken=System.Threading.CancellationToken}
 2020-05-26 19:09:04,164 [1] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
-request: Method: POST, RequestUri: 'https://サービス名.search.windows.net/indexes('インデックス名')/docs/search.post.search?api-version=2019-05-06', Version: 2.0, Content: System.Net.Http.StringContent, Headers:
+request: Method: POST, RequestUri: &#39;https://サービス名.search.windows.net/indexes(&#39;インデックス名&#39;)/docs/search.post.search?api-version=2019-05-06&#39;, Version: 2.0, Content: System.Net.Http.StringContent, Headers:
 {
   client-request-id: 591cb14f-e5c2-4a85-977d-01d1f6431ddc
   Accept-Language: en-US
@@ -443,24 +443,24 @@ request: Method: POST, RequestUri: 'https://サービス名.search.windows.net/i
 Body:
 {
 {
-  &quot;count&quot;: false,
-  &quot;facets&quot;: [],
-  &quot;queryType&quot;: &quot;simple&quot;,
-  &quot;scoringParameters&quot;: [],
-  &quot;search&quot;: &quot;azure&quot;,
-  &quot;searchMode&quot;: &quot;any&quot;
+  &#34;count&#34;: false,
+  &#34;facets&#34;: [],
+  &#34;queryType&#34;: &#34;simple&#34;,
+  &#34;scoringParameters&#34;: [],
+  &#34;search&#34;: &#34;azure&#34;,
+  &#34;searchMode&#34;: &#34;any&#34;
 }
 }
 
 2020-05-26 19:09:04,459 [Thread Pool Worker] DEBUG Microsoft.Rest.Tracing.Log4Net.Log4NetTracingInterceptor [(null)] - invocationId: 1
-response: StatusCode: 200, ReasonPhrase: 'OK', Version: 1.1, Content: System.Net.Http.StreamContent, Headers:
+response: StatusCode: 200, ReasonPhrase: &#39;OK&#39;, Version: 1.1, Content: System.Net.Http.StreamContent, Headers:
 {
   Cache-Control: no-cache
   Pragma: no-cache
   request-id: 591cb14f-e5c2-4a85-977d-01d1f6431ddc
   elapsed-time: 72
   OData-Version: 4.0
-  Preference-Applied: odata.include-annotations=&quot;*&quot;
+  Preference-Applied: odata.include-annotations=&#34;*&#34;
   Strict-Transport-Security: max-age=15724800; includeSubDomains
   Date: Tue, 26 May 2020 10:09:04 GMT
   Content-Type: application/json; odata.metadata=none
@@ -479,65 +479,65 @@ Azure?.NET?のアプリケーションパフォーマンスモニタリングの
 <p>ただ、Application Insightsのデフォルトの機能では、URL程度の情報だけが送信されます(<a href="https://blog.shibayan.jp/entry/20190405/1554459340">参考:しばやんさんのブログ</a>)</p>
 <p>こちらも拡張機能が用意されており、ITelemetryInitializerのインターフェースを実装したクラスを用意することで、独自の情報をApplication Insightsに出力することが可能となります。詳細については<a href="https://blog.shibayan.jp/entry/20190405/1554459340">しばやんさんのブログ</a>を参考にしてもらうのが良いかと。</p>
 <p>Httpリクエストを出力する実装例は次のとおりです。ただ、ちょっとうまく行かないパターンがあったので、コメントアウトとして残してあったりします(なんでだろう?)</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">using</span> System.Collections.Generic;
-<span style="color:#66d9ef">using</span> System.Net.Http;
-<span style="color:#66d9ef">using</span> System.Net.Http.Headers;
-<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Channel;
-<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.DataContracts;
-<span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Extensibility;
-
-<span style="color:#66d9ef">namespace</span> AzureSearchWebSample.ApplicationInsights
-{
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">HttpRequestInitializer</span> : ITelemetryInitializer
-    {
-        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Initialize(ITelemetry telemetry)
-        {
-
-            <span style="color:#66d9ef">if</span> (!(telemetry <span style="color:#66d9ef">is</span> DependencyTelemetry dependency))
-            {
-                <span style="color:#66d9ef">return</span>;
-            }
-
-            HttpRequestMessage requestMessage = <span style="color:#66d9ef">null</span>;
-            HttpRequestHeaders requestHeaders;
-            <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequest&#34;</span>, <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">var</span> details) &amp;&amp;
-                details <span style="color:#66d9ef">is</span> HttpRequestMessage request)
-            {
-                requestMessage = request;
-                requestHeaders = request.Headers;            
-                <span style="color:#66d9ef">if</span> (requestMessage.Method == HttpMethod.Post)
-                {
-                    <span style="color:#66d9ef">string</span> contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    dependency.Properties.Add(<span style="color:#e6db74">&#34;RequestBody&#34;</span>,contentBody);
-                }
-            }
-            <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequestHeaders&#34;</span>, <span style="color:#66d9ef">out</span> details) &amp;&amp;
-                     details <span style="color:#66d9ef">is</span> HttpRequestHeaders headers)
-            {
-                requestHeaders = headers;
-            }
-            <span style="color:#66d9ef">else</span>
-            {
-                <span style="color:#66d9ef">return</span>;
-            }
-
-            <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> requestHeaders)
-            {
-                <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
-                {
-                    dependency.Properties.Add(header.Key, <span style="color:#66d9ef">value</span>);
-                }
-            }
-            <span style="color:#75715e">//この実装の場合は出力されなかった。なぜ?
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// if (requestMessage != null &amp;&amp; requestMessage.Method == HttpMethod.Post)
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// {
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">//     string contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">//     dependency.Properties.Add(&#34;RequestBody&#34;,contentBody);
-</span><span style="color:#75715e"></span>            <span style="color:#75715e">// }
-</span><span style="color:#75715e"></span>        }
-    }
-}
-</code></pre></div><h4 id="メリットデメリット-2">メリット、デメリット</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C#" data-lang="C#"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Collections.Generic;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Net.Http;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Net.Http.Headers;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Channel;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.DataContracts;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> Microsoft.ApplicationInsights.Extensibility;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">namespace</span> AzureSearchWebSample.ApplicationInsights
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">HttpRequestInitializer</span> : ITelemetryInitializer
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Initialize(ITelemetry telemetry)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (!(telemetry <span style="color:#66d9ef">is</span> DependencyTelemetry dependency))
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            HttpRequestMessage requestMessage = <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>            HttpRequestHeaders requestHeaders;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequest&#34;</span>, <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">var</span> details) &amp;&amp;
+</span></span><span style="display:flex;"><span>                details <span style="color:#66d9ef">is</span> HttpRequestMessage request)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                requestMessage = request;
+</span></span><span style="display:flex;"><span>                requestHeaders = request.Headers;            
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (requestMessage.Method == HttpMethod.Post)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">string</span> contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+</span></span><span style="display:flex;"><span>                    dependency.Properties.Add(<span style="color:#e6db74">&#34;RequestBody&#34;</span>,contentBody);
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (dependency.TryGetOperationDetail(<span style="color:#e6db74">&#34;HttpRequestHeaders&#34;</span>, <span style="color:#66d9ef">out</span> details) &amp;&amp;
+</span></span><span style="display:flex;"><span>                     details <span style="color:#66d9ef">is</span> HttpRequestHeaders headers)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                requestHeaders = headers;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">foreach</span> (KeyValuePair&lt;<span style="color:#66d9ef">string</span>,IEnumerable&lt;<span style="color:#66d9ef">string</span>&gt;&gt; header <span style="color:#66d9ef">in</span> requestHeaders)
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">string</span> <span style="color:#66d9ef">value</span> <span style="color:#66d9ef">in</span> header.Value)
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    dependency.Properties.Add(header.Key, <span style="color:#66d9ef">value</span>);
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">//この実装の場合は出力されなかった。なぜ?</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// if (requestMessage != null &amp;&amp; requestMessage.Method == HttpMethod.Post)</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// {</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">//     string contentBody = requestMessage.Content.ReadAsStringAsync().GetAwaiter().GetResult();</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">//     dependency.Properties.Add(&#34;RequestBody&#34;,contentBody);</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// }</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h4 id="メリットデメリット-2">メリット、デメリット</h4>
 <p>すでにApplication Insightsを利用している場合はついでに情報が出力されるので便利です。かつ、常にリクエストログを見れるようにしておく場合はとても便利だと思います。</p>
 <p>Application Insightsを利用していない場合は、そこから導入しなければならなくなるので、手間が増えるかもしれないです。</p>
 <h3 id="4-azure-cognitive-searchのコンソールにある診断情報の機能を利用する">4. Azure Cognitive Searchのコンソールにある診断情報の機能を利用する。</h3>
@@ -546,7 +546,7 @@ Azure?.NET?のアプリケーションパフォーマンスモニタリングの
 <p>これまでは、リクエストボディを出力する方法を考えていましたが、Azure Cognitive Search側の診断ログを有効にすると、リクエストボディで送信したものが、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#properties-schema">Azure Cognitive Search側で、クエリパラーメータとして、診断ログに出力</a>されます(診断ログの<code>Query_s</code>)。</p>
 <p>あとは、<a href="https://docs.microsoft.com/ja-jp/azure/search/search-monitor-logs#query-log-information">Azureのコンソール</a>で当該時間のログを見ればよいだけです。以下は出力されたログの一部です。Description_sにはURLのパスが記載されています。</p>
 <p>診断ログ例(一部)</p>
-<pre tabindex="0"><code>Description_s      POST /indexes('multi-field-test')/docs/search.post.search
+<pre tabindex="0"><code>Description_s      POST /indexes(&#39;multi-field-test&#39;)/docs/search.post.search
 Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&amp;queryType=Simple&amp;$count=false
 </code></pre><h4 id="メリットデメリット-3">メリット、デメリット</h4>
 <p>アプリケーション側に手を入れる必要がなのでお手軽です。
@@ -585,7 +585,7 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -908,6 +908,8 @@ Query_s            ?api-version=2019-05-06&amp;searchMode=Any&amp;search=azure&a
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

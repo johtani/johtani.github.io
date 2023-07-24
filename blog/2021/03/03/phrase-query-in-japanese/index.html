@@ -234,8 +234,8 @@ ODataは検索条件（<code>$filter</code>）やソート条件（<code>$orderb
 <p>この時、OData式で<code>ミルクティ</code>という単語で検索してみましょう。</p>
 <p>検索条件は<code>$filter</code>で指定します。
 フルテキスト検索用に関数が用意されており、こちらに単語を指定します。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
-</code></pre></div><p>こんな感じ。フィールドの指定がない場合、対象のフィールドは検索可能なフィールドすべてが検索対象になります（<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/search-documents#query-parameters">公式ガイドのクエリパラメータ</a>の<code>queryType</code>に説明あり）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
+</span></span></code></pre></div><p>こんな感じ。フィールドの指定がない場合、対象のフィールドは検索可能なフィールドすべてが検索対象になります（<a href="https://docs.microsoft.com/ja-jp/rest/api/searchservice/search-documents#query-parameters">公式ガイドのクエリパラメータ</a>の<code>queryType</code>に説明あり）。</p>
 <p>では、実行してみましょう。で返ってくるのは？1だけかな？と思う人が多いかもしれません。
 が、結果は3件とも帰ってきます。</p>
 <h2 id="問題点は">問題点は？</h2>
@@ -331,8 +331,8 @@ ODataは検索条件（<code>$filter</code>）やソート条件（<code>$orderb
 <h3 id="ismatchscoringの問題点はやっと帰ってきました">ismatchscoringの問題点は？（やっと帰ってきました）</h3>
 <p>さて、回り道をし、簡単ですが転置インデックスやAnalyzerについて説明しました。
 では本題です。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
-</code></pre></div><p>この<code>ismatchscoring</code>関数ですが、そのほかにも引数の指定が可能で、省略した場合にデフォルトで採用される値がいくつかあります。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>)
+</span></span></code></pre></div><p>この<code>ismatchscoring</code>関数ですが、そのほかにも引数の指定が可能で、省略した場合にデフォルトで採用される値がいくつかあります。
 <a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions">公式のドキュメントにパラメータの意味</a>が掲載されています。</p>
 <p>今回は、第4引数の<code>searchMode</code>の値が問題点です。デフォルトでは、<code>any</code>が指定されます。
 この、<code>any</code>は検索語（今回は<code>ミルクティ</code>）の<strong>任意の検索語句</strong>が一致する必要があることになります。
@@ -348,8 +348,8 @@ ODataは検索条件（<code>$filter</code>）やソート条件（<code>$orderb
 <li>風呂上がりの<code>ミル</code>クは最高です。</li>
 </ol>
 <p>NGramで一部分の単語だけで一致したものがヒットしてしまうと違和感があるので、<code>all</code>に変更します。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
-</code></pre></div><p>今度はどうなるでしょう？</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;ミルクティ&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
+</span></span></code></pre></div><p>今度はどうなるでしょう？</p>
 <ol>
 <li><code>ミルクティ</code>を飲みたいです。</li>
 <li>マ<code>ティ</code>ーニはカ<code>クテ</code>ルですが、<code>ミルク</code>セーキは？</li>
@@ -365,22 +365,22 @@ ODataは検索条件（<code>$filter</code>）やソート条件（<code>$orderb
 <p>「ミル」「ルク」「クテ」「ティ」</p>
 <p>この順序で出てきた場合のみ、検索にヒットしたことになります。
 OData式でフレーズ検索する場合は、単語をダブルクォート<code>&quot;</code>でくくる必要があります（<a href="https://docs.microsoft.com/ja-jp/azure/search/search-query-odata-full-text-search-functions#examples">公式ドキュメントの例に記載あり</a>）。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
-</code></pre></div><p>これで結果は以下の1件だけとなります。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
+</span></span></code></pre></div><p>これで結果は以下の1件だけとなります。</p>
 <ol>
 <li><code>ミルクティ</code>を飲みたいです。</li>
 </ol>
 <p>これでNGramで部分一致のような挙動で日本語の検索ができるようになりました。</p>
 <p>ちなみに、フレーズにした場合は第4引数は<code>any</code>に変更しても1件だけの検索結果となります。
 フレーズ検索には「すべての語が含まれる」、「すべての語が順番に現れる」という2つの条件が含まれるためです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
-</code></pre></div><p>この例の引数を<code>ミルクティ</code>を<code>&quot;ミルク&quot; &quot;最高&quot;</code>のような検索条件に変えた場合、「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」の2つの条件を<code>any</code>で扱うため、
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
+</span></span></code></pre></div><p>この例の引数を<code>ミルクティ</code>を<code>&quot;ミルク&quot; &quot;最高&quot;</code>のような検索条件に変えた場合、「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」の2つの条件を<code>any</code>で扱うため、
 「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」のどちらかが出てくれば良い結果となり、3件の結果が返ってきます。
 第4引数を<code>all</code>に変更すると、「&ldquo;ミルク&rdquo;」「&ldquo;最高&rdquo;」の両方が出てこなければならないため、3件目のデータのみが返ってきます。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34; &#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
-</code></pre></div><p>これは、</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>) <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
-</code></pre></div><p>と同じ意味となります。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34; &#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;all&#39;</span>)
+</span></span></code></pre></div><p>これは、</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#a6e22e">$filter</span><span style="color:#f92672">=</span><span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;ミルクティ&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>) <span style="color:#a6e22e">and</span> <span style="color:#a6e22e">search</span>.<span style="color:#a6e22e">ismatchscoring</span>(<span style="color:#e6db74">&#39;&#34;最高&#34;&#39;</span>, <span style="color:#e6db74">&#39;body&#39;</span>, <span style="color:#e6db74">&#39;simple&#39;</span>, <span style="color:#e6db74">&#39;any&#39;</span>)
+</span></span></code></pre></div><p>と同じ意味となります。
 少し長くはなりますが、後者の書き方をプログラムで書くと思います、私の場合は。
 検索窓に入力された単語に必ず<code>&quot;</code>を追加する処理を書くために、画面入力の文字列を一旦パースをすることになるからです。</p>
 <h2 id="まとめ">まとめ</h2>
@@ -420,7 +420,7 @@ OData式でフレーズ検索する場合は、単語をダブルクォート<co
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -743,6 +743,8 @@ OData式でフレーズ検索する場合は、単語をダブルクォート<co
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

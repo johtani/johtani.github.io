@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
+  <channel>
+    <title>wsl on @johtaniの日記 3rd</title>
+    <link>https://blog.johtani.info/tags/wsl/</link>
+    <description>Recent content in wsl on @johtaniの日記 3rd</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja</language>
+    <lastBuildDate>Mon, 24 Jul 2023 06:28:48 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/wsl/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>WSL2のディストリビューションの環境移行</title>
+      <link>https://blog.johtani.info/blog/2023/07/24/move-distribution-to-another-disk/</link>
+      <pubDate>Mon, 24 Jul 2023 06:28:48 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2023/07/24/move-distribution-to-another-disk/</guid>
+      <description>WSL2にUbuntuを入れて、開発とかはこちらを利用しています。 また、Docker DesktopもWSL2のバックエンドエンジンを利用して</description>
+      <content:encoded>&lt;p&gt;WSL2にUbuntuを入れて、開発とかはこちらを利用しています。
+また、Docker DesktopもWSL2のバックエンドエンジンを利用しています。&lt;/p&gt;
+&lt;p&gt;知り合いとの話で、Ubuntuの外付けのSSDをマウントしたという話が出てきて、それだと遅くない？Ubuntu自体を移動できるんじゃないかな？という
+流れになりました。
+知り合いは、特に移動とかは考えてなかったのですが、自分のディスクの容量が今どのくらい使われているのかが気になり、調べてみると、
+Cドライブの使用率が90%を超えてるじゃないですか。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://diskanalyzer.com/&#34;&gt;WizTree&lt;/a&gt;というソフトを&lt;a href=&#34;https://twitter.com/johtani/status/1565250490329608197&#34;&gt;前回入れていたのを思い出して&lt;/a&gt;、再度調べてみたところUbuntuらしき&lt;code&gt;vhdx&lt;/code&gt;ファイルのサイズが171GB、Docker Desktopのデータ領域の&lt;code&gt;vhdx&lt;/code&gt;ファイルのサイズが81GBと、結構な割合です。&lt;/p&gt;
+&lt;p&gt;前回は、Hyper-V管理ツールで仮想ディスクの圧縮処理を行ったのですが、Dドライブに移行したほうが安心できそうな気がしたので、移動の方法を調べました。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://learn.microsoft.com/ja-jp/windows/wsl/basic-commands&#34;&gt;WSLコマンドのドキュメント&lt;/a&gt;が公式で公開されています。こちらのコマンドを元に作業をしました。
+また、ググって出てきた記事も参考にさせていただきました。ありがとうございます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.ojisan.io/wsl-reinstall-d/&#34;&gt;wsl をDドライブに入れ直してディスク拡張する | blog.ojisan.io&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://qiita.com/shinsaka/items/71a234e71ebca3daf3c9&#34;&gt;WSL2環境をコピー（複製）する方法 - Qiita&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まずは確認と停止&#34;&gt;まずは確認と停止&lt;/h2&gt;
+&lt;p&gt;WSL2で使っているディストリビューションを確認します。コマンドは以下の通り。
+実行した結果も含まれています。コマンドの実行にはコマンドプロンプトを使用しました。公式ドキュメントのドキュメントではスニペットはPower Shellと書かれてますが、コマンドプロンプトでも大丈夫そうでした。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;D:\&amp;gt;wsl -l -v
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  NAME                   STATE           VERSION
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;* Ubuntu                 Running         2
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  docker-desktop         Running         2
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  docker-desktop-data    Running         2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;残念ながら、wslのコマンドでは実体がどこにあるのかを調べることができなかったですが、WizTreeでディレクトリ名などを見ていたのでなんとなう予測ができました。
+（これ、他に知る方法あるのかなぁ？）&lt;/p&gt;
+&lt;p&gt;ディストリビューションの移動は次のような手順になります。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;wslのshutdown&lt;/li&gt;
+&lt;li&gt;エクスポート（ディストリビューションのコピー）&lt;/li&gt;
+&lt;li&gt;今あるディストリビューションを削除&lt;/li&gt;
+&lt;li&gt;インポート（今ある名前で2.のファイルをインポート）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;まずは停止です。これをやらないとエクスポートができないので。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;D:\&amp;gt;wsl --shutdown
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;エクスポート&#34;&gt;エクスポート&lt;/h2&gt;
+&lt;p&gt;次にエクスポートです。
+今回は以下の2種類の仮想環境をエクスポートします。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ubuntu&lt;/li&gt;
+&lt;li&gt;docker-desktop-data&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;エクスポートでは、元のディストリビューションのファイル（Cドライブにあるファイル）が消えることはありません。
+また、エクスポートの形式として、&lt;code&gt;tar&lt;/code&gt;と&lt;code&gt;vhdx&lt;/code&gt;の2種類が指定できます。
+エクスポートのコマンドのデフォルトは&lt;code&gt;tar&lt;/code&gt;形式ですが、エクスポート元のファイルが&lt;code&gt;vhdx&lt;/code&gt;なので、&lt;code&gt;vhdx&lt;/code&gt;でエクスポートしたほうがCPUにやさしかったです。
+ちなみに、&lt;code&gt;docker-desktop-data&lt;/code&gt;は&lt;code&gt;tar&lt;/code&gt;形式でエクスポートしてインポートしました。&lt;code&gt;tar&lt;/code&gt;形式の場合は、ディスクのサイズが小さくなる可能性があるみたいです（不要なデータが&lt;code&gt;vhdx&lt;/code&gt;の中に残っていたりする影響かと）。&lt;/p&gt;
+&lt;p&gt;コマンドは以下の通りです（&lt;a href=&#34;https://learn.microsoft.com/ja-jp/windows/wsl/basic-commands#import-and-export-a-distribution&#34;&gt;詳細は公式ドキュメントを参照してください&lt;/a&gt;）。出力ディレクトリはあらかじめ作っておきました（作ってない場合の挙動は未確認です。）&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;D:\&amp;gt;wsl --export Ubuntu .\wsl\Ubuntu\ext4.vhdx --vhd
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;docker-desktop-dataはtar形式です。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;D:\&amp;gt;wsl --export docker-desktop-data .\Docker\ docker-desktop-data.tar
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;ディストリビューションの削除こわい&#34;&gt;ディストリビューションの削除（こわい？）&lt;/h2&gt;
+&lt;p&gt;今ついているディストリビューション名を利用したいので、いったん、Cドライブ上にあるディストリビューションを削除する必要があります。
+&lt;a href=&#34;https://learn.microsoft.com/ja-jp/windows/wsl/basic-commands#unregister-or-uninstall-a-linux-distribution&#34;&gt;コマンドは公式ドキュメントにある&lt;code&gt;--unregister&lt;/code&gt;&lt;/a&gt;オプションを利用します。
+以下のコマンドはUbuntuですが、docker-desktop-dataもやりました。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;D:\&amp;gt;wsl --unregister Ubuntu
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;ちなみに、このコマンドを実行すると、Cドライブの容量がいきなり空きました。
+コマンドいっぱつでなくなりました。きちんとエクスポートしてから実行しましょう。
+（なんなら、一度、別名でインポートして動作確認するのもいいかもしれないです。私はしましたｗ）&lt;/p&gt;
+&lt;h2 id=&#34;インポート&#34;&gt;インポート&lt;/h2&gt;
+&lt;p&gt;インポートするオプションも2種類あります。&lt;code&gt;vhdx&lt;/code&gt;ファイルの場合は、インプレースでのインポート（vhdxファイルをそのまま利用する形式）が可能です。
+Ubuntuについてはこちらを利用しました。この場合、vhdxファイルがそのまま利用されるため、バックアップとしては利用できなくなります。今回は170GBもあるので、これでいいかと。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;D:\&amp;gt;wsl --import-in-place Ubuntu .\wsl\Ubuntu\ext4.vhdx
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;tarファイル（docker-desktop-data）の場合は、通常のインポートを行いました。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;wsl --import docker-desktop-data D:\Docker\docker-desktop-data\ D:\Docker\docker-desktop-data.tar
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;この場合、tarファイルは残ったままで、新たに&lt;code&gt;D:\Docker\docker-desktop-data\&lt;/code&gt;ディレクトリに&lt;code&gt;ext4.vhdx&lt;/code&gt;ファイルが作られました。
+バックアップも取りつつ移行したい場合は&lt;code&gt;--import&lt;/code&gt;がいいかもしれません。
+また、WSLはバージョン1とバージョン2があり、インポートの際にこの部分も気にする必要があるようです。
+今回はすべてバージョン2で、かつ、wslのデフォルトのバージョンを2にしてあったので特に意識していません。&lt;/p&gt;
+&lt;h2 id=&#34;ubuntu起動ユーザーの指定と注意点&#34;&gt;Ubuntu起動ユーザーの指定と注意点&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://learn.microsoft.com/ja-jp/windows/wsl/basic-commands#change-the-default-user-for-a-distribution&#34;&gt;公式ドキュメントに&lt;/a&gt;、既存のユーザーを変更するコマンドの記載があります。
+インポートしたディストリビューションは、デフォルトユーザーがrootになっていることがあるようなので、Ubuntuのユーザーを次のようなコマンドで変更しました。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-console&#34; data-lang=&#34;console&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt; ubuntu config --default-user johtani
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;公式ドキュメントの警告にもありますが、実行可能ランチャーがない場合があります。
+今回の&lt;code&gt;ubuntu&lt;/code&gt;は、WSL2でUbuntuをインストールした時に作成されたコマンドで、unregisterした後にimportしてもきちんと動いたので問題にはなりませんでした。これは、インポートするときに、既存のディストリビューション名を利用したためと思われます。&lt;/p&gt;
+&lt;p&gt;エクスポートやインポートの検証するために、&lt;code&gt;NewUbuntu&lt;/code&gt;という名前で別途インポートした時には、&lt;code&gt;NewUbuntu&lt;/code&gt;という実行可能ランチャーは作成されず、上記のデフォルトユーザーの設定は別の方法が必要になります（罠だ）&lt;/p&gt;
+&lt;p&gt;docker-desktop-dataのほうは、特に変更してないけど動いてそうだからいいのかな？
+前の設定の確認とかやっておくのがいいんだろうな、本当は。。。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、Cドライブに300GB近い空きができて、心の余裕もできました。
+今回は、同じPC内で別のドライブへの移動でしたが、他のPCにもこれで移行ができそうですね。
+たまにはバックアップをとっておくのもいいのかも？と思いました（やるかどうかはまた別の話）&lt;/p&gt;
+</content:encoded>
+    </item>
+    
+  </channel>
+</rss>

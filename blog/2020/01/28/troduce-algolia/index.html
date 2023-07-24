@@ -309,11 +309,11 @@ OctopressのころはElastic社のサービスである<a href="https://www.elas
 </ul>
 </li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">ALGOLIA_APP_ID<span style="color:#f92672">=</span>AlgoliaのApplication ID
-ALGOLIA_ADMIN_KEY<span style="color:#f92672">=</span>AlgoliaのAdmin API Key
-ALGOLIA_INDEX_NAME<span style="color:#f92672">=</span>先程作ったインデックス名
-ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
-</code></pre></div><p>最後の<code>ALGOLIA_INDEX_FILE</code>は固定文字列でいいと思います。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>ALGOLIA_APP_ID<span style="color:#f92672">=</span>AlgoliaのApplication ID
+</span></span><span style="display:flex;"><span>ALGOLIA_ADMIN_KEY<span style="color:#f92672">=</span>AlgoliaのAdmin API Key
+</span></span><span style="display:flex;"><span>ALGOLIA_INDEX_NAME<span style="color:#f92672">=</span>先程作ったインデックス名
+</span></span><span style="display:flex;"><span>ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
+</span></span></code></pre></div><p>最後の<code>ALGOLIA_INDEX_FILE</code>は固定文字列でいいと思います。
 <code>hugo</code>コマンドを実行すると<code>public</code>ディレクトリ配下に<code>algolia.json</code>というファイルが生成され、Algolia登録用のJSONが出力されています。</p>
 <blockquote>
 <p>余談 : algolia.jsonの出力の設定は、config.tomlに記載があります。また、JSONファイルのテンプレート自体は<code>themes/hugo-theme-cleanwhite/layouts/_default/list.algolia.json</code>にあります。Algoliaに登録するデータの構造など変更をする場合はこのテンプレートをカスタマイズすれば良さそうです。</p>
@@ -333,11 +333,11 @@ ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
 </li>
 </ol>
 <p>以下の値を設定します。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-toml" data-lang="toml">  <span style="color:#a6e22e">algolia_search</span> = <span style="color:#66d9ef">true</span>
-  <span style="color:#a6e22e">algolia_appId</span> = <span style="color:#e6db74">&#34;AlgoliaのApplication ID&#34;</span>
-  <span style="color:#a6e22e">algolia_indexName</span> = <span style="color:#e6db74">&#34;作成したインデックス名&#34;</span>
-  <span style="color:#a6e22e">algolia_apiKey</span> = <span style="color:#e6db74">&#34;AlgoliaのSearch-Only API Key&#34;</span>
-</code></pre></div><p>以上でAlgolia関連の設定などの作業が終了です。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_appId</span> = <span style="color:#e6db74">&#34;AlgoliaのApplication ID&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_indexName</span> = <span style="color:#e6db74">&#34;作成したインデックス名&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_apiKey</span> = <span style="color:#e6db74">&#34;AlgoliaのSearch-Only API Key&#34;</span>
+</span></span></code></pre></div><p>以上でAlgolia関連の設定などの作業が終了です。</p>
 <h2 id="algoliaへのデータ登録方法">Algoliaへのデータ登録方法</h2>
 <p>最後に、実際にデータを登録する必要があります。
 手順は、以下のとおりです。</p>
@@ -367,16 +367,16 @@ ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
 <p><code>list.algolia.json</code>を編集して、記事だけをインデックスするように修正しました。
 テーマに存在する<code>layouts/_default/list.algolia.json</code>を、自分のところにコピーし、次のように変更しました。if文を1行追加して、<code>post</code>という種類のものだけを出力するようにしました。</p>
 <pre tabindex="0"><code>{{/* Generates a valid Algolia search index */}}
-{{- $.Scratch.Add &quot;index&quot; slice -}}
-{{- $section := $.Site.GetPage &quot;section&quot; .Section }}
+{{- $.Scratch.Add &#34;index&#34; slice -}}
+{{- $section := $.Site.GetPage &#34;section&#34; .Section }}
 {{- range .Site.AllPages -}}
   {{- if or (and (.IsDescendant $section) (and (not .Draft) (not .Params.private))) $section.IsHome -}}
-    {{- if (and (eq .Section &quot;post&quot;) (ne .URL &quot;/post/&quot;)) -}}
-      {{- $.Scratch.Add &quot;index&quot; (dict &quot;objectID&quot; .UniqueID &quot;date&quot; .Date.UTC.Unix &quot;description&quot; .Description &quot;dir&quot; .Dir &quot;expirydate&quot; .ExpiryDate.UTC.Unix &quot;fuzzywordcount&quot; .FuzzyWordCount &quot;keywords&quot; .Keywords &quot;kind&quot; .Kind &quot;lang&quot; .Lang &quot;lastmod&quot; .Lastmod.UTC.Unix &quot;permalink&quot; .Permalink &quot;publishdate&quot; .PublishDate &quot;readingtime&quot; .ReadingTime &quot;relpermalink&quot; .RelPermalink &quot;html&quot; .Params.Description &quot;title&quot; .Title &quot;type&quot; .Type &quot;url&quot; .URL &quot;weight&quot; .Weight &quot;wordcount&quot; .WordCount &quot;section&quot; .Section &quot;tags&quot; .Params.Tags &quot;categories&quot; .Params.Categories &quot;author&quot; .Params.authors &quot;content&quot; .Params.Description &quot;excerpt_html&quot; .Params.Description &quot;excerpt_text&quot; .Params.Description &quot;summary&quot; .Summary)}}
+    {{- if (and (eq .Section &#34;post&#34;) (ne .URL &#34;/post/&#34;)) -}}
+      {{- $.Scratch.Add &#34;index&#34; (dict &#34;objectID&#34; .UniqueID &#34;date&#34; .Date.UTC.Unix &#34;description&#34; .Description &#34;dir&#34; .Dir &#34;expirydate&#34; .ExpiryDate.UTC.Unix &#34;fuzzywordcount&#34; .FuzzyWordCount &#34;keywords&#34; .Keywords &#34;kind&#34; .Kind &#34;lang&#34; .Lang &#34;lastmod&#34; .Lastmod.UTC.Unix &#34;permalink&#34; .Permalink &#34;publishdate&#34; .PublishDate &#34;readingtime&#34; .ReadingTime &#34;relpermalink&#34; .RelPermalink &#34;html&#34; .Params.Description &#34;title&#34; .Title &#34;type&#34; .Type &#34;url&#34; .URL &#34;weight&#34; .Weight &#34;wordcount&#34; .WordCount &#34;section&#34; .Section &#34;tags&#34; .Params.Tags &#34;categories&#34; .Params.Categories &#34;author&#34; .Params.authors &#34;content&#34; .Params.Description &#34;excerpt_html&#34; .Params.Description &#34;excerpt_text&#34; .Params.Description &#34;summary&#34; .Summary)}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- $.Scratch.Get &quot;index&quot; | jsonify -}}
+{{- $.Scratch.Get &#34;index&#34; | jsonify -}}
 </code></pre><h2 id="まとめ">まとめ</h2>
 <p>これで、ブログ内記事検索ができるようになります。
 Algoliaは個人の非商用利用の場合、フリープランが用意されているのがありがたいですね。
@@ -408,7 +408,7 @@ Algoliaは個人の非商用利用の場合、フリープランが用意され�
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -731,6 +731,8 @@ Algoliaは個人の非商用利用の場合、フリープランが用意され�
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

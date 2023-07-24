@@ -232,52 +232,52 @@
 <li>partition_size - パーティションのサイズ(=Elasticsearchでのシャードかな?)です。今回は1つでの性能を計測したかったので1にしてあります。</li>
 <li>search_cluster_name - Azure Cognitive Searchのサービス名。<code>search.windows.net</code>名前空間で一意である必要があったので、他の人が使わなそうな名前をつけています。</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#ae81ff">variable &#34;machine_type&#34; {</span>
-  <span style="color:#ae81ff">default = &#34;standard&#34;</span>
-}
-
-<span style="color:#ae81ff">variable &#34;region&#34; {</span>
-  <span style="color:#ae81ff">default = &#34;East Asia&#34;</span>
-}
-
-<span style="color:#ae81ff">variable &#34;resource_group&#34; {</span>
-  <span style="color:#ae81ff">default = &#34;johtani-wiki-test&#34;</span>
-}
-
-<span style="color:#ae81ff">variable &#34;search_cluster_name&#34; {</span>
-  <span style="color:#ae81ff">default = &#34;johtani-wikipedia&#34;</span>
-}
-
-<span style="color:#ae81ff">variable &#34;partition_size&#34; {</span>
-  <span style="color:#ae81ff">default = 1</span>
-}
-</code></pre></div><h3 id="terraformtf"><code>terraform.tf</code></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#ae81ff">variable &#34;machine_type&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">default = &#34;standard&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">variable &#34;region&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">default = &#34;East Asia&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">variable &#34;resource_group&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">default = &#34;johtani-wiki-test&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">variable &#34;search_cluster_name&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">default = &#34;johtani-wikipedia&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">variable &#34;partition_size&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">default = 1</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="terraformtf"><code>terraform.tf</code></h3>
 <p><code>terraform.tf</code>は以下の通り。<a href="https://www.terraform.io/docs/providers/azurerm/r/search_service.html">Terraformの公式ドキュメントにある例</a>に<code>provider</code>を追加しただけのものになります。</p>
 <ul>
 <li>provider - プロバイダーの設定。Azureを利用するという宣言です。<code>features {}</code>がないとエラーになります。空でも必ず指定が必要です。認証周りについては、<a href="https://www.terraform.io/docs/providers/azurerm/guides/azure_cli.html"><code>azure-cli</code>経由で認証する方式</a>を採用しました。<code>azure-cli</code>はHomebrewでインストールしています。</li>
 <li>azurerm_resource_group - リソースグループの設定。<code>variables.tf</code>の<code>resource_group</code>と<code>region</code>を利用しています。必須項目はこの2種類だけです。</li>
 <li>azurerm_search_service - Azure Cognitive Searchの設定。<code>partition_count</code>以外は必須項目です。<code>variables.tf</code>と<code>azurerm_resource_group</code>の設定を利用しています。今回は利用していませんが、レプリカ数なども指定できるようになっています。</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Azureのproviderを指定。</span>
-<span style="color:#ae81ff">provider &#34;azurerm&#34; {</span>
-  <span style="color:#ae81ff">features {}</span>
-}
-
-<span style="color:#75715e"># リソースグループの設定</span>
-<span style="color:#ae81ff">resource &#34;azurerm_resource_group&#34; &#34;wiki-test&#34; {</span>
-  <span style="color:#ae81ff">name     = var.resource_group</span>
-  <span style="color:#ae81ff">location = var.region</span>
-}
-
-<span style="color:#75715e"># Azure Cognitive Searchの設定</span>
-<span style="color:#ae81ff">resource &#34;azurerm_search_service&#34; &#34;search_service&#34; {</span>
-  <span style="color:#ae81ff">name                = var.search_cluster_name</span>
-  <span style="color:#ae81ff">resource_group_name = azurerm_resource_group.wiki-test.name</span>
-  <span style="color:#ae81ff">location            = azurerm_resource_group.wiki-test.location</span>
-  <span style="color:#ae81ff">sku                 = var.machine_type</span>
-  <span style="color:#ae81ff">partition_count     = var.partition_size</span>
-}
-</code></pre></div><p>以上がファイルです。ほぼ公式ドキュメントのサンプル通りですねw</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Azureのproviderを指定。</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">provider &#34;azurerm&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">features {}</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># リソースグループの設定</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">resource &#34;azurerm_resource_group&#34; &#34;wiki-test&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">name     = var.resource_group</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">location = var.region</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Azure Cognitive Searchの設定</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">resource &#34;azurerm_search_service&#34; &#34;search_service&#34; {</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">name                = var.search_cluster_name</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">resource_group_name = azurerm_resource_group.wiki-test.name</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">location            = azurerm_resource_group.wiki-test.location</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">sku                 = var.machine_type</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">partition_count     = var.partition_size</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>以上がファイルです。ほぼ公式ドキュメントのサンプル通りですねw</p>
 <h2 id="デプロイとか">デプロイとか</h2>
 <p>ファイルの準備ができたら実際にデプロイします。
 Azureの環境への認証にはAzure CLIを利用して、事前にログインした状態にします。
@@ -324,7 +324,7 @@ Azureの環境への認証にはAzure CLIを利用して、事前にログイン
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -647,6 +647,8 @@ Azureの環境への認証にはAzure CLIを利用して、事前にログイン
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

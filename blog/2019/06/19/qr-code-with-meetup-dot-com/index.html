@@ -248,14 +248,14 @@ QRコード生成の仕組みを紹介してみようかと。</p>
 </div>
 
 <p>この時のプレビューのURLをQRコードのURLとして使いたいので、このURLをQRコード表示のHTMLに埋め込みます。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
-  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">obj</span> <span style="color:#f92672">=</span> {
-    <span style="color:#e6db74">&#34;entry.1744035444&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">id</span>,
-    <span style="color:#e6db74">&#34;entry.2031666715&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">name</span>
-  };
-  <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">param</span>(<span style="color:#a6e22e">obj</span>);
-}
-</code></pre></div><p>ここら辺です。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">obj</span> <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;entry.1744035444&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">id</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;entry.2031666715&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">name</span>
+</span></span><span style="display:flex;"><span>  };
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">param</span>(<span style="color:#a6e22e">obj</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>ここら辺です。
 <code>return</code>に書いてある<code>https</code>で始まる文字列をまず、先ほどのURLで置き換えます。
 次に、プレビューのHTMLの中から<code>&lt;input&gt;</code>タグを探して、<code>name</code>の値を抜き出します。
 それを<code>obj</code>のキーに利用します。<code>entry.</code>で始まる文字列が該当します。</p>
@@ -318,23 +318,23 @@ Elasticsearch勉強会の場合は、私のドメインにwwwをつけた&quot;h
 
 <p>で、Allowをクリックすれば、<code>redirect_uri</code>に指定されているページが表示されるわけです。</p>
 <p>QRコード表示用のHTMLでは、次のAPIを使用して、ログインしているユーザーの情報を取得してきています。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">getMemberId</span>() {
-  <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">getJSON</span>(<span style="color:#e6db74">&#39;https://api.meetup.com/2/member/self/?only=id,name&amp;access_token=&#39;</span><span style="color:#f92672">+</span> <span style="color:#a6e22e">getToken</span>(), <span style="color:#a6e22e">displayQRCode</span>);
-}
-</code></pre></div><p>ここで取れた値が、先ほどの「2. Google Formの準備」で説明したコードの<code>data</code>の部分に渡ってくるわけです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
-  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">obj</span> <span style="color:#f92672">=</span> {
-    <span style="color:#e6db74">&#34;entry.1744035444&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">id</span>,
-    <span style="color:#e6db74">&#34;entry.2031666715&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">name</span>
-  };
-  <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">param</span>(<span style="color:#a6e22e">obj</span>);
-}
-</code></pre></div><h3 id="4-qrコードの表示">4. QRコードの表示</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">getMemberId</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">getJSON</span>(<span style="color:#e6db74">&#39;https://api.meetup.com/2/member/self/?only=id,name&amp;access_token=&#39;</span><span style="color:#f92672">+</span> <span style="color:#a6e22e">getToken</span>(), <span style="color:#a6e22e">displayQRCode</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>ここで取れた値が、先ほどの「2. Google Formの準備」で説明したコードの<code>data</code>の部分に渡ってくるわけです。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">obj</span> <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;entry.1744035444&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">id</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;entry.2031666715&#34;</span> <span style="color:#f92672">:</span> <span style="color:#a6e22e">data</span>.<span style="color:#a6e22e">name</span>
+</span></span><span style="display:flex;"><span>  };
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;https://docs.google.com/forms/d/e/&lt;GOOGLE_FORM_ID&gt;/viewform?&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">param</span>(<span style="color:#a6e22e">obj</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="4-qrコードの表示">4. QRコードの表示</h3>
 <p>あとは、<a href="https://github.com/jeromeetienne/jquery-qrcode"><code>jquery.qrcode.min.js</code></a>を使用してURLを表示するだけです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">displayQRCode</span>(<span style="color:#a6e22e">data</span>) {
-  <span style="color:#a6e22e">$</span>(<span style="color:#e6db74">&#39;#qrcode&#39;</span>).<span style="color:#a6e22e">qrcode</span>({<span style="color:#a6e22e">width</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">128</span>,<span style="color:#a6e22e">height</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">128</span>, <span style="color:#a6e22e">text</span><span style="color:#f92672">:</span><span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>)});
-}
-</code></pre></div><p>サイズとURLを指定するだけですね。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">displayQRCode</span>(<span style="color:#a6e22e">data</span>) {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">$</span>(<span style="color:#e6db74">&#39;#qrcode&#39;</span>).<span style="color:#a6e22e">qrcode</span>({<span style="color:#a6e22e">width</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">128</span>,<span style="color:#a6e22e">height</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">128</span>, <span style="color:#a6e22e">text</span><span style="color:#f92672">:</span><span style="color:#a6e22e">createGoogleFormURL</span>(<span style="color:#a6e22e">data</span>)});
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>サイズとURLを指定するだけですね。</p>
 <h2 id="まとめ">まとめ</h2>
 <p>あとは、受付で、参加者の方が表示してくれたQRコードをスマホのQRコードリーダーやカメラで読み込めばGoogle Formが開いて必要な情報は入っているので、「送信ボタン」を押せば参加者リストが出来上がっていくという形になります。</p>
 <p>毎回勉強会の前日に、前回のGoogle Formを「コピー」してから、各回の勉強会の登録者フォームを作成しています。
@@ -371,7 +371,7 @@ QRコードを持ってきた方がすんなり受付を通過できるように
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -694,6 +694,8 @@ QRコードを持ってきた方がすんなり受付を通過できるように
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

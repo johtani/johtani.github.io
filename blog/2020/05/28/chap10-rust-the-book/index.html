@@ -248,47 +248,47 @@
 <p>少しだけ気になったので、動作確認したのは次の実装です。</p>
 <p>トレイトで宣言されている関数と構造体が独自に実装する関数の名前がかぶるとどうなるのかという実験です。
 構造体独自のメソッドが優先される感じになりそう。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Tweet</span> {
-    <span style="color:#66d9ef">pub</span> username: String,
-    <span style="color:#66d9ef">pub</span> content: String,
-    <span style="color:#66d9ef">pub</span> reply: <span style="color:#66d9ef">bool</span>,
-    <span style="color:#66d9ef">pub</span> retweet: <span style="color:#66d9ef">bool</span>,
-}
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">trait</span> Summary {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String;
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        <span style="color:#75715e">// {}さんからもっと読む
-</span><span style="color:#75715e"></span>        format!(<span style="color:#e6db74">&#34;(Read more from {}...)&#34;</span>, self.summarize_author())
-    }
-}
-<span style="color:#66d9ef">impl</span> Tweet {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        format!(<span style="color:#e6db74">&#34;hoge {}&#34;</span>, self.username)
-    }
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">to_string</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        format!(<span style="color:#e6db74">&#34;fuga&#34;</span>)
-    }
-}
-<span style="color:#66d9ef">impl</span> Summary <span style="color:#66d9ef">for</span> Tweet {
-    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
-        format!(<span style="color:#e6db74">&#34;@{}&#34;</span>, self.username)
-    }
-}
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summary</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Summary</span><span style="color:#f92672">&gt;</span>(hoge: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">T</span>) {
-    println!(<span style="color:#e6db74">&#34;{}&#34;</span>, hoge.summarize_author());
-}
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
-    <span style="color:#66d9ef">let</span> tweet <span style="color:#f92672">=</span> Tweet {
-        username: String::from(<span style="color:#e6db74">&#34;horse_ebooks&#34;</span>),
-        content: String::from(<span style="color:#e6db74">&#34;of course, as you probably already know, people&#34;</span>),
-        reply: <span style="color:#a6e22e">false</span>,
-        retweet: <span style="color:#a6e22e">false</span>,
-    };
-    println!(<span style="color:#e6db74">&#34;{}&#34;</span>, tweet.summarize_author());
-    summary(<span style="color:#f92672">&amp;</span>tweet);
-    println!(<span style="color:#e6db74">&#34;{}&#34;</span>, Summary::summarize_author(<span style="color:#f92672">&amp;</span>tweet));
-}
-</code></pre></div><h3 id="ライフタイムで参照を有効化する">ライフタイムで参照を有効化する</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Tweet</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> username: String,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> content: String,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> reply: <span style="color:#66d9ef">bool</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pub</span> retweet: <span style="color:#66d9ef">bool</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">trait</span> Summary {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// {}さんからもっと読む
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        format!(<span style="color:#e6db74">&#34;(Read more from </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">...)&#34;</span>, self.summarize_author())
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Tweet {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
+</span></span><span style="display:flex;"><span>        format!(<span style="color:#e6db74">&#34;hoge </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, self.username)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">to_string</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
+</span></span><span style="display:flex;"><span>        format!(<span style="color:#e6db74">&#34;fuga&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Summary <span style="color:#66d9ef">for</span> Tweet {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summarize_author</span>(<span style="color:#f92672">&amp;</span>self) -&gt; String {
+</span></span><span style="display:flex;"><span>        format!(<span style="color:#e6db74">&#34;@</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, self.username)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">summary</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Summary</span><span style="color:#f92672">&gt;</span>(hoge: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, hoge.summarize_author());
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> tweet <span style="color:#f92672">=</span> Tweet {
+</span></span><span style="display:flex;"><span>        username: String::from(<span style="color:#e6db74">&#34;horse_ebooks&#34;</span>),
+</span></span><span style="display:flex;"><span>        content: String::from(<span style="color:#e6db74">&#34;of course, as you probably already know, people&#34;</span>),
+</span></span><span style="display:flex;"><span>        reply: <span style="color:#a6e22e">false</span>,
+</span></span><span style="display:flex;"><span>        retweet: <span style="color:#a6e22e">false</span>,
+</span></span><span style="display:flex;"><span>    };
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, tweet.summarize_author());
+</span></span><span style="display:flex;"><span>    summary(<span style="color:#f92672">&amp;</span>tweet);
+</span></span><span style="display:flex;"><span>    println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, Summary::summarize_author(<span style="color:#f92672">&amp;</span>tweet));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="ライフタイムで参照を有効化する">ライフタイムで参照を有効化する</h3>
 <p>言われてみればそうですが、プログラマが色々考えないとまぁ、行けないんですねという感想。</p>
 <p>ただ、借用チェッカーが賢くやってくれるおかげで、全てにライフタイム注釈をつけなくて良くなっているというのがわかりました。
 逆に言うと、なんとなくRustを書き始めてしまったので、それを知らずに書いたせいで、コンパイラに怒られてても「?」となっていたのかと。。。</p>
@@ -332,7 +332,7 @@
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -655,6 +655,8 @@
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

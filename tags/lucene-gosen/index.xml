@@ -259,7 +259,7 @@ lucene-gosenでもこのテストを利用してランダムなテストをし�
 以下、エラーの出力例。「NOTE: reproduce with: 」のあとにあるantコマンドを実行すれば、同じテストが再現可能です。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
     [junit] ------------- Standard Error -----------------
-    [junit] TEST FAIL: useCharFilter=false text=&#39;wgxznwk&#39;
+    [junit] TEST FAIL: useCharFilter=false text=&amp;#39;wgxznwk&amp;#39;
     [junit] 
     [junit] ===&amp;gt;
     [junit] Uncaught exception by thread: Thread[Thread-3,5,main]
@@ -272,10 +272,9 @@ lucene-gosenでもこのテストを利用してランダムなテストをし�
     [junit] 	at org.apache.lucene.analysis.BaseTokenStreamTestCase$AnalysisThread.run(BaseTokenStreamTestCase.java:337)
     [junit] &amp;lt;===
     [junit] 
-    [junit] NOTE: reproduce with: ant test -Dtestcase=TestGosenAnalyzer -Dtestmethod=testReliability -Dtests.seed=4ad9618caecb9fb2:d5476c03b8172df:-9c569f70013ffbb -Dargs=&amp;quot;-Dfile.encoding=SJIS&amp;quot;
+    [junit] NOTE: reproduce with: ant test -Dtestcase=TestGosenAnalyzer -Dtestmethod=testReliability -Dtests.seed=4ad9618caecb9fb2:d5476c03b8172df:-9c569f70013ffbb -Dargs=&amp;#34;-Dfile.encoding=SJIS&amp;#34;
     [junit] ------------- ---------------- ---------------
     [junit] Testcase: testReliability(org.apache.lucene.analysis.gosen.TestGosenAnalyzer):	Caused an ERROR
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;3.デバッグの結果、Luceneのtest-frameworkにある「MockReaderWrapper」というクラスの影響を確認
 LuceneのJIRAの&lt;a href=&#34;https://issues.apache.org/jira/browse/LUCENE-3894&#34;&gt;LUCENE-3894&lt;/a&gt;にて追加されたクラスであるとわかる。
 このクラス、Readerのreadメソッド内部で、ランダムな値を元に長さを途中で返すという実装のReaderになっている。
@@ -555,12 +554,12 @@ lucene-gosenのJapaneseTokenizerFactoryではこのinform()メソッドでdictio
 こちらのパッチをSolrに適用し、SynonymFilterFactoryを次のように指定することで問題を回避することが可能になります。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 
-　&amp;lt;tokenizer class=&amp;quot;solr.JapaneseTokenizerFactory&amp;quot; compositePOS=&amp;quot;compositePOS.txt&amp;quot;
-　 dictionaryDir=&amp;quot;dictionary/naist-chasen&amp;quot;/&amp;amp;gt;
+　&amp;lt;tokenizer class=&amp;#34;solr.JapaneseTokenizerFactory&amp;#34; compositePOS=&amp;#34;compositePOS.txt&amp;#34;
+　 dictionaryDir=&amp;#34;dictionary/naist-chasen&amp;#34;/&amp;amp;gt;
 　...
-　　&amp;lt;filter class=&amp;quot;solr.SynonymFilterFactory&amp;quot; synonyms=&amp;quot;synonyms.txt&amp;quot; ignoreCase=&amp;quot;true&amp;quot; 
-　　  expand=&amp;quot;true&amp;quot; tokenizerFactory=&amp;quot;solr.JapaneseTokenizerFactory&amp;quot; 
-　　  **compositePOS=&amp;quot;compositePOS.txt&amp;quot; dictionaryDir=&amp;quot;dictionary/naist-chasen&amp;quot;**/&amp;amp;gt;
+　　&amp;lt;filter class=&amp;#34;solr.SynonymFilterFactory&amp;#34; synonyms=&amp;#34;synonyms.txt&amp;#34; ignoreCase=&amp;#34;true&amp;#34; 
+　　  expand=&amp;#34;true&amp;#34; tokenizerFactory=&amp;#34;solr.JapaneseTokenizerFactory&amp;#34; 
+　　  **compositePOS=&amp;#34;compositePOS.txt&amp;#34; dictionaryDir=&amp;#34;dictionary/naist-chasen&amp;#34;**/&amp;amp;gt;
 　...
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;SynonymFilterFactoryの設定にcompositePOS、dictionaryDirを追加します。
 ここの設定は&amp;lt;tokenizer&amp;gt;タグで指定された設定と同じ物を指定します。以上で問題なく動作することになります。&lt;/p&gt;
@@ -734,16 +733,16 @@ jarファイルを作成しなければなりません。
 ここに、辞書ディレクトリ（*.senファイルが存在するディレクトリ）を相対/絶対パスで指定します。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 ...
-Tokenizer tokenizer = new JapaneseTokenizer(reader, null, &amp;quot;辞書のディレクトリ&amp;quot;);
+Tokenizer tokenizer = new JapaneseTokenizer(reader, null, &amp;#34;辞書のディレクトリ&amp;#34;);
 ...
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;つぎは、Solrでの設定の方法です。
 schema.xmlにて次のような設定を行います。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 ...
-&amp;lt;fieldType name=&amp;quot;text_ja&amp;quot; ...&amp;gt;
+&amp;lt;fieldType name=&amp;#34;text_ja&amp;#34; ...&amp;gt;
   &amp;lt;analyzer&amp;gt;
     ...
-    &amp;lt;tokenizer class=&amp;quot;solr.JapaneseTokenizerFactory&amp;quot; compositePOS=&amp;quot;compositePOS.txt&amp;quot; dictionaryDir=&amp;quot;辞書のディレクトリ&amp;quot;/&amp;amp;gt;
+    &amp;lt;tokenizer class=&amp;#34;solr.JapaneseTokenizerFactory&amp;#34; compositePOS=&amp;#34;compositePOS.txt&amp;#34; dictionaryDir=&amp;#34;辞書のディレクトリ&amp;#34;/&amp;amp;gt;
     ...
   &amp;lt;/analyzer&amp;gt;
 &amp;lt;/fieldType&amp;gt;
@@ -788,7 +787,7 @@ schema.xmlにて次のような設定を行います。&lt;/p&gt;
 &lt;p&gt;そして、「rebuild-dic」です。こちらは、&lt;a href=&#34;http://johtani.jugem.jp/?eid=4&#34;&gt;以前記事に書きました&lt;/a&gt;が、カスタム辞書のコンパイルが思いの外面倒だったので、ターゲットを追加しました。
 次のように指定することで、辞書のリビルドが可能です。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-$ ant -Ddictype=naist-chasen -Dcustom.dcs=&amp;quot;custom1.csv custom2.csv&amp;quot; rebuild-dic
+$ ant -Ddictype=naist-chasen -Dcustom.dcs=&amp;#34;custom1.csv custom2.csv&amp;#34; rebuild-dic
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;提供されるjarファイルについて&lt;/strong&gt;&lt;hr&gt;&lt;/p&gt;
 &lt;p&gt;提供されるjarファイルは次のようになる予定です。
 1番目のjarファイルが今回追加になる、辞書なしのjarファイルになります。&lt;/p&gt;
@@ -930,8 +929,6 @@ keeptags_ja.txt
 &amp;lt;/div&amp;gt;
 最近、頭が硬くなってきてるなぁと実感してしまいました。まぁ、こんな使い方もあるかなぁと。
 もっと頭を柔らかくして問題を解けるけるようになりたいなぁと。
-
-
 &lt;/code&gt;&lt;/pre&gt;</content:encoded>
     </item>
     
@@ -986,14 +983,14 @@ keeptags_ja.txt
 dictionaryDirに指定された文字列をキー、その辞書ディレクトリを利用したSenFactoryのインスタンスを値に持つmapをSenFactory内に保持します。あとは、SenFactoryのgetInstance(String dictionaryDir)メソッドで取得する際にmapに対応するインスタンスがあれば、そのインスタンスをなければ、dictionaryDirから辞書を読み込んでインスタンス生成してmapにキャッシュしつつ返すという実装に変えただけです。
 ということで、次のようなIPADICとNAIST-JDIC for ChaSenを同時に使う設定も可能となります。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-    &amp;lt;fieldType name=&amp;quot;text_ja_ipadic&amp;quot; class=&amp;quot;solr.TextField&amp;quot; positionIncrementGap=&amp;quot;100&amp;quot;&amp;amp;gt;
+    &amp;lt;fieldType name=&amp;#34;text_ja_ipadic&amp;#34; class=&amp;#34;solr.TextField&amp;#34; positionIncrementGap=&amp;#34;100&amp;#34;&amp;amp;gt;
       &amp;lt;analyzer&amp;amp;gt;
-        &amp;lt;tokenizer class=&amp;quot;solr.JapaneseTokenizerFactory&amp;quot; dictionaryDir=&amp;quot;/tmp/lucene-gosen/dictionary/ipadic&amp;quot;/&amp;amp;gt;
+        &amp;lt;tokenizer class=&amp;#34;solr.JapaneseTokenizerFactory&amp;#34; dictionaryDir=&amp;#34;/tmp/lucene-gosen/dictionary/ipadic&amp;#34;/&amp;amp;gt;
       &amp;lt;/analyzer&amp;amp;gt;
     &amp;lt;/fieldType&amp;amp;gt;
-    &amp;lt;fieldType name=&amp;quot;text_ja_naist_chasen&amp;quot; class=&amp;quot;solr.TextField&amp;quot; positionIncrementGap=&amp;quot;100&amp;quot;&amp;amp;gt;
+    &amp;lt;fieldType name=&amp;#34;text_ja_naist_chasen&amp;#34; class=&amp;#34;solr.TextField&amp;#34; positionIncrementGap=&amp;#34;100&amp;#34;&amp;amp;gt;
       &amp;lt;analyzer&amp;amp;gt;
-        &amp;lt;tokenizer class=&amp;quot;solr.JapaneseTokenizerFactory&amp;quot; dictionaryDir=&amp;quot;/tmp/lucene-gosen/dictionary/naist-chasen&amp;quot;/&amp;amp;gt;
+        &amp;lt;tokenizer class=&amp;#34;solr.JapaneseTokenizerFactory&amp;#34; dictionaryDir=&amp;#34;/tmp/lucene-gosen/dictionary/naist-chasen&amp;#34;/&amp;amp;gt;
       &amp;lt;/analyzer&amp;amp;gt;
     &amp;lt;/fieldType&amp;amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あと、注意事項です。
@@ -1038,9 +1035,9 @@ $ ant nodic-jar
   Tokenizer tokenizer = new JapaneseTokenizer(reader, compositeTokenFilter, dictionaryDir);
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;最後に、Solrのtokenizerタグでの指定方法です。&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-    &amp;lt;fieldType name=&amp;quot;text_ja&amp;quot; class=&amp;quot;solr.TextField&amp;quot; positionIncrementGap=&amp;quot;100&amp;quot;&amp;amp;gt;
+    &amp;lt;fieldType name=&amp;#34;text_ja&amp;#34; class=&amp;#34;solr.TextField&amp;#34; positionIncrementGap=&amp;#34;100&amp;#34;&amp;amp;gt;
     &amp;lt;analyzer&amp;amp;gt;
-        &amp;lt;tokenizer class=&amp;quot;solr.JapaneseTokenizerFactory&amp;quot; dictionaryDir=&amp;quot;/hoge/dictionarydir&amp;quot;/&amp;amp;gt;
+        &amp;lt;tokenizer class=&amp;#34;solr.JapaneseTokenizerFactory&amp;#34; dictionaryDir=&amp;#34;/hoge/dictionarydir&amp;#34;/&amp;amp;gt;
     &amp;lt;/analyzer&amp;amp;gt;
     &amp;lt;/fieldType&amp;amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;以上が、簡単な設定の仕方です。なお、辞書を内包したjarファイルでもdictionaryDirは利用可能です。優先度としては、dictionaryDirが指定されている場合はdictionaryDirを探索しファイルがなければRuntimeExceptionです。指定がnullもしくは空文字の場合はjarファイルの辞書の読み込みを行います。&lt;/p&gt;
@@ -1272,7 +1269,6 @@ $SOLR_HOME/conf/schema.xmlに以下を追加します。&amp;lt;types&amp;gt;～
     &amp;lt;/fieldType&amp;amp;gt;
  &amp;lt;/types&amp;amp;gt;
 ...
-
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;重要なのはtokenizerタグのcompositePOS属性になります。ここに1.で記載したファイルを指定します。指定したファイルはschema.xmlと同じディレクトリに配置します。
 以上が利用するための設定です。&lt;/p&gt;
 &lt;p&gt;前回同様、「このComputerは、10回に1回の割合で起動中に青い画面が表示されます。」という文章をanalyze画面で解析した結果を示します。&lt;/p&gt;
@@ -1472,7 +1468,7 @@ CSVの各カラムは次のような意味を持っています。&lt;/p&gt;
 $ cd lucene-gosen-trunk
 $ cd dictionary
 $ ant -Ddictype=naist-chasen clean-sen
-$ ant -Ddictype=naist-chasen -Dcustom.dics=&amp;quot;../custom-dic.csv&amp;quot; compile
+$ ant -Ddictype=naist-chasen -Dcustom.dics=&amp;#34;../custom-dic.csv&amp;#34; compile
 $ cd ..
 $ ant -Ddictype=naist-chasen
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;上記コマンドの例で&amp;quot;clean-sen&amp;quot;というタスクを実行しています。これは、すでに出来上がっているgosen用のバイナリ辞書を削除するタスクになります。すでにgosen用の辞書が作成されている場合には辞書の再生成が行われないためです。

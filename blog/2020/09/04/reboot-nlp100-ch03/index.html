@@ -236,111 +236,111 @@
 もっと巨大なファイルの場合は個別のJSONに対する処理を
 <code>buf.lines().map()</code>のmapのなかで実行する形にすると思います。
 gzipのファイルを開くのに<code>flate2</code>というクレート(ライブラリ)を利用しました。便利なのは、<code>BufReader</code>に<code>lines()</code>というメソッドがあるところですかね。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_ndjson_from_gzip</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found?&#34;</span>);
-    <span style="color:#66d9ef">let</span> gz <span style="color:#f92672">=</span> GzDecoder::new(f);
-    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(gz);
-    <span style="color:#66d9ef">let</span> lines: Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> buf.lines().map(<span style="color:#f92672">|</span>l<span style="color:#f92672">|</span> l.unwrap()).collect();
-    <span style="color:#66d9ef">return</span> lines;
-}
-</code></pre></div><p>こちらは、上記のメソッドで抜き出したVecを元に、記事の情報を抜き出す処理をしています。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">// https://docs.rs/flate2/1.0.14/flate2/read/struct.GzDecoder.html
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_ndjson_from_gzip</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> f <span style="color:#f92672">=</span> File::open(input_file_name).expect(<span style="color:#e6db74">&#34;file not found?&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> gz <span style="color:#f92672">=</span> GzDecoder::new(f);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> buf <span style="color:#f92672">=</span> BufReader::new(gz);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> lines: Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> buf.lines().map(<span style="color:#f92672">|</span>l<span style="color:#f92672">|</span> l.unwrap()).collect();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> lines;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>こちらは、上記のメソッドで抜き出したVecを元に、記事の情報を抜き出す処理をしています。
 JSONをパースして構造体<code>Article</code>にデシリアライズするために、<code>serde</code>というライブラリを使用しています。
 <code>serde</code>自体は様々なデータ形式(JSON、YAMLなど)をパースするためのフレームワークです。今回はJSONなので、<code>serde_json</code>の実装を利用しています。
 また、JSON文字列から構造体にデシリアライズするのを簡単にできるように構造体に<code>#[derive(Deserialize)]</code>をつけています。
 あとは、<code>let article: Article = serde_json::from_str(json.as_str())</code>という処理を実行すればserde_jsonがJSONをパースして構造体に変換してくれます。形式がわかっているJSONの扱いはこれが楽ですね。変数に型を明記してあるので、型の推論もしてくれてるようです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">#[derive(Deserialize)]</span>
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Article</span> {
-    title: String,
-    text: String,
-}
-
-<span style="color:#75715e">// ch03-20. JSONデータの読み込み
-</span><span style="color:#75715e">// https://serde.rs/
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, target_title: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Article<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> results <span style="color:#f92672">=</span> vec![];
-    <span style="color:#66d9ef">let</span> ndjson <span style="color:#f92672">=</span> extract_ndjson_from_gzip(input_file_name);
-    <span style="color:#66d9ef">for</span> json <span style="color:#66d9ef">in</span> ndjson {
-        <span style="color:#66d9ef">let</span> article: <span style="color:#a6e22e">Article</span> <span style="color:#f92672">=</span> serde_json::from_str(json.as_str()).expect(<span style="color:#e6db74">&#34;json parse error&#34;</span>);
-        <span style="color:#66d9ef">if</span> article.title <span style="color:#f92672">==</span> target_title {
-            results.push(article);
-        }
-    }
-    <span style="color:#66d9ef">return</span> results;
-}
-</code></pre></div><p>後続の処理ではパースした<code>Article</code>から記事情報を取得して色々と処理をしています。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[derive(Deserialize)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Article</span> {
+</span></span><span style="display:flex;"><span>    title: String,
+</span></span><span style="display:flex;"><span>    text: String,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// ch03-20. JSONデータの読み込み
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// https://serde.rs/
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span>(input_file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>, target_title: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Article<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> results <span style="color:#f92672">=</span> vec![];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> ndjson <span style="color:#f92672">=</span> extract_ndjson_from_gzip(input_file_name);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> json <span style="color:#66d9ef">in</span> ndjson {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> article: <span style="color:#a6e22e">Article</span> <span style="color:#f92672">=</span> serde_json::from_str(json.as_str()).expect(<span style="color:#e6db74">&#34;json parse error&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> article.title <span style="color:#f92672">==</span> target_title {
+</span></span><span style="display:flex;"><span>            results.push(article);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> results;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>後続の処理ではパースした<code>Article</code>から記事情報を取得して色々と処理をしています。</p>
 <h3 id="正規表現">正規表現</h3>
 <p>正規表現用のクレート<code>regex</code>がRustに用意されています。<code>Regex::new(正規表現)</code>で、正規表現をコンパイルし、あとは、この構造体のメソッドを利用して文字列を処理していきます。
 問題では、マッチするかどうか、マッチした一部の文字列を抜き出す、不要なタグを削除するといった処理を正規表現で行いました(Rust書くよりも正規表現の書き方とかを調べるのに大半の時間をもっていかれてます。。。)。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
-<span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_category_lines</span>(article: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Article</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> re <span style="color:#f92672">=</span> Regex::new(<span style="color:#e6db74">r&#34;\[\[Category:(.*)\]\]&#34;).expect(&#34;syntax error in regex&#34;</span>);
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> vec![];
-    article.lines_from_text().iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
-        <span style="color:#66d9ef">if</span> re.is_match(line) {
-            lines.push(line.to_string());
-        }
-    });
-    <span style="color:#66d9ef">return</span> lines;
-}
-</code></pre></div><h3 id="mediawiki-apiリクエスト処理">MediaWiki APIリクエスト処理</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">extract_category_lines</span>(article: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">Article</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> re <span style="color:#f92672">=</span> Regex::new(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\[\[Category:(.*)\]\]&#34;</span>).expect(<span style="color:#e6db74">&#34;syntax error in regex&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> lines <span style="color:#f92672">=</span> vec![];
+</span></span><span style="display:flex;"><span>    article.lines_from_text().iter().for_each(<span style="color:#f92672">|</span>line<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> re.is_match(line) {
+</span></span><span style="display:flex;"><span>            lines.push(line.to_string());
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    });
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> lines;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="mediawiki-apiリクエスト処理">MediaWiki APIリクエスト処理</h3>
 <p>最後の問題で国旗のファイル名を元に<a href="https://www.mediawiki.org/wiki/API:Imageinfo">MediaWiki API</a>を叩いて、URLの文字列を取得しましょうという問題がありました。
 ファイル名をREST APIの引数に渡してHTTP経由でリクエストを送信し、返ってくるJSONレスポンスからURLを抜き出すという処理です。</p>
 <p>HTTPのリクエストの送受信に<code>reqwest</code>というクレートを利用しました。
 ちょっと長いけど、APIコールしている箇所はこんな形です。</p>
 <p>この関数には<code>async</code>とついています。非同期処理の関数です。内部で2回ほど(リクエスト送信の結果待ちとレスポンスのパース待ち)<code>.await</code>があります。</p>
 <p><code>client</code>に<code>.get(URL)</code>や<code>query(&amp;[])</code>といったメソッドが用意されているので、URLやクエリパラメータを用意して<code>send()</code>でリクエスト送信します。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
-<span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">call_api</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Result<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> {
-    <span style="color:#66d9ef">let</span> client <span style="color:#f92672">=</span> reqwest::Client::new();
-    <span style="color:#66d9ef">let</span> file_name2 <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;File:{}&#34;</span>, file_name);
-    <span style="color:#75715e">//let mut file_name2 = file_name.to_string().replace(&#34; &#34;, &#34;_&#34;);
-</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> query <span style="color:#f92672">=</span> [
-        (<span style="color:#e6db74">&#34;action&#34;</span>, <span style="color:#e6db74">&#34;query&#34;</span>),
-        (<span style="color:#e6db74">&#34;format&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>),
-        (<span style="color:#e6db74">&#34;prop&#34;</span>, <span style="color:#e6db74">&#34;imageinfo&#34;</span>),
-        (<span style="color:#e6db74">&#34;iiprop&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>),
-        (<span style="color:#e6db74">&#34;titles&#34;</span>, file_name2.as_str()),
-    ];
-    <span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> client
-        .get(<span style="color:#e6db74">&#34;https://en.wikipedia.org/w/api.php&#34;</span>)
-        .query(<span style="color:#f92672">&amp;</span>query)
-        .send()
-        .<span style="color:#66d9ef">await</span>;
-
-    <span style="color:#66d9ef">match</span> result {
-        Ok(response) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> response.status() {
-            StatusCode::OK <span style="color:#f92672">=&gt;</span> {
-                <span style="color:#66d9ef">let</span> body <span style="color:#f92672">=</span> response.json::<span style="color:#f92672">&lt;</span>MediaWikiResponse<span style="color:#f92672">&gt;</span>().<span style="color:#66d9ef">await</span>;
-                <span style="color:#66d9ef">match</span> body {
-                    Ok(obj) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> obj.get_url() {
-                        Some(url) <span style="color:#f92672">=&gt;</span> Ok(url),
-                        None <span style="color:#f92672">=&gt;</span> Err(String::from(<span style="color:#e6db74">&#34;Cannot get url...&#34;</span>)),
-                    },
-                    Err(error) <span style="color:#f92672">=&gt;</span> Err(error.to_string()),
-                }
-            }
-            _ <span style="color:#f92672">=&gt;</span> Err(String::from(format!(
-                <span style="color:#e6db74">&#34;Status code is {}.&#34;</span>,
-                response.status()
-            ))),
-        },
-        Err(error) <span style="color:#f92672">=&gt;</span> {
-            <span style="color:#66d9ef">let</span> error_msg <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;Error occurred... {:?}&#34;</span>, error);
-            println!(<span style="color:#e6db74">&#34;{}&#34;</span>, error_msg.as_str());
-            Err(error_msg)
-        }
-    }
-}
-</code></pre></div><p>あとは、呼び出し元で非同期の処理を実行するために、<code>tokio</code>というクレートを利用しています。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">async</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">call_api</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Result<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> client <span style="color:#f92672">=</span> reqwest::Client::new();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> file_name2 <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;File:</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, file_name);
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">//let mut file_name2 = file_name.to_string().replace(&#34; &#34;, &#34;_&#34;);
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> query <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;action&#34;</span>, <span style="color:#e6db74">&#34;query&#34;</span>),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;format&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;prop&#34;</span>, <span style="color:#e6db74">&#34;imageinfo&#34;</span>),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;iiprop&#34;</span>, <span style="color:#e6db74">&#34;url&#34;</span>),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;titles&#34;</span>, file_name2.as_str()),
+</span></span><span style="display:flex;"><span>    ];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> client
+</span></span><span style="display:flex;"><span>        .get(<span style="color:#e6db74">&#34;https://en.wikipedia.org/w/api.php&#34;</span>)
+</span></span><span style="display:flex;"><span>        .query(<span style="color:#f92672">&amp;</span>query)
+</span></span><span style="display:flex;"><span>        .send()
+</span></span><span style="display:flex;"><span>        .<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> result {
+</span></span><span style="display:flex;"><span>        Ok(response) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> response.status() {
+</span></span><span style="display:flex;"><span>            StatusCode::<span style="color:#66d9ef">OK</span> <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> body <span style="color:#f92672">=</span> response.json::<span style="color:#f92672">&lt;</span>MediaWikiResponse<span style="color:#f92672">&gt;</span>().<span style="color:#66d9ef">await</span>;
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">match</span> body {
+</span></span><span style="display:flex;"><span>                    Ok(obj) <span style="color:#f92672">=&gt;</span> <span style="color:#66d9ef">match</span> obj.get_url() {
+</span></span><span style="display:flex;"><span>                        Some(url) <span style="color:#f92672">=&gt;</span> Ok(url),
+</span></span><span style="display:flex;"><span>                        None <span style="color:#f92672">=&gt;</span> Err(String::from(<span style="color:#e6db74">&#34;Cannot get url...&#34;</span>)),
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                    Err(error) <span style="color:#f92672">=&gt;</span> Err(error.to_string()),
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            _ <span style="color:#f92672">=&gt;</span> Err(String::from(format!(
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;Status code is </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">.&#34;</span>,
+</span></span><span style="display:flex;"><span>                response.status()
+</span></span><span style="display:flex;"><span>            ))),
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        Err(error) <span style="color:#f92672">=&gt;</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> error_msg <span style="color:#f92672">=</span> format!(<span style="color:#e6db74">&#34;Error occurred... </span><span style="color:#e6db74">{:?}</span><span style="color:#e6db74">&#34;</span>, error);
+</span></span><span style="display:flex;"><span>            println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, error_msg.as_str());
+</span></span><span style="display:flex;"><span>            Err(error_msg)
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>あとは、呼び出し元で非同期の処理を実行するために、<code>tokio</code>というクレートを利用しています。
 <code>block_on()</code>で<code>call_api()</code>の実行をして、結果が返ってくるのを待ち受けています。結果が返ってきて、問題なければ、<code>call_api</code>の戻り値<code>Result&lt;String, String&gt;</code>の左側のStringの値が取り出され、<code>get_image_url</code>の戻り値となります。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust">
-<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_image_url</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> _rt <span style="color:#f92672">=</span> tokio::runtime::Runtime::new().expect(<span style="color:#e6db74">&#34;Fail initializing runtime&#34;</span>);
-    <span style="color:#66d9ef">let</span> task <span style="color:#f92672">=</span> call_api(file_name);
-    _rt.block_on(task).expect(<span style="color:#e6db74">&#34;Something wrong...&#34;</span>)
-}
-</code></pre></div><p>一応、非同期に関して説明してみましたが、合っているのかどうか。。。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">get_image_url</span>(file_name: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> _rt <span style="color:#f92672">=</span> tokio::runtime::Runtime::new().expect(<span style="color:#e6db74">&#34;Fail initializing runtime&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> task <span style="color:#f92672">=</span> call_api(file_name);
+</span></span><span style="display:flex;"><span>    _rt.block_on(task).expect(<span style="color:#e6db74">&#34;Something wrong...&#34;</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>一応、非同期に関して説明してみましたが、合っているのかどうか。。。
 クレートの関係などはまだちょっと自身がないです。。。
 あとは、エラーの処理の仕方とかももうちょっと勉強したいかな。</p>
 <h2 id="まとめ">まとめ</h2>
@@ -372,7 +372,7 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -695,6 +695,8 @@ JSONをパースして構造体<code>Article</code>にデシリアライズす�
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

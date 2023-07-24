@@ -85,13 +85,12 @@ impl&amp;lt;T, Z&amp;gt; MyBox&amp;lt;T, Z&amp;gt; {
 
 fn main() {
     let x = 5;
-    let z = &amp;quot;10&amp;quot;;
+    let z = &amp;#34;10&amp;#34;;
     let y = MyBox::new(x, z);
 
     assert_eq!(5, x);
     assert_eq!(5, *y);
 }
-
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;derefトレイトでスマートポインタを普通の参照のように扱う&#34;&gt;Derefトレイトでスマートポインタを普通の参照のように扱う&lt;/h3&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;参照外し型強制&lt;/code&gt; : 日本語ムズカシイネ&lt;/li&gt;
@@ -113,7 +112,7 @@ enum List {
 }
 
 fn print_typename&amp;lt;T&amp;gt;(_: T) {
-    println!(&amp;quot;{}&amp;quot;, std::any::type_name::&amp;lt;T&amp;gt;());
+    println!(&amp;#34;{}&amp;#34;, std::any::type_name::&amp;lt;T&amp;gt;());
 }
 
 use List::{Cons, Nil};
@@ -128,9 +127,9 @@ fn main() {
     match &amp;amp;(*a) {
         Cons(v1, v2) =&amp;gt; {
             print_typename(v2);
-            println!(&amp;quot;{}, {:?}&amp;quot;, v1, v2);
+            println!(&amp;#34;{}, {:?}&amp;#34;, v1, v2);
         },
-        Nil =&amp;gt; println!(&amp;quot;Nil!!&amp;quot;)
+        Nil =&amp;gt; println!(&amp;#34;Nil!!&amp;#34;)
     };
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;refcelltと内部可変性パターン&#34;&gt;RefCell&lt;T&gt;と内部可変性パターン&lt;/h3&gt;
@@ -257,47 +256,47 @@ fn main() {
 &lt;p&gt;少しだけ気になったので、動作確認したのは次の実装です。&lt;/p&gt;
 &lt;p&gt;トレイトで宣言されている関数と構造体が独自に実装する関数の名前がかぶるとどうなるのかという実験です。
 構造体独自のメソッドが優先される感じになりそう。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Tweet&lt;/span&gt; {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; username: String,
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; content: String,
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; reply: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; retweet: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
-}
-&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Summary {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
-        &lt;span style=&#34;color:#75715e&#34;&gt;// {}さんからもっと読む
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(Read more from {}...)&amp;#34;&lt;/span&gt;, self.summarize_author())
-    }
-}
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Tweet {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
-        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge {}&amp;#34;&lt;/span&gt;, self.username)
-    }
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;to_string&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
-        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fuga&amp;#34;&lt;/span&gt;)
-    }
-}
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Summary &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Tweet {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
-        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@{}&amp;#34;&lt;/span&gt;, self.username)
-    }
-}
-&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;T: &lt;span style=&#34;color:#a6e22e&#34;&gt;Summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;(hoge: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;T&lt;/span&gt;) {
-    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, hoge.summarize_author());
-}
-&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tweet &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Tweet {
-        username: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;horse_ebooks&amp;#34;&lt;/span&gt;),
-        content: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;of course, as you probably already know, people&amp;#34;&lt;/span&gt;),
-        reply: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
-        retweet: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
-    };
-    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, tweet.summarize_author());
-    summary(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet);
-    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, Summary::summarize_author(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet));
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;ライフタイムで参照を有効化する&#34;&gt;ライフタイムで参照を有効化する&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Tweet&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; username: String,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; content: String,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; reply: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; retweet: &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Summary {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#75715e&#34;&gt;// {}さんからもっと読む
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;(Read more from &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;...)&amp;#34;&lt;/span&gt;, self.summarize_author())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Tweet {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, self.username)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;to_string&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fuga&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Summary &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; Tweet {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summarize_author&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; String {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        format!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;@&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, self.username)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;T: &lt;span style=&#34;color:#a6e22e&#34;&gt;Summary&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt;(hoge: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;T&lt;/span&gt;) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, hoge.summarize_author());
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;pub&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; tweet &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Tweet {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        username: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;horse_ebooks&amp;#34;&lt;/span&gt;),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        content: String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;of course, as you probably already know, people&amp;#34;&lt;/span&gt;),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        reply: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        retweet: &lt;span style=&#34;color:#a6e22e&#34;&gt;false&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    };
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, tweet.summarize_author());
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    summary(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, Summary::summarize_author(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;tweet));
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;ライフタイムで参照を有効化する&#34;&gt;ライフタイムで参照を有効化する&lt;/h3&gt;
 &lt;p&gt;言われてみればそうですが、プログラマが色々考えないとまぁ、行けないんですねという感想。&lt;/p&gt;
 &lt;p&gt;ただ、借用チェッカーが賢くやってくれるおかげで、全てにライフタイム注釈をつけなくて良くなっているというのがわかりました。
 逆に言うと、なんとなくRustを書き始めてしまったので、それを知らずに書いたせいで、コンパイラに怒られてても「?」となっていたのかと。。。&lt;/p&gt;
@@ -636,17 +635,17 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 &lt;li&gt;最初の引数は必ず&lt;code&gt;self&lt;/code&gt;&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;impl&lt;/code&gt;は構造体とは別の場所に書く = Javaのクラスとは違う&lt;/li&gt;
 &lt;/ul&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Rectangle&lt;/span&gt; {
-    width: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
-    height: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
-}
-
-&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Rectangle {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;area&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt; {
-        self.width &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; self.height
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Rectangle&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    width: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    height: &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Rectangle {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;area&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;u32&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        self.width &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; self.height
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ul&gt;
 &lt;li&gt;参照じゃない&lt;code&gt;self&lt;/code&gt;も使えるらしい。どういうときに使うんだろう?&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h4 id=&#34;関連関数&#34;&gt;関連関数&lt;/h4&gt;
@@ -672,25 +671,25 @@ NLP100とか、いくつかのプログラムを書いていて、なんとな�
 &lt;/ul&gt;
 &lt;h4 id=&#34;実験&#34;&gt;実験&lt;/h4&gt;
 &lt;p&gt;スコープとかどうなりそう?って実験もしてみた。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Hoge {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
-    }
-
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Hoge &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; String {
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) {
-            println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hogehoge {}&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
-        }
-    }
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge&amp;#34;&lt;/span&gt;);
-    c.trim();
-    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;{}&amp;#34;&lt;/span&gt;, fuga(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;c));
-}
-
-&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;fuga&lt;/span&gt;(d: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;String) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt; {
-    d.trim()
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力はこんな感じ&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-rust&#34; data-lang=&#34;rust&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;trait&lt;/span&gt; Hoge {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;impl&lt;/span&gt; Hoge &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; String {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;trim&lt;/span&gt;(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self) {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hogehoge &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;self);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;let&lt;/span&gt; c &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; String::from(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hoge&amp;#34;&lt;/span&gt;);
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    c.trim();
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    println!(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, fuga(&lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;c));
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;fn&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;fuga&lt;/span&gt;(d: &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;String) -&amp;gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;str&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    d.trim()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;出力はこんな感じ&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;hogehoge hoge
 hoge
 &lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
@@ -721,19 +720,19 @@ hoge
 &lt;li&gt;&lt;code&gt;drop&lt;/code&gt;関数ってのがあって、明示的に呼ぶことも可能。次のような感じで。2つ目の&lt;code&gt;println!&lt;/code&gt;はエラーになる。sがもう無いのに借用しようとしてるから。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() {
-    let mut s = String::from(&amp;quot;hello&amp;quot;);
-    s.push_str(&amp;quot;, world!&amp;quot;);
-    println!(&amp;quot;{}&amp;quot;, s);
+    let mut s = String::from(&amp;#34;hello&amp;#34;);
+    s.push_str(&amp;#34;, world!&amp;#34;);
+    println!(&amp;#34;{}&amp;#34;, s);
     drop(s);
-    println!(&amp;quot;{}&amp;quot;, s);
+    println!(&amp;#34;{}&amp;#34;, s);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;
 &lt;li&gt;ムーブ - shallow copyではない。以下の2行目がムーブ。&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let s1 = String::from(&amp;quot;hello&amp;quot;);
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let s1 = String::from(&amp;#34;hello&amp;#34;);
 let s2 = s1;
 
-println!(&amp;quot;{}, world!&amp;quot;, s1);
+println!(&amp;#34;{}, world!&amp;#34;, s1);
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;スタックとヒープの話が絡んでくる。あんまり意識すること無いよなぁ。
 スタック = 固定長のデータを入れる場所。ポインタ、数値など
 ヒープ = 可変長のデータが入る場所。可変の文字列とか。&lt;/p&gt;
@@ -763,7 +762,7 @@ println!(&amp;quot;{}, world!&amp;quot;, s1);
 &lt;/ul&gt;
 &lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let mut s = String::from(&amp;quot;hello&amp;quot;);
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let mut s = String::from(&amp;#34;hello&amp;#34;);
 
 {
     let r1 = &amp;amp;mut s;
@@ -776,7 +775,7 @@ let r2 = &amp;amp;mut s;
 &lt;/ul&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn dangle() -&amp;gt; &amp;amp;String { // dangleはStringへの参照を返す
 
-    let s = String::from(&amp;quot;hello&amp;quot;); // sは新しいString
+    let s = String::from(&amp;#34;hello&amp;#34;); // sは新しいString
 
     &amp;amp;s // String sへの参照を返す
 } // ここで、sはスコープを抜け、ドロップされる。そのメモリは消される。
@@ -860,10 +859,10 @@ let r2 = &amp;amp;mut s;
 
     let x = x * 2;
 
-    println!(&amp;quot;The value of x is: {}&amp;quot;, x);
+    println!(&amp;#34;The value of x is: {}&amp;#34;, x);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;とか&lt;/p&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let spaces = &amp;quot;   &amp;quot;;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;let spaces = &amp;#34;   &amp;#34;;
 let spaces = spaces.len();
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;みたいに、同一変数名を使い回せること。再代入ではない&lt;/p&gt;
 &lt;h2 id=&#34;3章&#34;&gt;3章&lt;/h2&gt;
@@ -959,8 +958,8 @@ let spaces = spaces.len();
 &lt;li&gt;rustfmt&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;フォーマッター。デフォルトでフォーマット機能が付いてるの便利ですね。言語として決まってると、プロジェクトごとに悩まなくていいってのがありますし。&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-zsh&#34; data-lang=&#34;zsh&#34;&gt;rustfmt ファイル名
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;という形で使えるみたい。
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-zsh&#34; data-lang=&#34;zsh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;rustfmt ファイル名
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;という形で使えるみたい。
 プロジェクトごとだと&lt;code&gt;cargo fmt&lt;/code&gt;のほうが楽そうかな。&lt;/p&gt;
 &lt;ol start=&#34;2&#34;&gt;
 &lt;li&gt;標準ライブラリAPIドキュメントをブラウザで閲覧&lt;/li&gt;
@@ -1020,13 +1019,13 @@ source $HOME/.cargo/env
 &lt;li&gt;&lt;code&gt;cargo new hello&lt;/code&gt;したあとに&lt;code&gt;main.rs&lt;/code&gt;に以下の&lt;code&gt;main()&lt;/code&gt;関数が出来上がっている!?&lt;/li&gt;
 &lt;/ol&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;fn main() {
-    println!(&amp;quot;Hello, world!&amp;quot;);
+    println!(&amp;#34;Hello, world!&amp;#34;);
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;驚きましたが、&lt;code&gt;cargo new hoge&lt;/code&gt;ってやっても、おなじ&lt;code&gt;main.rs&lt;/code&gt;ができてました。デフォルトで出来上がるんですね。どんな超能力!?と思ってしまいましたw&lt;/p&gt;
 &lt;ol start=&#34;2&#34;&gt;
 &lt;li&gt;&lt;code&gt;cargo new hello&lt;/code&gt;して出来上がった&lt;code&gt;Cargo.toml&lt;/code&gt;に著者名が入力されていた。&lt;/li&gt;
 &lt;/ol&gt;
-&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;authors = [&amp;quot;Jun Ohtani &amp;lt;メアド&amp;gt;&amp;quot;]
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;authors = [&amp;#34;Jun Ohtani &amp;lt;メアド&amp;gt;&amp;#34;]
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;なんで?と思いました。まだ解明してないです。
 本を読んでいけばわかるかな?&lt;/p&gt;
 &lt;ul&gt;
@@ -1564,7 +1563,6 @@ end
 end&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;ここまでが実装したモジュール＋クラス。
 以下は実行例。id,name,sizeというheaderをもつCSVを使ってみた。
-
 &lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
 &lt;blockquote&gt;
 &lt;p&gt;require &amp;lsquo;acts_as_csv_module_mod.rb&amp;rsquo;
@@ -1589,7 +1587,7 @@ csv.each {|row| puts row.id}
 &lt;/blockquote&gt;
 &lt;/blockquote&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
-&amp;lt;span style=&amp;quot;color:#FF0000&amp;quot;&amp;gt;※idというcsvフィールド名にしたら、object_idとかぶっているようでwarningが出てしまった。&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#FF0000&amp;#34;&amp;gt;※idというcsvフィールド名にしたら、object_idとかぶっているようでwarningが出てしまった。&amp;lt;/span&amp;gt;
 
 CsvRowクラスの定義がモジュールの中に入っているが、この実装でも動くみたい。ただ、パッケージみたいな感じ7日までは調査してない。。。
 &lt;/code&gt;&lt;/pre&gt;</content:encoded>
@@ -1613,7 +1611,7 @@ CsvRowクラスの定義がモジュールの中に入っているが、この�
 &amp;gt;&amp;gt; end
 =&amp;gt; nil
 &amp;gt;&amp;gt; tell_the_trueth()
-NoMethodError: undefined method `tell_the_trueth&#39; for main:Object
+NoMethodError: undefined method `tell_the_trueth&amp;#39; for main:Object
      from (irb):4
 &lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&#34;配列そしてシンタックスシュガー&#34;&gt;◎配列：そしてシンタックスシュガー&lt;/h3&gt;
 &lt;p&gt;puts animalsで内容が出力されるのはうれしい。JavaだとHashCodeが出てくるから。出力メソッド書かないといけなくなる。
@@ -1673,7 +1671,7 @@ injectはすんなり使うイメージが出にくそう。また、ソース�
 &lt;dt&gt;○コードブロックを使った場合と使わない場合の両方について、ファイルにアクセスするコードを書く。コードブロックの利点は？&lt;/dt&gt;
 &lt;dd&gt;※コードブロックあり。
 ```
-&lt;p&gt;File.open(&amp;ldquo;tree.rb&amp;rdquo;, &amp;lsquo;r&amp;rsquo;) {|f| f.each {|line| puts &amp;ldquo;#{f.lineno} : #{line}&amp;quot;}}&lt;/p&gt;
+&lt;p&gt;File.open(&amp;ldquo;tree.rb&amp;rdquo;, &amp;lsquo;r&amp;rsquo;) {|f| f.each {|line| puts &amp;ldquo;#{f.lineno} : #{line}&amp;rdquo;}}&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;※コードブロックなし
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;f = File.open(&amp;ldquo;tree.rb&amp;rdquo;, &amp;lsquo;r&amp;rsquo;)
 while line = f.gets
@@ -1689,7 +1687,7 @@ end&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
 &lt;blockquote&gt;
 &lt;p&gt;h = [:key1 =&amp;gt; &amp;ldquo;hoge&amp;rdquo;, :key2 =&amp;gt; &amp;ldquo;boke&amp;rdquo;, :key3 =&amp;gt; &amp;ldquo;fuga&amp;rdquo;]
-h.each {|key, value| puts &amp;ldquo;#{key} is #{value}&amp;quot;}
+h.each {|key, value| puts &amp;ldquo;#{key} is #{value}&amp;rdquo;}
 =&amp;gt;key1hogekey2bokekey3fuga is&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;/blockquote&gt;
@@ -1704,12 +1702,12 @@ a.each {|i| h.store(a.index(i),i) }&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;※また間違い？なんでそうなる？
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a.inject(h2) {|hoge, i| hoge[a.index(i).to_s] = i}&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;こっちならいいみたい。まだinjectがわかってない。
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a.inject(h2) {|hoge, i| hoge[a.index(i).to_s] = i;puts &amp;ldquo;#{i}&amp;quot;; hoge}&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a.inject(h2) {|hoge, i| hoge[a.index(i).to_s] = i;puts &amp;ldquo;#{i}&amp;rdquo;; hoge}&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 &amp;lt;/dd&amp;gt;
 &amp;lt;dt&amp;gt;○ハッシュの各要素について繰り返すにはどうすればよいか？&amp;lt;/dt&amp;gt;
 &amp;lt;dd&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;h.each {|key, value| puts &amp;ldquo;#{key} is #{value}&amp;quot;}&lt;/p&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;h.each {|key, value| puts &amp;ldquo;#{key} is #{value}&amp;rdquo;}&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;&amp;lt;/dd&amp;gt;
 &amp;lt;dt&amp;gt;○Rubyの配列はスタックとしても使える。スタック以外に配列で実現可能なよくあるデータ構造体を挙げよ。&amp;lt;/dt&amp;gt;
 &amp;lt;dd&amp;gt;キュー。
@@ -1721,7 +1719,7 @@ a.each {|i| h.store(a.index(i),i) }&lt;/p&gt;
 &amp;lt;dl&amp;gt;
 &amp;lt;dt&amp;gt;○最初に、eachだけを用いて、１６個の数値と４個の数値の配列の中身を同時に出力せよ。次に、同じ事をEnumerableのeach_sliceを用いて実行せよ。&amp;lt;/dt&amp;gt;
 &amp;lt;dd&amp;gt;
-&amp;lt;span style=&amp;quot;color:#FF0000&amp;quot;&amp;gt;&amp;lt;em&amp;gt;※これ日本語がわからないんだが、4個ずつ出せってことか？？&amp;lt;/em&amp;gt;&amp;lt;/span&amp;gt;ということで、「16個の数字の配列の中身を4個ずつ同時に出力せよ。」と解釈して実装してみた
+&amp;lt;span style=&amp;#34;color:#FF0000&amp;#34;&amp;gt;&amp;lt;em&amp;gt;※これ日本語がわからないんだが、4個ずつ出せってことか？？&amp;lt;/em&amp;gt;&amp;lt;/span&amp;gt;ということで、「16個の数字の配列の中身を4個ずつ同時に出力せよ。」と解釈して実装してみた
 ※each利用版
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 s = []
@@ -1738,8 +1736,8 @@ end&lt;/p&gt;
 a.each_slice(4) {|b| puts b.inspect}&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;また、えらい違いだな。
 &amp;lt;/dd&amp;gt;
-&amp;lt;dt&amp;gt;○Treeクラスは面白いクラスだったが、きれいなインタフェースを用いて新しいツリーを指定することは出来なかった。そこで、initializerにハッシュと配列が入れ子になった構造体を指定できるようにせよ。具体的には、次のようなツリーを指定できるようにしたい。{&#39;grandpa&#39; =&amp;amp;gt; { &#39;dad&#39; =&amp;amp;gt; {&#39;child 1&#39; =&amp;amp;gt; [], &#39;child 2&#39; =&amp;amp;gt; [] }, &#39;uncle&#39; =&amp;amp;gt; {&#39;child 3&#39; =&amp;amp;gt; [], &#39;child 4&#39; =&amp;lt; [] } } }&amp;lt;/dt&amp;gt;
-&amp;lt;dd&amp;gt;&amp;lt;span style=&amp;quot;color:#FF0000&amp;quot;&amp;gt;※root（ここではgrandpaレベル）が複数あると破綻しないのか？&amp;lt;/span&amp;gt;
+&amp;lt;dt&amp;gt;○Treeクラスは面白いクラスだったが、きれいなインタフェースを用いて新しいツリーを指定することは出来なかった。そこで、initializerにハッシュと配列が入れ子になった構造体を指定できるようにせよ。具体的には、次のようなツリーを指定できるようにしたい。{&amp;#39;grandpa&amp;#39; =&amp;amp;gt; { &amp;#39;dad&amp;#39; =&amp;amp;gt; {&amp;#39;child 1&amp;#39; =&amp;amp;gt; [], &amp;#39;child 2&amp;#39; =&amp;amp;gt; [] }, &amp;#39;uncle&amp;#39; =&amp;amp;gt; {&amp;#39;child 3&amp;#39; =&amp;amp;gt; [], &amp;#39;child 4&amp;#39; =&amp;lt; [] } } }&amp;lt;/dt&amp;gt;
+&amp;lt;dd&amp;gt;&amp;lt;span style=&amp;#34;color:#FF0000&amp;#34;&amp;gt;※root（ここではgrandpaレベル）が複数あると破綻しないのか？&amp;lt;/span&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;class Tree
 attr_accessor :children, :node_name&lt;/p&gt;
 &lt;p&gt;def initialize(name, children=[])
@@ -1767,7 +1765,7 @@ end&lt;/p&gt;
 残念ながらちょっとカンニングしてしまいました。。。
 &amp;lt;/dd&amp;gt;
 &amp;lt;dt&amp;gt; ○ファイル内で、あるフレーズを含む全ての行を出力する簡単なgrepをかけ。簡単な正規表現でマッチングを行い、ファイルから行を読み出す必要がある（この処理はRubyでは驚くほど簡単にかける）。必要なら行番号も出力してみると良い。&amp;lt;/dt&amp;gt;
-&amp;lt;dd&amp;gt;※メソッドだけでいいな。&amp;lt;span style=&amp;quot;color:#0000FF&amp;quot;&amp;gt;ファイルクローズはこの記述の場合はコーディングブロックのendのタイミングでクローズされるのか？&amp;lt;/span&amp;gt;
+&amp;lt;dd&amp;gt;※メソッドだけでいいな。&amp;lt;span style=&amp;#34;color:#0000FF&amp;#34;&amp;gt;ファイルクローズはこの記述の場合はコーディングブロックのendのタイミングでクローズされるのか？&amp;lt;/span&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;class RegGrep
 def grep(filename, regexp)
 File.open(filename, &amp;lsquo;r&amp;rsquo;) do |f|
@@ -1868,33 +1866,33 @@ s.index(&amp;lsquo;Ruby&amp;rsquo;) //indexofで間違えた&lt;/p&gt;
 ※まずは、正統派。
 i = 0
 while i &amp;lt; 10
-  puts &amp;quot;johtani&amp;quot;
+  puts &amp;#34;johtani&amp;#34;
   i = i + 1
 end
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;※Rangeを利用
-(1..10).each {|n| puts &amp;quot;johtani #{n}&amp;quot;}
+(1..10).each {|n| puts &amp;#34;johtani #{n}&amp;#34;}
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 ※forもあるよね
 for i in 1..10
-  puts &amp;quot;johtani&amp;quot;
+  puts &amp;#34;johtani&amp;#34;
 end
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 ※timesってのもある。（0始まり）
-10.times {|n| puts &amp;quot;johtani #{n}&amp;quot;}
+10.times {|n| puts &amp;#34;johtani #{n}&amp;#34;}
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 ※uptoなんてのもあるのか。
-1.upto(10) {|n| puts &amp;quot;johtani #{n}&amp;quot;}
+1.upto(10) {|n| puts &amp;#34;johtani #{n}&amp;#34;}
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 ※downtoも
-10.downto(1) {puts &amp;quot;johtani&amp;quot;}
+10.downto(1) {puts &amp;#34;johtani&amp;#34;}
 &lt;/code&gt;&lt;/pre&gt;&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;
 ※stepもある。
-10.step(1, -1) {puts &amp;quot;johtani&amp;quot;}//step(上限,ステップ)
+10.step(1, -1) {puts &amp;#34;johtani&amp;#34;}//step(上限,ステップ)
 ```&amp;lt;/dd&amp;gt;
-&amp;lt;dt&amp;gt;○文字列&amp;quot;This is sentence number 1&amp;quot;の1を10までカウントアップしながら10回出力する。&amp;lt;/dt&amp;gt;
+&amp;lt;dt&amp;gt;○文字列&amp;#34;This is sentence number 1&amp;#34;の1を10までカウントアップしながら10回出力する。&amp;lt;/dt&amp;gt;
 &amp;lt;dd&amp;gt;```
 
-1.upto(10) {|n| puts &amp;quot;This is sentence number #{n}&amp;quot;}
+1.upto(10) {|n| puts &amp;#34;This is sentence number #{n}&amp;#34;}
 ※あとは上記と一緒
 ```&amp;lt;/dd&amp;gt;
 &amp;lt;dt&amp;gt;○ファイルに格納されているRubyプログラムを実行する。&amp;lt;/dt&amp;gt;

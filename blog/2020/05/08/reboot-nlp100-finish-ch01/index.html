@@ -219,51 +219,51 @@
 <p>前回は<a href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/">こちら</a>。</p>
 <p>とっくに終わってたのに、ブログ書いてなかった。。。</p>
 <h3 id="08-暗号文">08. 暗号文</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">cipher</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">return</span> String::from_iter(text.chars().map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> {
-        <span style="color:#66d9ef">if</span> x.is_ascii_alphanumeric() <span style="color:#f92672">&amp;&amp;</span> x.is_lowercase() {
-            <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> b <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>; <span style="color:#ae81ff">4</span>];
-            x.encode_utf8(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> b);
-            b[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">219</span> <span style="color:#f92672">-</span> b[<span style="color:#ae81ff">0</span>];
-            <span style="color:#66d9ef">char</span>::from(b[<span style="color:#ae81ff">0</span>])
-        } <span style="color:#66d9ef">else</span> {
-            x
-        }
-    }));
-}
-</code></pre></div><p>Rustの文字列はUTF-8でエンコードされたテキストを保持しているので、文字コード自体は意識していないです。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">cipher</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> String::from_iter(text.chars().map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> x.is_ascii_alphanumeric() <span style="color:#f92672">&amp;&amp;</span> x.is_lowercase() {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> b <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>; <span style="color:#ae81ff">4</span>];
+</span></span><span style="display:flex;"><span>            x.encode_utf8(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> b);
+</span></span><span style="display:flex;"><span>            b[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">219</span> <span style="color:#f92672">-</span> b[<span style="color:#ae81ff">0</span>];
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">char</span>::from(b[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>            x
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Rustの文字列はUTF-8でエンコードされたテキストを保持しているので、文字コード自体は意識していないです。
 <code>chars()</code>でUnicodeスカラー値のイテレータが返ってくるので、1文字ずつ扱えるようになります。</p>
 <p>ただ、1文字をバイトとして扱うのに手こずりました。
 <code>encode_utf8</code>というメソッドを利用して1バイトだけ取り出して、計算するというのをやっています。
 文字種の判別のメソッドが用意されているのは便利ですね。</p>
 <p>なんかもうちょっとスマートにできないのかな?と思いつつ動いたのでこれになってます。</p>
 <h3 id="09-typoglycemia">09. Typoglycemia</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">typoglycemia</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
-    <span style="color:#66d9ef">return</span> text
-        .split_whitespace()
-        .map(<span style="color:#f92672">|</span>word<span style="color:#f92672">|</span> {
-            <span style="color:#66d9ef">if</span> word.len() <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">4</span> {
-                word.to_string()
-            } <span style="color:#66d9ef">else</span> {
-                <span style="color:#66d9ef">let</span> original <span style="color:#f92672">=</span> word.chars().collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">char</span><span style="color:#f92672">&gt;&gt;</span>();
-                <span style="color:#66d9ef">let</span> first <span style="color:#f92672">=</span> original.get(<span style="color:#ae81ff">0</span>).unwrap();
-                <span style="color:#66d9ef">let</span> last <span style="color:#f92672">=</span> original.last().unwrap();
-                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> original[<span style="color:#ae81ff">1</span><span style="color:#f92672">..</span>original.len() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]
-                    .iter()
-                    .map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> x.clone())
-                    .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">char</span><span style="color:#f92672">&gt;&gt;</span>();
-                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> rng <span style="color:#f92672">=</span> thread_rng();
-                typo.shuffle(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> rng);
-                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> String::from_iter(typo.iter());
-                typo.insert(<span style="color:#ae81ff">0</span>, first.clone());
-                typo.push(last.clone());
-                typo
-            }
-        })
-        .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;&gt;</span>()
-        .join(<span style="color:#e6db74">&#34; &#34;</span>);
-}
-</code></pre></div><p>一応、1行で記述できたかな?
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">pub</span> <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">typoglycemia</span>(text: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; String {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> text
+</span></span><span style="display:flex;"><span>        .split_whitespace()
+</span></span><span style="display:flex;"><span>        .map(<span style="color:#f92672">|</span>word<span style="color:#f92672">|</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> word.len() <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">4</span> {
+</span></span><span style="display:flex;"><span>                word.to_string()
+</span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> original <span style="color:#f92672">=</span> word.chars().collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">char</span><span style="color:#f92672">&gt;&gt;</span>();
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> first <span style="color:#f92672">=</span> original.get(<span style="color:#ae81ff">0</span>).unwrap();
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> last <span style="color:#f92672">=</span> original.last().unwrap();
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> original[<span style="color:#ae81ff">1</span><span style="color:#f92672">..</span>original.len() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>                    .iter()
+</span></span><span style="display:flex;"><span>                    .map(<span style="color:#f92672">|</span>x<span style="color:#f92672">|</span> x.clone())
+</span></span><span style="display:flex;"><span>                    .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">char</span><span style="color:#f92672">&gt;&gt;</span>();
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> rng <span style="color:#f92672">=</span> thread_rng();
+</span></span><span style="display:flex;"><span>                typo.shuffle(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> rng);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> typo <span style="color:#f92672">=</span> String::from_iter(typo.iter());
+</span></span><span style="display:flex;"><span>                typo.insert(<span style="color:#ae81ff">0</span>, first.clone());
+</span></span><span style="display:flex;"><span>                typo.push(last.clone());
+</span></span><span style="display:flex;"><span>                typo
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        })
+</span></span><span style="display:flex;"><span>        .collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;&gt;</span>()
+</span></span><span style="display:flex;"><span>        .join(<span style="color:#e6db74">&#34; &#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>一応、1行で記述できたかな?
 まずは、スペースで単語ごとに区切った後に、<code>word</code>(単語)の長さによって、処理を分岐し、単語が5文字以上の場合にランダムに並び替えを行うというのをやっています。
 文字単位で処理を行うために、<code>chars()</code>で1文字ずつ取り出しています。
 最初と最後の文字だけはそのままに、間の文字をランダムにシャッフルするというのをやるのに、もとの<code>word</code>のスライスからコピーした文字列を作り出してから組み立て直すということをやっています。</p>
@@ -299,7 +299,7 @@
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -622,6 +622,8 @@
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         

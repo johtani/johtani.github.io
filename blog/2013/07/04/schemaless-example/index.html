@@ -241,64 +241,64 @@ java -Dsolr.solr.home=example-schemaless/solr -jar start.jar
 <p>さて、フィールドを追加してみます。
 PUTを利用すると1フィールドの追加が可能です。
 「fugatext」というフィールド名でフィールドを追加しています。今のところJSONのみ対応みたいです。</p>
-<pre tabindex="0"><code>$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H 'Content-Type: application/json' -d '{&quot;type&quot;:&quot;text_ja&quot;,&quot;stored&quot;:false,&quot;multiValued&quot;:true}'
+<pre tabindex="0"><code>$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H &#39;Content-Type: application/json&#39; -d &#39;{&#34;type&#34;:&#34;text_ja&#34;,&#34;stored&#34;:false,&#34;multiValued&#34;:true}&#39;
 {
-  &quot;responseHeader&quot;:{
-    &quot;status&quot;:0,
-    &quot;QTime&quot;:18}}
+  &#34;responseHeader&#34;:{
+    &#34;status&#34;:0,
+    &#34;QTime&#34;:18}}
 </code></pre><p>追加できたかどうかもREST APIで取得してみます。</p>
 <pre tabindex="0"><code>$ curl http://localhost:8983/solr/schema/fields
 {
-  &quot;responseHeader&quot;:{
-    &quot;status&quot;:0,
-    &quot;QTime&quot;:0},
-  &quot;fields&quot;:[{
-      &quot;name&quot;:&quot;_version_&quot;,
-      &quot;type&quot;:&quot;long&quot;,
-      &quot;indexed&quot;:true,
-      &quot;stored&quot;:true},
+  &#34;responseHeader&#34;:{
+    &#34;status&#34;:0,
+    &#34;QTime&#34;:0},
+  &#34;fields&#34;:[{
+      &#34;name&#34;:&#34;_version_&#34;,
+      &#34;type&#34;:&#34;long&#34;,
+      &#34;indexed&#34;:true,
+      &#34;stored&#34;:true},
     {
-      &quot;name&quot;:&quot;fugatext&quot;,
-      &quot;type&quot;:&quot;text_ja&quot;,
-      &quot;multiValued&quot;:true,
-      &quot;stored&quot;:false},
+      &#34;name&#34;:&#34;fugatext&#34;,
+      &#34;type&#34;:&#34;text_ja&#34;,
+      &#34;multiValued&#34;:true,
+      &#34;stored&#34;:false},
     {
-      &quot;name&quot;:&quot;id&quot;,
-      &quot;type&quot;:&quot;string&quot;,
-      &quot;multiValued&quot;:false,
-      &quot;indexed&quot;:true,
-      &quot;required&quot;:true,
-      &quot;stored&quot;:true,
-      &quot;uniqueKey&quot;:true}]}
+      &#34;name&#34;:&#34;id&#34;,
+      &#34;type&#34;:&#34;string&#34;,
+      &#34;multiValued&#34;:false,
+      &#34;indexed&#34;:true,
+      &#34;required&#34;:true,
+      &#34;stored&#34;:true,
+      &#34;uniqueKey&#34;:true}]}
 </code></pre><p>追加できました。
 ちなみに、同じフィールド名を追加しようとするとエラーが帰ってきます。</p>
-<pre tabindex="0"><code>$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H 'Content-Type: application/json' -d '{&quot;type&quot;:&quot;text_ja&quot;,&quot;stored&quot;:false,&quot;multiValued&quot;:true}'
+<pre tabindex="0"><code>$ curl -X PUT http://localhost:8983/solr/schema/fields/fugatext -H &#39;Content-Type: application/json&#39; -d &#39;{&#34;type&#34;:&#34;text_ja&#34;,&#34;stored&#34;:false,&#34;multiValued&#34;:true}&#39;
 {
-  &quot;responseHeader&quot;:{
-    &quot;status&quot;:400,
-    &quot;QTime&quot;:1},
-  &quot;error&quot;:{
-    &quot;msg&quot;:&quot;Field 'fugatext' already exists.&quot;,
-    &quot;code&quot;:400}}
+  &#34;responseHeader&#34;:{
+    &#34;status&#34;:400,
+    &#34;QTime&#34;:1},
+  &#34;error&#34;:{
+    &#34;msg&#34;:&#34;Field &#39;fugatext&#39; already exists.&#34;,
+    &#34;code&#34;:400}}
 </code></pre><h2 id="設定の違い">設定の違い</h2>
 <p>example-schemalessのsolrconfig.xmlは以下の設定が通常のexampleとは異なるようです。</p>
 <h4 id="schemafactoryの設定">schemaFactoryの設定</h4>
 <p>schemaをAPIから変更可能にする設定です。これまでの変更しない設定の場合は<code>ClassicIndexSchemaFactory</code>を指定します。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml">...
-  <span style="color:#f92672">&lt;schemaFactory</span> <span style="color:#a6e22e">class=</span><span style="color:#e6db74">&#34;ManagedIndexSchemaFactory&#34;</span><span style="color:#f92672">&gt;</span>
-    <span style="color:#f92672">&lt;bool</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;mutable&#34;</span><span style="color:#f92672">&gt;</span>true<span style="color:#f92672">&lt;/bool&gt;</span>
-    <span style="color:#f92672">&lt;str</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;managedSchemaResourceName&#34;</span><span style="color:#f92672">&gt;</span>managed-schema<span style="color:#f92672">&lt;/str&gt;</span>
-  <span style="color:#f92672">&lt;/schemaFactory&gt;</span>
-...
-</code></pre></div><h4 id="updatechainの設定">update.chainの設定</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;schemaFactory</span> <span style="color:#a6e22e">class=</span><span style="color:#e6db74">&#34;ManagedIndexSchemaFactory&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;bool</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;mutable&#34;</span><span style="color:#f92672">&gt;</span>true<span style="color:#f92672">&lt;/bool&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;str</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;managedSchemaResourceName&#34;</span><span style="color:#f92672">&gt;</span>managed-schema<span style="color:#f92672">&lt;/str&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/schemaFactory&gt;</span>
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><h4 id="updatechainの設定">update.chainの設定</h4>
 <p>更新処理（update関連のリクエストハンドラ「/update」とか）には次のような設定が追加されていました。（1006行目あたり）</p>
-<pre tabindex="0"><code>  &lt;requestHandler name=&quot;/update&quot; class=&quot;solr.UpdateRequestHandler&quot;&gt;
+<pre tabindex="0"><code>  &lt;requestHandler name=&#34;/update&#34; class=&#34;solr.UpdateRequestHandler&#34;&gt;
     &lt;!-- See below for information on defining 
          updateRequestProcessorChains that can be used by name 
          on each Update Request
       --&gt;
-    &lt;lst name=&quot;defaults&quot;&gt;
-      &lt;str name=&quot;update.chain&quot;&gt;add-unknown-fields-to-the-schema&lt;/str&gt;
+    &lt;lst name=&#34;defaults&#34;&gt;
+      &lt;str name=&#34;update.chain&#34;&gt;add-unknown-fields-to-the-schema&lt;/str&gt;
     &lt;/lst&gt;
   &lt;/requestHandler&gt;
 </code></pre><p>「add-unknown-fields-to-the-schema」というupdate.chainが指定されています。このchainの定義自体は1669行目くらいに存在します。
@@ -316,21 +316,21 @@ PUTを利用すると1フィールドの追加が可能です。
        
        See http://wiki.apache.org/solr/GuessingFieldTypes
     --&gt;
-  &lt;updateRequestProcessorChain name=&quot;add-unknown-fields-to-the-schema&quot;&gt;
-    &lt;processor class=&quot;solr.RemoveBlankFieldUpdateProcessorFactory&quot;/&gt;
-    &lt;processor class=&quot;solr.ParseBooleanFieldUpdateProcessorFactory&quot;/&gt;
-    &lt;processor class=&quot;solr.ParseLongFieldUpdateProcessorFactory&quot;/&gt;
-    &lt;processor class=&quot;solr.ParseDoubleFieldUpdateProcessorFactory&quot;/&gt;
-    &lt;processor class=&quot;solr.ParseDateFieldUpdateProcessorFactory&quot;&gt;
-      &lt;arr name=&quot;format&quot;&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mm:ss.SSSZ&lt;/str&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mm:ss,SSSZ&lt;/str&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mm:ss.SSS&lt;/str&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mm:ss,SSS&lt;/str&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mm:ssZ&lt;/str&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mm:ss&lt;/str&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mmZ&lt;/str&gt;
-        &lt;str&gt;yyyy-MM-dd'T'HH:mm&lt;/str&gt;
+  &lt;updateRequestProcessorChain name=&#34;add-unknown-fields-to-the-schema&#34;&gt;
+    &lt;processor class=&#34;solr.RemoveBlankFieldUpdateProcessorFactory&#34;/&gt;
+    &lt;processor class=&#34;solr.ParseBooleanFieldUpdateProcessorFactory&#34;/&gt;
+    &lt;processor class=&#34;solr.ParseLongFieldUpdateProcessorFactory&#34;/&gt;
+    &lt;processor class=&#34;solr.ParseDoubleFieldUpdateProcessorFactory&#34;/&gt;
+    &lt;processor class=&#34;solr.ParseDateFieldUpdateProcessorFactory&#34;&gt;
+      &lt;arr name=&#34;format&#34;&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mm:ss.SSSZ&lt;/str&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mm:ss,SSSZ&lt;/str&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mm:ss.SSS&lt;/str&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mm:ss,SSS&lt;/str&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mm:ssZ&lt;/str&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mm:ss&lt;/str&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mmZ&lt;/str&gt;
+        &lt;str&gt;yyyy-MM-dd&#39;T&#39;HH:mm&lt;/str&gt;
         &lt;str&gt;yyyy-MM-dd HH:mm:ss.SSSZ&lt;/str&gt;
         &lt;str&gt;yyyy-MM-dd HH:mm:ss,SSSZ&lt;/str&gt;
         &lt;str&gt;yyyy-MM-dd HH:mm:ss.SSS&lt;/str&gt;
@@ -342,28 +342,28 @@ PUTを利用すると1フィールドの追加が可能です。
         &lt;str&gt;yyyy-MM-dd&lt;/str&gt;
       &lt;/arr&gt;
     &lt;/processor&gt;
-    &lt;processor class=&quot;solr.AddSchemaFieldsUpdateProcessorFactory&quot;&gt;
-      &lt;str name=&quot;defaultFieldType&quot;&gt;text_general&lt;/str&gt;
-      &lt;lst name=&quot;typeMapping&quot;&gt;
-        &lt;str name=&quot;valueClass&quot;&gt;java.lang.Boolean&lt;/str&gt;
-        &lt;str name=&quot;fieldType&quot;&gt;booleans&lt;/str&gt;
+    &lt;processor class=&#34;solr.AddSchemaFieldsUpdateProcessorFactory&#34;&gt;
+      &lt;str name=&#34;defaultFieldType&#34;&gt;text_general&lt;/str&gt;
+      &lt;lst name=&#34;typeMapping&#34;&gt;
+        &lt;str name=&#34;valueClass&#34;&gt;java.lang.Boolean&lt;/str&gt;
+        &lt;str name=&#34;fieldType&#34;&gt;booleans&lt;/str&gt;
       &lt;/lst&gt;
-      &lt;lst name=&quot;typeMapping&quot;&gt;
-        &lt;str name=&quot;valueClass&quot;&gt;java.util.Date&lt;/str&gt;
-        &lt;str name=&quot;fieldType&quot;&gt;tdates&lt;/str&gt;
+      &lt;lst name=&#34;typeMapping&#34;&gt;
+        &lt;str name=&#34;valueClass&#34;&gt;java.util.Date&lt;/str&gt;
+        &lt;str name=&#34;fieldType&#34;&gt;tdates&lt;/str&gt;
       &lt;/lst&gt;
-      &lt;lst name=&quot;typeMapping&quot;&gt;
-        &lt;str name=&quot;valueClass&quot;&gt;java.lang.Long&lt;/str&gt;
-        &lt;str name=&quot;valueClass&quot;&gt;java.lang.Integer&lt;/str&gt;
-        &lt;str name=&quot;fieldType&quot;&gt;tlongs&lt;/str&gt;
+      &lt;lst name=&#34;typeMapping&#34;&gt;
+        &lt;str name=&#34;valueClass&#34;&gt;java.lang.Long&lt;/str&gt;
+        &lt;str name=&#34;valueClass&#34;&gt;java.lang.Integer&lt;/str&gt;
+        &lt;str name=&#34;fieldType&#34;&gt;tlongs&lt;/str&gt;
       &lt;/lst&gt;
-      &lt;lst name=&quot;typeMapping&quot;&gt;
-        &lt;str name=&quot;valueClass&quot;&gt;java.lang.Number&lt;/str&gt;
-        &lt;str name=&quot;fieldType&quot;&gt;tdoubles&lt;/str&gt;
+      &lt;lst name=&#34;typeMapping&#34;&gt;
+        &lt;str name=&#34;valueClass&#34;&gt;java.lang.Number&lt;/str&gt;
+        &lt;str name=&#34;fieldType&#34;&gt;tdoubles&lt;/str&gt;
       &lt;/lst&gt;
     &lt;/processor&gt;
-    &lt;processor class=&quot;solr.LogUpdateProcessorFactory&quot;/&gt;
-    &lt;processor class=&quot;solr.RunUpdateProcessorFactory&quot;/&gt;
+    &lt;processor class=&#34;solr.LogUpdateProcessorFactory&#34;/&gt;
+    &lt;processor class=&#34;solr.RunUpdateProcessorFactory&#34;/&gt;
   &lt;/updateRequestProcessorChain&gt;
 </code></pre><p>使ってるUpdateProcessorはこんな感じみたいです。最後の2つはこれ用じゃないので省略。</p>
 <table>
@@ -380,40 +380,40 @@ PUTを利用すると1フィールドの追加が可能です。
 <p>起動時には定義されてないフィールドをもったデータを登録してみます。
 boolean型で試してみることに。以下のデータを管理画面のデータ登録画面から登録します。（http://localhost:8983/solr/#/collection1/documents）
 （タイトルでbooleanってわかりにくいですが）</p>
-<pre tabindex="0"><code>{&quot;id&quot;:&quot;change.me&quot;,&quot;title&quot;:true, &quot;price&quot;:1.25, &quot;fuga&quot;:&quot;100,200&quot;}
+<pre tabindex="0"><code>{&#34;id&#34;:&#34;change.me&#34;,&#34;title&#34;:true, &#34;price&#34;:1.25, &#34;fuga&#34;:&#34;100,200&#34;}
 </code></pre><p>エラーは出ません。で、またフィールド一覧を取得すると。</p>
 <pre tabindex="0"><code>$ curl http://localhost:8983/solr/schema/fields
 {
-  &quot;responseHeader&quot;:{
-    &quot;status&quot;:0,
-    &quot;QTime&quot;:1},
-  &quot;fields&quot;:[{
-      &quot;name&quot;:&quot;_version_&quot;,
-      &quot;type&quot;:&quot;long&quot;,
-      &quot;indexed&quot;:true,
-      &quot;stored&quot;:true},
+  &#34;responseHeader&#34;:{
+    &#34;status&#34;:0,
+    &#34;QTime&#34;:1},
+  &#34;fields&#34;:[{
+      &#34;name&#34;:&#34;_version_&#34;,
+      &#34;type&#34;:&#34;long&#34;,
+      &#34;indexed&#34;:true,
+      &#34;stored&#34;:true},
     {
-      &quot;name&quot;:&quot;fuga&quot;,
-      &quot;type&quot;:&quot;tlongs&quot;},
+      &#34;name&#34;:&#34;fuga&#34;,
+      &#34;type&#34;:&#34;tlongs&#34;},
     {
-      &quot;name&quot;:&quot;fugatext&quot;,
-      &quot;type&quot;:&quot;text_ja&quot;,
-      &quot;multiValued&quot;:true,
-      &quot;stored&quot;:false},
+      &#34;name&#34;:&#34;fugatext&#34;,
+      &#34;type&#34;:&#34;text_ja&#34;,
+      &#34;multiValued&#34;:true,
+      &#34;stored&#34;:false},
     {
-      &quot;name&quot;:&quot;id&quot;,
-      &quot;type&quot;:&quot;string&quot;,
-      &quot;multiValued&quot;:false,
-      &quot;indexed&quot;:true,
-      &quot;required&quot;:true,
-      &quot;stored&quot;:true,
-      &quot;uniqueKey&quot;:true},
+      &#34;name&#34;:&#34;id&#34;,
+      &#34;type&#34;:&#34;string&#34;,
+      &#34;multiValued&#34;:false,
+      &#34;indexed&#34;:true,
+      &#34;required&#34;:true,
+      &#34;stored&#34;:true,
+      &#34;uniqueKey&#34;:true},
     {
-      &quot;name&quot;:&quot;price&quot;,
-      &quot;type&quot;:&quot;tdoubles&quot;},
+      &#34;name&#34;:&#34;price&#34;,
+      &#34;type&#34;:&#34;tdoubles&#34;},
     {
-      &quot;name&quot;:&quot;title&quot;,
-      &quot;type&quot;:&quot;booleans&quot;}]}
+      &#34;name&#34;:&#34;title&#34;,
+      &#34;type&#34;:&#34;booleans&#34;}]}
 </code></pre><p>おー、最後にtitleが追加されてます。他にもfugaやpriceも。（日付は手を抜きました。。。）</p>
 <h2 id="感想">感想</h2>
 <p>詳細までは追いかけてないですが、こんなかんじです。
@@ -449,7 +449,7 @@ boolean型で試してみることに。以下のデータを管理画面のデ�
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
 <script type="application/javascript">
-    var disqus_config = function () {
+    window.disqus_config = function () {
     
     
     
@@ -772,6 +772,8 @@ boolean型で試してみることに。以下のデータを管理画面のデ�
                         <a href="/tags/workplace-search" title="workplace-search">
                             workplace-search
                         </a>
+                        
+                        
                         
                         
                         
