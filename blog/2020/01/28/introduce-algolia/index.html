@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Hugoをアップデートした" />
-    <meta property="og:title" content="Hugoをアップデートした" />
-    <meta property="twitter:title" content="Hugoをアップデートした" />
+    <meta name="title" content="ブログ移行日記(その4) - 検索機能(Algolia)の導入" />
+    <meta property="og:title" content="ブログ移行日記(その4) - 検索機能(Algolia)の導入" />
+    <meta property="twitter:title" content="ブログ移行日記(その4) - 検索機能(Algolia)の導入" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Hugoをアップデートした | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>ブログ移行日記(その4) - 検索機能(Algolia)の導入 | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2022/08/05/upgrade-hugo-accidentally/">
+    <link rel="canonical" href="/blog/2020/01/28/introduce-algolia/">
 
     
     
@@ -158,12 +158,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/hugo" title="hugo">
-                            hugo
+                        <a class="tag" href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
                         </a>
                         
                     </div>
-                    <h1>Hugoをアップデートした</h1>
+                    <h1>ブログ移行日記(その4) - 検索機能(Algolia)の導入</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -171,9 +171,11 @@
                             johtani
                          
                         on 
-                        Friday, August 5, 2022
+                        Tuesday, January 28, 2020
                         
                         
+                        
+                        <br>Last Modified on 水曜日, 1月 29, 2020
                         
                     </span>
                 </div>
@@ -201,88 +203,185 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#なんでアップデート">なんでアップデート？</a></li>
-    <li><a href="#バージョンアップに伴う修正">バージョンアップに伴う修正</a>
+    <li><a href="#参考記事">参考記事</a></li>
+    <li><a href="#algoliaとは">Algoliaとは?</a></li>
+    <li><a href="#algoliaのサービス登録からインデックス作成">Algoliaのサービス登録からインデックス作成</a></li>
+    <li><a href="#hugo側で必要な設定">Hugo側で必要な設定</a>
       <ul>
-        <li><a href="#pageurlなどがdeprecatedに">Page.URLなどがdeprecatedに</a></li>
-        <li><a href="#tweetのshortcodeの引数が増えた">tweetのshortcodeの引数が増えた</a></li>
-        <li><a href="#鍵付きツイートによるエラー">鍵付きツイートによるエラー</a></li>
-        <li><a href="#hugo_buildlockファイルが生成される">.hugo_build.lockファイルが生成される</a></li>
+        <li><a href="#npm関連の作業">npm関連の作業</a></li>
+        <li><a href="#検索関連の設定">検索関連の設定</a></li>
       </ul>
     </li>
+    <li><a href="#algoliaへのデータ登録方法">Algoliaへのデータ登録方法</a></li>
+    <li><a href="#今後の課題">今後の課題</a></li>
     <li><a href="#まとめ">まとめ</a></li>
-    <li><a href="#参考">参考</a></li>
   </ul>
 </nav>
                 
-                <p>Hugoを0.84から0.92にアップデートをする際に、これまでのブログ記事やレイアウトファイルを修正したので個人的にメモを残しておきます。</p>
-<h2 id="なんでアップデート">なんでアップデート？</h2>
-<p>うっかり魔がさして、メインのWSL2のUbuntuを20.04から22.04にアップグレードしました。。。
-新規に22.04を落としてきて移行ではなく。
-皆さんはまねしないほうがいいですよ！
-アップデートした後にGitの環境がおかしくなったりと大変でした。
-WSL2のUbuntuではHugoでブログのビルド、いろんな確認のためのElasticsearchの起動、個人的なプログラムとかを書く環境として利用しています。</p>
-<p>で、Ubuntuを上げたところ無事（？）Hugoもアップデートされたわけです。
-最初はGitでfetchが出来なくなって修正していましたが、そのほかの動作確認を行なう段階でHugoでブログがビルドできなくなっていることが判明しました。</p>
-<h2 id="バージョンアップに伴う修正">バージョンアップに伴う修正</h2>
-<p>hugoコマンドを実行すると、いくつかのERRORとWARNが出力されました。
-次のようなものです。</p>
-<pre tabindex="0"><code>hugo v0.92.2+extended linux/amd64 BuildDate=2022-02-23T16:47:50Z VendorInfo=ubuntu:0.92.2-1
-ERROR 2022/08/05 13:22:32 Page.URL is deprecated and will be removed in Hugo 0.93.0. Use .Permalink or .RelPermalink. If what you want is the front matter URL value, use .Params.url
-WARN 2022/08/05 13:22:32 The &#34;tweet&#34; shortcode will soon require two named parameters: user and id. See &#34;/home/johtani/blog_generator/content/post/2020/2020-12-04-build_corne_choc.md:46:1&#34;
-...
-ERROR 2022/08/05 13:22:33 Failed to get JSON resource &#34;https://publish.twitter.com/oembed?dnt=fa...
-If you feel that this should not be logged as an ERROR, you can ignore it by adding this to your site config:
-ignoreErrors = [&#34;error-remote-getjson&#34;]
-ERROR 2022/08/05 18:44:11 Page.UniqueID is deprecated and will be removed in Hugo 0.93.0. Use .File.UniqueID
-ERROR 2022/08/05 18:44:11 Page.Dir is deprecated and will be removed in Hugo 0.93.0. Use .File.Dir
-</code></pre><h3 id="pageurlなどがdeprecatedに">Page.URLなどがdeprecatedに</h3>
-<p>最初と最後2行のERRORがこちらになります。
-どうやら、Pageオブジェクトの変数に変更があったようです（まだdeprecatedであり、存在はしていそう？）。
-レイアウト（テンプレート）ファイルで「Previous Post」や「Next Post」といったリンクを作ったり、
-<a href="/blog/2020/01/28/introduce-algolia/#%E4%BB%8A%E5%BE%8C%E3%81%AE%E8%AA%B2%E9%A1%8C">Algoliaに登録するためのJSONファイルを生成するところ</a>でURL文字列を取得するために参照していました。</p>
-<p>ログ出力でどのように変更すればよいのか？という記載があるので便利ですね。
-ただ、どのファイルにこの記述があるのかはログに出てなかったので少しだけ苦労しました。</p>
-<p>実際には「UniqueID」という文字列でディレクトリ内を検索してあたりを付けた感じです。
-利用させていただいているテーマ（<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite">Clean White</a>）がすでにアップデートに対応されていたのでそちらが参考になりました。</p>
-<p>いくつか、テーマをもとに修正したテンプレートがlayoutsディレクトリにあったので、それらを修正した形です（参考のリンクはテーマのファイルになります）。</p>
+                <p>ブログ移行日記(その4)です。その他の記事はこちら。</p>
 <ul>
-<li><code>.URL</code>を<code>.Permalink</code>に変更（参考：<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/layouts/_default/single.html#L91">single.html</a>）</li>
-<li><code>.UniqueID</code>を<code>.File.UniqueID</code>に変更（参考：<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/layouts/_default/list.algolia.json#L6-L7">list.algolia.json</a>）</li>
+<li><a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記(その1)</a></li>
+<li><a href="/blog/2020/01/23/convert-md-from-octopress-to-hugo/">ブログ移行日記(その2)</a></li>
+<li><a href="/blog/2020/01/24/setting-hugo/">ブログ移行日記(その3)</a></li>
+<li><a href="/blog/2020/02/21/import-jugem-posts/">ブログ移行日記(その5)</a></li>
 </ul>
-<h3 id="tweetのshortcodeの引数が増えた">tweetのshortcodeの引数が増えた</h3>
-<p>これまでは以下のようにIDだけで良かったのですが、<code>user</code>と<code>id</code>という2つの引数が必須になるという変更が入ったようです。</p>
-<p>変更前：</p>
-<pre tabindex="0"><code>{{ &lt;tweet 1449214872143609860&gt; }}
-</code></pre><p>変更後：</p>
-<pre tabindex="0"><code>{{ &lt;tweet user=&#34;johtani&#34; id=&#34;1449214872143609860&#34;&gt; }}
-</code></pre><p>WARNにはファイル名、行番号が出力されていたので、1つずつ修正していきました。
-結構な量があったので、地味に大変でした、
-公開しているブログを見ながら、該当するツイートを見つけては<code>user</code>を指定していく部分が特に。
-自分のツイート以外もブログに貼っていたので画一的には対処できなくて。。。</p>
-<p>なにかプログラムで機械的に対応ができたかもなぁ。</p>
-<h3 id="鍵付きツイートによるエラー">鍵付きツイートによるエラー</h3>
-<p>tweetのshortcode対応を行なった後でもビルドがエラーになっており、次のようなエラーが消えないままでした（エラーの一部は省略しています）。
-（幸いにも）1つのツイートだけ、ブログ記事を書いた後で鍵付きになってしまった方のツイートがあったようで、ツイート用のJSONが取得できなくてエラーになっていました。</p>
-<pre tabindex="0"><code>ERROR 2022/08/05 13:22:33 Failed to get JSON resource &#34;https://publish.twitter.com/oembed?dnt=fa...
-If you feel that this should not be logged as an ERROR, you can ignore it by adding this to your site config:
-ignoreErrors = [&#34;error-remote-getjson&#34;]
-</code></pre><p>こちらもログに対処方法が出ています。
-<code>config.toml</code>に<code>ignoreErrors = [&quot;error-remote-getjson&quot;]</code>を追加すれば、エラーが出力されなくなりビルドも成功するようになります。
-ただ、tweet以外でもエラーが出る可能性がありそうで、その場合に、ブログに書いたつもりが一部が出力されないまま公開されそうな気がします。
-なので、今回は<code>config.toml</code>に該当の設定を追加するのではなく、ブログ記事から該当のツイートを消す対応をしました。
-幸いにも、ツイートを消してもブログ記事自体には影響がありませんでした。</p>
-<h3 id="hugo_buildlockファイルが生成される">.hugo_build.lockファイルが生成される</h3>
-<p>これは、エラーではないのですがgit addしようとした際に、ファイルが増えていたのでどういったファイルなのかを調べました。
-0.89.0から追加されたロックファイルのようです（参考：<a href="https://gohugo.io/news/0.89.0-relnotes/#notes">0.89.0のリリースノート</a>）。
-こちらは特に保管する必要もなさそうなので.gitignoreに追加して対処しました。</p>
-<h2 id="まとめ">まとめ</h2>
-<p>ということで、気軽にUbuntuをアップグレードしないほうがいいですね。。。
-期せずしてHugoのアップグレードができたのは良かったかもなｗ</p>
-<h2 id="参考">参考</h2>
+<p>前回までで、なんとなく移行は終わってます。
+今回はテーマで使えるようになっているブログの検索機能の導入の話です。</p>
+<p>検索サービスは<a href="https://www.algolia.com/">Algolia</a>を利用します。
+OctopressのころはElastic社のサービスである<a href="https://www.elastic.co/jp/site-search">Elastic Site Search</a>の機能を利用して、クローリングしてから検索できるようにしていましたが、Hugoで導入できるモジュール?があったので、今回からこちらに移行しました。</p>
+<h2 id="参考記事">参考記事</h2>
 <ul>
-<li><a href="https://zenn.dev/ryuu/articles/upgrade-ubuntu2204-wsl">【WSL2】Ubuntu 20.04.4 LTS を 22.04 LTS へアップグレードした</a></li>
+<li><a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia">Clean White ThemeのREADME(Algoliaの設定方法)</a></li>
+<li>参考ブログ:<a href="https://blog.uni-3.app/2019/01/02/hugo-algolia-search/">hugoで作ったblogにalgoliaで全文検索機能を追加する</a></li>
 </ul>
+<h2 id="algoliaとは">Algoliaとは?</h2>
+<p>検索のas-a-serviceをやっている会社です。<a href="https://en.wikipedia.org/wiki/Algolia">Wikipediaによると本社はサンフランシスコにあるみたいですね</a>(フランスの会社のイメージでした。起業された方がフランス出身だからかなぁ?)。
+クラウドで検索インデックスを保持でき、API経由で検索したり登録したりできる感じのサービスです。内部で使われているのはOSSではない独自の検索エンジンです。</p>
+<p>クラウドで提供されているサービスなのでサクッと検索を使い始めることができるのがいい点ですね。
+また、<a href="https://www.algolia.com/pricing/">小さな非商用のプロジェクトにフリーで利用できるプラン</a>も提供されているようです(2020年1月現在)。</p>
+<h2 id="algoliaのサービス登録からインデックス作成">Algoliaのサービス登録からインデックス作成</h2>
+<p><a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite#site-search-with-algolia">私が利用しているテーマで設定する方法</a>の記載があったので手順の通りにやってみました。
+大きく2つの作業(Algolia側とHugo側)が必要です。まずは、Algoliaで必要な作業から。作業の流れだけ記載しておきます。<a href="https://forestry.io/blog/search-with-algolia-in-hugo/#3-create-your-index-in-algolia">詳細は「Static site search with Hugo + Algolia」の3)</a>を確認してください。</p>
+<ol>
+<li>Algoliaのサインアップ(すでにアカウントがあれば不要)</li>
+<li>New Applicationの作成(名前とプランの指定)</li>
+<li>リージョンの指定</li>
+<li>インデックス名の指定</li>
+<li>APIキーを確認</li>
+</ol>
+<p>です。これで、Algolia側の準備は完了です。</p>
+<p>今回は関係ないですが、Algoliaの管理画面で、利用状況(データ登録などの操作回数、クエリの回数、インデックスに保存されているレコード数)の確認が可能です。
+ほかにも有料プランを利用すると<a href="https://www.algolia.com/doc/guides/getting-insights-and-analytics/search-analytics/out-of-the-box-analytics/">Analytics</a>などもできるようです。</p>
+<h2 id="hugo側で必要な設定">Hugo側で必要な設定</h2>
+<p>今度はHugo側です。Hugoのサイトのディレクトリに移動してからの作業です。</p>
+<p>仕組みとしては、</p>
+<ol>
+<li>Hugoのoutput機能でAlgolia向けのJSONファイルを生成する</li>
+<li>Node.jsのライブラリを使用してAlgoliaに1.で生成したJSONを登録、更新する</li>
+<li>検索画面の作成</li>
+</ol>
+<p>という流れになります。
+ですので、作業としては以下のとおりです。</p>
+<ol>
+<li>Output出力の設定(すでにテーマ側で設定されているので、特に作業は必要なし)</li>
+<li>npm環境の構築(Hugoのconfig.tomlと同じディレクトリ階層)
+<ol>
+<li>Node.jsのインストール(必要であれば)</li>
+<li>npm環境の初期化</li>
+<li>npmでatomic-algoliaのインストール</li>
+<li>atomic-algolia向けの設定(登録のためのAPI関連の設定)</li>
+<li>Algolia向けJSONの出力設定</li>
+</ol>
+</li>
+<li>検索関連の設定
+<ol>
+<li>content/search/placeholder.mdの作成</li>
+<li>検索用のAPIキーなどを設定</li>
+</ol>
+</li>
+</ol>
+<h3 id="npm関連の作業">npm関連の作業</h3>
+<p>以下、npm関連の作業です。</p>
+<ol>
+<li>Node.jsのインストール(必要であれば)
+<ul>
+<li>割愛します。環境に合わせてインストールしてください。私はnvm経由でインストールしています。</li>
+</ul>
+</li>
+<li>npm環境の初期化
+<ul>
+<li>Hugoのディレクトリで<code>nvm init</code>を実行</li>
+</ul>
+</li>
+<li>npmでatomic-algoliaのインストール
+<ul>
+<li>Hugoのディレクトリで<code>npm install atomic-algolia --save</code></li>
+</ul>
+</li>
+<li>atomic-algolia向けの設定(登録のためのAPI関連の設定)
+<ul>
+<li>Hugoのディレクトリに<code>.env</code>ファイルを作成し、以下を設定します。</li>
+</ul>
+</li>
+<li>Algolia向けJSONの出力設定
+<ul>
+<li>特に変更なし(<code>config.toml</code>に少し設定があります)。</li>
+</ul>
+</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>ALGOLIA_APP_ID<span style="color:#f92672">=</span>AlgoliaのApplication ID
+</span></span><span style="display:flex;"><span>ALGOLIA_ADMIN_KEY<span style="color:#f92672">=</span>AlgoliaのAdmin API Key
+</span></span><span style="display:flex;"><span>ALGOLIA_INDEX_NAME<span style="color:#f92672">=</span>先程作ったインデックス名
+</span></span><span style="display:flex;"><span>ALGOLIA_INDEX_FILE<span style="color:#f92672">=</span>public/algolia.json
+</span></span></code></pre></div><p>最後の<code>ALGOLIA_INDEX_FILE</code>は固定文字列でいいと思います。
+<code>hugo</code>コマンドを実行すると<code>public</code>ディレクトリ配下に<code>algolia.json</code>というファイルが生成され、Algolia登録用のJSONが出力されています。</p>
+<blockquote>
+<p>余談 : algolia.jsonの出力の設定は、config.tomlに記載があります。また、JSONファイルのテンプレート自体は<code>themes/hugo-theme-cleanwhite/layouts/_default/list.algolia.json</code>にあります。Algoliaに登録するデータの構造など変更をする場合はこのテンプレートをカスタマイズすれば良さそうです。</p>
+</blockquote>
+<h3 id="検索関連の設定">検索関連の設定</h3>
+<p>実際に検索の画面を表示するために、検索用の画面と、検索用のAPIの設定が必要です。</p>
+<ol>
+<li>content/search/placeholder.mdの作成
+<ul>
+<li><code>/search/</code>が検索用のページになります。空のファイルです。実際にはJavaScriptが検索用の窓を表示したりしてくれます(これが必要な理由がまだ不明だなぁ)。</li>
+</ul>
+</li>
+<li>検索用のAPIキーなどを設定
+<ul>
+<li>検索のためのAPIキーなどの設定が必要となります。<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/exampleSite/config.toml#L32">テーマ作者の方のサンプルの<code>config.toml</code>にパラメータは用意されています</a>。</li>
+</ul>
+</li>
+</ol>
+<p>以下の値を設定します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_appId</span> = <span style="color:#e6db74">&#34;AlgoliaのApplication ID&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_indexName</span> = <span style="color:#e6db74">&#34;作成したインデックス名&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">algolia_apiKey</span> = <span style="color:#e6db74">&#34;AlgoliaのSearch-Only API Key&#34;</span>
+</span></span></code></pre></div><p>以上でAlgolia関連の設定などの作業が終了です。</p>
+<h2 id="algoliaへのデータ登録方法">Algoliaへのデータ登録方法</h2>
+<p>最後に、実際にデータを登録する必要があります。
+手順は、以下のとおりです。</p>
+<ol>
+<li><code>hugo</code>コマンドの実行(htmlと一緒に登録データの<code>algolia.json</code>を生成)</li>
+<li><code>npm run algolia</code>コマンドの実行(atomic-algoliaを利用してAlgoliaにデータを登録)</li>
+</ol>
+<p>設定などが問題なければ、Algoliaの管理画面で登録ができているはずです。
+実際にブログのデプロイには<code>deploy.sh</code>というファイルをこちらを元に作成して使っています。このなかで、<code>hugo</code>コマンド実行後に<code>npm run algolia</code>を実行するようにしいます。</p>
+<h2 id="今後の課題">今後の課題</h2>
+<p>Hugoで生成された記事はそれぞれのブログポスト以外に、タグごとのページも生成されています。
+こちらも実はAlgoliaのインデックスに登録されていて、タグを入力すると、タグ名のリンクが出てきます。</p>
+<p>こちらは<code>elasticsearch</code>で検索したときの検索結果です。1件目はタグページです。</p>
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20200128/tag.png" />
+    </div>
+    <a href="/images/entries/20200128/tag.png" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>これらのページはAlgoliaに登録しないようにするのが良さそうかな?と考えているところです(考えてるだけ)。</p>
+<p><strong>2020/01/29更新</strong></p>
+<p><code>list.algolia.json</code>を編集して、記事だけをインデックスするように修正しました。
+テーマに存在する<code>layouts/_default/list.algolia.json</code>を、自分のところにコピーし、次のように変更しました。if文を1行追加して、<code>post</code>という種類のものだけを出力するようにしました。</p>
+<pre tabindex="0"><code>{{/* Generates a valid Algolia search index */}}
+{{- $.Scratch.Add &#34;index&#34; slice -}}
+{{- $section := $.Site.GetPage &#34;section&#34; .Section }}
+{{- range .Site.AllPages -}}
+  {{- if or (and (.IsDescendant $section) (and (not .Draft) (not .Params.private))) $section.IsHome -}}
+    {{- if (and (eq .Section &#34;post&#34;) (ne .URL &#34;/post/&#34;)) -}}
+      {{- $.Scratch.Add &#34;index&#34; (dict &#34;objectID&#34; .UniqueID &#34;date&#34; .Date.UTC.Unix &#34;description&#34; .Description &#34;dir&#34; .Dir &#34;expirydate&#34; .ExpiryDate.UTC.Unix &#34;fuzzywordcount&#34; .FuzzyWordCount &#34;keywords&#34; .Keywords &#34;kind&#34; .Kind &#34;lang&#34; .Lang &#34;lastmod&#34; .Lastmod.UTC.Unix &#34;permalink&#34; .Permalink &#34;publishdate&#34; .PublishDate &#34;readingtime&#34; .ReadingTime &#34;relpermalink&#34; .RelPermalink &#34;html&#34; .Params.Description &#34;title&#34; .Title &#34;type&#34; .Type &#34;url&#34; .URL &#34;weight&#34; .Weight &#34;wordcount&#34; .WordCount &#34;section&#34; .Section &#34;tags&#34; .Params.Tags &#34;categories&#34; .Params.Categories &#34;author&#34; .Params.authors &#34;content&#34; .Params.Description &#34;excerpt_html&#34; .Params.Description &#34;excerpt_text&#34; .Params.Description &#34;summary&#34; .Summary)}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $.Scratch.Get &#34;index&#34; | jsonify -}}
+</code></pre><h2 id="まとめ">まとめ</h2>
+<p>これで、ブログ内記事検索ができるようになります。
+Algoliaは個人の非商用利用の場合、フリープランが用意されているのがありがたいですね。
+まだ、Hugoと連携しただけで、Algolia自体でどんな機能があって、どんなことができそうかといったところは調べていませんが、簡単に利用できるのはとても助かります。</p>
+<p>まぁ、個人ブログの検索機能ってそんなに使う人はいないんですが、自分としては便利かなぁと。</p>
 
 
                 
@@ -291,13 +390,13 @@ ignoreErrors = [&#34;error-remote-getjson&#34;]
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="https://blog.johtani.info/blog/2022/07/20/querqy-architecture/" data-toggle="tooltip" data-placement="top" title="Querqyの調査（その2：アーキテクチャ）">&larr;
+                        <a href="https://blog.johtani.info/blog/2020/01/24/setting-hugo/" data-toggle="tooltip" data-placement="top" title="ブログ移行日記(その3) - Hugoの設定と微調整(テーマに合わせた)">&larr;
                             Previous Post</a>
                     </li>
                     
                     
                     <li class="next">
-                        <a href="https://blog.johtani.info/blog/2022/08/09/japanese-auto-completion/" data-toggle="tooltip" data-placement="top" title="日本語用オートコンプリートのためのAnalyzer">Next
+                        <a href="https://blog.johtani.info/blog/2020/01/31/start-freelance/" data-toggle="tooltip" data-placement="top" title="フリーランスはじめました(仮)">Next
                             Post &rarr;</a>
                     </li>
                     

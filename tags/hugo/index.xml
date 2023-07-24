@@ -7,7 +7,90 @@
     <description>Recent content in hugo on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Fri, 05 Aug 2022 17:59:14 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/hugo/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 24 Jul 2023 09:10:32 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/hugo/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ブログ記述環境としてのDev Container</title>
+      <link>https://blog.johtani.info/blog/2023/07/24/introduce-dev-container-to-hugo-env/</link>
+      <pubDate>Mon, 24 Jul 2023 09:10:32 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2023/07/24/introduce-dev-container-to-hugo-env/</guid>
+      <description>このブログの生成には、Hugoを利用しています。 ブログ移行日記（その1）に書いてありますが、当時はbrewでインストールしていました。 また、</description>
+      <content:encoded>&lt;p&gt;このブログの生成には、&lt;a href=&#34;https://gohugo.io/&#34;&gt;Hugo&lt;/a&gt;を利用しています。
+&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;ブログ移行日記（その1）&lt;/a&gt;に書いてありますが、当時は&lt;code&gt;brew&lt;/code&gt;でインストールしていました。
+また、Windowsに移行したタイミングで、WSL2のUbuntuに&lt;code&gt;apt&lt;/code&gt;でhugoをインストールして利用していました。
+WSL2の環境が壊れなければこのままでもいいのですが、最近Dev Containerを触っていたので、このブログを書く環境（おもにHugo）もDev Containerにできるのでは？と気づきました。&lt;/p&gt;
+&lt;p&gt;ということで、Hugo＋αの環境をDev Container化したので、そのメモです。&lt;/p&gt;
+&lt;h2 id=&#34;必要なもの&#34;&gt;必要なもの&lt;/h2&gt;
+&lt;p&gt;ブログを書いて、記事を構築して、公開するところまでに利用するのは次のようなものです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;git&lt;/li&gt;
+&lt;li&gt;Hugo&lt;/li&gt;
+&lt;li&gt;node&lt;/li&gt;
+&lt;li&gt;atomic-algolia&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;GitHubのプライベートリポジトリでHugoのプロジェクトを管理しています。
+また、GitHub Pagesで公開しており、生成したHTMLもgitコマンドを利用してGitHubにpushしています。
+このため、gitコマンドが必要です。&lt;/p&gt;
+&lt;p&gt;コンテンツの生成はHugoコマンドを利用します（テーマの適用とかいろいろ）。&lt;/p&gt;
+&lt;p&gt;あと、Algoliaでブログを検索できるようにしており（&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/introduce-algolia/&#34;&gt;ブログ移行日記（その4）参照&lt;/a&gt;）、Algoliaへドキュメントのデータをアップロードするために、atomic-algoliaを利用しています。こちらは、nodeのモジュールであるので、nodeの環境も必要です。&lt;/p&gt;
+&lt;h2 id=&#34;ベースにするイメージ&#34;&gt;ベースにするイメージ&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/devcontainers/templates/&#34;&gt;Dev Container Templates&lt;/a&gt;というリポジトリが公開されています。
+こちらを探すと、元となるdevcontainer.jsonが見つかることがあります。
+Hugoのものがあるか探してみましたが、残念ながら見つかったのはJekyllのテンプレートでした。
+今回は、nodeの環境が必要なので&lt;a href=&#34;https://github.com/devcontainers/templates/tree/main/src/javascript-node&#34;&gt;javascript-node&lt;/a&gt;を元に編集していきます。&lt;/p&gt;
+&lt;p&gt;手元のUbuntuのnodeのバージョンが16だったので、バージョン16のイメージを指定します(devcontainer.jsonは後述)。&lt;/p&gt;
+&lt;h2 id=&#34;hugoの追加&#34;&gt;Hugoの追加&lt;/h2&gt;
+&lt;p&gt;Hugoのテンプレートはなかったのですが、&lt;a href=&#34;https://github.com/devcontainers/features/blob/main/README.md&#34;&gt;Dev Container Features&lt;/a&gt;に&lt;a href=&#34;https://github.com/devcontainers/features/tree/main/src/hugo&#34;&gt;Hugoのfeature&lt;/a&gt;が用意されていました。
+&lt;code&gt;features&lt;/code&gt;に1行追加するだけでコンテナにHugoをインストールしてくれる便利ものです。&lt;/p&gt;
+&lt;h2 id=&#34;markdownの環境&#34;&gt;Markdownの環境&lt;/h2&gt;
+&lt;p&gt;Dev Container Templatesを探索していて&lt;a href=&#34;https://github.com/devcontainers/templates/tree/main/src/markdown&#34;&gt;見つけたMarkdownのテンプレート&lt;/a&gt;も参考にしてみました。
+VS CodeのMarkdown向けの拡張機能がいくつかリストアップされていたので、ついでに追加です。
+&lt;code&gt;markdown-all-in-one&lt;/code&gt;や&lt;code&gt;markdownlint&lt;/code&gt;はこれまでも利用していたので、他のものも便利だろうということで。
+他の物はどんなものかを後で調べてみる予定です。&lt;/p&gt;
+&lt;h2 id=&#34;作ったdevcontainerの設定はこちら&#34;&gt;作った.devcontainerの設定はこちら&lt;/h2&gt;
+&lt;p&gt;ということで、出来上がった設定は以下の通りです。&lt;/p&gt;
+&lt;h3 id=&#34;devcontainerjson&#34;&gt;devcontainer.json&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-json&#34; data-lang=&#34;json&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;name&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Hugo - blog generator&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;image&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;mcr.microsoft.com/devcontainers/javascript-node:16&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;postCreateCommand&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/bin/sh ./.devcontainer/postCreateCommand.sh&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;features&amp;#34;&lt;/span&gt;: {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;ghcr.io/devcontainers/features/hugo:1&amp;#34;&lt;/span&gt;: {}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;customizations&amp;#34;&lt;/span&gt;: {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;vscode&amp;#34;&lt;/span&gt;: {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			&lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;extensions&amp;#34;&lt;/span&gt;: [
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;yzhang.markdown-all-in-one&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;streetsidesoftware.code-spell-checker&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;DavidAnson.vscode-markdownlint&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;shd101wyy.markdown-preview-enhanced&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bierner.github-markdown-preview&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;postCreateCommand.sh&lt;/code&gt;では、npm installで、必要なモジュールのインストールをコンテナビルド後に実行できるようにしました。
+（&lt;code&gt;apt update&lt;/code&gt;はなくてもいいな）&lt;/p&gt;
+&lt;h3 id=&#34;postcreatecommandsh&#34;&gt;postCreateCommand.sh&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#!/bin/sh
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# postCreateCommand.sh&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;START Install&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo apt update
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sudo chown -R vscode:vscode .
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;npm install
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;FINISH Install&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、ここ最近Dev Containerについて色々調べていたのでサクッとDev Container化ができました。
+まぁ、HugoのFeatureが用意されていて、他に大したことをやっていないというのが大きいのですが。
+このブログは今回構築したDev Containerで生成して公開した記事になります。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>Hugoをアップデートした</title>
       <link>https://blog.johtani.info/blog/2022/08/05/upgrade-hugo-accidentally/</link>
@@ -40,7 +123,7 @@ ERROR 2022/08/05 18:44:11 Page.Dir is deprecated and will be removed in Hugo 0.9
 &lt;p&gt;最初と最後2行のERRORがこちらになります。
 どうやら、Pageオブジェクトの変数に変更があったようです（まだdeprecatedであり、存在はしていそう？）。
 レイアウト（テンプレート）ファイルで「Previous Post」や「Next Post」といったリンクを作ったり、
-&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/troduce-algolia/#%E4%BB%8A%E5%BE%8C%E3%81%AE%E8%AA%B2%E9%A1%8C&#34;&gt;Algoliaに登録するためのJSONファイルを生成するところ&lt;/a&gt;でURL文字列を取得するために参照していました。&lt;/p&gt;
+&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/28/introduce-algolia/#%E4%BB%8A%E5%BE%8C%E3%81%AE%E8%AA%B2%E9%A1%8C&#34;&gt;Algoliaに登録するためのJSONファイルを生成するところ&lt;/a&gt;でURL文字列を取得するために参照していました。&lt;/p&gt;
 &lt;p&gt;ログ出力でどのように変更すればよいのか？という記載があるので便利ですね。
 ただ、どのファイルにこの記述があるのかはログに出てなかったので少しだけ苦労しました。&lt;/p&gt;
 &lt;p&gt;実際には「UniqueID」という文字列でディレクトリ内を検索してあたりを付けた感じです。

@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Hugoをアップデートした" />
-    <meta property="og:title" content="Hugoをアップデートした" />
-    <meta property="twitter:title" content="Hugoをアップデートした" />
+    <meta name="title" content="ブログ記述環境としてのDev Container" />
+    <meta property="og:title" content="ブログ記述環境としてのDev Container" />
+    <meta property="twitter:title" content="ブログ記述環境としてのDev Container" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Hugoをアップデートした | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>ブログ記述環境としてのDev Container | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2022/08/05/upgrade-hugo-accidentally/">
+    <link rel="canonical" href="/blog/2023/07/24/introduce-dev-container-to-hugo-env/">
 
     
     
@@ -163,7 +163,7 @@
                         </a>
                         
                     </div>
-                    <h1>Hugoをアップデートした</h1>
+                    <h1>ブログ記述環境としてのDev Container</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -171,7 +171,7 @@
                             johtani
                          
                         on 
-                        Friday, August 5, 2022
+                        Monday, July 24, 2023
                         
                         
                         
@@ -201,88 +201,93 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#なんでアップデート">なんでアップデート？</a></li>
-    <li><a href="#バージョンアップに伴う修正">バージョンアップに伴う修正</a>
+    <li><a href="#必要なもの">必要なもの</a></li>
+    <li><a href="#ベースにするイメージ">ベースにするイメージ</a></li>
+    <li><a href="#hugoの追加">Hugoの追加</a></li>
+    <li><a href="#markdownの環境">Markdownの環境</a></li>
+    <li><a href="#作ったdevcontainerの設定はこちら">作った.devcontainerの設定はこちら</a>
       <ul>
-        <li><a href="#pageurlなどがdeprecatedに">Page.URLなどがdeprecatedに</a></li>
-        <li><a href="#tweetのshortcodeの引数が増えた">tweetのshortcodeの引数が増えた</a></li>
-        <li><a href="#鍵付きツイートによるエラー">鍵付きツイートによるエラー</a></li>
-        <li><a href="#hugo_buildlockファイルが生成される">.hugo_build.lockファイルが生成される</a></li>
+        <li><a href="#devcontainerjson">devcontainer.json</a></li>
+        <li><a href="#postcreatecommandsh">postCreateCommand.sh</a></li>
       </ul>
     </li>
     <li><a href="#まとめ">まとめ</a></li>
-    <li><a href="#参考">参考</a></li>
   </ul>
 </nav>
                 
-                <p>Hugoを0.84から0.92にアップデートをする際に、これまでのブログ記事やレイアウトファイルを修正したので個人的にメモを残しておきます。</p>
-<h2 id="なんでアップデート">なんでアップデート？</h2>
-<p>うっかり魔がさして、メインのWSL2のUbuntuを20.04から22.04にアップグレードしました。。。
-新規に22.04を落としてきて移行ではなく。
-皆さんはまねしないほうがいいですよ！
-アップデートした後にGitの環境がおかしくなったりと大変でした。
-WSL2のUbuntuではHugoでブログのビルド、いろんな確認のためのElasticsearchの起動、個人的なプログラムとかを書く環境として利用しています。</p>
-<p>で、Ubuntuを上げたところ無事（？）Hugoもアップデートされたわけです。
-最初はGitでfetchが出来なくなって修正していましたが、そのほかの動作確認を行なう段階でHugoでブログがビルドできなくなっていることが判明しました。</p>
-<h2 id="バージョンアップに伴う修正">バージョンアップに伴う修正</h2>
-<p>hugoコマンドを実行すると、いくつかのERRORとWARNが出力されました。
-次のようなものです。</p>
-<pre tabindex="0"><code>hugo v0.92.2+extended linux/amd64 BuildDate=2022-02-23T16:47:50Z VendorInfo=ubuntu:0.92.2-1
-ERROR 2022/08/05 13:22:32 Page.URL is deprecated and will be removed in Hugo 0.93.0. Use .Permalink or .RelPermalink. If what you want is the front matter URL value, use .Params.url
-WARN 2022/08/05 13:22:32 The &#34;tweet&#34; shortcode will soon require two named parameters: user and id. See &#34;/home/johtani/blog_generator/content/post/2020/2020-12-04-build_corne_choc.md:46:1&#34;
-...
-ERROR 2022/08/05 13:22:33 Failed to get JSON resource &#34;https://publish.twitter.com/oembed?dnt=fa...
-If you feel that this should not be logged as an ERROR, you can ignore it by adding this to your site config:
-ignoreErrors = [&#34;error-remote-getjson&#34;]
-ERROR 2022/08/05 18:44:11 Page.UniqueID is deprecated and will be removed in Hugo 0.93.0. Use .File.UniqueID
-ERROR 2022/08/05 18:44:11 Page.Dir is deprecated and will be removed in Hugo 0.93.0. Use .File.Dir
-</code></pre><h3 id="pageurlなどがdeprecatedに">Page.URLなどがdeprecatedに</h3>
-<p>最初と最後2行のERRORがこちらになります。
-どうやら、Pageオブジェクトの変数に変更があったようです（まだdeprecatedであり、存在はしていそう？）。
-レイアウト（テンプレート）ファイルで「Previous Post」や「Next Post」といったリンクを作ったり、
-<a href="/blog/2020/01/28/introduce-algolia/#%E4%BB%8A%E5%BE%8C%E3%81%AE%E8%AA%B2%E9%A1%8C">Algoliaに登録するためのJSONファイルを生成するところ</a>でURL文字列を取得するために参照していました。</p>
-<p>ログ出力でどのように変更すればよいのか？という記載があるので便利ですね。
-ただ、どのファイルにこの記述があるのかはログに出てなかったので少しだけ苦労しました。</p>
-<p>実際には「UniqueID」という文字列でディレクトリ内を検索してあたりを付けた感じです。
-利用させていただいているテーマ（<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite">Clean White</a>）がすでにアップデートに対応されていたのでそちらが参考になりました。</p>
-<p>いくつか、テーマをもとに修正したテンプレートがlayoutsディレクトリにあったので、それらを修正した形です（参考のリンクはテーマのファイルになります）。</p>
+                <p>このブログの生成には、<a href="https://gohugo.io/">Hugo</a>を利用しています。
+<a href="/blog/2020/01/22/intro-hugo-and-theme/">ブログ移行日記（その1）</a>に書いてありますが、当時は<code>brew</code>でインストールしていました。
+また、Windowsに移行したタイミングで、WSL2のUbuntuに<code>apt</code>でhugoをインストールして利用していました。
+WSL2の環境が壊れなければこのままでもいいのですが、最近Dev Containerを触っていたので、このブログを書く環境（おもにHugo）もDev Containerにできるのでは？と気づきました。</p>
+<p>ということで、Hugo＋αの環境をDev Container化したので、そのメモです。</p>
+<h2 id="必要なもの">必要なもの</h2>
+<p>ブログを書いて、記事を構築して、公開するところまでに利用するのは次のようなものです。</p>
 <ul>
-<li><code>.URL</code>を<code>.Permalink</code>に変更（参考：<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/layouts/_default/single.html#L91">single.html</a>）</li>
-<li><code>.UniqueID</code>を<code>.File.UniqueID</code>に変更（参考：<a href="https://github.com/zhaohuabing/hugo-theme-cleanwhite/blob/master/layouts/_default/list.algolia.json#L6-L7">list.algolia.json</a>）</li>
+<li>git</li>
+<li>Hugo</li>
+<li>node</li>
+<li>atomic-algolia</li>
 </ul>
-<h3 id="tweetのshortcodeの引数が増えた">tweetのshortcodeの引数が増えた</h3>
-<p>これまでは以下のようにIDだけで良かったのですが、<code>user</code>と<code>id</code>という2つの引数が必須になるという変更が入ったようです。</p>
-<p>変更前：</p>
-<pre tabindex="0"><code>{{ &lt;tweet 1449214872143609860&gt; }}
-</code></pre><p>変更後：</p>
-<pre tabindex="0"><code>{{ &lt;tweet user=&#34;johtani&#34; id=&#34;1449214872143609860&#34;&gt; }}
-</code></pre><p>WARNにはファイル名、行番号が出力されていたので、1つずつ修正していきました。
-結構な量があったので、地味に大変でした、
-公開しているブログを見ながら、該当するツイートを見つけては<code>user</code>を指定していく部分が特に。
-自分のツイート以外もブログに貼っていたので画一的には対処できなくて。。。</p>
-<p>なにかプログラムで機械的に対応ができたかもなぁ。</p>
-<h3 id="鍵付きツイートによるエラー">鍵付きツイートによるエラー</h3>
-<p>tweetのshortcode対応を行なった後でもビルドがエラーになっており、次のようなエラーが消えないままでした（エラーの一部は省略しています）。
-（幸いにも）1つのツイートだけ、ブログ記事を書いた後で鍵付きになってしまった方のツイートがあったようで、ツイート用のJSONが取得できなくてエラーになっていました。</p>
-<pre tabindex="0"><code>ERROR 2022/08/05 13:22:33 Failed to get JSON resource &#34;https://publish.twitter.com/oembed?dnt=fa...
-If you feel that this should not be logged as an ERROR, you can ignore it by adding this to your site config:
-ignoreErrors = [&#34;error-remote-getjson&#34;]
-</code></pre><p>こちらもログに対処方法が出ています。
-<code>config.toml</code>に<code>ignoreErrors = [&quot;error-remote-getjson&quot;]</code>を追加すれば、エラーが出力されなくなりビルドも成功するようになります。
-ただ、tweet以外でもエラーが出る可能性がありそうで、その場合に、ブログに書いたつもりが一部が出力されないまま公開されそうな気がします。
-なので、今回は<code>config.toml</code>に該当の設定を追加するのではなく、ブログ記事から該当のツイートを消す対応をしました。
-幸いにも、ツイートを消してもブログ記事自体には影響がありませんでした。</p>
-<h3 id="hugo_buildlockファイルが生成される">.hugo_build.lockファイルが生成される</h3>
-<p>これは、エラーではないのですがgit addしようとした際に、ファイルが増えていたのでどういったファイルなのかを調べました。
-0.89.0から追加されたロックファイルのようです（参考：<a href="https://gohugo.io/news/0.89.0-relnotes/#notes">0.89.0のリリースノート</a>）。
-こちらは特に保管する必要もなさそうなので.gitignoreに追加して対処しました。</p>
-<h2 id="まとめ">まとめ</h2>
-<p>ということで、気軽にUbuntuをアップグレードしないほうがいいですね。。。
-期せずしてHugoのアップグレードができたのは良かったかもなｗ</p>
-<h2 id="参考">参考</h2>
-<ul>
-<li><a href="https://zenn.dev/ryuu/articles/upgrade-ubuntu2204-wsl">【WSL2】Ubuntu 20.04.4 LTS を 22.04 LTS へアップグレードした</a></li>
-</ul>
+<p>GitHubのプライベートリポジトリでHugoのプロジェクトを管理しています。
+また、GitHub Pagesで公開しており、生成したHTMLもgitコマンドを利用してGitHubにpushしています。
+このため、gitコマンドが必要です。</p>
+<p>コンテンツの生成はHugoコマンドを利用します（テーマの適用とかいろいろ）。</p>
+<p>あと、Algoliaでブログを検索できるようにしており（<a href="/blog/2020/01/28/introduce-algolia/">ブログ移行日記（その4）参照</a>）、Algoliaへドキュメントのデータをアップロードするために、atomic-algoliaを利用しています。こちらは、nodeのモジュールであるので、nodeの環境も必要です。</p>
+<h2 id="ベースにするイメージ">ベースにするイメージ</h2>
+<p><a href="https://github.com/devcontainers/templates/">Dev Container Templates</a>というリポジトリが公開されています。
+こちらを探すと、元となるdevcontainer.jsonが見つかることがあります。
+Hugoのものがあるか探してみましたが、残念ながら見つかったのはJekyllのテンプレートでした。
+今回は、nodeの環境が必要なので<a href="https://github.com/devcontainers/templates/tree/main/src/javascript-node">javascript-node</a>を元に編集していきます。</p>
+<p>手元のUbuntuのnodeのバージョンが16だったので、バージョン16のイメージを指定します(devcontainer.jsonは後述)。</p>
+<h2 id="hugoの追加">Hugoの追加</h2>
+<p>Hugoのテンプレートはなかったのですが、<a href="https://github.com/devcontainers/features/blob/main/README.md">Dev Container Features</a>に<a href="https://github.com/devcontainers/features/tree/main/src/hugo">Hugoのfeature</a>が用意されていました。
+<code>features</code>に1行追加するだけでコンテナにHugoをインストールしてくれる便利ものです。</p>
+<h2 id="markdownの環境">Markdownの環境</h2>
+<p>Dev Container Templatesを探索していて<a href="https://github.com/devcontainers/templates/tree/main/src/markdown">見つけたMarkdownのテンプレート</a>も参考にしてみました。
+VS CodeのMarkdown向けの拡張機能がいくつかリストアップされていたので、ついでに追加です。
+<code>markdown-all-in-one</code>や<code>markdownlint</code>はこれまでも利用していたので、他のものも便利だろうということで。
+他の物はどんなものかを後で調べてみる予定です。</p>
+<h2 id="作ったdevcontainerの設定はこちら">作った.devcontainerの設定はこちら</h2>
+<p>ということで、出来上がった設定は以下の通りです。</p>
+<h3 id="devcontainerjson">devcontainer.json</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Hugo - blog generator&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;mcr.microsoft.com/devcontainers/javascript-node:16&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;postCreateCommand&#34;</span>: <span style="color:#e6db74">&#34;/bin/sh ./.devcontainer/postCreateCommand.sh&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;features&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;ghcr.io/devcontainers/features/hugo:1&#34;</span>: {}
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;customizations&#34;</span>: {
+</span></span><span style="display:flex;"><span>		<span style="color:#f92672">&#34;vscode&#34;</span>: {
+</span></span><span style="display:flex;"><span>			<span style="color:#f92672">&#34;extensions&#34;</span>: [
+</span></span><span style="display:flex;"><span>				<span style="color:#e6db74">&#34;yzhang.markdown-all-in-one&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#e6db74">&#34;streetsidesoftware.code-spell-checker&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#e6db74">&#34;DavidAnson.vscode-markdownlint&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#e6db74">&#34;shd101wyy.markdown-preview-enhanced&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#e6db74">&#34;bierner.github-markdown-preview&#34;</span>
+</span></span><span style="display:flex;"><span>			]
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>postCreateCommand.sh</code>では、npm installで、必要なモジュールのインストールをコンテナビルド後に実行できるようにしました。
+（<code>apt update</code>はなくてもいいな）</p>
+<h3 id="postcreatecommandsh">postCreateCommand.sh</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/sh
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># postCreateCommand.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;START Install&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>sudo chown -R vscode:vscode .
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>npm install
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;FINISH Install&#34;</span>
+</span></span></code></pre></div><h2 id="まとめ">まとめ</h2>
+<p>ということで、ここ最近Dev Containerについて色々調べていたのでサクッとDev Container化ができました。
+まぁ、HugoのFeatureが用意されていて、他に大したことをやっていないというのが大きいのですが。
+このブログは今回構築したDev Containerで生成して公開した記事になります。</p>
 
 
                 
@@ -291,15 +296,10 @@ ignoreErrors = [&#34;error-remote-getjson&#34;]
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="https://blog.johtani.info/blog/2022/07/20/querqy-architecture/" data-toggle="tooltip" data-placement="top" title="Querqyの調査（その2：アーキテクチャ）">&larr;
+                        <a href="https://blog.johtani.info/blog/2023/07/24/move-distribution-to-another-disk/" data-toggle="tooltip" data-placement="top" title="WSL2のディストリビューションの環境移行">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="https://blog.johtani.info/blog/2022/08/09/japanese-auto-completion/" data-toggle="tooltip" data-placement="top" title="日本語用オートコンプリートのためのAnalyzer">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
