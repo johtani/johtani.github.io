@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="VS CodeとDev Container(コンテナ名の指定)" />
-    <meta property="og:title" content="VS CodeとDev Container(コンテナ名の指定)" />
-    <meta property="twitter:title" content="VS CodeとDev Container(コンテナ名の指定)" />
+    <meta name="title" content="search-UIとSearchkitと検索画面" />
+    <meta property="og:title" content="search-UIとSearchkitと検索画面" />
+    <meta property="twitter:title" content="search-UIとSearchkitと検索画面" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>VS CodeとDev Container(コンテナ名の指定) | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>search-UIとSearchkitと検索画面 | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2023/07/27/container-name-in-devcontainer/">
+    <link rel="canonical" href="/blog/2023/08/23/search-ui-and-searchkit/">
 
     
     
@@ -158,12 +158,20 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/dev-container" title="dev container">
-                            dev container
+                        <a class="tag" href="/tags/searchkit" title="searchkit">
+                            searchkit
+                        </a>
+                        
+                        <a class="tag" href="/tags/search-ui" title="search-ui">
+                            search-ui
+                        </a>
+                        
+                        <a class="tag" href="/tags/%E7%94%BB%E9%9D%A2" title="画面">
+                            画面
                         </a>
                         
                     </div>
-                    <h1>VS CodeとDev Container(コンテナ名の指定)</h1>
+                    <h1>search-UIとSearchkitと検索画面</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -171,7 +179,7 @@
                             johtani
                          
                         on 
-                        Thursday, July 27, 2023
+                        Wednesday, August 23, 2023
                         
                         
                         
@@ -201,24 +209,105 @@
                 </header>
                 <nav id="TableOfContents">
   <ul>
-    <li><a href="#コンテナ名の指定">コンテナ名の指定</a></li>
+    <li><a href="#search-uiとsearchkit">Search UIとSearchkit</a>
+      <ul>
+        <li><a href="#search-uiの構成">Search UIの構成</a></li>
+      </ul>
+    </li>
+    <li><a href="#改めて要件をまとめると">改めて要件をまとめると</a></li>
+    <li><a href="#elasticsearch-api-connectorの調査">Elasticsearch API connectorの調査</a>
+      <ul>
+        <li><a href="#searchkitとは">Searchkitとは？</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ？</a></li>
   </ul>
 </nav>
                 
-                <p>いくつかある環境をDev Containerで動くように変えていますが、最初に導入した時に疑問点だった「コンテナ名」について解消したのでメモを残しておきます。</p>
-<h2 id="コンテナ名の指定">コンテナ名の指定</h2>
-<p><a href="/blog/2023/07/13/introduce-vs-code-and-dev-container/#container%E3%81%AE%E5%90%8D%E5%89%8D">最初のDev Container導入の記事</a>で、起動したコンテナの名前が自動で付与されて、ランダムに変わるという疑問点を書いていました。</p>
-<p><a href="/blog/2023/07/21/multi-containers-with-dev-container/#%E5%89%AF%E6%AC%A1%E7%9A%84%E3%81%AA%E5%8A%B9%E6%9E%9C">docker-compose.yml対応の記事では</a>docker-compose.ymlを利用すると、コンテナ名はファイル内で定義されたサービス名で起動されて見やすくなると気づきました。</p>
-<p>やはり、Dev Containerでイメージを指定している場合もわかりやすいコンテナ名がいいなと思ったところで、「<code>runArgs</code>」を思い出しました。
-Dev Containerからコンテナを起動するときに渡す引数が書けるじゃないですか。そういえば、むかしdockerコマンドを使う時に名前を指定した記憶があったなと。ということで、Google検索です。「docker command args container name」で検索しましたｗ</p>
-<p><a href="https://docs.docker.com/engine/reference/run/#name---name"><code>--name</code>というオプション</a>で起動時のコンテナの名前の指定ができます。ということで、このブログを生成するためのdevcontainer.jsonに&quot;runArgs&quot;でコンテナ名を指定してコンテナ起動ができるようになりました（「<a href="/blog/2023/07/24/introduce-dev-container-to-hugo-env/">ブログ記述環境としてのDev Container</a>」という記事のdevcontainer.jsonにrunArgsの行を追加しただけ）。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Hugo - blog generator&#34;</span>,
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;image&#34;</span>: <span style="color:#e6db74">&#34;mcr.microsoft.com/devcontainers/javascript-node:16&#34;</span>,
-</span></span><span style="display:flex;"><span>	<span style="color:#f92672">&#34;runArgs&#34;</span>: [<span style="color:#e6db74">&#34;--name&#34;</span>, <span style="color:#e6db74">&#34;blog_generator&#34;</span>],
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;postCreateCommand&#34;</span>: <span style="color:#e6db74">&#34;/bin/sh ./.devcontainer/postCreateCommand.sh&#34;</span>,
-</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">...</span>
-</span></span></code></pre></div>
+                <p>趣味？（<a href="https://github.com/johtani/search-research">検索エンジンに関する趣味プロジェクト</a>）でPythonのプログラムを書いています。
+ベクトル検索などの確認なども含めて、Jupyter Notebookで簡単なAPIの呼び出しを書いていましたが、検索はやはり画面があるほうがにぎやかでいいですよね。
+ということで、画面周りで調べものをしていた時のことを後日の自分のためのメモとして残しておきます。</p>
+<h2 id="search-uiとsearchkit">Search UIとSearchkit</h2>
+<p>ということで、それほど手がかからないで検索の画面をサクッと作る方法がないか？ということでちょっとだけ探してみました。
+最初にElasticsearchを利用していることもあり、すぐに検索の画面を作れるライブラリ・フレームワーク・コンポーネントがないかな？ということで思いついたのが次の2つでした。</p>
+<ul>
+<li><a href="https://docs.elastic.co/search-ui/overview">Elastic Search UI</a></li>
+<li><a href="https://www.searchkit.co/">Searchkit</a></li>
+</ul>
+<p>どちらも直接Elasticsearchに接続して検索をすることができるコンポーネントです。
+Elasticsearchだけで完結していればそれでおしまいだったのですが、今回はバックエンド経由でElasticsearchに検索を書ける必要があります（ベクトル検索の仕組みもデモをしたいため、クエリの文字列をLLMなどでベクトルにしてからknn検索をすることになります）。</p>
+<h3 id="search-uiの構成">Search UIの構成</h3>
+<p>もともとSearch UIはElasticのApp SearchのGUI構築向けのコンポーネントとして作られました。
+最近になって、直接Elasticsearchに接続できるコネクターを提供しています（ベータだけど）。
+このコネクターを利用した場合は、ざっくりですが、このような流れになります。</p>
+
+<link rel="stylesheet" href="/css/hugo-easy-gallery.css" />
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20230822/search-ui_simple.jpg" />
+    </div>
+    <a href="/images/entries/20230822/search-ui_simple.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>また、Search UIはCustom Connectorの仕組みも用意しており（ConnectorのAPIが宣言されているのでそのAPIで独自実装が可能）、これを利用することで、ブラウザではなく<a href="https://docs.elastic.co/search-ui/api/connectors/elasticsearch#nodejs-integration">バックエンド（Node）でElasticsearch Connectorを利用する</a>ような構成も取れるようになっています。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20230822/search-ui_custom_connector.jpg" />
+    </div>
+    <a href="/images/entries/20230822/search-ui_custom_connector.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<h2 id="改めて要件をまとめると">改めて要件をまとめると</h2>
+<p>ということで、やりたいことは</p>
+<ul>
+<li>簡単にUIが作れる</li>
+<li>バックエンドはPythonを経由して検索したい</li>
+</ul>
+<p>となります。
+Searchkitも調べようかと思いましたが、いったんはSearch UIのCustom ConnectorでPythonでFastAPIでバックエンドのAPIを実装して、Search UIの想定しているリクエスト・レスポンスに変換すればいいかな？ということにしました。</p>
+<p>とりあえずSearch UI＋Custom Connectorからのリクエスト・レスポンス（フロントからバックエンドへの出入りの部分）を記録し、
+Search UI＋Elasticsearch Connectorのときのリクエスト・レスポンス（バックエンドからEsへのの出入りの部分）も記録して、
+参考にしながらバックエンドを実装しようと試みました。
+Search UIのCustom Connectorのサンプルとなっていた、Node上でElasticsearch Connectorを動かしている部分をPythonで簡単に再実装しようという試みです（まったく同じ実装にする必要はなく、必要最低限の機能（検索窓、ファセット、ページング）が動作するところを目指します）。</p>
+<h2 id="elasticsearch-api-connectorの調査">Elasticsearch API connectorの調査</h2>
+<p>方針が決まったので、Search UIがElasticsearch API Connectorに渡しているリクエストをブラウザのデバッグ機能を使って追いかけてみると。。。
+<a href="https://github.com/elastic/search-ui/blob/main/packages/search-ui-engines-connector/src/handlers/search/index.ts#L27">内部でSearchkitを読んでいる？？</a>ことがわかりました。</p>
+<p>Elasticsearch API Connectorがリクエストを変換しているのかと思っていたのですが、実は内部にもう一段変換が行われていました。</p>
+
+
+<div class="box" style="max-width:600">
+  <figure  itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">
+    <div class="img">
+      <img itemprop="thumbnail" src="/images/entries/20230822/searchkit_v3.jpg" />
+    </div>
+    <a href="/images/entries/20230822/searchkit_v3.jpg" itemprop="contentUrl"></a>
+  </figure>
+</div>
+
+<p>方針を決めたつもりが、Searchkitが出てきてしまったので、Searchkitも調べてみることに。。。
+なお、<a href="https://github.com/elastic/search-ui/pull/651">Search UIにElasticsearch API Connectorを導入した</a>のがどうやら、Searchkitの作者で、現在はElasticのエンジニアになられているようです。</p>
+<h3 id="searchkitとは">Searchkitとは？</h3>
+<p><a href="https://github.com/elastic/search-ui/blob/main/packages/search-ui-engines-connector/package.json#L46">Search UIが利用しているSearchkitは、3.0</a>ですが、Searchkit本家の<a href="https://github.com/searchkit/searchkit/tags">リポジトリ</a>を見ると4.x.0となっています。</p>
+<p>どうして新しいものをSearch UIで使っていないのかな？と思いつつ調べてみたところ、<a href="https://blog.searchkit.co/searchkit-v4-search-ui-for-elasticsearch-with-instantsearch-f1297ab5a3d">Searchkit V4のブログ</a>を発見しました。</p>
+<blockquote>
+<p>Searchkit V4 integrates with Algolia’s Instantsearch library, which is a Search UI library built by Algolia. Instantsearch is an amazing library, and it’s been used by many companies and supports many frameworks like React, Vue and Angular.
+ブログより引用</p>
+</blockquote>
+<p>どうやら、V4ではコンセプトをガラッと変更されたようで、Algoliaがオープンソースとして開発している<a href="https://github.com/algolia/instantsearch">InstantSearch</a>のコネクター（アダプター）としてSearchkit V4を開発しているようです。
+これは最近出てきている検索エンジンの<a href="https://typesense.org/">Typesense</a>や<a href="https://www.meilisearch.com/">Meilisearch</a>の戦略にもなっています。</p>
+<p>なお、SearchkitのGitHubリポジトリやSearch UIのリポジトリを見ていると、Search UIの開発（およびSearchkitの3系）は現在は活発に行われていないように見えました。
+Searchkit V4はちょっとずつ開発が進んでいるようです。</p>
+<h2 id="まとめ">まとめ？</h2>
+<p>一応Searchkit V4の現状やInstantSearchもすこしだけ見てみたのですが、今回の私のプロジェクトでは検索画面はまだそこまで重要度は高くないので、いったん調べていたSearch UI＋Pythonのバックエンドの構成で動作する最小限を実装したところで終わりにしました。
+なので、Searchkit V4＋InstantSearchの構成はまた今度という感じです。</p>
+<p>なお、Search UIの方は5月からコミットがされていないようです。どうも開発しているチームが別件で忙しそうだなというのを感じました。</p>
+
 
                 
 
@@ -226,15 +315,10 @@ Dev Containerからコンテナを起動するときに渡す引数が書ける�
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="https://blog.johtani.info/blog/2023/07/24/introduce-dev-container-to-hugo-env/" data-toggle="tooltip" data-placement="top" title="ブログ記述環境としてのDev Container">&larr;
+                        <a href="https://blog.johtani.info/blog/2023/07/27/container-name-in-devcontainer/" data-toggle="tooltip" data-placement="top" title="VS CodeとDev Container(コンテナ名の指定)">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="https://blog.johtani.info/blog/2023/08/23/search-ui-and-searchkit/" data-toggle="tooltip" data-placement="top" title="search-UIとSearchkitと検索画面">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
