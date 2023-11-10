@@ -50,7 +50,7 @@
     <link rel="stylesheet" href="/css/zanshang.css">
 
     
-    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="/css/font-awesome.all.min.css">
 
     
     <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
@@ -65,9 +65,27 @@
     <script src="/js/hux-blog.min.js"></script>
 
     
+    <script src="/js/lazysizes.min.js"></script>
+
+    
     
 
 </head>
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
 
 
 
@@ -99,14 +117,11 @@
                     
                     
 		    
-                        <li><a href="/top/about/">ABOUT</a></li>
+                        <li><a href="/top/about//">ABOUT</a></li>
                     
-
-                    
-		    <li>
+		            <li>
                         <a href="/search"><i class="fa fa-search"></i></a>
-		    </li>
-                    
+		           </li>
                 </ul>
             </div>
         </div>
@@ -172,21 +187,26 @@
             col-xs-12
             post-container
         ">
+        
             
-<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@2.6.0/dist/instantsearch.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.20.0/dist/algoliasearch-lite.umd.js" integrity="sha256-DABVk+hYj0mdUzo+7ViJC6cwLahQIejFvC+my2M/wfM=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.60.0/dist/instantsearch.production.min.js" integrity="sha256-9242vN47QUX50UG5Gf5XDO1YREWCEJRyXHofh5fsl24=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/instantsearch.js@2.6.0/dist/instantsearch.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/instantsearch.js@2.6.0/dist/instantsearch-theme-algolia.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/reset-min.css" integrity="sha256-2AeJLzExpZvqLUxMfcs+4DWcMwNfpnjUeAAvEtPr0wU=" crossorigin="anonymous">
 
-<div id="search-searchbar"></div>
+<div id="search-searchbar">
+  
+<div id="powered-by"></div>
+</div>
  <div class="post-list" id="search-hits">
  </div>
 
 <script>
+const client = algoliasearch('IFYKYNKGFQ', 'f79c6a4a4cb5b70d480814d243b6b8eb');
 const search = instantsearch({
-  appId: 'IFYKYNKGFQ',
+  searchClient: client,
   indexName: 'blogs',
-  apiKey: 'f79c6a4a4cb5b70d480814d243b6b8eb'
+  insights: true
 });
 
 const hitTemplate = function(hit) {
@@ -217,11 +237,12 @@ const hitTemplate = function(hit) {
 
   return `
     <div class="post-item">
-      <span class="post-meta">${date}</span>
       <h2><a class="post-link" href="${url}">${title}</a></h2>
       <a href="${url}" class="post-breadcrumbs">${breadcrumbs}</a>
+      <span class="post-meta">${date}</span>
       <div class="post-snippet">${content}</div>
     </div>
+    <hr/>
   `;
 }
 
@@ -229,8 +250,14 @@ const hitTemplate = function(hit) {
 search.addWidget(
   instantsearch.widgets.searchBox({
     container: '#search-searchbar',
-    placeholder: 'Search into posts...',
-    poweredBy: true 
+    placeholder: 'Search into posts...'
+  })
+);
+
+
+search.addWidget(
+  instantsearch.widgets.poweredBy({
+    container: '#powered-by',
   })
 );
 
@@ -247,10 +274,57 @@ search.start();
 </script>
 
 <style>
-.ais-search-box {
-  max-width: 100%;
-  margin-bottom: 15px;
+
+
+
+.ais-SearchBox-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding: 0.3rem 3rem;
+    width: 100%;
+    position: relative;
+    background-color: #fff;
+    border: 1px solid #c4c8d8;
+    border-radius: 5px;
 }
+
+.ais-SearchBox-submit {
+    left: 0;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    padding: 1rem 2.7rem;
+}
+
+.ais-SearchBox-submitIcon {
+    width: 14px;
+    height: 14px;
+}
+
+
+.ais-SearchBox-reset {
+    right: 8%;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    padding: 1rem 2.7rem;
+}
+
+.ais-SearchBox-resetIcon {
+    width: 14px;
+    height: 14px;
+}
+
+.ais-PoweredBy {
+  right: 8%;
+  position: absolute;
+  font-size: 8px;
+  top: 1%
+}
+
 .post-item {
   margin-bottom: 30px;
 }
@@ -281,6 +355,7 @@ search.start();
 }
 </style>
 
+        
        	</div>
         
 
@@ -297,7 +372,7 @@ search.start();
 	
         <div class="short-about">
             
-            <a href="/top/about">
+            <a href="/about">
                <img src="/images/about_me2.jpg" alt="avatar" style="cursor: pointer" />
             </a>
             
