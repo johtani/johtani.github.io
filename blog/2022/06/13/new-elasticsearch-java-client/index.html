@@ -255,16 +255,16 @@ if (!doNotTrack) {
 ですので、Indexをしている部分だけとか、検索部分だけなどといった部分的な置き換えをしつつ新しいクライアントに慣れていくことができます。</p>
 <h3 id="ラムダっぽく書ける">ラムダっぽく書ける</h3>
 <p>検索のクエリのサンプルを見るとわかりますが、こんな感じでクエリが書けます(<a href="https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/searching.html#_simple_search_query">公式ドキュメントより抜粋</a>)。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span>SearchResponse<span style="color:#f92672">&lt;</span>Product<span style="color:#f92672">&gt;</span> response <span style="color:#f92672">=</span> esClient<span style="color:#f92672">.</span><span style="color:#a6e22e">search</span><span style="color:#f92672">(</span>s <span style="color:#f92672">-&gt;</span> s
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span><span style="color:#a6e22e">index</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;products&#34;</span><span style="color:#f92672">)</span> 
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span><span style="color:#a6e22e">query</span><span style="color:#f92672">(</span>q <span style="color:#f92672">-&gt;</span> q      
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">.</span><span style="color:#a6e22e">match</span><span style="color:#f92672">(</span>t <span style="color:#f92672">-&gt;</span> t   
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">.</span><span style="color:#a6e22e">field</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;name&#34;</span><span style="color:#f92672">)</span>  
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">.</span><span style="color:#a6e22e">query</span><span style="color:#f92672">(</span>searchText<span style="color:#f92672">)</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">)</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">),</span>
-</span></span><span style="display:flex;"><span>    Product<span style="color:#f92672">.</span><span style="color:#a6e22e">class</span>      
-</span></span><span style="display:flex;"><span><span style="color:#f92672">);</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span>SearchResponse<span style="color:#f92672">&lt;</span>Product<span style="color:#f92672">&gt;</span> response <span style="color:#f92672">=</span> esClient.<span style="color:#a6e22e">search</span>(s <span style="color:#f92672">-&gt;</span> s
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">index</span>(<span style="color:#e6db74">&#34;products&#34;</span>) 
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">query</span>(q <span style="color:#f92672">-&gt;</span> q      
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">match</span>(t <span style="color:#f92672">-&gt;</span> t   
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;name&#34;</span>)  
+</span></span><span style="display:flex;"><span>            .<span style="color:#a6e22e">query</span>(searchText)
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>    ),
+</span></span><span style="display:flex;"><span>    Product.<span style="color:#a6e22e">class</span>      
+</span></span><span style="display:flex;"><span>);
 </span></span></code></pre></div><p>また、最後で渡している<code>Product.class</code>は、検索結果をどのクラスのインスタンスにして返すかの指定です。
 Elasticsearchのレスポンス（JSON）から値をコピーして返してくれるようになっています。
 ですので、値を入れ替える処理を書く必要がなくなっています。</p>
@@ -285,25 +285,25 @@ Elasticsearchのレスポンス（JSON）から値をコピーして返してく
 Elasticsearchへ投げるRequestのクラス（例：CreateTemplateRequestとか）を引数に渡すことで、JSON文字列に変換できるようになっています（StringWriterに書き出されてる）。
 ここの<code>Logger</code>はサンプルです。<code>writer.toString()</code>で取り出せる文字列がJSON文字列になっているので、ログに出してみるなり、ファイルに落とすなりしてデバッグのお供にしてください。</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.io.StringWriter<span style="color:#f92672">;</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> co.elastic.clients.elasticsearch._types.RequestBase<span style="color:#f92672">;</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> co.elastic.clients.json.SimpleJsonpMapper<span style="color:#f92672">;</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> jakarta.json.stream.JsonGenerator<span style="color:#f92672">;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.io.StringWriter;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> co.elastic.clients.elasticsearch._types.RequestBase;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> co.elastic.clients.json.SimpleJsonpMapper;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> jakarta.json.stream.JsonGenerator;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">...</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">printRequestBodyJsonForDebug</span><span style="color:#f92672">(</span>RequestBase request<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">printRequestBodyJsonForDebug</span>(RequestBase request) {
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//for debug
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        Logger<span style="color:#f92672">.</span><span style="color:#a6e22e">log</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;** Debug print start **&#34;</span><span style="color:#f92672">);</span>
-</span></span><span style="display:flex;"><span>        StringWriter writer <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> StringWriter<span style="color:#f92672">();</span>
-</span></span><span style="display:flex;"><span>        SimpleJsonpMapper mapper <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> SimpleJsonpMapper<span style="color:#f92672">();</span>
-</span></span><span style="display:flex;"><span>        JsonGenerator generator <span style="color:#f92672">=</span> mapper<span style="color:#f92672">.</span><span style="color:#a6e22e">jsonProvider</span><span style="color:#f92672">().</span><span style="color:#a6e22e">createGenerator</span><span style="color:#f92672">(</span>writer<span style="color:#f92672">);</span>
-</span></span><span style="display:flex;"><span>        mapper<span style="color:#f92672">.</span><span style="color:#a6e22e">serialize</span><span style="color:#f92672">(</span>request<span style="color:#f92672">,</span> generator<span style="color:#f92672">);</span>
-</span></span><span style="display:flex;"><span>        generator<span style="color:#f92672">.</span><span style="color:#a6e22e">close</span><span style="color:#f92672">();</span>
-</span></span><span style="display:flex;"><span>        Logger<span style="color:#f92672">.</span><span style="color:#a6e22e">log</span><span style="color:#f92672">(</span>writer<span style="color:#f92672">.</span><span style="color:#a6e22e">toString</span><span style="color:#f92672">());</span>
-</span></span><span style="display:flex;"><span>        Logger<span style="color:#f92672">.</span><span style="color:#a6e22e">log</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;** Debug print finish **&#34;</span><span style="color:#f92672">);</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//for debug</span>
+</span></span><span style="display:flex;"><span>        Logger.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;** Debug print start **&#34;</span>);
+</span></span><span style="display:flex;"><span>        StringWriter writer <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> StringWriter();
+</span></span><span style="display:flex;"><span>        SimpleJsonpMapper mapper <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> SimpleJsonpMapper();
+</span></span><span style="display:flex;"><span>        JsonGenerator generator <span style="color:#f92672">=</span> mapper.<span style="color:#a6e22e">jsonProvider</span>().<span style="color:#a6e22e">createGenerator</span>(writer);
+</span></span><span style="display:flex;"><span>        mapper.<span style="color:#a6e22e">serialize</span>(request, generator);
+</span></span><span style="display:flex;"><span>        generator.<span style="color:#a6e22e">close</span>();
+</span></span><span style="display:flex;"><span>        Logger.<span style="color:#a6e22e">log</span>(writer.<span style="color:#a6e22e">toString</span>());
+</span></span><span style="display:flex;"><span>        Logger.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;** Debug print finish **&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
 </span></span></code></pre></div><h3 id="プラグインなどで提供されるクエリが書けない">プラグインなどで提供されるクエリが書けない</h3>
 <p>LtRプラグインなどは、Elasticsearchの検索クエリを拡張しています。
 残念ながら、現時点（2022/06/13）ではカスタムクエリを新しいJavaクライアントで利用しようとした場合、エラーが発生してしまいます（知らないJSONだと判断されてしまいます）。</p>
@@ -367,7 +367,26 @@ JavaのObjectに詰め替えてくれる機能など便利になっているの�
 
 
 
+                <hr/>
+                
 
+<h3>See Also by Hugo</h3>
+<ul>
+ 
+ <li><a href="/blog/2022/08/10/jp-auto-completion-2/">ローマ字入力のゆれと読み（JapaneseCompletionAnalyzerその2）</a></li>
+ 
+ <li><a href="/blog/2021/03/03/phrase-query-in-japanese/">OData式と日本語の検索(NGram)とフレーズ検索</a></li>
+ 
+ <li><a href="/blog/2020/12/17/index_template_v2/">Index Template V2</a></li>
+ 
+ <li><a href="/blog/2022/08/05/upgrade-hugo-accidentally/">Hugoをアップデートした</a></li>
+ 
+ <li><a href="/blog/2022/08/09/japanese-auto-completion/">日本語用オートコンプリートのためのAnalyzer</a></li>
+ 
+</ul>
+
+                <hr/>
+                
             </div>
             
             <div class="
