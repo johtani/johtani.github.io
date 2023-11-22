@@ -223,7 +223,7 @@ const sk = new Searchkit({
     highlight_attributes: ["title", "title_ja", "summary"],
     snippet_attributes: ["title_ja","summary", "contents"],
     search_attributes: [{field: "title_ja", weight: 3,}, "summary", "contents", "tags"],
-    result_attributes: ["title", "title_ja", "summary", "tags", "permalink"],
+    result_attributes: ["title", "title_ja", "summary", "tags", "permalink", "date"],
     facet_attributes: [
     { 
       attribute: 'tags', 
@@ -265,11 +265,19 @@ const hitTemplate = function(hit) {
     content = hit.summary;
   }
 
+  let tags = "";
+  if (hit.tags){
+    hit.tags.sort().forEach(element => {
+      tags += '<span class="hit_tag">' + element + '</span>'
+    });
+  }
+
 
   return `
     <div class="post-item">
       <h3><a class="post-link" href="${url}">${title}</a></h3>
       <span class="post-meta">${date}</span>
+      <span class="post-meta">${tags}</span>
       <div class="post-snippet">${content}</div>
     </div>
     <hr/>
@@ -400,6 +408,16 @@ search.start();
 }
 .post-snippet img {
   display: none;
+}
+.hit_tag {
+    background: #f5f5fa none repeat scroll 0 0;
+    border: 1px solid #b6b7d5;
+    border-radius: 99999px;
+    color: #23263b;
+    display: -ms-inline-flexbox;
+    font-weight: 400;
+    margin-left: 0.5rem;
+    padding: 0 1rem;
 }
 </style>
 
