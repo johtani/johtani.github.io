@@ -115,11 +115,11 @@ if (!doNotTrack) {
                     
                         
                     
+		            
+                    <li><a href="/top/about//">ABOUT</a></li>
                     
-		    
-                        <li><a href="/top/about//">ABOUT</a></li>
+                    <li><a href="/orama/">Orama Search</a></li>
                     
-                        <li><a href="/orama/">Orama Search</a></li>
                     
 		            <li>
                         <a href="/search"><i class="fa fa-search"></i></a>
@@ -189,10 +189,13 @@ if (!doNotTrack) {
             col-xs-12
             post-container
         ">
-        <div id="search-searchbar">
+        <script src="https://cdn.jsdelivr.net/npm/tiny-segmenter@0.2.0/dist/tiny-segmenter-0.2.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment.min.js"></script>
+<div id="search-searchbar">
     <label for="search-input" class="form-label">Search</label>
     <input type="search" class="form-control mb-3" id="search-input" />
 </div>
+<div id="stats"></div>
 <div class="post-list" id="search-hits">
 </div>
 
@@ -201,6 +204,18 @@ import { create, search, insert, insertMultiple } from 'https://unpkg.com/@orama
 
 const documents = await fetch("/orama.json");
 const docsJson = await documents.json();
+const segmenter = new TinySegmenter();
+
+function beforeSearchPluginExample() {
+  return {
+    name: 'before-search-plugin',
+    beforeSearch: (orama, query) => {
+      console.log('Orama tokenizer: ', orama.tokenizer)
+      console.log('Query: ', query)
+      console.log('Tokens: ', orama.tokenizer.tokenize(query.term))
+    }
+  }
+}
 
 const db = await create({
     schema: {
@@ -208,12 +223,22 @@ const db = await create({
     title: 'string',
     summary: 'string',
     tags: 'string[]',
+    date: 'number'
     },
-  components: {
-    beforeInsert() {
-      console.log('ID: '+ id)
-    }
-  }
+
+
+components: {
+    tokenizer: {
+      language: "english",
+      stemming: false,
+      tokenize: (raw) => {
+            return segmenter.segment(raw)
+      },
+    },
+  },
+
+
+  plugins: [beforeSearchPluginExample()]
 })
     
 await insertMultiple(db, docsJson)
@@ -224,19 +249,29 @@ const searchInput = document.getElementById("search-input");
 );
 
 async function query(event) {
+  
+  var sort = {
+      property: 'date', 
+      order: 'DESC'
+  }
+  if(event.target.value){
+    sort = undefined
+  }
   const searchResponse = await search(db, {
     term: event.target.value,
     properties: "*",
+    sortBy: sort,
   });
+  document.getElementById("stats").innerHTML = "<span>"+searchResponse.count+" results found in "+searchResponse.elapsed.formatted+"</span>";
   document.getElementById("search-hits").innerHTML = searchResponse.hits
     .map(
       (i) =>
         `
         <div class="post-item">
-          <span class="post-meta">${i.document.date}</span>
           <h2><a class="post-link" href="${i.document.permalink}">${i.document.title}</a></h2>
-          <a href="${i.document.permalink}" class="post-breadcrumbs">${i.document.title}</a>
+          <span class="post-meta">${moment.unix(i.document.date).format('MMM D, YYYY')}</span>
           <div class="post-snippet">${i.document.summary}</div>
+          <hr/>
         </div>
         `
     )
