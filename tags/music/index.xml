@@ -7,7 +7,170 @@
     <description>Recent content in music on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Thu, 15 Dec 2022 00:05:58 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/music/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 07 Dec 2023 15:00:00 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/music/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GoでSlackのボットを作った話</title>
+      <link>https://blog.johtani.info/blog/2023/12/07/smarthome-bot/</link>
+      <pubDate>Thu, 07 Dec 2023 15:00:00 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2023/12/07/smarthome-bot/</guid>
+      <description>PySpaアドベントカレンダーの12/08のエントリーです。昨日は渋川さんのアンラーニングで失敗した話でした。 私は、今年は昨年の続きっぽい話</description>
+      <content:encoded>&lt;p&gt;PySpaアドベントカレンダーの12/08のエントリーです。昨日は&lt;a href=&#34;https://gist.github.com/shibukawa/af62f192033cb6d500017505f503ca18&#34;&gt;渋川さんのアンラーニングで失敗した話&lt;/a&gt;でした。&lt;/p&gt;
+&lt;p&gt;私は、今年は&lt;a href=&#34;https://blog.johtani.info/blog/2022/12/15/music-server-on-mac-mini/&#34;&gt;昨年の続き&lt;/a&gt;っぽい話を。&lt;/p&gt;
+&lt;h2 id=&#34;音楽の再生とか停止とか&#34;&gt;音楽の再生とか停止とか&lt;/h2&gt;
+&lt;p&gt;今年もリモートで仕事を継続しています。
+昨年、OwnToneという音楽サーバーを導入しましたが、ミーティング開始時や終了後に音楽の停止や再生をするのに、ブラウザで操作するのはちょっと面倒です。
+加えて、ミーティングする際には実際には&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;音楽を止める&lt;/li&gt;
+&lt;li&gt;電気をつける&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;といったことをっやります。
+音楽再生についても&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;音楽を再生する&lt;/li&gt;
+&lt;li&gt;アンプの音は音楽再生用の音量にする&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;といった複数のことを行います。&lt;/p&gt;
+&lt;p&gt;基本的にPCの前にいるし、Slackを常に開いているからSlackのBotを作ると便利になるのでは？
+ということで、自分専用のSlack Botを作ってみました。&lt;/p&gt;
+
+&lt;link rel=&#34;stylesheet&#34; href=&#34;https://blog.johtani.info/css/hugo-easy-gallery.css&#34; /&gt;
+&lt;div class=&#34;box&#34; style=&#34;max-width:400&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20231208/slack-bot-start-music.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20231208/slack-bot-start-music.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&#34;githubリポジトリ&#34;&gt;GitHubリポジトリ&lt;/h3&gt;
+&lt;p&gt;全く誰の役にも立たないけど、公開しています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/smarthome&#34;&gt;https://github.com/johtani/smarthome&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;goで実装&#34;&gt;Goで実装&lt;/h3&gt;
+&lt;p&gt;知り合いに勧められたということもあり、Goをあまり触ったことがなかったので、Goでやってみました。時々新しい言語を触ってみたくなるので。。。&lt;/p&gt;
+&lt;p&gt;コマンドパターンのような作りで、コマンド（操作）を増やしていく感じで実装してはみたのですが、この書き方がいいのかはまだよくわかっていないです。&lt;/p&gt;
+&lt;p&gt;Actionという単体の操作(例：&lt;a href=&#34;https://github.com/johtani/smarthome/blob/master/subcommand/action/owntone/pause.go&#34;&gt;OwnToneの一時停止&lt;/a&gt;)を、操作したい機器の操作ごとに作成しています。
+インターフェースとしてはRunだけを定義しています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Action&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;interface&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	&lt;span style=&#34;color:#a6e22e&#34;&gt;Run&lt;/span&gt;() (&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;error&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;それらの操作（Action）をひとまとめにしたものをSubcommandという形で定義して、SlackのBotにはSubcommandの名前を送って処理を実行する形にしています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;type&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Subcommand&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	&lt;span style=&#34;color:#a6e22e&#34;&gt;Definition&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	&lt;span style=&#34;color:#a6e22e&#34;&gt;actions&lt;/span&gt;     []&lt;span style=&#34;color:#a6e22e&#34;&gt;action&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Action&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	&lt;span style=&#34;color:#a6e22e&#34;&gt;ignoreError&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;bool&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;やりたいことを追加するタイミングで時々リファクタしたりもしていますが、基本はこんな感じです。
+細かな実装はさておき、今回ボットを作るときの観点をいくつか。&lt;/p&gt;
+&lt;h3 id=&#34;宅内ネットワーク&#34;&gt;宅内ネットワーク&lt;/h3&gt;
+&lt;p&gt;音楽サーバーのOwnToneもですが、YAMAHAのアンプのAPIも見つけたのでこれらの操作をボットから行っています。どちらも自宅のネットワークにあるので、今回作成したボットも同じネットワークで動作します。&lt;/p&gt;
+&lt;p&gt;外部に公開されたHTTPのエンドポイントがあればよいのですが、今回は用意していません。
+SlackのAPIではこれに対応したアプリを作るときのために&lt;a href=&#34;https://api.slack.com/apis/connections/socket&#34;&gt;Socket Mode&lt;/a&gt;を用意してくれています。&lt;/p&gt;
+&lt;p&gt;ドキュメントがしっかりしているのもあり、チュートリアルなどを見つつ特に迷うことなく構築できました。&lt;/p&gt;
+&lt;p&gt;基本的には「特定のチャンネルでボットがメンションされたら動作する」という挙動だけしか実装していないので、特に今回はこれで困ることもありませんでした（世の中の人たちはもっとすごいSlackの使い方をしていそうだけど。。。）。&lt;/p&gt;
+&lt;h3 id=&#34;対象となるものたち&#34;&gt;対象となるものたち&lt;/h3&gt;
+&lt;p&gt;ボットから操作しているのは今のところ3種類です。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;SwitchBot&lt;/li&gt;
+&lt;li&gt;OwnTone&lt;/li&gt;
+&lt;li&gt;YAMAHAのアンプ&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id=&#34;switchbot&#34;&gt;SwitchBot&lt;/h4&gt;
+&lt;p&gt;SwitchBotについては、&lt;a href=&#34;https://github.com/nasa9084/go-switchbot&#34;&gt;go-siwtchbot&lt;/a&gt;を利用しています。
+電気、エアコン、空気清浄機、サーキュレーターのオンオフをSwitchBot経由でやっています。&lt;/p&gt;
+&lt;p&gt;室内灯の明るさのために、SwitchBot側でシーンを設定している（一番暗い明るさで電気をつける）ので、そこが少しと特殊でしょうか？&lt;/p&gt;
+&lt;p&gt;あとは、SwitchBotの温湿度計を3つ（室内2つ、室外1つ）おいてあるので、これらの温度を表示するコマンドも用意しました。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:400&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20231208/display-temperature.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20231208/display-temperature.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;それぞれの機器の電池残量（電池の絵文字の右側）を表示してます（書斎が2つあるように見えますが、温湿度計の名前なので、同じ部屋においてあります。。。温度が高いほうがデスクトップPCの近くにある）。
+防水の温湿度計があるので、外の気温もわかるのは便利です。&lt;/p&gt;
+&lt;h4 id=&#34;owntone&#34;&gt;OwnTone&lt;/h4&gt;
+&lt;p&gt;&lt;a href=&#34;https://owntone.github.io/owntone-server/json-api/&#34;&gt;JSONのAPIが用意されています&lt;/a&gt;が、特にクライアントライブラリなどは用意されていません。
+今回は、用意されているAPIのごく一部だけを利用するので、net/httpのClientでJSONを投げています。
+必要になったらowntone/clientにメソッドを追加していく感じです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/smarthome/blob/master/subcommand/action/owntone/client.go#L45&#34;&gt;https://github.com/johtani/smarthome/blob/master/subcommand/action/owntone/client.go#L45&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;再生、一時停止、プレイリストの取得、音量指定あたりを実装しています。
+音の出力先はAirPlay（次に出てくるYamahaのアンプ）になっています。&lt;/p&gt;
+&lt;p&gt;あと、JSON APIのサンプルをChatGPTに渡して、「このJSONをレスポンスに受け取る処理をGoで書いてください」と聞いて処理を書いたりしました（細かいのはどう聞いたか覚えてないけど）。&lt;/p&gt;
+&lt;h4 id=&#34;yamahaのアンプ&#34;&gt;YAMAHAのアンプ&lt;/h4&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/rsc-dev/pyamaha/blob/master/doc/YXC_API_Spec_Basic_v2.0.pdf&#34;&gt;ググって探してきましたが&lt;/a&gt;、利用しているYAMAHAのアンプにYXC（Yamaha Extented Control）と呼ばれるAPIが用意されていました。
+PDFでAPIの仕様が公開されていたので、この資料とにらめっこしながら、必要そうなAPIを実行するクライアントを実装しました。
+こちらは、OwnToneのAPIの処理をすでに書いた後だったので、それをもとに必要な実装を追加しただけです。&lt;/p&gt;
+&lt;p&gt;ちなみに、アンプの電源をONにするAPIは実装していません。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;OwnToneで音楽を再生する(AirPlayで信号が送られるみたい)&lt;/li&gt;
+&lt;li&gt;シーン選択（Nintendo SwitchやPS5のシーンを用意している）のAPIを呼び出す&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;という処理をすると自動で電源がONになりました。スタンバイしている状態でもAPIはリクエストを受け付ける状態になっているようです。
+また、PS5のシーンを呼び出したら、PS5自体も起動するのが便利だったりします。HDMI経由で信号が飛んでるのかな？
+「ミーティング開始」や「音楽停止」コマンドではアンプの電源をオフするAPIを呼び出すようにしています。&lt;/p&gt;
+&lt;h3 id=&#34;タイポ対応&#34;&gt;タイポ対応&lt;/h3&gt;
+&lt;p&gt;「入力間違いしちゃうんです、人間だもの。。。」&lt;/p&gt;
+&lt;p&gt;ということで、&lt;a href=&#34;https://github.com/johtani/smarthome/pull/34&#34;&gt;10月にタイポ対応の処理&lt;/a&gt;を入れてみました。
+タイポ対応前の実装では、入力された文字列がコマンドの文字列と完全一致した場合にだけ、コマンドが実行される形になっていました。
+結構タイポしちゃうので、完全一致で見つからない場合の処理として、入力された文字列とコマンド名のレーベンシュタイン距離が&lt;strong&gt;2&lt;/strong&gt;以下のものを探し、その中で距離が一番小さな値のコマンドを実行する形にしてみました。
+コマンド数はたかが知れているのでコマンドのリストを全部チェックする形にしています。
+タイポするとこんな感じ。&lt;/p&gt;
+
+
+&lt;div class=&#34;box&#34; style=&#34;max-width:400&#34;&gt;
+  &lt;figure  itemprop=&#34;associatedMedia&#34; itemscope itemtype=&#34;http://schema.org/ImageObject&#34;&gt;
+    &lt;div class=&#34;img&#34;&gt;
+      &lt;img itemprop=&#34;thumbnail&#34; src=&#34;https://blog.johtani.info/images/entries/20231208/did-you-mean.png&#34; /&gt;
+    &lt;/div&gt;
+    &lt;a href=&#34;https://blog.johtani.info/images/entries/20231208/did-you-mean.png&#34; itemprop=&#34;contentUrl&#34;&gt;&lt;/a&gt;
+  &lt;/figure&gt;
+&lt;/div&gt;
+
+&lt;p&gt;レーベンシュタイン距離の計算には&lt;a href=&#34;https://pkg.go.dev/github.com/hbollon/go-edlib#section-readme&#34;&gt;Go-edlib&lt;/a&gt;を利用しています。OSS便利ですね。&lt;/p&gt;
+&lt;h2 id=&#34;やってよかったこと&#34;&gt;やってよかったこと&lt;/h2&gt;
+&lt;p&gt;ミーティング開始時などのいくつかの手順が簡素化できたので満足しています。
+SwitchBotの操作もスマホをわざわざ操作しなくてもいいですし（仕事してるとキーボードとSlackは常に使ってるし）。
+また、副次的な効果として、部屋の外から電源を切り忘れていたり、エアコンの切り忘れなどの場合に、スマホから遠隔でまとめた処理ができるのが便利です。&lt;/p&gt;
+&lt;h2 id=&#34;今後やってみたいこと&#34;&gt;今後やってみたいこと&lt;/h2&gt;
+&lt;p&gt;こういうのがあるともうちょっと便利かもなぁ？というのもあるので今後も気が向いたらコマンドなどを追加していく予定です。
+今のところこんなことやりたいなというのがいくつかあります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;キーワードに関連する曲の再生
+&lt;ul&gt;
+&lt;li&gt;OwnTone自体に検索の仕組みがついているので、キーワードを受け付けてそれに関する曲を流す&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://blog.johtani.info/blog/2020/09/08/update-working-facility/#%E3%83%87%E3%82%B9%E3%82%AF&#34;&gt;Flexispotの操作&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;ミーティングの時は立ち上がっているので、机をスタンディングの状態にしたい&lt;/li&gt;
+&lt;li&gt;電子工作しないとだめかも？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://amzn.to/3GxIw94&#34;&gt;Webカメラ用ライト&lt;/a&gt;の点灯
+&lt;ul&gt;
+&lt;li&gt;ミーティング時に明かりが必要なのですが、物理スイッチのOn/Off&lt;/li&gt;
+&lt;li&gt;これも電子工作かな？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;定期的に温度をBotに表示させるとと面白いかも？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、新しいプログラミング言語にも触れたし、作業環境も便利になって一石二鳥でした。
+新しいプログラミング言語触るのはやっぱたのしいですね。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>仕事中のBGM環境</title>
       <link>https://blog.johtani.info/blog/2022/12/15/music-server-on-mac-mini/</link>
