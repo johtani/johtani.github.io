@@ -7,7 +7,208 @@
     <description>Recent content in search on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Wed, 12 Jan 2022 18:41:02 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/search/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 15 Dec 2023 00:00:00 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/search/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Oramaという検索エンジンでブログ検索を作ってみた</title>
+      <link>https://blog.johtani.info/blog/2023/12/15/introduce-orama-to-blog/</link>
+      <pubDate>Fri, 15 Dec 2023 00:00:00 +0900</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2023/12/15/introduce-orama-to-blog/</guid>
+      <description>この記事は、情報検索・検索技術 Advent Calendar 2023の15日目の記事です。 昨年に続き2回目の情報検索のAdvent Calendar参戦です。 今年は、夏</description>
+      <content:encoded>&lt;p&gt;この記事は、&lt;a href=&#34;https://adventar.org/calendars/8678&#34;&gt;情報検索・検索技術 Advent Calendar 2023&lt;/a&gt;の15日目の記事です。&lt;/p&gt;
+&lt;p&gt;昨年に続き2回目の情報検索のAdvent Calendar参戦です。&lt;/p&gt;
+&lt;p&gt;今年は、&lt;a href=&#34;https://blog.johtani.info/blog/2023/06/21/attend-berlin-buzzwords-2023/&#34;&gt;夏にオンライン参加&lt;/a&gt;した&lt;a href=&#34;https://berlinbuzzwords.de&#34;&gt;Berlin Buzzwords&lt;/a&gt;の&lt;a href=&#34;https://program.berlinbuzzwords.de/berlin-buzzwords-2023/talk/73UNZD/&#34;&gt;「The Debate Returns (with more vectors) Which Search Engine?」&lt;/a&gt;というセッションでPhilippさんが話題に出した&lt;a href=&#34;https://www.oramasearch.com/&#34;&gt;Orama search&lt;/a&gt;という検索エンジンを紹介してみようと思います（Oramaが正式名称なのかな？）。&lt;/p&gt;
+&lt;h2 id=&#34;oramaという検索エンジン&#34;&gt;Oramaという検索エンジン&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.oramasearch.com/&#34;&gt;公式サイト&lt;/a&gt;のトップにも記載がありますが、エッジで動作する全文検索＆ベクトル検索エンジンというもののようです。
+なにそれ？という感じがしますが、&lt;a href=&#34;https://docs.oramasearch.com/open-source/&#34;&gt;オープンソース版のドキュメント&lt;/a&gt;を見るともう少しわかりやすい説明になっています。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Orama is a fast, batteries-included, full-text and vector search engine entirely written in TypeScript, with zero dependencies.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;OramaはTypeScriptで書かれた、依存なしで利用できる検索エンジンということです（&lt;em&gt;batteries-included&lt;/em&gt;って初めて見たかも。「必要なものがそろってる」とかいう意味みたい（参考：&lt;a href=&#34;https://en.wiktionary.org/wiki/batteries-included&#34;&gt;英語のWikipedia&lt;/a&gt;））。&lt;/p&gt;
+&lt;p&gt;以下は公式サイトにあるサンプルです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;create&lt;/code&gt;でスキーマの定義をした検索エンジンのインスタンスを生成します。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;insert&lt;/code&gt;で先ほど生成した検索エンジンにデータをインデックスします（後で紹介しますが、一括でインデックスするメソッドも用意されています）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;search&lt;/code&gt;で検索し、検索した結果が返ってきます。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;以上です。あとは、必要に応じてGUIを用意するだけです。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-typescript&#34; data-lang=&#34;typescript&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;import&lt;/span&gt; { &lt;span style=&#34;color:#a6e22e&#34;&gt;create&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;insert&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt; } &lt;span style=&#34;color:#66d9ef&#34;&gt;from&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;@orama/orama&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;db&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;create&lt;/span&gt;({
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;schema&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;title&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;string&amp;#39;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;director&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;string&amp;#39;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;isFavorite&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;boolean&amp;#39;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;year&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;number&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;})
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;insert&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;db&lt;/span&gt;, {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;title&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;The Prestige&amp;#39;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;director&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Christopher Nolan&amp;#39;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;isFavorite&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;year&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;2006&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;})
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;searchResults&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;search&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;db&lt;/span&gt;, {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;term&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;prestige&amp;#39;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;where&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;isFavorite&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#a6e22e&#34;&gt;year&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#a6e22e&#34;&gt;between&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; [&lt;span style=&#34;color:#ae81ff&#34;&gt;2000&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;2008&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;})
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;サクッと動きそうですよね？依存関係がなくTypeScriptで書かれているということは静的なサイトなどでコンテンツを検索するのに使えるのでは？&lt;/p&gt;
+&lt;p&gt;ということで、自分のブログに組み込んでみました。
+今回は組み込んだ時の流れと気になった点などを紹介します。
+Hugoに組み込む際になるべく簡単にしたかったので、unpkg.comで公開されているJavaScriptだけを利用する形で検索ページを作ってみました。
+JavaScriptやTypeScriptは不慣れなので効率がよくなかったり、間違っている点があればコメントなどをいただけると嬉しいです。&lt;/p&gt;
+&lt;h2 id=&#34;構成&#34;&gt;構成&lt;/h2&gt;
+&lt;p&gt;私のブログサイトはHugoで生成（&lt;a href=&#34;https://blog.johtani.info/blog/2020/01/22/intro-hugo-and-theme/&#34;&gt;参考：Hugo導入時の記事&lt;/a&gt;）して、GitHub Pagesとして公開しています。
+現在のブログ検索にはAlgoliaを利用しているのですが、テスト目的としてOramaも使えるようにしてみました（右上のメニューでOramaをクリックすると以下で説明するOramaによる検索を試すことができます。&lt;/p&gt;
+&lt;p&gt;今回実装してみたのは次のような流れです（日本語検索対応については後で説明します）。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;HugoでJSONのリストを生成（これまでと一緒）&lt;/li&gt;
+&lt;li&gt;1.で生成したリストをもとにNodeのスクリプトでOramaのインデックスファイルを作成&lt;/li&gt;
+&lt;li&gt;2.で作成したファイルを公開&lt;/li&gt;
+&lt;li&gt;画面で3.のファイルをダウンロードして検索&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;1-hugoでjsonのリストを生成これまでと一緒&#34;&gt;1. HugoでJSONのリストを生成（これまでと一緒）&lt;/h3&gt;
+&lt;p&gt;HugoでJSONのリストを生成します。Algoliaに記事を登録するのにも利用している仕組みです。
+検索に利用する記事の情報を1記事を1つのオブジェクトとして出力します。1つの配列に記事ごとのオブジェクトが入っているJSONファイルになります。&lt;/p&gt;
+&lt;script src=&#34;https://gist.github.com/johtani/3e40c6738424f95f38c117e18181a010.js?file=list.orma.json.gohtml&#34;&gt;&lt;/script&gt;
+
+&lt;p&gt;少しだけ特殊なことをしています。
+ブログ記事に&lt;code&gt;Tags&lt;/code&gt;というフィールドのありなしで処理を分岐しています。
+Oramaが配列にNullを受け取った場合にうまく動かなかったので出力するJSON側で調整しています（あとで再確認してIssueあげておかないと）&lt;/p&gt;
+&lt;h3 id=&#34;2-1で生成したリストをもとにnodeのスクリプトでoramaのインデックスファイルを作成&#34;&gt;2. 1.で生成したリストをもとにNodeのスクリプトでOramaのインデックスファイルを作成&lt;/h3&gt;
+&lt;p&gt;最初に紹介した公式のサンプルの場合、毎回Oramaのインスタンスを生成した後にインデックス登録の処理を行わなければいけません。
+ただ、Hugoで生成したコンテンツは特に動的に更新があるわけでもないので、検索画面を表示するたびにインデックス登録するのも無駄が多い気がします。
+Orama単体で最初に実装した時には、1.で作成した記事一覧のJSONをOramaで実装した検索ページのスクリプトが呼ばれたタイミングでフェッチし、&lt;code&gt;insertMultiple&lt;/code&gt;（複数登録用のメソッド）を呼び出す実装にしていました。&lt;/p&gt;
+&lt;p&gt;Oramaでは、あらかじめ作成したOramaのデータベースを永続化・リストアするための&lt;a href=&#34;https://docs.oramasearch.com/open-source/plugins/plugin-data-persistence.html&#34;&gt;Data Persistenceプラグイン&lt;/a&gt;が提供されています。
+インデックスに登録する処理コストはHugoでコンテンツを生成した直後に行い、検索画面では作成済みのインデックスファイルをフェッチしてリストアする形にすることにしました。インデックスと記事のJSONデータを含んだファイルになるので、元の記事一覧のJSONよりはファイルサイズが大きくなってしまいますが、処理時間も含めて考えると許容できるサイズではないかなと。&lt;/p&gt;
+&lt;p&gt;次のスクリプトは1.で生成したJSONファイルを読み込んで、Oramaでインデックスした後に&lt;a href=&#34;https://www.jsdelivr.com/package/npm/dpack&#34;&gt;&lt;code&gt;dpack&lt;/code&gt;というバイナリ形式&lt;/a&gt;でファイルに保存しています。
+こののプラグインで選択できる形式は現時点では&lt;code&gt;json&lt;/code&gt;、&lt;code&gt;binary&lt;/code&gt;（デフォルト＝msgpack）、&lt;code&gt;dpack&lt;/code&gt;の3種類になります。
+残念ながら今回試したところ、&lt;code&gt;binary&lt;/code&gt;ではエラーが発生したので、&lt;code&gt;dpack&lt;/code&gt;を使用しました。&lt;/p&gt;
+&lt;script src=&#34;https://gist.github.com/johtani/3e40c6738424f95f38c117e18181a010.js?file=persist_orama.mts&#34;&gt;&lt;/script&gt;
+
+&lt;h3 id=&#34;3-2で作成したファイルを公開&#34;&gt;3. 2.で作成したファイルを公開&lt;/h3&gt;
+&lt;p&gt;単にGitHub Pagesに公開しているだけです。
+ブラウザが2.で作成したインデックスファイルをフェッチしてから利用するためです。&lt;/p&gt;
+&lt;h3 id=&#34;4-画面で3のファイルをダウンロードして検索&#34;&gt;4. 画面で3.のファイルをダウンロードして検索&lt;/h3&gt;
+&lt;p&gt;あとは検索画面です（長すぎるので、styleの部分は省略しています）。&lt;/p&gt;
+&lt;p&gt;まず、必要なライブラリなどを読み込みます（下のソースコードの1行目から14行目）。&lt;/p&gt;
+&lt;p&gt;Oramaだけであれば問題ないのですが、OramaのプラグインがOramaをモジュールとして参照しているため、&lt;a href=&#34;https://developer.mozilla.org/ja/docs/Web/HTML/Element/script/type/importmap&#34;&gt;importmap&lt;/a&gt;として定義しています。
+Oramaのプラグインがいくつか利用しているものがあったので、まとめてimportmapに定義してあります。&lt;/p&gt;
+&lt;p&gt;次に、検索窓（&lt;code&gt;search-searchbar&lt;/code&gt;）や検索結果（&lt;code&gt;search-hits&lt;/code&gt;）などのHTMLタグを用意します。
+ヒット件数と検索にかかった時間も取れるので、表示する場所として&lt;code&gt;stats&lt;/code&gt;も用意してあります。&lt;/p&gt;
+&lt;p&gt;22行目からが実際の処理になります。&lt;/p&gt;
+&lt;p&gt;28行目で、手順2.で作成したインデックスのファイルをフェッチします。
+32行目でフェッチしたファイルから取り出した文字列をリストアして、Oramaのインスタンスを生成します。
+34行目のtokenizerに関しては日本語対応で説明します。&lt;/p&gt;
+&lt;p&gt;48行目の&lt;code&gt;query&lt;/code&gt;関数がクエリの組み立て＋検索の処理です。&lt;code&gt;search-input&lt;/code&gt;で入力されたテキストを&lt;code&gt;term&lt;/code&gt;として渡して検索をしています（56行目）。
+検索した結果のリストをもとに検索結果のHTMLタグを組み上げていきます。
+検索結果には後述する&lt;code&gt;@orama/highlight&lt;/code&gt;のモジュールを利用してスニペットを追加しています。&lt;/p&gt;
+&lt;script src=&#34;https://gist.github.com/johtani/3e40c6738424f95f38c117e18181a010.js?file=search-orama.html&#34;&gt;&lt;/script&gt;
+
+&lt;h2 id=&#34;日本語対応&#34;&gt;日本語対応&lt;/h2&gt;
+&lt;p&gt;残念ながらOramaは公式には日本語をサポートしていません（&lt;a href=&#34;https://github.com/oramasearch/orama/blob/7456e32455a22ac7f8d29760dcd149246c4af1a8/packages/orama/src/components/tokenizer/languages.ts#L1&#34;&gt;サポートしているスキーマに設定できる&lt;code&gt;language&lt;/code&gt;の一覧&lt;/a&gt;（＝STEMMERSにあるものだけ&lt;a href=&#34;https://github.com/oramasearch/orama/blob/7456e32455a22ac7f8d29760dcd149246c4af1a8/packages/orama/src/components/tokenizer/index.ts#L86&#34;&gt;指定可能&lt;/a&gt;）。一覧と実装分けたほうがいい気がするけど？）。
+ただ、&lt;a href=&#34;https://docs.oramasearch.com/open-source/internals/components.html#tokenizer&#34;&gt;tokenize関数を変更できるようにしてくれています&lt;/a&gt;。これを利用して、少しトリッキーな形で日本語対応しました。&lt;/p&gt;
+&lt;p&gt;先ほどの手順2.でOramaの&lt;code&gt;create&lt;/code&gt;関数として、&lt;code&gt;components&lt;/code&gt;に次の&lt;code&gt;tokenizer&lt;/code&gt;を渡します。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;language&lt;/code&gt;は&lt;code&gt;english&lt;/code&gt;ですが、日本語をtokenizeする処理に次のように書き換えました。
+&lt;code&gt;stemming&lt;/code&gt;は今回は行わない（＝用意されているstemmerを使えない）ので&lt;code&gt;false&lt;/code&gt;、&lt;code&gt;normalizationCache&lt;/code&gt;は空のMapを用意しておかないとエラーが出るので、&lt;code&gt;new Map()&lt;/code&gt;しています。
+この設定を使ってcreateすることで、&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;components&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenizer&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#a6e22e&#34;&gt;language&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;english&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#a6e22e&#34;&gt;stemming&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#a6e22e&#34;&gt;normalizationCache&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Map&lt;/span&gt;(),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenize&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; (&lt;span style=&#34;color:#a6e22e&#34;&gt;raw&lt;/span&gt;) =&amp;gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;              &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenize&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;raw&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    },
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;少しわかりにくいですが、&lt;code&gt;tokenizer&lt;/code&gt;の&lt;code&gt;tokenize&lt;/code&gt;関数の中で呼び出している&lt;code&gt;return tokenize(raw)&lt;/code&gt;の部分は&lt;a href=&#34;https://github.com/yuhsak/wakachigaki&#34;&gt;wakachigaki&lt;/a&gt;というライブラリのtokenize関数となっています。&lt;/p&gt;
+&lt;h3 id=&#34;wakachigakiというライブラリ&#34;&gt;wakachigakiというライブラリ&lt;/h3&gt;
+&lt;p&gt;Elasticsearchなどのサーバー上で動作させる検索エンジンではkuromojiなどの辞書を内包した形態素解析器を利用するのが通常です。
+ただ、今回はブラウザだけで完結した簡単な検索を行う仕組みをOramaを使って提供しようと考えました（&lt;a href=&#34;https://github.com/takuyaa/kuromoji.js&#34;&gt;kuromoji.js&lt;/a&gt;というのもありますが、辞書のサイズがそこそこのサイズです）。
+ですので、辞書ファイルのない軽量の形態素解析ライブラリとして、&lt;a href=&#34;https://github.com/yuhsak/wakachigaki&#34;&gt;wakachigaki&lt;/a&gt;というライブラリ（＝6.2Kbの軽量日本語分かち書きライブラリ）を利用してみました。&lt;/p&gt;
+&lt;p&gt;最初は&lt;a href=&#34;https://github.com/leungwensen/tiny-segmenter&#34;&gt;TinySegmenter&lt;/a&gt;の利用をしていたのですが、wakachigakiのサイトにもあるように、TypeScriptやES Moduleでも利用できる形式となっていたのでこちらに切り替えました。&lt;/p&gt;
+&lt;p&gt;辞書もっていないため、品詞でのフィルタリングや読みを利用した処理はできませんが、日本語の文章を分かち書きしてくれます。&lt;/p&gt;
+&lt;h3 id=&#34;tokenize関数の設定&#34;&gt;tokenize関数の設定&lt;/h3&gt;
+&lt;p&gt;Oramaの&lt;a href=&#34;https://github.com/oramasearch/orama/blob/7456e32455a22ac7f8d29760dcd149246c4af1a8/packages/orama/src/types.ts#L741&#34;&gt;Tokenizerインタフェースの&lt;code&gt;tokenize&lt;/code&gt;&lt;/a&gt;は入力の文字列を&lt;code&gt;string[]&lt;/code&gt;として返すことを期待しています。
+wakachigakiの&lt;code&gt;tokenize&lt;/code&gt;も文字列を引数にとり、&lt;code&gt;string[]&lt;/code&gt;を返すので、そのまま呼び出すだけにしてあります。&lt;/p&gt;
+&lt;p&gt;ただ、今回のブログ検索の実装では、検索窓に入力された文字列も特に何も処理せずに&lt;code&gt;tokenize&lt;/code&gt;に渡す形にしています。
+クエリパーサーなどを考える場合は、検索窓に入力された文字列を前処理したりする必要がありますが今回はいったんこれで。。。&lt;/p&gt;
+&lt;h3 id=&#34;data-persistenceはcomponentsはpersistしない&#34;&gt;data-persistenceはcomponentsはpersistしない&lt;/h3&gt;
+&lt;p&gt;手順2.で導入した、data-persistenceプラグインですが、現在の実装ではOramaが生成したデータベース（転置インデックス）&lt;strong&gt;だけ&lt;/strong&gt;を永続化しています。
+独自に設定した&lt;code&gt;tokenizer&lt;/code&gt;は残念ながら含まれていませんでした。
+手順4.の検索画面のコードの34行目の部分（下記）で、フェッチしたインデックスデータから&lt;code&gt;restore&lt;/code&gt;した後のOramaのインスタンスの&lt;code&gt;tokenizer&lt;/code&gt;に手順2.と同じ設定の&lt;code&gt;tokenizer&lt;/code&gt;を設定することで検索時にも同じトークナイズがされるようになります（今の仕組みだと修正した場合には、両方のソースコードを修正しないといけないのがちょっと面倒かも？）。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-javascript&#34; data-lang=&#34;javascript&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;db&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;tokenizer&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#a6e22e&#34;&gt;language&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;english&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#a6e22e&#34;&gt;stemming&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;false&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#a6e22e&#34;&gt;normalizationCache&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Map&lt;/span&gt;(),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenize&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; (&lt;span style=&#34;color:#a6e22e&#34;&gt;raw&lt;/span&gt;) =&amp;gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;tokenize&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;raw&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;tokenizer&lt;/code&gt;はOramaの検索エンジンのインスタンスに紐づく設定となっているので、フィールドごとに切り替えるといったことも現在では想定されていない気がします。&lt;/p&gt;
+&lt;h2 id=&#34;ハイライト&#34;&gt;ハイライト&lt;/h2&gt;
+&lt;p&gt;ハイライトのために、インデックスデータに単語のポジションを保存するためのプラグインも提供されています。
+このポジションは検索の単語がヒットしドキュメントのどの位置に出てくるのか？をあらかじめデータとして保存しておくことで、ハイライトのたびに単語の位置を毎回計算しなくてもよくするためのものと思われます。&lt;/p&gt;
+&lt;p&gt;これを利用してもよかったのですが、今回は&lt;a href=&#34;https://github.com/oramasearch/highlight&#34;&gt;&lt;code&gt;@orama/highlight&lt;/code&gt;というモジュール&lt;/a&gt;を利用することにしました。
+検索にヒットしたドキュメントの元の文章と検索のキーワードを入力すると検索キーワードの周りにハイライトのHTMLタグを埋め込んでくれるライブラリを利用しました。これは普通に他でも便利かも？&lt;/p&gt;
+&lt;p&gt;余力があればプラグインを利用した時のインデックスのサイズの違いや検索時の速度の違いを調べてみるのもいいかもしれないです。&lt;/p&gt;
+&lt;h2 id=&#34;そのほかの機能&#34;&gt;そのほかの機能&lt;/h2&gt;
+&lt;p&gt;今回は利用していませんが、Oramaにはそのほかの機能も用意されています（&lt;a href=&#34;https://docs.oramasearch.com/open-source/usage/search/introduction.html&#34;&gt;公式ドキュメントの検索の紹介のページ&lt;/a&gt;）。詳細は公式ドキュメントをご覧ください。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Typo tolerance&lt;/li&gt;
+&lt;li&gt;Facet/Filter&lt;/li&gt;
+&lt;li&gt;Vector Search&lt;/li&gt;
+&lt;li&gt;Geo Search&lt;/li&gt;
+&lt;li&gt;Grouping&lt;/li&gt;
+&lt;li&gt;Threshold&lt;/li&gt;
+&lt;li&gt;Preflight&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;oramaでまだできないこと&#34;&gt;Oramaで（まだ？）できないこと&lt;/h2&gt;
+&lt;p&gt;今回触ってみて、現在のOramaの実装ではできなそうなことがいくつかあったので書き出しておきます。
+あくまでも現時点のことです。今後実装される可能性もあります。&lt;/p&gt;
+&lt;p&gt;デフォルトでは、&lt;code&gt;search&lt;/code&gt;の&lt;code&gt;term&lt;/code&gt;に渡した文字列を&lt;code&gt;tokenize&lt;/code&gt;し、出力されたトークン列（単語の配列）のそれぞれのトークン（単語）にヒットしたドキュメントが&lt;strong&gt;全て&lt;/strong&gt;検索結果に含まれます。
+検索結果のドキュメントは&lt;a href=&#34;https://docs.oramasearch.com/open-source/usage/search/bm25-algorithm.html&#34;&gt;&lt;code&gt;BM25&lt;/code&gt;でスコアリング&lt;/a&gt;されるので、多くのトークンが含まれるものが上位に来る可能性が高いです。&lt;/p&gt;
+&lt;p&gt;ただ、特定の単語を含まない検索、ANDやOR検索など凝ったクエリは現在は書けないようです（&lt;a href=&#34;https://github.com/oramasearch/orama/issues/295&#34;&gt;Issueがある&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;filterは別途用意されているので、例えばファセットで表示したカテゴリで絞り込んだ状態にするといったことはできそうです。&lt;/p&gt;
+&lt;h2 id=&#34;残課題&#34;&gt;残課題&lt;/h2&gt;
+&lt;p&gt;とりあえず日本語をなんとなく検索できるようにすることはできました。
+が、気になることもいっぱいありました。
+時間を見つけてTypeScriptなどを勉強しながら探っていく感じでしょうか。&lt;/p&gt;
+&lt;h3 id=&#34;インデックスを小さくする方法&#34;&gt;インデックスを小さくする方法&lt;/h3&gt;
+&lt;p&gt;今回はブログ記事のサマリー（Hugoで生成されるSummary）でインデックスを作ったので、インデックスのサイズはまだ小さくなっています（といっても1MB超えてるけど）。ブログ記事全体を検索できるようにする場合は、インデックスファイルが大きくなります。&lt;/p&gt;
+&lt;p&gt;これは、OramaがデフォルトではインデックスしたJSON自体もインデックス（ドキュメントストア）に保存しているためです。
+ですので、Oramaに登録したJSONデータ＋検索用のインデックスがインデックスファイルとなります。
+ただ、検索だけができればよい場合は、出来上がったインデックスがあればドキュメントのIDは取得できます。&lt;/p&gt;
+&lt;p&gt;公式ドキュメントでもそのことに触れているページがあります（参考：&lt;a href=&#34;https://docs.oramasearch.com/open-source/usage/insert.html#remote-document-storing&#34;&gt;Remote document storing&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;まだちゃんと実装を見ていませんが、ブログ記事本体の文字列はドキュメントストアに保存しないようにすれば検索はできるが、容量が大きくならないといった工夫ができそうです。&lt;/p&gt;
+&lt;p&gt;ただ、検索結果にハイライトを含んだスニペットを表示したい場合は、コンテンツ文字列が必要になってくるので、代わりに何かしらの仕組みを考える必要が出てきます（例えばサマリー部分の文字列だけ保存しておいて、ハイライトはそこだけを対象とするなど）。&lt;/p&gt;
+&lt;h3 id=&#34;そのほか&#34;&gt;そのほか&lt;/h3&gt;
+&lt;p&gt;そのほかに思いつくのはこの辺でしょうか？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;オートコンプリート：Oramaというよりも、JavaScriptやTypeScriptでうまく実装できるのか？という話のような気がしますが。。。&lt;/li&gt;
+&lt;li&gt;ファセット対応：機能としては存在していますが、今回は実装が間に合いませんでした。&lt;/li&gt;
+&lt;li&gt;Vector Search：検索キーワードのベクトルをどうやって作るのか？という問題が残りそう。コンテンツのベクトルだけで関連ページの表示みたいなことはできるかも？（動的にやる必要がないので、事前計算して各ページに埋め込むほうがよさそうだけど）&lt;/li&gt;
+&lt;li&gt;Geo Search：緯度経度があるデータを探し出してこないと？&lt;/li&gt;
+&lt;li&gt;relevanceの処理の変更：BM25以外に切り替えることができるかどうか（Oramaのソースとにらめっこしないといけなそう）&lt;/li&gt;
+&lt;li&gt;tokenizeの改良：辞書を利用する形態素解析ライブラリやAPIを利用してみたり、「てにをは」といった1文字のひらがなを削ることで、無駄な検索ヒットを減らしてみたり。大文字小文字の正規化も必要。&lt;/li&gt;
+&lt;li&gt;検索ログの解析：検索ログを保存する仕組みなどはないので、Google AnalyticsやほかのAPIなどを用意する？&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、Oramaという検索エンジン？ライブラリ？を利用して日本語のブログ検索を実装してみました。
+まだ、機能が少ない部分もありますが、少数のデータをブラウザだけで簡単に検索できる仕組みをGitHub Pagesだけで提供することができそうです。
+今回は静的なファイルだけで完結する形にしましたが、TypeScriptで利用できる簡単な検索エンジンライブラリとして使ってみるとまた別の面白さもあるかもしれないです。
+まだ触っていない機能は思いついたこと（＝残課題に書いたこと）もあるので、ちょっと試行錯誤してみようかなぁ。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>Extreme Multi-label Learning for Semantic Matching in Product Searchという論文を読んだ</title>
       <link>https://blog.johtani.info/blog/2022/01/12/reading-xmc-for-semantic-search-in-prod/</link>
