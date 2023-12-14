@@ -189,8 +189,20 @@ if (!doNotTrack) {
             col-xs-12
             post-container
         ">
-        <script src="https://cdn.jsdelivr.net/npm/tiny-segmenter@0.2.0/dist/tiny-segmenter-0.2.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "@orama/orama": "https://unpkg.com/@orama/orama@latest/dist/index.js",
+    "@orama/highlight": "https://unpkg.com/@orama/highlight@latest/dist/index.js",
+    "@orama/orama/internals": "https://unpkg.com/@orama/orama@latest/dist/internals.js",
+    "@orama/plugin-data-persistence": "https://unpkg.com/@orama/plugin-data-persistence@latest/dist/index.js",
+    "@msgpack/msgpack": "https://cdn.jsdelivr.net/npm/@msgpack/msgpack@2.8.0/+esm",
+    "dpack": "https://cdn.jsdelivr.net/npm/dpack@0.6.22/+esm",
+    "wakachigaki": "https://unpkg.com/wakachigaki@latest"
+  }
+}
+</script>
 <div id="search-searchbar">
     <label for="search-input" class="form-label">Search</label>
     <input type="search" class="form-control mb-3" id="search-input" />
@@ -198,13 +210,18 @@ if (!doNotTrack) {
 <div id="stats"></div>
 <div class="post-list" id="search-hits">
 </div>
+<script type="module">
+import { tokenize } from 'wakachigaki'
+import { create, search, insert, insertMultiple } from '@orama/orama'
+import { restore } from '@orama/plugin-data-persistence';
+import { Highlight } from '@orama/highlight'
 
- <script type="module">
-import { create, search, insert, insertMultiple } from 'https://unpkg.com/@orama/orama@latest/dist/index.js'
-
-const documents = await fetch("/orama.json");
-const docsJson = await documents.json();
-const segmenter = new TinySegmenter();
+const start1 = Date.now();
+console.log("start loading - "+ start1);
+const tmp = await fetch("/orama_index.json")
+const persisted_index = await tmp.text()
+console.log(persisted_index);
+const highlighter = new Highlight();
 
 function beforeSearchPluginExample() {
   return {
@@ -217,31 +234,23 @@ function beforeSearchPluginExample() {
   }
 }
 
-const db = await create({
-    schema: {
-    id: 'string',
-    title: 'string',
-    summary: 'string',
-    tags: 'string[]',
-    date: 'number'
-    },
-
-
-components: {
-    tokenizer: {
+const start2 = Date.now();
+console.log("duration is "+(start2 - start1));
+console.log("start indexing - "+ start2);
+const db = await restore('dpack', persisted_index);
+    
+db.tokenizer = {
       language: "english",
       stemming: false,
+      normalizationCache: new Map(),
       tokenize: (raw) => {
-            return segmenter.segment(raw)
+            return tokenize(raw)
       },
-    },
-  },
+    }
 
-
-  plugins: [beforeSearchPluginExample()]
-})
-    
-await insertMultiple(db, docsJson)
+const finish = Date.now();
+console.log("finish indexing - "+ finish);
+console.log("duration is "+(finish - start2));
 
 const searchInput = document.getElementById("search-input");
 ["change", "cut", "focus", "input", "paste", "search"].forEach((type) =>
@@ -268,9 +277,9 @@ async function query(event) {
       (i) =>
         `
         <div class="post-item">
-          <h2><a class="post-link" href="${i.document.permalink}">${i.document.title}</a></h2>
+          <h2><a class="post-link" href="${i.document.permalink}">${highlighter.highlight(i.document.title, tokenize(event.target.value).join(" ")).HTML}</a></h2>
           <span class="post-meta">${moment.unix(i.document.date).format('MMM D, YYYY')}</span>
-          <div class="post-snippet">${i.document.summary}</div>
+          <div class="post-snippet">${highlighter.highlight(i.document.summary.slice(0, 100), tokenize(event.target.value).join(" ")).HTML}</div>
           <hr/>
         </div>
         `
@@ -424,6 +433,8 @@ async function query(event) {
                
             
                
+            
+               
                     <a href="/tags/cloudera" title="cloudera">
                         cloudera
                     </a>
@@ -477,8 +488,6 @@ async function query(event) {
                     <a href="/tags/elasticsearch" title="elasticsearch">
                         elasticsearch
                     </a>
-               
-            
                
             
                
@@ -575,6 +584,10 @@ async function query(event) {
                     </a>
                
             
+               
+                    <a href="/tags/music" title="music">
+                        music
+                    </a>
                
             
                
