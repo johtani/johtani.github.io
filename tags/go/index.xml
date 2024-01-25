@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
+  <channel>
+    <title>go on @johtaniの日記 3rd</title>
+    <link>https://blog.johtani.info/tags/go/</link>
+    <description>Recent content in go on @johtaniの日記 3rd</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja</language>
+    <lastBuildDate>Thu, 25 Jan 2024 09:30:53 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/go/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>kagome-botのユーザーサービス化</title>
+      <link>https://blog.johtani.info/blog/2024/01/25/kagome-bot-as-a-user-service/</link>
+      <pubDate>Thu, 25 Jan 2024 09:30:53 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2024/01/25/kagome-bot-as-a-user-service/</guid>
+      <description>日常でよく、形態素解析したくなることがありますよね？ そして、Slackも日常的に立ち上がってますよね？ ということは、Slackのボットとして</description>
+      <content:encoded>&lt;p&gt;日常でよく、形態素解析したくなることがありますよね？
+そして、Slackも日常的に立ち上がってますよね？
+ということは、Slackのボットとして常駐してもらえばできるのでは？&lt;/p&gt;
+&lt;h2 id=&#34;kagome-bot&#34;&gt;kagome-bot&lt;/h2&gt;
+&lt;p&gt;知り合いが&lt;a href=&#34;https://github.com/ikawaha/kagome&#34;&gt;kagome&lt;/a&gt;という形態素解析ライブラリを開発しています。
+その知り合いが、ボットにもしてくれています（複数辞書対応してみたかったので、PR作って取り込んでもらいました）。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/ikawaha/kagome-bot&#34;&gt;https://github.com/ikawaha/kagome-bot&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ただ、デプロイはしてなかったので、我が家にあるUbuntuのサーバーにデプロイして動かすことにしました。
+ボットについては、上記のリポジトリを見てもらえればいいかなと。&lt;/p&gt;
+&lt;p&gt;とりあえず動けばいいや、ということで、適当なshell scriptに&lt;code&gt;nohup&lt;/code&gt;で起動していたのですが、Ubuntuの更新後の再起動で毎回ログインしてスクリプトの実行はめんどくさいな？ということでググって調べてみました。&lt;/p&gt;
+&lt;h2 id=&#34;systemdでユーザーのサービスとして登録&#34;&gt;systemdでユーザーのサービスとして登録&lt;/h2&gt;
+&lt;p&gt;参考ブログにある手順ほぼそのままでした。知見ありがたいです。&lt;/p&gt;
+&lt;p&gt;サービスの登録自体は、指定のディレクトリにファイルを作るのではなく、systemdコマンドをしようしました。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ systemctl --user --force --full edit kagome
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;これで、参考ブログにあるように&lt;code&gt;kagome.service&lt;/code&gt;というファイルが&lt;code&gt;~/.config/systemd/user/&lt;/code&gt;ディレクトリに作られます。
+ファイルの内容などはほぼ参考ブログにある通りです。こんなかんじ。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;[Unit]
+Description=kagome bot
+
+[Service]
+ExecStart=/home/johtani/kagome-bot/start_kagomebot_service.sh
+ExecStop=/bin/kill ${MAINPID}
+Restart=always
+
+[Install]
+WantedBy=default.target
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;start_kagomebot_service.sh&lt;/code&gt;の中で、kagome-botコマンドを実行しますが、こちらは絶対パスで記述しておきました。
+サービス起動時のパスは&lt;code&gt;~/&lt;/code&gt;のようなのですが、念のために。&lt;/p&gt;
+&lt;p&gt;あとは、次の手順でサービスを登録して開始します。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ systemctl --user enable kagome
+$ systemctl --user start kagome
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;ログを見るのは&lt;code&gt;journalctl&lt;/code&gt;コマンドです。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ journalctl --user -u kagome
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;あとは、以下のコマンドを実行しないと、マシン再起動後にログインするまでサービスが起動しないので忘れないようにしましょう。
+（忘れてログインしてみて起動してるじゃん？というコントみたいなことをしてしまいました）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ sudo loginctl enable-linger username
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;参考ブログ本当にありがたいですね。
+備忘録のついでにブログにしておきます。&lt;/p&gt;
+&lt;h2 id=&#34;参考ブログ&#34;&gt;参考ブログ&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://pyopyopyo.hatenablog.com/entry/2021/04/30/233755&#34;&gt;ユーザー権限で systemd のサービスを稼働させる方法 - pyopyopyo - Linuxとかプログラミングの覚え書き -&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded>
+    </item>
+    
+  </channel>
+</rss>
