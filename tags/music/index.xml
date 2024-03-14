@@ -7,7 +7,77 @@
     <description>Recent content in music on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Fri, 08 Dec 2023 00:00:00 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/music/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 14 Mar 2024 09:24:04 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/music/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Slackボットで音楽検索＆再生</title>
+      <link>https://blog.johtani.info/blog/2024/03/14/search-api-owntone/</link>
+      <pubDate>Thu, 14 Mar 2024 09:24:04 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2024/03/14/search-api-owntone/</guid>
+      <description>年末に、GoでSlackのボットを作ったという記事を書きましたが、少し改良したので話の続きを。 やってみたいこととして、キーワードを指定して再</description>
+      <content:encoded>&lt;p&gt;年末に、&lt;a href=&#34;https://blog.johtani.info/blog/2023/12/08/smarthome-bot/&#34;&gt;GoでSlackのボットを作った&lt;/a&gt;という記事を書きましたが、少し改良したので話の続きを。&lt;/p&gt;
+&lt;p&gt;やってみたいこととして、キーワードを指定して再生する仕組みを上げていました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;キーワードに関連する曲の再生
+&lt;ul&gt;
+&lt;li&gt;OwnTone自体に検索の仕組みがついているので、キーワードを受け付けてそれに関する曲を流す&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;コマンドの判別の仕組みの変更&#34;&gt;コマンドの判別の仕組みの変更&lt;/h2&gt;
+&lt;p&gt;これまでは、単純なコマンドを実行してもらう形で実装していたため、Slackで入力された文字列をそのままコマンド名にマッチするかどうかの判定だけをしていました（レーベンシュタイン距離でタイポ対応はしてましたが）。&lt;/p&gt;
+&lt;p&gt;この場合、やってみたいことに挙げていた「キーワードを受け付けて」の部分が想定から抜けています。
+なので、コマンド名の判別処理を入力文字列そのままではなく、次のような処理にしました（&lt;a href=&#34;https://github.com/johtani/smarthome/pull/43/files&#34;&gt;処理切り替え時のPR&lt;/a&gt;）。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;入力された文字列をスペース区切りでSplitして配列に&lt;/li&gt;
+&lt;li&gt;登録済みのコマンド名もスペース区切りでSplitして配列に&lt;/li&gt;
+&lt;li&gt;入力の配列に登録済みコマンドの配列が含まれていればコマンドにマッチした
+&lt;ul&gt;
+&lt;li&gt;入力の配列の残り（コマンド部分を抜いたもの）をスペースで連結してからコマンドの引数として渡す&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;また、このタイミングでコマンド名を1つの文字列にするために使っていたハイフンも除去することにしました（コマンドと引数の切れ目をわかりやすくしようと思ってハイフンを入れていたのですが、連結しておく必要もなくなったので）。&lt;/p&gt;
+&lt;h2 id=&#34;キーワードを受け取って検索&#34;&gt;キーワードを受け取って検索&lt;/h2&gt;
+&lt;p&gt;コマンドごとに引数をどのように利用するかは異なるので、コマンド側で引数の処理を行います。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://owntone.github.io/owntone-server/json-api/#search-by-search-term&#34;&gt;Owntoneには単語で簡単に検索できるAPI&lt;/a&gt;が用意されています。
+とりあえずは、引数の部分の文字列をそのままこのAPIの&lt;code&gt;query&lt;/code&gt;パラメータに渡すだけの簡単な処理を実装しました。
+取得件数（&lt;code&gt;limit&lt;/code&gt;）などもありますが、まずは固定で&lt;code&gt;5&lt;/code&gt;として実装しました
+（&lt;a href=&#34;https://github.com/johtani/smarthome/pull/45/files&#34;&gt;その時のPRはこちら&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;APIのレスポンスには、アーティスト、アルバム、曲ごとに項目が返ってくるので、それを表示しています。
+「検索するだけ(&lt;code&gt;search music&lt;/code&gt;)」のコマンドと「検索した結果を再生する&lt;code&gt;search play&lt;/code&gt;」コマンドの2種類を追加しました。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Search Results...
+# Artists (1)
+ Southern All Stars
+# Albums (4)
+ Paint The Sky With Stars: The Best Of Enya / Enya
+ SOUTHERN ALL STARS / サザンオールスターズ
+ STARS / Superfly &amp;amp; トータス松本
+ 江ノ島 (SOUTHERN ALL STARS GOLDEN HITS MEDLEY) / Z団
+# Tracks (20)
+ All Of The Stars / Ed Sheeran
+ ...
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;簡易版のクエリパーサーを追加&#34;&gt;簡易版のクエリパーサーを追加&lt;/h2&gt;
+&lt;p&gt;ちょっと使ってみると、ほかにもできそうなことが出てきます。&lt;/p&gt;
+&lt;p&gt;検索結果を見るとわかりますが、情報のタイプごとに結果が返ってきています。
+検索のAPIの仕様に、このタイプを絞り込む条件も渡すことができるようになっています。&lt;/p&gt;
+&lt;p&gt;いろんな曲が混ざるのもいいのですが、アルバム名で指定したかったり、アーティストで指定して曲をかけたくなります。
+また、取得件数も指定できるのがいいかも？ということで、引数にちょっとだけパース処理を入れてみました（&lt;a href=&#34;https://github.com/johtani/smarthome/blob/69373b9b38c4a92f8693cd6be18a2f0508b27658/subcommand/action/owntone/search.go#L118&#34;&gt;Parse関数&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;パーサー用のライブラリなども調べてみましたが、そこまで凝った条件を書くわけでもないので、スペース区切りで分割した後に、
+「limit:数値」や「type:artist」など特殊なキーが単語の先頭についているかどうかの判断をする処理でお茶を濁しました。。。&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;search music stars type:artist&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;と入れた場合は、「stars」を含むアーティストだけが結果としてかえるようになります。&lt;/p&gt;
+&lt;h2 id=&#34;そして新たな課題&#34;&gt;そして新たな課題&lt;/h2&gt;
+&lt;p&gt;とりあえずなんとなく検索して再生できるようになりました。
+ただ、OwntoneはSQLiteに入っているデータに対して、入力された単語で部分一致検索をしているだけのようです。
+また、曲ごとに異なるアーティスト名になっている場合にアルバムのアーティストがVarious Artistsのようになっており、
+いい感じに検索できないこともあります（トラックごとのアーティストにも検索してほしい）。&lt;/p&gt;
+&lt;p&gt;また、私の問題なのですが、海外の歌手名のつづりを覚えていなかったりもするので、もうちょっといい感じに検索できる仕組みが欲しくなってきています。&lt;/p&gt;
+&lt;p&gt;ということで、今後は類義語（英語名の歌手のカタカナ名とか）や細かなアーティスト名やコンポーザーなどでも検索できるようになにかしらの検索エンジンにデータをいれて、検索はそちらでやりつつ、音楽を流せるような仕組みを作りたくなってきました。&lt;/p&gt;
+&lt;p&gt;曲のメタデータを増やしたりどうやってやるのがいいかなぁ？&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>GoでSlackのボットを作った話</title>
       <link>https://blog.johtani.info/blog/2023/12/08/smarthome-bot/</link>
