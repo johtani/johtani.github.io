@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info//images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info//images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="OpenSearchのderivedフィールドタイプについて" />
+    <meta property="og:title" content="OpenSearchのderivedフィールドタイプについて" />
+    <meta property="twitter:title" content="OpenSearchのderivedフィールドタイプについて" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>OpenSearchのderivedフィールドタイプについて | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2024/07/24/derived-field-type-in-opensearch/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link rel="stylesheet" href="/css/font-awesome.all.min.css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    <script src="/js/lazysizes.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about//">ABOUT</a></li>
+                    
+                        <li><a href="/orama/">Orama Search</a></li>
+                    
+		            <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		           </li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/opensearch" title="OpenSearch">
+                            OpenSearch
+                        </a>
+                        
+                    </div>
+                    <h1>OpenSearchのderivedフィールドタイプについて</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Wednesday, July 24, 2024
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#どういうもの">どういうもの？</a></li>
+    <li><a href="#なにができるの">なにができるの？</a>
+      <ul>
+        <li><a href="#前提条件">前提条件</a></li>
+      </ul>
+    </li>
+    <li><a href="#何ができないの">何ができないの？</a></li>
+    <li><a href="#データはどういう持ち方なの">データはどういう持ち方なの？</a></li>
+    <li><a href="#実際に検証してみる">実際に検証してみる</a>
+      <ul>
+        <li><a href="#1-一部のデータに参照している元のフィールドがない場合にどうなるのか">1. 一部のデータに参照している元のフィールドがない場合にどうなるのか？</a></li>
+        <li><a href="#2-一部のデータがパースに失敗する場合はどうなるか">2. 一部のデータがパースに失敗する場合はどうなるか？</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+    <li><a href="#残課題">残課題</a></li>
+  </ul>
+</nav>
+                
+                <p><a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/">Derivedフィールドタイプ</a>とは、OpenSearch 2.15から導入された新しいフィールドタイプです。</p>
+<p>以下の記事は、2.15.0のドキュメントおよびOpenSearchを利用して確認した内容になります。</p>
+<h2 id="どういうもの">どういうもの？</h2>
+<p>既存のフィールド（_sourceのフィールドもしくはdoc valuesから）新しいフィールドを「動的」に作成できます。
+derivedフィールドタイプを利用できるできないの設定が用意されており、不要であればオフにすることも可能です。
+デフォルトでは利用可能な状態になっています。</p>
+<p>スクリプトを定義して、元のフィールドから特定の箇所の文字列などを抜き出し、特定の型（<code>date</code>とか<code>long</code>とか）として扱えるようにします。
+例えば、date型の場合はformatを指定することで、日付文字列としてパースしたりといった具合です。</p>
+<h2 id="なにができるの">なにができるの？</h2>
+<p>通常、OpenSearchの検索条件に利用するフィールドは指定されたフィールド型でインデックスに登録され、検索用のデータ構造が生成されている必要があります。
+これは、データ登録を行う時点でどんなデータがあり、どういった検索をしたいか？というのを決めておく必要があるということです（Schema on Write）。
+例えば、ログなどを保存しておいて解析したい場合に、あらかじめ、ログ文字列から必要な情報（日付、サーバ名、IPアドレス、ユーザID、サービス名など）を抜き出してインデックスイン登録してあげる必要があるということです。
+あとから、ログ文字列の中から特定の項目を取り出して検索したい場合は、これまでの場合はスキーマにフィールドを追加してから、データの再登録（再インデックス）を行う必要がありました。</p>
+<p>このderived fieldを利用することで、データ登録時ではなく、データ利用時にデータをパースしながら検索できるようになります（Schema on Read）。
+あらかじめデータを切り出して保存する必要がないため、保存しているデータ量の削減ができます。その代わり、検索時に毎回パース処理が実行されるため検索時のコストが増えます。</p>
+<p>derived fieldを定義する方法は2つ用意されています。</p>
+<ol>
+<li>インデックスのマッピングに定義する</li>
+<li>検索リクエストで定義する</li>
+</ol>
+<p>derivedフィールドの利用方法も現時点では2種類あります。</p>
+<ol>
+<li>検索条件のフィールドとして利用</li>
+<li>検索結果のデータに含めるフィールドとして利用</li>
+</ol>
+<ul>
+<li>データ登録時点ではスキーマが決まっている必要がない
+<ul>
+<li>通常、検索や集計に利用する場合は、登録時にスキーマ（フィールドの型）が決まっている必要がある</li>
+</ul>
+</li>
+<li>prefilter_fieldを指定することで、元のフィールドを用いた絞り込みを実行できる
+<ul>
+<li><a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#prefilter-field">Prefilter field / Derived - OpenSearch Documentation</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="前提条件">前提条件</h3>
+<p>前提条件として、derivedの対象とする元のフィールドは以下を満たす必要があります。</p>
+<ul>
+<li>_sourceもしくはdoc valuesが存在する（元データを取り出す必要があるため）
+<ul>
+<li>スクリプトを利用してデータを抜き出すから</li>
+</ul>
+</li>
+<li>search.allow_expensive_queries: trueが設定されている（クラスターの設定）
+<ul>
+<li>処理が重くなるので、コストのかかるクエリがオフの設定の場合は動作しない仕組みとなっている（<a href="https://github.com/opensearch-project/OpenSearch/blob/e749424db053ad31db1c4f1ab9374251ca9b737d/server/src/main/java/org/opensearch/index/mapper/DerivedFieldResolverFactory.java#L19">ソースコード</a>）</li>
+</ul>
+</li>
+<li>derivedが利用可能になっている
+<ul>
+<li>cluster/indexレベルでそれぞれオンオフの設定がある(どちらも動的設定)
+<ul>
+<li>indexレベル：index.query.derived_field.enabled</li>
+<li>clusterレベル：search.derived_field.enabled</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>パフォーマンスに関する考慮が必要
+<ul>
+<li>参考：<a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#performance">Performance節</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="何ができないの">何ができないの？</h2>
+<p>制限事項がいくつかあります。</p>
+<ul>
+<li>Aggregationやスコアリング、ソートにはまだ未対応（対応する予定がありそう（<a href="https://github.com/opensearch-project/OpenSearch/issues/12281">[META] Derived Fields #12281</a>））</li>
+<li>OpenSearch Dashboardの表示には未対応。フィルタリングは仕組みを知っていれば利用できる</li>
+<li>derived fieldに対して、2つ以上のパースの設定はできない</li>
+<li>join field typeは未対応</li>
+<li>concurrent segment searchには未対応</li>
+</ul>
+<h2 id="データはどういう持ち方なの">データはどういう持ち方なの？</h2>
+<p>derived field自体はデータを持っているのではなく、次のような情報を定義する。</p>
+<ul>
+<li><code>type</code> : <code>script</code>でパースした後のデータの型を指定</li>
+<li><code>script</code> : フィールドのデータを作り出すためのスクリプト。基本的には元になる別のフィールドを使って、パースする処理となる</li>
+</ul>
+<p>あとは、<code>type</code>に合わせていくつかのオプションがあるが詳細は<a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#parameters">parameters</a>を参照。</p>
+<p>動作としては、検索時に検索対象となるデータに対して、<code>script</code>を実行して<code>type</code>に変換し、<code>type</code>ごとに対応するクエリの処理が実行され、derived fieldのクエリにヒットするかどうかの判定が行われる。
+あくまでも検索時に実行される処理となるため、データ登録時には特にエラーなどは起きない。</p>
+<p><code>ignore_malformed</code>というオプションが用意されており、クエリ実行時にエラーがある場合はそのデータを無視するオプションが用意されています（詳細は後述）。</p>
+<h2 id="実際に検証してみる">実際に検証してみる</h2>
+<p><a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#example-setup">公式ドキュメントに簡単なサンプルが用意されており</a>、それを試してみることで簡単な動作の確認ができます。
+ただし、次のような場合にどんな挙動になるのか？というのが気になったので確認してみました。
+以下のサンプルとして提示するクエリはOpenSearch Dashboardで実行できる形式を模しています（私自身はVS CodeのRest Client拡張を普段利用しているのでそこから編集して転記しています）。</p>
+<ol>
+<li>一部のデータに参照している元のフィールドがない場合にどうなるのか？</li>
+<li>一部のデータがパースに失敗する場合はどうなるか？</li>
+<li>上記のようなパースに失敗するデータがある場合に、それ以外のデータだけを対象とするような条件とderived fieldを利用した場合はどうなるか？</li>
+</ol>
+<h3 id="1-一部のデータに参照している元のフィールドがない場合にどうなるのか">1. 一部のデータに参照している元のフィールドがない場合にどうなるのか？</h3>
+<p>公式ドキュメントのサンプルにあるデータは必ず対象となるフィールド（<code>request</code>）にデータが入っています。
+対象となるフィールドがあったりなかったりする場合もあると思いますが、その時にどういう扱いになるかを確認します。
+公式ドキュメントのサンプルインデックスに次のデータを追加します（公式ドキュメントのExample Setupから<a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#searching-derived-fields-defined-in-index-mappings">「Searching derived fields defined in index mappings」</a>まで1度実施済みとします）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">PUT</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_doc</span><span style="color:#f92672">/</span><span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span>{ 
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;61.177.2.0&#34;</span> 
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>データ登録時には特に何も言われません。derivedフィールドはデータ登録時には動作しないためです。</p>
+<p>まずは、「検索結果のデータに含めるフィールドとして利用」するサンプルです。
+検索リクエストで、<code>fields</code>パラメータにderivedフィールドを含めた全件検索を実施します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">GET</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_search</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;request&#34;</span>, <span style="color:#e6db74">&#34;clientip&#34;</span>, <span style="color:#e6db74">&#34;timestamp&#34;</span>]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>実施後のレスポンスにはエラーが出てきています（抜粋）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;error&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;root_cause&#34;</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;script_exception&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;reason&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;runtime error&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;script_stack&#34;</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;org.opensearch.index.fielddata.ScriptDocValues$Strings.get(ScriptDocValues.java:555)&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;org.opensearch.index.fielddata.ScriptDocValues$Strings.getValue(ScriptDocValues.java:571)&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[0]))&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;                                          ^---- HERE&#34;</span>
+</span></span><span style="display:flex;"><span>        ],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[0]))&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;lang&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;painless&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;offset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">42</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;start&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;end&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">71</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;search_phase_execution_exception&#34;</span>,
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;status&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">400</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>同様に、クエリにderivedフィールドを利用する方法も試します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">GET</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_search</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;query&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;range&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;timestamp&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;gte&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;1970-01-11T08:20:30.400Z&#34;</span>,   
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;lte&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;1970-01-12T08:26:00.400Z&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;request&#34;</span>, <span style="color:#e6db74">&#34;clientip&#34;</span>]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>こちらも同様のエラーが出ます。
+<code>script</code>が動作した時に対象データが<code>request.keyword</code>というフィールドを持っていないためにエラーとなります。</p>
+<p><a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#parameters">公式ドキュメントのパラメータ</a>に、先ほども説明した<code>ignore_malformed</code>というオプションがあります。
+マッピングの修正用のリクエストです。デフォルトでは、<code>ignore_malformed</code>は<code>false</code>になっているのでそれぞれに追加します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">PUT</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_mapping</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Type</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">application</span><span style="color:#f92672">/</span><span style="color:#a6e22e">json</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;derived&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;timestamp&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;date&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;format&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;MM/dd/yyyy HH:mm:ss&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[0]))&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;method&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;keyword&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;emit(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[1])&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;size&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;long&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[5]))&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>上記を実行後、先ほどの2種類（<code>fields</code>に指定する利用方法、クエリに利用する方法）を試してみると、クエリを利用する方法（<code>range</code>クエリ）については、フィールドが存在しないデータ以外のデータが検索に返ってくることがわかります。
+ただ、残念ながら、<code>fields</code>に利用したクエリについては、同じエラーが出てしまいました。
+ドキュメントの<code>ignore_malformed</code>の説明には以下のような記述があります。</p>
+<blockquote>
+<p>A Boolean value that specifies whether to ignore malformed values when running a query on a derived field.</p>
+</blockquote>
+<p>残念ながらクエリの処理についてのみ対象としているのかもしれないですが、バグなような気も。。。（あとでIssue作っておくかな）</p>
+<p>回避する方法についてはエラーにヒントが含まれています。
+上のエラー例では省略しましたが、次のようなメッセージがエラーに含まれていました。</p>
+<pre tabindex="0"><code>  &#34;type&#34;: &#34;illegal_state_exception&#34;,
+  &#34;reason&#34;: &#34;A document doesn&#39;t have a value for a field! Use doc[&lt;field&gt;].size()==0 to check if a document is missing a field!&#34;
+</code></pre><p>公式のサンプルでは、簡略化もかねてなのか<code>script</code>の処理でいきなり<code>emit()</code>を呼び出していますが、安全のためにフィールドの存在確認をするほうがよいでしょう。
+ということで、上記のチェック処理を入れたサンプルは次の通りです。
+<code>emit()</code>の処理の外側に<code>if</code>文でフィールドのデータのサイズが0ではない（フィールドが存在する場合）という条件を記述することで、フィールドが存在しない場合は処理がなくなる仕組みとなります。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">インデックスマッピングでderivedを定義</span>(<span style="color:#a6e22e">ignore_malformed</span><span style="color:#f92672">:</span><span style="color:#a6e22e">trueかつフィールド存在チェック処理追加</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">PUT</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_mapping</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;derived&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;timestamp&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;date&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;format&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;MM/dd/yyyy HH:mm:ss&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;if(doc[\&#34;request.keyword\&#34;].size() != 0) {emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[0]))}&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;method&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;keyword&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;if(doc[\&#34;request.keyword\&#34;].size() != 0) {emit(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[1])}&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;size&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;long&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;if(doc[\&#34;request.keyword\&#34;].size() != 0) {emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[5]))}&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>上記の修正後はエラーになっていた<code>fields</code>を指定するリクエストに関してもエラーにならなずに検索結果が返ってくるようになります。
+<code>request.keyword</code>のないデータは検索結果には<code>timestamp</code>は含まれていません。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;_index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;logs&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;_id&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;8&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;_score&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">1.0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;_source&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;61.177.2.0&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;61.177.2.0&#34;</span>
+</span></span><span style="display:flex;"><span>          ]
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span></code></pre></div><h3 id="2-一部のデータがパースに失敗する場合はどうなるか">2. 一部のデータがパースに失敗する場合はどうなるか？</h3>
+<p>フィールド自体が存在しない場合は検証しました。
+次は想定していないデータが対象となるフィールドに存在する場合について考えます。</p>
+<p>フィールド自体が存在しない場合は検証しました。
+次は想定していないデータが対象となるフィールドに存在する場合について考えます。
+1.で登録したデータや変更などを一度削除して、公式ドキュメントのサンプルインデックスに次のデータを追加します（公式ドキュメントのExample Setupから<a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#searching-derived-fields-defined-in-index-mappings">「Searching derived fields defined in index mappings」</a>まで1度実施済みとします）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">PUT</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_doc</span><span style="color:#f92672">/</span><span style="color:#ae81ff">7</span>
+</span></span><span style="display:flex;"><span>{ 
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;request&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;hoge GET /english/images/france98_venues.gif HTTP/1.0 200 778&#34;</span>, 
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;61.177.2.0&#34;</span> 
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>1.の時と同様に、データ登録時には特にエラーなどは出ませんが、検索時に登録したデータが処理されるとエラーがでます。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">GET</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_search</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;request&#34;</span>, <span style="color:#e6db74">&#34;clientip&#34;</span>, <span style="color:#e6db74">&#34;timestamp&#34;</span>]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>1.とは異なり、フィールド自体は存在しますがパース処理で失敗するため、次のようなエラーになります。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;error&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;root_cause&#34;</span><span style="color:#f92672">:</span> [...
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;search_phase_execution_exception&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;reason&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;all shards failed&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;phase&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;query&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;grouped&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;failed_shards&#34;</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>      {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;shard&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;index&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;logs&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;node&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;gKwPMrF9SHSfoNzKdMSWoA&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;reason&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;script_exception&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;reason&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;runtime error&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;script_stack&#34;</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;java.base/java.lang.Long.parseLong(Long.java:709)&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;java.base/java.lang.Long.parseLong(Long.java:832)&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[0]))&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;                                                                  ^---- HERE&#34;</span>
+</span></span><span style="display:flex;"><span>          ],
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[0]))&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;lang&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;painless&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;position&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;offset&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">66</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;start&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;end&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">71</span>
+</span></span><span style="display:flex;"><span>          },
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;caused_by&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;number_format_exception&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;reason&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;For input string: \&#34;hoge\&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;status&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">400</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>caused_by</code>の部分で「hoge」という文字列を<code>Long.parseLong()</code>で処理しようとしてエラーが出ていることがわかります。</p>
+<p>こちらも1.と同様に、<code>&quot;ignore_malformed&quot;: true</code>を付与すると、検索クエリで該当データが出てきた場合はエラーが無視されてそれ以外のデータが検索結果に帰ってくるようになりますが、
+<code>fields</code>に指定した場合はエラーになります。</p>
+<p>次のようにtry-catchで例外発生時には値を返さない処理を追加するとエラーなく検索できるようになります。
+もちろんエラーの出るデータについては検索結果には出てきません。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">PUT</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_mapping</span>
+</span></span><span style="display:flex;"><span>{  <span style="color:#e6db74">&#34;derived&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;timestamp&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;date&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;format&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;MM/dd/yyyy HH:mm:ss&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;if(doc[\&#34;request.keyword\&#34;].size() != 0) {try{emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[0]))} catch(NumberFormatException e) {return}}&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;method&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;keyword&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;if(doc[\&#34;request.keyword\&#34;].size() != 0) {emit(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[1])}&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;size&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;type&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;long&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;script&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;source&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;if(doc[\&#34;request.keyword\&#34;].size() != 0) {try{emit(Long.parseLong(doc[\&#34;request.keyword\&#34;].value.splitOnToken(\&#34; \&#34;)[5]))} catch(NumberFormatException e) {return}}&#34;</span>
+</span></span><span style="display:flex;"><span>      },
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;ignore_malformed&#34;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h4 id="3-上記のようなパースに失敗するデータがある場合にそれ以外のデータだけを対象とするような条件とderived-fieldを利用した場合はどうなるか">3. 上記のようなパースに失敗するデータがある場合に、それ以外のデータだけを対象とするような条件とderived fieldを利用した場合はどうなるか？</h4>
+<p>derivedフィールドは検索時に処理が実行されます。
+ということは、1.や2.でエラーとなるデータを追加していても、そのデータが含まれない検索条件で検索した場合はエラーが出ないと想定されます。
+こちらも確認してみましょう。</p>
+<p>まずは、公式ドキュメントのサンプルデータの状態に戻します。公式ドキュメントのサンプルインデックスに次のデータを追加します（公式ドキュメントのExample Setupから<a href="https://opensearch.org/docs/latest/field-types/supported-field-types/derived/#searching-derived-fields-defined-in-index-mappings">「Searching derived fields defined in index mappings」</a>まで1度実施済みとします）。
+次に、1.と2.のデータを追加します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">PUT</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_doc</span><span style="color:#f92672">/</span><span style="color:#ae81ff">7</span>
+</span></span><span style="display:flex;"><span>{ 
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;request&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;hoge GET /english/images/france98_venues.gif HTTP/1.0 200 778&#34;</span>, 
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;61.177.2.0&#34;</span> 
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">PUT</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_doc</span><span style="color:#f92672">/</span><span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span>{ 
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;clientip&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;61.177.2.0&#34;</span> 
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>この状態だと、次の検索ではエラーが発生します。これまで説明したとおりです。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">GET</span> <span style="color:#f92672">/</span><span style="color:#a6e22e">logs</span><span style="color:#f92672">/</span><span style="color:#a6e22e">_search</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;fields&#34;</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;request&#34;</span>, <span style="color:#e6db74">&#34;clientip&#34;</span>, <span style="color:#e6db74">&#34;timestamp&#34;</span>]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>例外の発生するデータがヒットしないクエリを追加して実行するとエラーなく結果が返ってきます。</p>
+<pre tabindex="0"><code class="language-javscript" data-lang="javscript">GET /logs/_search
+{
+  &#34;query&#34;: {
+    &#34;bool&#34;: {
+      &#34;must_not&#34;: [
+        {
+          &#34;ids&#34;: {
+            &#34;values&#34;: [7,8]
+          }
+        }
+      ]
+    }
+  },
+  &#34;fields&#34;: [&#34;request&#34;, &#34;clientip&#34;, &#34;timestamp&#34;]
+}
+</code></pre><h2 id="まとめ">まとめ</h2>
+<p>新しく追加されたderivedフィールドについて簡単に調べてみました。
+きれいなデータであればスクリプトもシンプルですみますが、検索時にエラーが出ないようにする場合は、きちんと各所でチェックを入れるスクリプトの書き方が重要になってくるかと思います。
+とくに<code>ignore_malformed</code>の挙動が検索クエリの時のみに限定されているので、安全なスクリプトにするほうが良いと思います。</p>
+<p>また、インデックスのmappingsにderivedフィールドを定義する場合は、定義のタイミングではコンパイルなどはされないため構文エラーなどの発生もすべて検索するタイミングとなります。
+さらに、後から来たデータでエラーになることも考えられますので、利用するのは注意しながらがよいかなと思います。</p>
+<p>ただ、これまでよりも柔軟にデータ登録してあとから検索を考えるなどができるので便利になりそうですね。</p>
+<h2 id="残課題">残課題</h2>
+<ul>
+<li>JSONオブジェクトをderivedフィールドに指定する例もドキュメントにあるのでそれの使用感</li>
+<li>大量データを入れて、速度的にどのくらい影響が出るのか？
+<ul>
+<li>prefilter_fieldを使うといい感じになりそうか？</li>
+</ul>
+</li>
+<li>検索時にエラーにならないスクリプトの書き方の説明をしたが、エラーになるようなデータがあるかどうかを調べるにはどうするか？</li>
+<li>derivedフィールドが使えないバージョンで作成したインデックスに対してderivedフィールドを作ろうとするとどうなるのか？
+<ul>
+<li>おそらくエラーになると思われる。ローカルでインデックス作ってデータを入れて、バージョンアップをして検証してみる？</li>
+</ul>
+</li>
+</ul>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="https://blog.johtani.info/blog/2024/06/01/searchtechjp-2024-spring/" data-toggle="tooltip" data-placement="top" title="検索技術勉強会2024 Springで司会しました">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+
+
+<div id="disqus-comment"></div>
+<div id="disqus_thread"></div>
+<script>
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+                <hr/>
+                
+
+<h3>See Also by Hugo</h3>
+<ul>
+ 
+ <li><a href="/blog/2023/12/15/introduce-orama-to-blog/">Oramaという検索エンジンでブログ検索を作ってみた</a></li>
+ 
+ <li><a href="/blog/2020/09/15/improve-search-no3/">検索対象のデータとデータソース(検索システムに関する妄想その3)</a></li>
+ 
+ <li><a href="/blog/2022/08/09/japanese-auto-completion/">日本語用オートコンプリートのためのAnalyzer</a></li>
+ 
+ <li><a href="/blog/2020/07/27/improve-search-no1/">システムの特徴と検索機能について(検索システムに関する妄想その1)</a></li>
+ 
+ <li><a href="/blog/2013/08/23/index-wikipedia-ja-to-elasticsearch/">ElasticSearchにプラグインで日本語Wikipediaデータを入れてみました</a></li>
+ 
+</ul>
+
+                <hr/>
+                
+<div class="article-widget content-widget-hr">
+  <h3>Related by prelims-cli</h3>
+  <ul>
+    
+    
+    
+    
+    <li><a href="https://blog.johtani.info/blog/2015/07/08/great-mapping-refactoring-ja/">Mappingのすばらしいリファクタリング（日本語訳）</a></li>
+    
+    <li><a href="https://blog.johtani.info/blog/2013/07/04/schemaless-example/">スキーマレスモード？（SOLR-4897）を調べて見ました。</a></li>
+    
+    <li><a href="https://blog.johtani.info/blog/2012/07/13/partial-update%E3%81%A8copyfield%E3%81%AE%E3%83%90%E3%82%B0solr-4-0-alpha/">Partial UpdateとcopyFieldのバグ【Solr 4.0 ALPHA】(Jugemより移植)</a></li>
+    
+  </ul>
+</div>
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure search">
+                            azure search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
+                            berlin buzzwords
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/bot" title="bot">
+                            bot
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera search">
+                            cloudera search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/conference" title="conference">
+                            conference
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/dev-container" title="dev container">
+                            dev container
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/java" title="java">
+                            java
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/music" title="music">
+                            music
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/opensearch" title="opensearch">
+                            opensearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/paper" title="paper">
+                            paper
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/python" title="python">
+                            python
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/search" title="search">
+                            search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual studio code">
+                            visual studio code
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace search">
+                            workplace search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2024
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
+
+</body>
+</html>
