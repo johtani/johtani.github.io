@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-	<meta name="generator" content="Hugo 0.124.1">
+	<meta name="generator" content="Hugo 0.139.3">
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -75,17 +75,20 @@
 
 
 
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
-<script>
-var doNotTrack = false;
-if (!doNotTrack) {
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
-}
-</script>
-
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+      <script>
+        var doNotTrack = false;
+        if ( false ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-ZCZYDMJX3V');
+        }
+      </script>
 
 
 
@@ -192,21 +195,25 @@ if (!doNotTrack) {
             post-container
         ">
             
+<div data-pagefind-ignore="all">
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/02/21/lucene-gosen%E3%81%A8synonymfilter%E3%82%92%E5%88%A9%E7%94%A8%E3%81%99%E3%82%8B%E3%81%A8%E3%81%8D%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9%E5%95%8F%E9%A1%8C%E7%82%B9%E7%B7%A8/">
+    <a href="https://blog.johtani.info/blog/2012/04/05/lucene-gosen%E3%81%AEjava7%E3%81%A7%E3%81%AE%E3%83%86%E3%82%B9%E3%83%88%E5%A4%B1%E6%95%97%E5%95%8F%E9%A1%8C%E3%81%AE%E5%AF%BE%E5%BF%9C/">
         <h2 class="post-title">
-            lucene-gosenとSynonymFilterを利用するときの注意点（問題点編）(Jugemより移植)
+            lucene-gosenのJava7でのテスト失敗問題の対応(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            久々にlucene-gosenの話です。 しかも、あんまり嬉しくない話しです。 すでにissueをアップしていますが、lucene-gosenと
+            先日、2.0.0リリースの記事にも記載しましたが、Java7でテストケースが失敗する問題がありました。
+@haruyamaさんと@hideaki_tさんの協力により問題を解消し、trunkと4xブランチにコミットしました。
+issueにも記載しましたが、Java6からJava7にバージョンアップするタイミングで変更されたUnicodeのバージョンが原因でした。 Java6ではUnicodeのバージョンが4.0です。Java7ではUnicodeのバージョンが6.0に変更されています。 今回の問題は「・」（0x30FB）の文字列のCharacter.getType()がCONNECTOR_PUNCTUATIONからOTHER_PUNCTUATIONに変更されたのが原因です。（この変更自体はUnicode 4.1で変更されたみたい） カタカナ文字種の判別をlucene-gosenのnet.java.sen.tokenizers.ja.JapaneseTokenizerのgetCharClass(char c)メソッドで行なっています。 修正前は、ここで、charの範囲が0x30A0～0x30FFにある文字でかつ、Character.getType()がCONNECTOR_PUNCTUATIONでないものがカタカナとして判別されていました。 issueの添付ファイルにJava6とJava7で上記範囲の文字のCharacter.getType()のリストを生成して、該当する文字を探した所、「・」（0x30FB）のみであることがわかりました。 ということで、このコードの意図としては、「・」はカタカナではないと判別したかったのだと。 上記の確認を行えたので、ソースコードを修正してコミットしました。 2.0.1としてリリースするかは、Issue29のボリュームを見て考えますので、もう少しお待ちください。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-02-21  by johtani
+    2012-04-05  by johtani
     
     
     </p>
@@ -215,19 +222,20 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/02/09/hadoop%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E3%83%AA%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E7%AC%AC8%E5%9B%9E%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F-hadoopreading/">
+    <a href="https://blog.johtani.info/blog/2012/04/02/%E9%87%8D%E8%A6%81lucene-gosen-2-0-0%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9/">
         <h2 class="post-title">
-            Hadoopソースコードリーディング第8回に参加しました。#hadoopreading(Jugemより移植)
+            【重要】lucene-gosen 2.0.0リリース(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            また、勉強会ログです、すみません。。。 直接業務とは関係ないのですが、今回はリクルートの中野さんが話しをされるというので顔を出してきました。 も
+            先日、宣言したとおり、lucene-gosenのパッケージ名＋クラス名の変更を行ったlucene-gosen 2.0.0をリリースしました。 Lucene/Solr 3.6.0のリリースを待つつもりだったのですが、なかなか出ないので先にリリースを行いました。 現時点では、branches/4xについては、パッケージ名、クラス名の修正が追いついていません。 明日までに4xブランチについても修正を反映する予定です。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-02-09  by johtani
+    2012-04-02  by johtani
     
     
     </p>
@@ -236,19 +244,21 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/02/05/fluentd-meetup-japan%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F/">
+    <a href="https://blog.johtani.info/blog/2012/03/27/%E9%87%8D%E8%A6%81lucene-gosen%E3%81%AE%E6%AC%A1%E6%9C%9F%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6/">
         <h2 class="post-title">
-            Fluentd Meetup Japanに参加しました。(Jugemより移植)
+            【重要】lucene-gosenの次期リリースについて(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            Fluentd meetup in Japanに参加しました。いつも面白そうな話を聞いてばっかりなので、役に立つためにスタッフとしても参加してみました。 まずは、会場が綺麗
+            lucene-gosenを利用して頂いてる皆様に連絡があります。
+連絡事項 次期lucene-gosenのリリース（2.0を予定）にて、org.apache系のパッケージ名および、クラス名の変更を行います。 Lucene/Solrの次期リリース版である3.6.0以降では、lucene-gosen 2.0（予定）を利用するようにしてください。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-02-05  by johtani
+    2012-03-27  by johtani
     
     
     </p>
@@ -257,19 +267,20 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/01/27/%E4%BB%8A%E8%88%88%E5%91%B3%E3%81%8C%E3%81%82%E3%82%8B%E3%81%93%E3%81%A8/">
+    <a href="https://blog.johtani.info/blog/2012/03/25/%E4%B9%85%E3%80%85%E3%81%ABmac-mini%E3%81%AE%E3%81%93%E3%81%A8%E3%81%A7%E3%82%82/">
         <h2 class="post-title">
-            今興味があること(Jugemより移植)
+            久々にMac Miniのことでも(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            昨年末に今年の抱負について書いたのですが、 他にも興味あるものが増えたので備忘録＆公約？を兼ねてブログに書いておきます。 （興味あるものがあれば
+            子供の寝かしつけしてたら、寝かしつけされてしまって、２時に目が覚めてしまいました。 TSUTAYAでCD借りてきてウォークマンに入れようと思っていたのに。。。 ということで、今作業してます。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-01-27  by johtani
+    2012-03-25  by johtani
     
     
     </p>
@@ -278,19 +289,20 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/01/27/%E3%83%A2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%8E%E3%83%AD%E3%82%B8%E3%83%BC2012-1%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F/">
+    <a href="https://blog.johtani.info/blog/2012/03/22/%E7%AC%AC5%E5%9B%9E-twitter-api%E5%8B%89%E5%BC%B7%E4%BC%9A--%E6%B8%8B%E8%B0%B7--twtr_hack/">
         <h2 class="post-title">
-            モーショノロジー2012#1に参加しました。(Jugemより移植)
+            第5回 Twitter API勉強会 @渋谷 #twtr_hack(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            ということで、いつものように勉強会に参加したメモです。 http://atnd.org/events/23608 日時 :2012/01/26 19:00 to 22:00 会場 :アカデミーヒルズ(六本木ヒルズ内) 49階（タワーホールA） （港区六
+            はい。またまた、Twitter API勉強会に参加してきました。（今回から開催回数の記載がなくなった？） 今回は直前でタイムテーブルが変わってしまう波乱がありましたが、個人的には楽しめる内容でした。 Twitterの国際化や形態素解析などの話が聞けたのがすごく面白かったです。 アーキテクチャや利用されている形態素解析器の話など、また、現状の問題点なども話が聞けました。 日々、進化しているんだなぁと。 残念ながら、発表者の方が懇親会にいらっしゃらなかったので、詳しく聞けませんでしたが、挨拶だけは出来ました。 実際のテスト環境や導入方法、A/Bテストとかやってるのかなど、ブログをかきながら色々と気になることが出てきてしまいますｗ 頭の回転がよくないので、話を聞いてる間は質問があんまり思い浮かばなかったなぁ。。。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-01-27  by johtani
+    2012-03-22  by johtani
     
     
     </p>
@@ -299,19 +311,20 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/01/20/mapr%E4%B8%AD%E8%BA%AB%E8%AA%AC%E6%98%8E%E4%BC%9A%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F/">
+    <a href="https://blog.johtani.info/blog/2012/03/20/%E8%87%AA%E5%88%86%E3%81%AE%E5%B0%8F%E3%81%95%E3%81%AA%E7%AE%B1%E3%81%8B%E3%82%89%E8%84%B1%E5%87%BA%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95%E3%82%92%E8%AA%AD%E3%81%BF%E3%81%BE%E3%81%97%E3%81%9F/">
         <h2 class="post-title">
-            MapR中身説明会に参加しました。(Jugemより移植)
+            「自分の小さな「箱」から脱出する方法」を読みました。(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            日時：2012/01/19 18:30-20:30 場所：ベルサール三田Room2シアター Inside MapR デモ＋内部のお話。 ・自己紹介 Susheel Kaushik 元YahooのHadoop系の人。製品
+            TLで面白いと見かけて、Amazonで買ってしまいました。 SEやってるのに、つい最近Amazonを使い始めた軟弱者です。 それにしてもAmazon危険です。スマートフォンにAmazonの Androidアプリを入れたのですが、これがまた、レコメンドに面白そうな本が出てきて危険です。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-01-20  by johtani
+    2012-03-20  by johtani
     
     
     </p>
@@ -320,19 +333,20 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/01/19/ossaj%E3%81%AE%E3%83%9F%E3%83%8B%E3%82%BB%E3%83%9F%E3%83%8A%E3%83%BC%E3%81%A7%E8%A9%B1%E3%81%97%E3%82%92%E3%81%97%E3%81%A6%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/">
+    <a href="https://blog.johtani.info/blog/2012/03/14/scala%E5%A7%8B%E3%82%81%E3%81%BE%E3%81%97%E3%81%9F/">
         <h2 class="post-title">
-            OSSAJのミニセミナーで話しをしてきました(Jugemより移植)
+            Scala始めました(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            お久しぶりです。インフルエンザで一家全滅という最悪の状況に陥っていた我が家でした。 流行してるみたいなのでみなさんも気をつけてください。 さて、
+            えーと、ブログ更新してないなぁとふと思ったので。 １年前くらいからずーっと、つぶやいてましたが、やっとScalaを始めました。 長かった。。。 とある、サンプルデータを作成するので、ついでにScalaを勉強してしまえという感じで始めました。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-01-19  by johtani
+    2012-03-14  by johtani
     
     
     </p>
@@ -341,19 +355,20 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/01/08/lucene-gosen%E3%81%AElucene-solr4-0%E5%AF%BE%E5%BF%9C%E3%83%96%E3%83%A9%E3%83%B3%E3%83%81%E6%9B%B4%E6%96%B0/">
+    <a href="https://blog.johtani.info/blog/2012/03/09/%E7%AC%AC0%E5%9B%9E-twitter-hack--twtr_hack-%E3%81%AB%E9%81%8A%E3%81%B3%E3%81%AB%E8%A1%8C%E3%81%8D%E3%81%BE%E3%81%97%E3%81%9F/">
         <h2 class="post-title">
-            lucene-gosenのLucene/Solr4.0対応ブランチ更新(Jugemより移植)
+            第0回 Twitter Hack #twtr_hack に遊びに行きました。(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            先日のSolr勉強会でLucene/Solr4.x系のlucene-gosenについて質問を受けていたのを忘れないように（年越しちゃいました
+            森ビルに行ったことなかったので、参加してみました。 あと、最近まともにコーディングしてないので、そのへんを矯正するためにもと思って。 （まぁ、遊びに行きたかっただけなんですけどね）
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-01-08  by johtani
+    2012-03-09  by johtani
     
     
     </p>
@@ -362,19 +377,20 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2012/01/05/%E3%81%82%E3%81%91%E3%81%BE%E3%81%97%E3%81%A6%E3%81%8A%E3%82%81%E3%81%A7%E3%81%A8%E3%81%86%E3%81%94%E3%81%96%E3%81%84%E3%81%BE%E3%81%99%E4%BC%9A%E7%A4%BE%E3%81%AE%E3%83%96%E3%83%AD%E3%82%B0%E6%9B%B4%E6%96%B0/">
+    <a href="https://blog.johtani.info/blog/2012/03/03/clean-coder%E3%82%92%E8%AA%AD%E3%82%93%E3%81%A0/">
         <h2 class="post-title">
-            あけましておめでとうございます＋会社のブログ更新(Jugemより移植)
+            Clean Coderを読んだ(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            あけましておめでとうございます。（もう5日ですが。。。） 今年もlucene-gosenを中心に色々と記事を書いていきますので、ツッコミ、コメ
+             Clean Coder プロフェッショナルプログラマへの道 Clean Coderを読みました。 理由はTwitterで「Clean Code」がいい本だと流れてきたためです。 「Clean Code」はまだ読んでいないのですが、クリーンなコード（メンテナンスしやすく、修正などもやりやすいコード？）を書くために必要な話が書いてあるのだと思います。（まだ妄想）
+
        
         </div>
     </a>
     <p class="post-meta">
-    2012-01-05  by johtani
+    2012-03-03  by johtani
     
     
     </p>
@@ -383,19 +399,21 @@ if (!doNotTrack) {
 <hr>
 
 <div class="post-preview">
-    <a href="https://blog.johtani.info/blog/2011/12/28/%E4%BB%8A%E5%B9%B4%E3%81%AE%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A%E3%81%A8%E6%9D%A5%E5%B9%B4%E3%81%AE%E6%8A%B1%E8%B2%A0/">
+    <a href="https://blog.johtani.info/blog/2012/02/26/%E8%A6%AA%E5%AD%90%E3%81%A7%E6%A5%BD%E3%81%97%E3%82%81%E3%82%8B-%E7%B5%B5%E6%9C%AC%E3%81%A7%E8%8B%B1%E8%AA%9E%E3%82%92%E3%81%AF%E3%81%98%E3%82%81%E3%82%8B%E6%9C%AC/">
         <h2 class="post-title">
-            今年の振り返りと来年の抱負？(Jugemより移植)
+            親子で楽しめる 絵本で英語をはじめる本(Jugemより移植)
         </h2>
 	
         <div class="post-content-preview">
 	
-            他の方たちよりひと足はやいですが、今年の仕事が終わりました。 せっかくブログを始めたので、振り返りと来年の抱負など書いてみようかなと。 今年の振
+             親子で楽しめる 絵本で英語をはじめる本 Twitterでこの本について書かれたブログ記事が流れてきて、購入しました。
+最近、英語を身につけておいたほうがいいなと思うことが多々あり、子供にも英語を勉強してもらいたいなと思っていたところでした。 あとは、私自身が英語が苦手というのもあり、子供をダシにして勉強したいというのもありまして。。。 サラっと読んでみましたが、参考になりました。 特に「多読」というキーワードが面白かったです。こちらが元のようですが。 多読とは、文章を分析しないで大意を把握する読書法だそうです。
+
        
         </div>
     </a>
     <p class="post-meta">
-    2011-12-28  by johtani
+    2012-02-26  by johtani
     
     
     </p>
@@ -403,6 +421,7 @@ if (!doNotTrack) {
 </div>
 <hr>
 
+</div>
 
             
 
@@ -508,6 +527,8 @@ if (!doNotTrack) {
                
             
                
+            
+               
                     <a href="/tags/aws" title="aws">
                         aws
                     </a>
@@ -592,9 +613,13 @@ if (!doNotTrack) {
                
             
                
+            
+               
                     <a href="/tags/fluentd" title="fluentd">
                         fluentd
                     </a>
+               
+            
                
             
                
@@ -748,6 +773,8 @@ if (!doNotTrack) {
                
             
                
+            
+               
                     <a href="/tags/rust" title="rust">
                         rust
                     </a>
@@ -802,6 +829,10 @@ if (!doNotTrack) {
                
             
                
+                    <a href="/tags/watcher" title="watcher">
+                        watcher
+                    </a>
+               
             
                
                     <a href="/tags/wikipedia" title="wikipedia">
@@ -845,6 +876,10 @@ if (!doNotTrack) {
                     </a>
                
             
+               
+                    <a href="/tags/%E3%82%AB%E3%83%B3%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9" title="カンファレンス">
+                        カンファレンス
+                    </a>
                
             
                
@@ -1051,21 +1086,6 @@ if (!doNotTrack) {
     })
 </script>
 
-
-
-
-
-
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
-<script>
-var doNotTrack = false;
-if (!doNotTrack) {
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
-}
-</script>
 
 
 
