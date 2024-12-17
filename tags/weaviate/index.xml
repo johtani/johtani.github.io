@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+
+  <channel>
+    <title>weaviate on @johtaniの日記 3rd</title>
+    <link>https://blog.johtani.info/tags/weaviate/</link>
+    <description>Recent content in weaviate on @johtaniの日記 3rd</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja</language>
+    <lastBuildDate>Tue, 17 Dec 2024 13:22:01 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/weaviate/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Weaviateで日本語を利用した検索という話をしました</title>
+      <link>https://blog.johtani.info/blog/2024/12/17/japanese-search-with-weaviate/</link>
+      <pubDate>Tue, 17 Dec 2024 13:22:01 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2024/12/17/japanese-search-with-weaviate/</guid>
+      <description>この記事は情報検索・検索技術 - Qiita Advent Calendar 2024 - Qiitaの17日目（ちょっと遅刻？）の記事となります。 「【日本初主催】新世代のソフトウェアのための</description>
+      <content:encoded>&lt;p&gt;この記事は&lt;a href=&#34;https://qiita.com/advent-calendar/2024/search&#34;&gt;情報検索・検索技術 - Qiita Advent Calendar 2024 - Qiita&lt;/a&gt;の17日目（ちょっと遅刻？）の記事となります。&lt;/p&gt;
+&lt;p&gt;「&lt;a href=&#34;https://weaviate-japan-event.peatix.com/&#34;&gt;【日本初主催】新世代のソフトウェアのためのAIネイティブデータベース Weaviate Japan Summit | Peatix&lt;/a&gt;」というイベントで&lt;a href=&#34;https://github.com/ikawaha/kagome&#34;&gt;Kagome&lt;/a&gt;でテキスト検索できる仕組みを実装したものを取り込んでもらった話をしてきました。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://weaviate.io/&#34;&gt;Weaviate&lt;/a&gt;とは、ベクトル検索やキーワード検索、RAGなどを手軽に体験できるデータベースになります。
+OSSで公開されており、SaaSも提供されています。Goで実装されていることもあり、日本語の検索に&lt;a href=&#34;https://github.com/ikawaha/kagome&#34;&gt;Kagome&lt;/a&gt;が利用できるかも？ということでちょっと調べて実装してみました。&lt;/p&gt;
+&lt;p&gt;先週の発表に利用した資料は次のリンク先で公開してあります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;スライド：&lt;a href=&#34;https://noti.st/johtani/9399yD/weaviate&#34;&gt;Weaviateの日本語対応とマルチモーダル・多言語検索デモ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;セッションでは、日本語のキーワード検索だけではなく、ベクトル検索やキーワードとベクトルを組み合わせたハイブリッド検索をデモしました。
+今回はセッションで話をあまりしていない、デモの仕組みに関してブログにまとめようと思います。&lt;/p&gt;
+&lt;h2 id=&#34;デモデータについて&#34;&gt;デモデータについて&lt;/h2&gt;
+&lt;p&gt;今回は日本語を用いたデモ（今回取り込んでもらった機能を紹介するデモ）が必須であったため、次のような要件でデモを考えていました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;日本語テキストに対してキーワード検索&lt;/li&gt;
+&lt;li&gt;ベクトル化したデータも検索（Weaviateの得意分野）&lt;/li&gt;
+&lt;li&gt;せっかく日本でやるイベントなので日本語を使ったベクトル検索がいい&lt;/li&gt;
+&lt;li&gt;ハイブリッド検索やフィルタ検索（ベクトル検索した結果をキーワードでフィルタリング）のデモをやりたい&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;テキストだけで当初はデータを探そうと思っていたのですが、ベクトル検索とキーワードの検索での違いが分かりにくくなりそうかも？という懸念がありました。
+それよりも、画像を日本語で検索でき、画像に日本語の文章の説明がついているデータがデモをするときの流れも作りやすいのでは？と思い、まずは、Weaviateのマルチモーダルのデモを探すことに。&lt;/p&gt;
+&lt;h3 id=&#34;デモのシステムのベース&#34;&gt;デモのシステムのベース&lt;/h3&gt;
+&lt;p&gt;Weaviateの方たちは様々なデモを用意してくれており、マルチモーダル検索のデモも用意されていました。
+ベースとしたのは、次のリンク先で公開されているサンプルになります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/weaviate/weaviate-examples/blob/main/clip-multi-modal-text-image-search/README.md&#34;&gt;weaviate-examples/clip-multi-modal-text-image-search/README.md at main · weaviate/weaviate-examples&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;このサンプルは3つの要素から構成されています。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Weaviate Server&lt;/li&gt;
+&lt;li&gt;CLIPモデルを用いたServer（&lt;a href=&#34;https://github.com/weaviate/multi2vec-clip-inference/tree/main&#34;&gt;Hugging Faceを利用したサービス&lt;/a&gt;）&lt;/li&gt;
+&lt;li&gt;Node.jsによるフロントエンド&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;最初の2つはDockerで起動するコンテナとなっています。&lt;/p&gt;
+&lt;p&gt;Weaviateにはモジュールという概念があります。このモジュールの中で、入力されたデータをもとにベクトル化するものを&lt;a href=&#34;https://weaviate.io/developers/weaviate/configuration/modules#vectorizer-modules&#34;&gt;Vectorizer&lt;/a&gt;と呼んでいます。
+今回は&lt;code&gt;multi2vec-clip&lt;/code&gt;というVectorizerを利用して、Weaviateから2のCLIPモデルを用いたサービスを呼び出し、画像やテキストをベクトル化してWeaviateに保存したり利用する形をとっています。&lt;/p&gt;
+&lt;p&gt;上記のサンプルでは、特定のディレクトリ（&lt;code&gt;images&lt;/code&gt;）に入れた画像をWeaviateに登録する処理（&lt;a href=&#34;https://github.com/weaviate/weaviate-examples/blob/main/clip-multi-modal-text-image-search/import/go/cmd/main.go&#34;&gt;Goで書かれたコマンド&lt;/a&gt;）が用意されています。&lt;/p&gt;
+&lt;p&gt;フロントエンドでは、検索窓が用意されておりテキストを入力すると、画像が検索結果として出てくるデモです。&lt;/p&gt;
+&lt;p&gt;テキストを入力としてベクトル検索をするデモの部分はこれでよいのですが、今回はこれに加えてキーワードで検索できるようなデータが必要となります。&lt;/p&gt;
+&lt;h3 id=&#34;デモデータの準備&#34;&gt;デモデータの準備&lt;/h3&gt;
+&lt;p&gt;キーワード検索をするために、画像＋テキスト（しかも日本語がよい）ということで、いくつか物色した結果、採用したでものデータは次のものになりました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://cocodataset.org/#home&#34;&gt;MS COCO&lt;/a&gt;データセット&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://captions.stair.center/&#34;&gt;日本語のキャプションデータ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;MS COCOと呼ばれる、画像に対していくつかのメタデータを追加してあるデータセットが公開されています。
+追加されてデータは次のようなものになります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;オブジェクト（画像内の位置と移っているオブジェクトのカテゴリ名）&lt;/li&gt;
+&lt;li&gt;キャプション（画像に関する説明文が5つ）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ただし、キャプションデータはもちろん英語となっています。
+このデータに対して、千葉工業大学の研究センターの方が日本語でキャプションデータを生成したものを公開してくれています。&lt;/p&gt;
+&lt;p&gt;MS COCOのの画像のうち商用利用可能なライセンスの画像を今回のデモ用に利用させていただきました。
+それぞれのファイルをダウンロードし、MS COCOの画像ファイル名をキーにして英語と日本語のキャプションデータを配列で持つようなJSONデータを生成し、それをもとにWeaviateにデータ登録する形です。&lt;/p&gt;
+&lt;p&gt;処理の内容は省きますが、上記のデータセットをもとに次のような1ファイル1JSONを作って、JSONLファイル（1行1JSON）として保存したものを読み込んでWeaviateに登録しています。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-JSON&#34; data-lang=&#34;JSON&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;200109&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;license_id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;4&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;license_name&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Attribution License&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;filename&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;COCO_val2014_000000200109.jpg&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;date_captured&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2013-11-22 02:26:57&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;caption_en&amp;#34;&lt;/span&gt;: [
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;645817&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;content&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;A slice of pizza partially obscuring a cell phone.&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;caption_jp&amp;#34;&lt;/span&gt;: [
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;41320&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;content&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;食事をしながらメールチェックをする&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        },
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;: [
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;英語のキャプションは登録はしましたが、今回のデモには利用しませんでした（日本語で検索できるところを見せたかったので）&lt;/p&gt;
+&lt;h2 id=&#34;スキーマの定義&#34;&gt;スキーマの定義&lt;/h2&gt;
+&lt;p&gt;上記のデータをもとに考えたWeaviateのスキーマは次のようなものになります。
+Weaviateで利用できる日本語のトークナイザーのうち、GSEとKagomeを利用してデモをできるようにそれぞれをTokenizationに指定したフィールドを&lt;code&gt;caption_ja_gse&lt;/code&gt;、&lt;code&gt;caption_ja&lt;/code&gt;として用意しました。&lt;/p&gt;
+&lt;p&gt;画像からベクトルを生成して保存する定義は、&lt;code&gt;Vectorizer&lt;/code&gt;という部分の&lt;code&gt;multi2vec-clip&lt;/code&gt;になります。
+実際に、画像からベクトルを生成するのは、&lt;code&gt;multi2vec-clip&lt;/code&gt;という名前のコンテナで動いているCLIPのモデルを通して処理をします（&lt;a href=&#34;https://github.com/weaviate/multi2vec-clip-inference/tree/main&#34;&gt;コンテナ内部で動いている処理などはこちらで公開&lt;/a&gt;されています）。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Go&#34; data-lang=&#34;Go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;multiModal&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;models&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Class&lt;/span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;Class&lt;/span&gt;:       &lt;span style=&#34;color:#a6e22e&#34;&gt;ClassName&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Sample class holding all the images&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;ModuleConfig&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;map&lt;/span&gt;[&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;]&lt;span style=&#34;color:#66d9ef&#34;&gt;interface&lt;/span&gt;{}{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;multi2vec-clip&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;map&lt;/span&gt;[&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;]&lt;span style=&#34;color:#66d9ef&#34;&gt;interface&lt;/span&gt;{}{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;imageFields&amp;#34;&lt;/span&gt;: []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;image&amp;#34;&lt;/span&gt;},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;VectorIndexType&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;flat&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;Vectorizer&lt;/span&gt;:      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;multi2vec-clip&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;Properties&lt;/span&gt;: []&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;models&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Property&lt;/span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;DataType&lt;/span&gt;:    []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;string&amp;#34;&lt;/span&gt;},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;The name of the file&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Name&lt;/span&gt;:        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;filename&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;DataType&lt;/span&gt;:    []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;string&amp;#34;&lt;/span&gt;},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;The Flickr URL&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Name&lt;/span&gt;:        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;flickr_url&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;DataType&lt;/span&gt;:    []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;blob&amp;#34;&lt;/span&gt;},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Base64 encoded image&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Name&lt;/span&gt;:        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;image&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;DataType&lt;/span&gt;:     []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#a6e22e&#34;&gt;schema&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;DataTypeTextArray&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;String&lt;/span&gt;()},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;:  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Caption in English&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Name&lt;/span&gt;:         &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;caption_en&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Tokenization&lt;/span&gt;: &lt;span style=&#34;color:#a6e22e&#34;&gt;models&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;PropertyTokenizationLowercase&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;DataType&lt;/span&gt;:     []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#a6e22e&#34;&gt;schema&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;DataTypeTextArray&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;String&lt;/span&gt;()},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;:  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Caption in Japanese&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Name&lt;/span&gt;:         &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;caption_ja_gse&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Tokenization&lt;/span&gt;: &lt;span style=&#34;color:#a6e22e&#34;&gt;models&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;PropertyTokenizationGse&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;DataType&lt;/span&gt;:     []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#a6e22e&#34;&gt;schema&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;DataTypeTextArray&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;String&lt;/span&gt;()},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;:  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Caption in Japanese&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Name&lt;/span&gt;:         &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;caption_ja&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Tokenization&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kagome_ja&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#75715e&#34;&gt;// TODO 1.28リリース時には定数を利用可能
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;DataType&lt;/span&gt;:     []&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{&lt;span style=&#34;color:#a6e22e&#34;&gt;schema&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;DataTypeTextArray&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;String&lt;/span&gt;()},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;:  &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Category in English&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Name&lt;/span&gt;:         &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;category&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				&lt;span style=&#34;color:#a6e22e&#34;&gt;Tokenization&lt;/span&gt;: &lt;span style=&#34;color:#a6e22e&#34;&gt;models&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;PropertyTokenizationLowercase&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;あとは、GoのWeaviateのSDKを利用してデータを登録するだけです。
+&lt;a href=&#34;https://github.com/weaviate/weaviate-examples/blob/main/clip-multi-modal-text-image-search/import/go/data/objects.go#L32&#34;&gt;登録処理はサンプル&lt;/a&gt;をもとに、上記のフィールドのデータを追加した程度です。&lt;/p&gt;
+&lt;p&gt;これで、Weaviateに日本語と画像のベクトルのデータが保存できました。あとは検索です。&lt;/p&gt;
+&lt;h2 id=&#34;検索処理&#34;&gt;検索処理&lt;/h2&gt;
+&lt;p&gt;参考にしたサンプルでは、Node.jsで処理が書いてあるのですが、私自身はあまりNode.jsを記述したことがありません。
+ということで、さくっと作るためにStreamlitを利用して検索画面を作成しました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://gist.github.com/johtani/a68b0d63b2bc6aec9c1ee32577206f3e&#34;&gt;コードはこちら&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Weaviateの接続部分は簡略化（別の便利関数を作った）してありますが、流れはなんとなくわかっていただけるかな？&lt;/p&gt;
+&lt;p&gt;デモのできることとしては次のような検索です。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;GSEのフィールドでキーワード検索&lt;/li&gt;
+&lt;li&gt;Kagomeのフィールドでキーワード検索&lt;/li&gt;
+&lt;li&gt;ベクトル検索（テキストをCLIPでベクトル化して検索）&lt;/li&gt;
+&lt;li&gt;ハイブリッド検索（ベクトル検索＋Kagomeフィールドでキーワード検索）&lt;/li&gt;
+&lt;li&gt;ベクトル検索＋Kagomeのフィールドでキーワードでフィルタリング&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;駆け足ですが、Weaviateで日本語のマルチモーダル検索をやるときにどんなデモデータでどんなデモをやったかを紹介しました。
+完全なものではないので恐縮ですが。。。&lt;/p&gt;
+&lt;p&gt;Weaviate 1.28（2024/12現在最新版）からKagome JAという日本語のキーワード検索用のトークナイザーが利用できるようになっています。
+興味がある方は、ちょっと触ってみてはどうでしょうか？&lt;/p&gt;
+&lt;p&gt;もう少し時間が取れて整理整頓出来たら、Docker Composeなども含めた形でリポジトリで公開しようと思います。
+Weaviateで動かしてみようとしたり、ブログで不明点などがあればXなどで連絡をいただければと。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
+  </channel>
+</rss>

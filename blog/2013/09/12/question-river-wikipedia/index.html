@@ -10,8 +10,8 @@
     <meta property="og:type" content="article">
 
     
-    <meta property="og:image" content="https://blog.johtani.info//images/header3.jpg">
-    <meta property="twitter:image" content="https://blog.johtani.info//images/header3.jpg" />
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
     
 
     
@@ -74,20 +74,17 @@
 
 
 
-      <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
-      <script>
-        var doNotTrack = false;
-        if ( false ) {
-          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
-          var doNotTrack = (dnt == "1" || dnt == "yes");
-        }
-        if (!doNotTrack) {
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-ZCZYDMJX3V');
-        }
-      </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
 
 
 
@@ -247,32 +244,32 @@
 このコンストラクタが、<code>_river/hogehoge/_meta</code>をPUTした時のJSONを元にElasticSearchから呼ばれて、Riverのインスタンスが作成されます。（たぶん、<a href="https://github.com/elasticsearch/elasticsearch/blob/master/src/main/java/org/elasticsearch/river/RiversService.java">このへんがその処理</a>だと思う。。。このあたりはまた今度）</p>
 <p>実際のRiverの処理はWikipediaRiverクラスのstart()メソッド内部に記述されています。</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">start</span>() {
-</span></span><span style="display:flex;"><span>        logger.<span style="color:#a6e22e">info</span>(<span style="color:#e6db74">&#34;starting wikipedia stream&#34;</span>);
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span> {
-</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">①</span>            client.<span style="color:#a6e22e">admin</span>().<span style="color:#a6e22e">indices</span>().<span style="color:#a6e22e">prepareCreate</span>(indexName).<span style="color:#a6e22e">execute</span>().<span style="color:#a6e22e">actionGet</span>();
-</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">catch</span> (Exception e) {
-</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (ExceptionsHelper.<span style="color:#a6e22e">unwrapCause</span>(e) <span style="color:#66d9ef">instanceof</span> IndexAlreadyExistsException) {
-</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// that&#39;s fine</span>
-</span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (ExceptionsHelper.<span style="color:#a6e22e">unwrapCause</span>(e) <span style="color:#66d9ef">instanceof</span> ClusterBlockException) {
-</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// ok, not recovered yet..., lets start indexing and hope we recover by the first bulk</span>
-</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// TODO: a smarter logic can be to register for cluster event listener here, and only start sampling when the block is removed...</span>
-</span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">else</span> {
-</span></span><span style="display:flex;"><span>                logger.<span style="color:#a6e22e">warn</span>(<span style="color:#e6db74">&#34;failed to create index [{}], disabling river...&#34;</span>, e, indexName);
-</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>;
-</span></span><span style="display:flex;"><span>            }
-</span></span><span style="display:flex;"><span>        }
-</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">②</span>        currentRequest <span style="color:#f92672">=</span> client.<span style="color:#a6e22e">prepareBulk</span>();
-</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">③</span>        WikiXMLParser parser <span style="color:#f92672">=</span> WikiXMLParserFactory.<span style="color:#a6e22e">getSAXParser</span>(url);
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span> {
-</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">④</span>            parser.<span style="color:#a6e22e">setPageCallback</span>(<span style="color:#66d9ef">new</span> PageCallback());
-</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">catch</span> (Exception e) {
-</span></span><span style="display:flex;"><span>            logger.<span style="color:#a6e22e">error</span>(<span style="color:#e6db74">&#34;failed to create parser&#34;</span>, e);
-</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span>;
-</span></span><span style="display:flex;"><span>        }
-</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">⑤</span>        thread <span style="color:#f92672">=</span> EsExecutors.<span style="color:#a6e22e">daemonThreadFactory</span>(settings.<span style="color:#a6e22e">globalSettings</span>(), <span style="color:#e6db74">&#34;wikipedia_slurper&#34;</span>).<span style="color:#a6e22e">newThread</span>(<span style="color:#66d9ef">new</span> Parser(parser));
-</span></span><span style="display:flex;"><span>        thread.<span style="color:#a6e22e">start</span>();
-</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">start</span><span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        logger<span style="color:#f92672">.</span><span style="color:#a6e22e">info</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;starting wikipedia stream&#34;</span><span style="color:#f92672">);</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">①</span>            client<span style="color:#f92672">.</span><span style="color:#a6e22e">admin</span><span style="color:#f92672">().</span><span style="color:#a6e22e">indices</span><span style="color:#f92672">().</span><span style="color:#a6e22e">prepareCreate</span><span style="color:#f92672">(</span>indexName<span style="color:#f92672">).</span><span style="color:#a6e22e">execute</span><span style="color:#f92672">().</span><span style="color:#a6e22e">actionGet</span><span style="color:#f92672">();</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span> <span style="color:#66d9ef">catch</span> <span style="color:#f92672">(</span>Exception e<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>ExceptionsHelper<span style="color:#f92672">.</span><span style="color:#a6e22e">unwrapCause</span><span style="color:#f92672">(</span>e<span style="color:#f92672">)</span> <span style="color:#66d9ef">instanceof</span> IndexAlreadyExistsException<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// that&#39;s fine
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>ExceptionsHelper<span style="color:#f92672">.</span><span style="color:#a6e22e">unwrapCause</span><span style="color:#f92672">(</span>e<span style="color:#f92672">)</span> <span style="color:#66d9ef">instanceof</span> ClusterBlockException<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// ok, not recovered yet..., lets start indexing and hope we recover by the first bulk
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>                <span style="color:#75715e">// TODO: a smarter logic can be to register for cluster event listener here, and only start sampling when the block is removed...
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#f92672">}</span> <span style="color:#66d9ef">else</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>                logger<span style="color:#f92672">.</span><span style="color:#a6e22e">warn</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;failed to create index [{}], disabling river...&#34;</span><span style="color:#f92672">,</span> e<span style="color:#f92672">,</span> indexName<span style="color:#f92672">);</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span><span style="color:#f92672">;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">②</span>        currentRequest <span style="color:#f92672">=</span> client<span style="color:#f92672">.</span><span style="color:#a6e22e">prepareBulk</span><span style="color:#f92672">();</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">③</span>        WikiXMLParser parser <span style="color:#f92672">=</span> WikiXMLParserFactory<span style="color:#f92672">.</span><span style="color:#a6e22e">getSAXParser</span><span style="color:#f92672">(</span>url<span style="color:#f92672">);</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">④</span>            parser<span style="color:#f92672">.</span><span style="color:#a6e22e">setPageCallback</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> PageCallback<span style="color:#f92672">());</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span> <span style="color:#66d9ef">catch</span> <span style="color:#f92672">(</span>Exception e<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>            logger<span style="color:#f92672">.</span><span style="color:#a6e22e">error</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;failed to create parser&#34;</span><span style="color:#f92672">,</span> e<span style="color:#f92672">);</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span><span style="color:#f92672">;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">⑤</span>        thread <span style="color:#f92672">=</span> EsExecutors<span style="color:#f92672">.</span><span style="color:#a6e22e">daemonThreadFactory</span><span style="color:#f92672">(</span>settings<span style="color:#f92672">.</span><span style="color:#a6e22e">globalSettings</span><span style="color:#f92672">(),</span> <span style="color:#e6db74">&#34;wikipedia_slurper&#34;</span><span style="color:#f92672">).</span><span style="color:#a6e22e">newThread</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> Parser<span style="color:#f92672">(</span>parser<span style="color:#f92672">));</span>
+</span></span><span style="display:flex;"><span>        thread<span style="color:#f92672">.</span><span style="color:#a6e22e">start</span><span style="color:#f92672">();</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
 </span></span></code></pre></div><p>内部では</p>
 <ol>
 <li>インデックスの作成</li>
@@ -292,13 +289,13 @@ bulkSize以上の件数がバルクのリクエストに貯まった時だけ、
 <p>で、DELETEが実行される呼ばれるのが、<code>WikipediaRiver</code>クラスの<a href="https://github.com/elasticsearch/elasticsearch-river-wikipedia/blob/master/src/main/java/org/elasticsearch/river/wikipedia/WikipediaRiver.java#L135"><code>close()</code>メソッド</a>です。</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">close</span>() {
-</span></span><span style="display:flex;"><span>        logger.<span style="color:#a6e22e">info</span>(<span style="color:#e6db74">&#34;closing wikipedia river&#34;</span>);
-</span></span><span style="display:flex;"><span>        closed <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>;
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (thread <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span>) {
-</span></span><span style="display:flex;"><span>            thread.<span style="color:#a6e22e">interrupt</span>();
-</span></span><span style="display:flex;"><span>        }
-</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">close</span><span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>        logger<span style="color:#f92672">.</span><span style="color:#a6e22e">info</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;closing wikipedia river&#34;</span><span style="color:#f92672">);</span>
+</span></span><span style="display:flex;"><span>        closed <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span><span style="color:#f92672">;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>thread <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>            thread<span style="color:#f92672">.</span><span style="color:#a6e22e">interrupt</span><span style="color:#f92672">();</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">}</span>
 </span></span></code></pre></div><p>見ていただくと分かりますが、スレッド止めて終了です。</p>
 <h3 id="問題点は">問題点は？</h3>
 <p>ということで、</p>
@@ -366,7 +363,7 @@ Riverの仕組みが結構スッキリしています。
 
 <div id="disqus-comment"></div>
 <div id="disqus_thread"></div>
-<script>
+<script type="application/javascript">
     window.disqus_config = function () {
     
     
@@ -451,8 +448,8 @@ Riverの仕組みが結構スッキリしています。
                         
                         
                         
-                        <a href="/tags/azure-search" title="azure search">
-                            azure search
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
                         </a>
                         
                         
@@ -461,8 +458,8 @@ Riverの仕組みが結構スッキリしています。
                         
                         
                         
-                        <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
-                            berlin buzzwords
+                        <a href="/tags/berlin-buzzwords" title="berlin-buzzwords">
+                            berlin-buzzwords
                         </a>
                         
                         
@@ -479,8 +476,8 @@ Riverの仕組みが結構スッキリしています。
                         
                         
                         
-                        <a href="/tags/cloudera-search" title="cloudera search">
-                            cloudera search
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
                         </a>
                         
                         
@@ -501,8 +498,8 @@ Riverの仕組みが結構スッキリしています。
                         
                         
                         
-                        <a href="/tags/dev-container" title="dev container">
-                            dev container
+                        <a href="/tags/dev-container" title="dev-container">
+                            dev-container
                         </a>
                         
                         
@@ -739,8 +736,8 @@ Riverの仕組みが結構スッキリしています。
                         
                         
                         
-                        <a href="/tags/visual-studio-code" title="visual studio code">
-                            visual studio code
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
                         </a>
                         
                         
@@ -748,6 +745,8 @@ Riverの仕組みが結構スッキリしています。
                         <a href="/tags/watcher" title="watcher">
                             watcher
                         </a>
+                        
+                        
                         
                         
                         
@@ -763,8 +762,8 @@ Riverの仕組みが結構スッキリしています。
                         
                         
                         
-                        <a href="/tags/workplace-search" title="workplace search">
-                            workplace search
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
                         </a>
                         
                         

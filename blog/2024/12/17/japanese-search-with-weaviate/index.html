@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="Weaviateで日本語を利用した検索という話をしました" />
+    <meta property="og:title" content="Weaviateで日本語を利用した検索という話をしました" />
+    <meta property="twitter:title" content="Weaviateで日本語を利用した検索という話をしました" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Weaviateで日本語を利用した検索という話をしました | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2024/12/17/japanese-search-with-weaviate/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link rel="stylesheet" href="/css/font-awesome.all.min.css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    <script src="/js/lazysizes.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
+}
+</script>
+
+
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about//">ABOUT</a></li>
+                    
+                        <li><a href="/orama/">Orama Search</a></li>
+                    
+		            <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		           </li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/weaviate" title="weaviate">
+                            weaviate
+                        </a>
+                        
+                    </div>
+                    <h1>Weaviateで日本語を利用した検索という話をしました</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Tuesday, December 17, 2024
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#デモデータについて">デモデータについて</a>
+      <ul>
+        <li><a href="#デモのシステムのベース">デモのシステムのベース</a></li>
+        <li><a href="#デモデータの準備">デモデータの準備</a></li>
+      </ul>
+    </li>
+    <li><a href="#スキーマの定義">スキーマの定義</a></li>
+    <li><a href="#検索処理">検索処理</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>この記事は<a href="https://qiita.com/advent-calendar/2024/search">情報検索・検索技術 - Qiita Advent Calendar 2024 - Qiita</a>の17日目（ちょっと遅刻？）の記事となります。</p>
+<p>「<a href="https://weaviate-japan-event.peatix.com/">【日本初主催】新世代のソフトウェアのためのAIネイティブデータベース Weaviate Japan Summit | Peatix</a>」というイベントで<a href="https://github.com/ikawaha/kagome">Kagome</a>でテキスト検索できる仕組みを実装したものを取り込んでもらった話をしてきました。</p>
+<p><a href="https://weaviate.io/">Weaviate</a>とは、ベクトル検索やキーワード検索、RAGなどを手軽に体験できるデータベースになります。
+OSSで公開されており、SaaSも提供されています。Goで実装されていることもあり、日本語の検索に<a href="https://github.com/ikawaha/kagome">Kagome</a>が利用できるかも？ということでちょっと調べて実装してみました。</p>
+<p>先週の発表に利用した資料は次のリンク先で公開してあります。</p>
+<ul>
+<li>スライド：<a href="https://noti.st/johtani/9399yD/weaviate">Weaviateの日本語対応とマルチモーダル・多言語検索デモ</a></li>
+</ul>
+<p>セッションでは、日本語のキーワード検索だけではなく、ベクトル検索やキーワードとベクトルを組み合わせたハイブリッド検索をデモしました。
+今回はセッションで話をあまりしていない、デモの仕組みに関してブログにまとめようと思います。</p>
+<h2 id="デモデータについて">デモデータについて</h2>
+<p>今回は日本語を用いたデモ（今回取り込んでもらった機能を紹介するデモ）が必須であったため、次のような要件でデモを考えていました。</p>
+<ul>
+<li>日本語テキストに対してキーワード検索</li>
+<li>ベクトル化したデータも検索（Weaviateの得意分野）</li>
+<li>せっかく日本でやるイベントなので日本語を使ったベクトル検索がいい</li>
+<li>ハイブリッド検索やフィルタ検索（ベクトル検索した結果をキーワードでフィルタリング）のデモをやりたい</li>
+</ul>
+<p>テキストだけで当初はデータを探そうと思っていたのですが、ベクトル検索とキーワードの検索での違いが分かりにくくなりそうかも？という懸念がありました。
+それよりも、画像を日本語で検索でき、画像に日本語の文章の説明がついているデータがデモをするときの流れも作りやすいのでは？と思い、まずは、Weaviateのマルチモーダルのデモを探すことに。</p>
+<h3 id="デモのシステムのベース">デモのシステムのベース</h3>
+<p>Weaviateの方たちは様々なデモを用意してくれており、マルチモーダル検索のデモも用意されていました。
+ベースとしたのは、次のリンク先で公開されているサンプルになります。</p>
+<ul>
+<li><a href="https://github.com/weaviate/weaviate-examples/blob/main/clip-multi-modal-text-image-search/README.md">weaviate-examples/clip-multi-modal-text-image-search/README.md at main · weaviate/weaviate-examples</a></li>
+</ul>
+<p>このサンプルは3つの要素から構成されています。</p>
+<ol>
+<li>Weaviate Server</li>
+<li>CLIPモデルを用いたServer（<a href="https://github.com/weaviate/multi2vec-clip-inference/tree/main">Hugging Faceを利用したサービス</a>）</li>
+<li>Node.jsによるフロントエンド</li>
+</ol>
+<p>最初の2つはDockerで起動するコンテナとなっています。</p>
+<p>Weaviateにはモジュールという概念があります。このモジュールの中で、入力されたデータをもとにベクトル化するものを<a href="https://weaviate.io/developers/weaviate/configuration/modules#vectorizer-modules">Vectorizer</a>と呼んでいます。
+今回は<code>multi2vec-clip</code>というVectorizerを利用して、Weaviateから2のCLIPモデルを用いたサービスを呼び出し、画像やテキストをベクトル化してWeaviateに保存したり利用する形をとっています。</p>
+<p>上記のサンプルでは、特定のディレクトリ（<code>images</code>）に入れた画像をWeaviateに登録する処理（<a href="https://github.com/weaviate/weaviate-examples/blob/main/clip-multi-modal-text-image-search/import/go/cmd/main.go">Goで書かれたコマンド</a>）が用意されています。</p>
+<p>フロントエンドでは、検索窓が用意されておりテキストを入力すると、画像が検索結果として出てくるデモです。</p>
+<p>テキストを入力としてベクトル検索をするデモの部分はこれでよいのですが、今回はこれに加えてキーワードで検索できるようなデータが必要となります。</p>
+<h3 id="デモデータの準備">デモデータの準備</h3>
+<p>キーワード検索をするために、画像＋テキスト（しかも日本語がよい）ということで、いくつか物色した結果、採用したでものデータは次のものになりました。</p>
+<ul>
+<li><a href="https://cocodataset.org/#home">MS COCO</a>データセット</li>
+<li><a href="http://captions.stair.center/">日本語のキャプションデータ</a></li>
+</ul>
+<p>MS COCOと呼ばれる、画像に対していくつかのメタデータを追加してあるデータセットが公開されています。
+追加されてデータは次のようなものになります。</p>
+<ul>
+<li>オブジェクト（画像内の位置と移っているオブジェクトのカテゴリ名）</li>
+<li>キャプション（画像に関する説明文が5つ）</li>
+</ul>
+<p>ただし、キャプションデータはもちろん英語となっています。
+このデータに対して、千葉工業大学の研究センターの方が日本語でキャプションデータを生成したものを公開してくれています。</p>
+<p>MS COCOのの画像のうち商用利用可能なライセンスの画像を今回のデモ用に利用させていただきました。
+それぞれのファイルをダウンロードし、MS COCOの画像ファイル名をキーにして英語と日本語のキャプションデータを配列で持つようなJSONデータを生成し、それをもとにWeaviateにデータ登録する形です。</p>
+<p>処理の内容は省きますが、上記のデータセットをもとに次のような1ファイル1JSONを作って、JSONLファイル（1行1JSON）として保存したものを読み込んでWeaviateに登録しています。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;200109&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;license_id&#34;</span>: <span style="color:#e6db74">&#34;4&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;license_name&#34;</span>: <span style="color:#e6db74">&#34;Attribution License&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;filename&#34;</span>: <span style="color:#e6db74">&#34;COCO_val2014_000000200109.jpg&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;date_captured&#34;</span>: <span style="color:#e6db74">&#34;2013-11-22 02:26:57&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;caption_en&#34;</span>: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;645817&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;content&#34;</span>: <span style="color:#e6db74">&#34;A slice of pizza partially obscuring a cell phone.&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;caption_jp&#34;</span>: [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;41320&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;content&#34;</span>: <span style="color:#e6db74">&#34;食事をしながらメールチェックをする&#34;</span>
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;category&#34;</span>: [
+</span></span><span style="display:flex;"><span>        <span style="color:#960050;background-color:#1e0010">...</span>
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>英語のキャプションは登録はしましたが、今回のデモには利用しませんでした（日本語で検索できるところを見せたかったので）</p>
+<h2 id="スキーマの定義">スキーマの定義</h2>
+<p>上記のデータをもとに考えたWeaviateのスキーマは次のようなものになります。
+Weaviateで利用できる日本語のトークナイザーのうち、GSEとKagomeを利用してデモをできるようにそれぞれをTokenizationに指定したフィールドを<code>caption_ja_gse</code>、<code>caption_ja</code>として用意しました。</p>
+<p>画像からベクトルを生成して保存する定義は、<code>Vectorizer</code>という部分の<code>multi2vec-clip</code>になります。
+実際に、画像からベクトルを生成するのは、<code>multi2vec-clip</code>という名前のコンテナで動いているCLIPのモデルを通して処理をします（<a href="https://github.com/weaviate/multi2vec-clip-inference/tree/main">コンテナ内部で動いている処理などはこちらで公開</a>されています）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Go" data-lang="Go"><span style="display:flex;"><span><span style="color:#a6e22e">multiModal</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Class</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Class</span>:       <span style="color:#a6e22e">ClassName</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Description</span>: <span style="color:#e6db74">&#34;Sample class holding all the images&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">ModuleConfig</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;multi2vec-clip&#34;</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>				<span style="color:#e6db74">&#34;imageFields&#34;</span>: []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;image&#34;</span>},
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">VectorIndexType</span>: <span style="color:#e6db74">&#34;flat&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Vectorizer</span>:      <span style="color:#e6db74">&#34;multi2vec-clip&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Properties</span>: []<span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">Property</span>{
+</span></span><span style="display:flex;"><span>			{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">DataType</span>:    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;string&#34;</span>},
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Description</span>: <span style="color:#e6db74">&#34;The name of the file&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:        <span style="color:#e6db74">&#34;filename&#34;</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>			{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">DataType</span>:    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;string&#34;</span>},
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Description</span>: <span style="color:#e6db74">&#34;The Flickr URL&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:        <span style="color:#e6db74">&#34;flickr_url&#34;</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>			{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">DataType</span>:    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;blob&#34;</span>},
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Description</span>: <span style="color:#e6db74">&#34;Base64 encoded image&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:        <span style="color:#e6db74">&#34;image&#34;</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>			{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">DataType</span>:     []<span style="color:#66d9ef">string</span>{<span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">DataTypeTextArray</span>.<span style="color:#a6e22e">String</span>()},
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Description</span>:  <span style="color:#e6db74">&#34;Caption in English&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:         <span style="color:#e6db74">&#34;caption_en&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Tokenization</span>: <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">PropertyTokenizationLowercase</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>			{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">DataType</span>:     []<span style="color:#66d9ef">string</span>{<span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">DataTypeTextArray</span>.<span style="color:#a6e22e">String</span>()},
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Description</span>:  <span style="color:#e6db74">&#34;Caption in Japanese&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:         <span style="color:#e6db74">&#34;caption_ja_gse&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Tokenization</span>: <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">PropertyTokenizationGse</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>			{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">DataType</span>:     []<span style="color:#66d9ef">string</span>{<span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">DataTypeTextArray</span>.<span style="color:#a6e22e">String</span>()},
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Description</span>:  <span style="color:#e6db74">&#34;Caption in Japanese&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:         <span style="color:#e6db74">&#34;caption_ja&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Tokenization</span>: <span style="color:#e6db74">&#34;kagome_ja&#34;</span>, <span style="color:#75715e">// TODO 1.28リリース時には定数を利用可能
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			},
+</span></span><span style="display:flex;"><span>			{
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">DataType</span>:     []<span style="color:#66d9ef">string</span>{<span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">DataTypeTextArray</span>.<span style="color:#a6e22e">String</span>()},
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Description</span>:  <span style="color:#e6db74">&#34;Category in English&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Name</span>:         <span style="color:#e6db74">&#34;category&#34;</span>,
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">Tokenization</span>: <span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">PropertyTokenizationLowercase</span>,
+</span></span><span style="display:flex;"><span>			},
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>	}
+</span></span></code></pre></div><p>あとは、GoのWeaviateのSDKを利用してデータを登録するだけです。
+<a href="https://github.com/weaviate/weaviate-examples/blob/main/clip-multi-modal-text-image-search/import/go/data/objects.go#L32">登録処理はサンプル</a>をもとに、上記のフィールドのデータを追加した程度です。</p>
+<p>これで、Weaviateに日本語と画像のベクトルのデータが保存できました。あとは検索です。</p>
+<h2 id="検索処理">検索処理</h2>
+<p>参考にしたサンプルでは、Node.jsで処理が書いてあるのですが、私自身はあまりNode.jsを記述したことがありません。
+ということで、さくっと作るためにStreamlitを利用して検索画面を作成しました。</p>
+<ul>
+<li><a href="https://gist.github.com/johtani/a68b0d63b2bc6aec9c1ee32577206f3e">コードはこちら</a></li>
+</ul>
+<p>Weaviateの接続部分は簡略化（別の便利関数を作った）してありますが、流れはなんとなくわかっていただけるかな？</p>
+<p>デモのできることとしては次のような検索です。</p>
+<ul>
+<li>GSEのフィールドでキーワード検索</li>
+<li>Kagomeのフィールドでキーワード検索</li>
+<li>ベクトル検索（テキストをCLIPでベクトル化して検索）</li>
+<li>ハイブリッド検索（ベクトル検索＋Kagomeフィールドでキーワード検索）</li>
+<li>ベクトル検索＋Kagomeのフィールドでキーワードでフィルタリング</li>
+</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>駆け足ですが、Weaviateで日本語のマルチモーダル検索をやるときにどんなデモデータでどんなデモをやったかを紹介しました。
+完全なものではないので恐縮ですが。。。</p>
+<p>Weaviate 1.28（2024/12現在最新版）からKagome JAという日本語のキーワード検索用のトークナイザーが利用できるようになっています。
+興味がある方は、ちょっと触ってみてはどうでしょうか？</p>
+<p>もう少し時間が取れて整理整頓出来たら、Docker Composeなども含めた形でリポジトリで公開しようと思います。
+Weaviateで動かしてみようとしたり、ブログで不明点などがあればXなどで連絡をいただければと。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="https://blog.johtani.info/blog/2024/12/05/with-ai/" data-toggle="tooltip" data-placement="top" title="AI活用しきれていない話">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+
+
+<div id="disqus-comment"></div>
+<div id="disqus_thread"></div>
+<script type="application/javascript">
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+                <hr/>
+                
+
+<h3>See Also by Hugo</h3>
+<ul>
+ 
+ <li><a href="/blog/2024/12/05/with-ai/">AI活用しきれていない話</a></li>
+ 
+ <li><a href="/blog/2024/10/31/searchtechjp-2024-summer/">検索技術勉強会2024 Summerで司会しました</a></li>
+ 
+ <li><a href="/blog/2024/07/24/derived-field-type-in-opensearch/">OpenSearchのderivedフィールドタイプについて</a></li>
+ 
+ <li><a href="/blog/2024/06/01/searchtechjp-2024-spring/">検索技術勉強会2024 Springで司会しました</a></li>
+ 
+ <li><a href="/blog/2024/03/22/daily-routine/">「続ける思考」を読んだ</a></li>
+ 
+</ul>
+
+                <hr/>
+                
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure-search">
+                            azure-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/berlin-buzzwords" title="berlin-buzzwords">
+                            berlin-buzzwords
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/bot" title="bot">
+                            bot
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera-search">
+                            cloudera-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/conference" title="conference">
+                            conference
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/dev-container" title="dev-container">
+                            dev-container
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/java" title="java">
+                            java
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/music" title="music">
+                            music
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/opensearch" title="opensearch">
+                            opensearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/paper" title="paper">
+                            paper
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/python" title="python">
+                            python
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/search" title="search">
+                            search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual-studio-code">
+                            visual-studio-code
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/watcher" title="watcher">
+                            watcher
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace-search">
+                            workplace-search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AB%E3%83%B3%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9" title="カンファレンス">
+                            カンファレンス
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2024
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+</body>
+</html>
