@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="@johtaniの日記 3rd">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://blog.johtani.info//images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info//images/header3.jpg" />
+    
+
+    
+    <meta name="title" content="ElasticsearchのRetrieverについて調べたので雑にメモ" />
+    <meta property="og:title" content="ElasticsearchのRetrieverについて調べたので雑にメモ" />
+    <meta property="twitter:title" content="ElasticsearchのRetrieverについて調べたので雑にメモ" />
+    
+
+    
+    <meta name="description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc.">
+    <meta property="og:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>ElasticsearchのRetrieverについて調べたので雑にメモ | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+
+    <link rel="canonical" href="/blog/2024/12/27/about-retriever/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link rel="stylesheet" href="/css/font-awesome.all.min.css">
+
+    
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    <script src="/js/lazysizes.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+      <script>
+        var doNotTrack = false;
+        if ( false ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-ZCZYDMJX3V');
+        }
+      </script>
+
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">@johtaniの日記 3rd</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                    
+                    
+		    
+                        <li><a href="/top/about//">ABOUT</a></li>
+                    
+                        <li><a href="/orama/">Orama Search</a></li>
+                    
+		            <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		           </li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                    </div>
+                    <h1>ElasticsearchのRetrieverについて調べたので雑にメモ</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Friday, December 27, 2024
+                        
+                        
+                        
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#elasticsearchのretriever">ElasticsearchのRetriever</a></li>
+    <li><a href="#retrieverとは">Retrieverとは？</a>
+      <ul>
+        <li><a href="#提供されているretriever">提供されているRetriever</a></li>
+        <li><a href="#使い方例">使い方（例）</a></li>
+        <li><a href="#queryのrescorerは">QueryのRescorerは？</a></li>
+      </ul>
+    </li>
+    <li><a href="#そのほかに気になる観点そのうち調べるかも">そのほかに気になる観点（そのうち調べるかも？）</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
+                <p>ElasticsearchにRetrieverという仕組みが8.16でGAしたので、ざっくり調べた時のメモを残しておこうかなと。</p>
+<!-- more -->
+<h2 id="elasticsearchのretriever">ElasticsearchのRetriever</h2>
+<p>Retrieverという検索の機能が8.16でGAリリースされた。</p>
+<ul>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/8.16/retrievers-overview.html">Retrievers - 公式ドキュメント</a></li>
+<li><a href="https://www.elastic.co/search-labs/blog/elasticsearch-retrievers-ga-8.16.0">Elasticsearch retrievers are generally available with Elasticsearch 8.16.0! - Search Labs</a></li>
+<li><a href="https://www.elastic.co/search-labs/blog/elasticsearch-retrievers">Introducing Retrievers - Search All the Things! - Search Labs (8.14.0)</a></li>
+<li><a href="https://www.elastic.co/search-labs/blog/semantic-reranking-with-retrievers">Semantic reranking in Elasticsearch with retrievers - Search Labs (8.14.0)</a></li>
+<li><a href="https://www.elastic.co/search-labs/blog/semantic-search-query-rules">Ensuring business rules work seamlessly with semantic search - Elasticsearch Labs</a></li>
+</ul>
+<h2 id="retrieverとは">Retrieverとは？</h2>
+<p>これまでの検索処理（<code>_serach</code>エンドポイント）では、検索して<code>search_after</code>で検索結果を絞り込む（Aggregationは最初の検索処理の結果）ことや、<code>rescore</code>で検索結果の一部を別のクエリでスコアリングして並べ替えるといったことが可能でした。
+しかし、複数の検索処理それぞれ実施してその結果を並べ替えたり、入れ子にした検索の処理を行ったりといった検索パイプラインのような処理はできませんでした。</p>
+<p>8.16でリリースされたRetrieverは1回のリクエストで、複数のクエリを実行した結果をRRFで結合したり、rerankerでリランキングしたりといったことが可能になります。
+rrfがリリースされたタイミング（<a href="https://www.elastic.co/guide/en/elasticsearch/reference/8.8/release-highlights.html#add_support_for_reciprocal_rank_fusion_rrf_to_search_api">8.8</a>）では1つのパターンのみが考慮されていました。</p>
+<p><code>query</code>が通常の転地インデックスを利用した検索、<code>knn</code>がベクトル検索、<code>rank</code>が2つの検索結果を統合するために<code>rrf</code>を利用するという命令となります。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;query&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;match&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;product&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;query&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;brown shoes&#34;</span>
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;knn&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;field&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;product-vector&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;query_vector&#34;</span><span style="color:#f92672">:</span> [<span style="color:#ae81ff">54</span>, <span style="color:#ae81ff">10</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>],
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;k&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">20</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;num_candidates&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">75</span>
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;rank&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>     <span style="color:#e6db74">&#34;rrf&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;window_size&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;rank_constant&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>     }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>この形以外で検索結果を統合する自由度がありません。
+また、rankについてもrrfのみのでGAしていません。
+これらの拡張性を提供する形でRetrieverが提供されています。</p>
+<p>上記のクエリは次のようなRetrieverとなります。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#34;retriever&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;rrf&#34;</span><span style="color:#f92672">:</span> { 
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;retrievers&#34;</span><span style="color:#f92672">:</span> [ 
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;standard&#34;</span><span style="color:#f92672">:</span> { 
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;query&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;match&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;product&#34;</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>                  <span style="color:#e6db74">&#34;query&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;brown shoes&#34;</span>
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>              }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>          <span style="color:#e6db74">&#34;knn&#34;</span><span style="color:#f92672">:</span> { 
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;field&#34;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;product-vector&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;query_vector&#34;</span><span style="color:#f92672">:</span> [<span style="color:#ae81ff">54</span>, <span style="color:#ae81ff">10</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>],
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;k&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">20</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;num_candidates&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">75</span>
+</span></span><span style="display:flex;"><span>          }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>      ],
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;rank_constant&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">20</span>, 
+</span></span><span style="display:flex;"><span>      <span style="color:#e6db74">&#34;rank_window_size&#34;</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">100</span>  
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>それぞれ検索結果のリストを返すものを「Retriever」と呼び、rrfなどは、複数の検索結果を混ぜて返すため、入れ子で別のRetrieverを読んでいる形となります。</p>
+<p>複数のretreiverをパイプライン処理のようにつなぎたい場合は、入れ子にしていくことで前段のretrieverの結果をもとに、後段のretrieverの処理を実施可能です。</p>
+<pre tabindex="0"><code>GET retrievers_example/_search
+{
+    &#34;retriever&#34;: {
+        &#34;text_similarity_reranker&#34;: {
+            &#34;retriever&#34;: {
+                &#34;text_similarity_reranker&#34;: {
+                    &#34;retriever&#34;: {
+                        &#34;knn&#34;: {
+                            &#34;field&#34;: &#34;vector&#34;,
+                            &#34;query_vector&#34;: [
+                                0.23,
+                                0.67,
+                                0.89
+                            ],
+                            &#34;k&#34;: 3,
+                            &#34;num_candidates&#34;: 5
+                        }
+                    },
+                    &#34;rank_window_size&#34;: 100,
+                    &#34;field&#34;: &#34;text&#34;,
+                    &#34;inference_id&#34;: &#34;my-rerank-model&#34;,
+                    &#34;inference_text&#34;: &#34;What are the state of the art applications of AI in information retrieval?&#34;
+                }
+            },
+            &#34;rank_window_size&#34;: 10,
+            &#34;field&#34;: &#34;text&#34;,
+            &#34;inference_id&#34;: &#34;my-other-more-expensive-rerank-model&#34;,
+            &#34;inference_text&#34;: &#34;Applications of Large Language Models in technology and their impact on user satisfaction&#34;
+        }
+    },
+    &#34;_source&#34;: false
+}
+</code></pre><h3 id="提供されているretriever">提供されているRetriever</h3>
+<ul>
+<li><code>standard</code>: これまでの検索クエリの実行を行うretriever。</li>
+<li><code>knn</code>: knn検索のためのretriever。</li>
+<li><code>rrf</code>: RRFを用いて検索結果を生成するretriever。
+<ul>
+<li>複数のRetrieverを呼び出せる。</li>
+</ul>
+</li>
+<li><code>text_similarity_reranker</code>: NLPモデルを利用して検索結果の上位k件を並べ替えるretriever。
+<ul>
+<li>inference APIで登録してあるものを呼び出すもの。</li>
+<li>別のRetriever（1つだけ）の結果を指定したRerankerで並び変える</li>
+</ul>
+</li>
+<li><code>rule</code>: <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/search-using-query-rules.html#query-rules">クエリルール</a>を利用して、特定のクエリに対して処理を実施する
+<ul>
+<li>8.17時点では、pinnedとexcludeのみ</li>
+</ul>
+</li>
+</ul>
+<h4 id="text-similarity-re-ranker-retriever817時点">Text Similarity Re-ranker Retriever（8.17時点）</h4>
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/put-inference-api.html">Create inference API</a>を利用して、text_similarity_rerankerのエンドポイントを設定。こちらは、テキストの類似性を計算できるもの。</p>
+<p>現在利用できるRerankerは次の通り</p>
+<ul>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/infer-service-elasticsearch.html#inference-example-elastic-reranker">Elastic Reranker</a>： Elasticが作ったクロスエンコーダモデル。</li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/infer-service-cohere.html">Cohere Rerank inference endpoint</a>:Cohereのrerankタスクを利用</li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/infer-service-google-vertex-ai.html">Google Vertex AI inference endpoint</a>:Vertex AIのrerankタスクを利用</li>
+<li>Elandというツールを使って、アップしたモデルを利用（[サポートされてるモデルに制限あり](<a href="https://www.elastic.co/guide/en/machine-learning/8.17/ml-nlp-model-ref.html#ml-nlp-model-ref-text-similarity">https://www.elastic.co/guide/en/machine-learning/8.17/ml-nlp-model-ref.html#ml-nlp-model-ref-text-similarity</a>）</li>
+</ul>
+<p>Elandを利用するパターンはサポートされているモデルは現状2種類なので、あまり選択肢がないと思われる。
+Vertex AIで定義したものがどのくらい自由度があるのかは別途調査する必要がある。
+<strong>Enterpriseの契約</strong>でなければInference APIが利用できない。</p>
+<h3 id="使い方例">使い方（例）</h3>
+<p>既存の検索の仕組みとの組み合わせの例などが記載してある（ハイライト、collapse、inner_hits、aggsなど）。</p>
+<ul>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/_retrievers_examples.html">Retrievers examples | Elasticsearch Guide ［8.17］ | Elastic</a></li>
+</ul>
+<h3 id="queryのrescorerは">QueryのRescorerは？</h3>
+<p><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html#query-rescorer">Query Rescorer</a>という仕組みが用意されており、通常の全文検索のqueryに対して、上位N件の結果を別のクエリを用いてスコア計算をする方法が用意されている。</p>
+<p>このquery rescorerはretrieverでは現時点（8.17）では利用できない模様（<a href="https://github.com/elastic/elasticsearch/issues/118327">Issue 118327</a>）
+これに対し、<a href="https://github.com/elastic/elasticsearch/pull/118585">すでにPRが作成され、次期バージョンに取り込まれるrescoreと呼ばれるretrieverが実装されている</a>。</p>
+<h4 id="elasticのltrとretrieverの組み合わせはどうなるのか">ElasticのLtRとRetrieverの組み合わせはどうなるのか？</h4>
+<p>上記の<a href="https://github.com/elastic/elasticsearch/pull/118585">PR</a>が実装されることで、「おそらく」ElasticのLtRの検索もrescoreのretrieverで呼び出せるはず（要確認）。</p>
+<h4 id="o19nのltrは">O19nのLtRは？</h4>
+<p>こちらもRescoreで呼び出す形であれば、上記のPRで対応されるのでは（要確認）。</p>
+<h2 id="そのほかに気になる観点そのうち調べるかも">そのほかに気になる観点（そのうち調べるかも？）</h2>
+<ul>
+<li>使えないクエリとかあるのか？
+<ul>
+<li>Retrieverと現在の<code>_search</code>の組み合わせに関しては<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/retriever.html#retriever-restrictions">制限の記載あり</a></li>
+<li>個別のRetriever内部で制限があるかは未調査</li>
+</ul>
+</li>
+<li>Query Profileとかどうなるのか？</li>
+<li>分散トレーシングのSpanとかはどうなるのか？どのRetrieverがどのくらいの処理時間みたいなのがわかるのか？</li>
+<li>SlowQueryはShardに対してなので、末端（葉）のクエリの処理での計測になるのか？
+<ul>
+<li>Fetchも同様か？</li>
+</ul>
+</li>
+<li>Fetchはどのタイミングで実行されるのか？一番最後？</li>
+<li>Rescoreとの違い、組み合わせはどうなるのか？
+<ul>
+<li>そのうちなくなりそう、rescore?</li>
+</ul>
+</li>
+<li>クエリの実行順序を明確に指定できる形にできるから、処理早くしたりできる？？？</li>
+<li>複数Shardの場合の処理の流れってどんな感じ？</li>
+</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>とりあえず、雑に調べてたので、雑にメモに残しておきます。
+まだちゃんとしたデータで動かしてないので、それは宿題かなぁ。</p>
+
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="https://blog.johtani.info/blog/2024/12/17/japanese-search-with-weaviate/" data-toggle="tooltip" data-placement="top" title="Weaviateで日本語を利用した検索という話をしました">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+
+                
+
+
+<div id="disqus-comment"></div>
+<div id="disqus_thread"></div>
+<script>
+    window.disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "johtaniblog2nd" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+                <hr/>
+                
+
+<h3>See Also by Hugo</h3>
+<ul>
+ 
+ <li><a href="/blog/2022/07/20/querqy-architecture/">Querqyの調査（その2：アーキテクチャ）</a></li>
+ 
+ <li><a href="/blog/2018/10/17/26th-elasticsearch-tokyo-meetup/">第25回Elasticsearch勉強会を開催しました。</a></li>
+ 
+ <li><a href="/blog/2014/10/27/how-to-use-validate-api/">validate APIの利用</a></li>
+ 
+ <li><a href="/blog/2023/12/15/introduce-orama-to-blog/">Oramaという検索エンジンでブログ検索を作ってみた</a></li>
+ 
+ <li><a href="/blog/2023/08/23/search-ui-and-searchkit/">search-UIとSearchkitと検索画面</a></li>
+ 
+</ul>
+
+                <hr/>
+                
+<div class="article-widget content-widget-hr">
+  <h3>Related by prelims-cli</h3>
+  <ul>
+    
+    
+    
+    
+    <li><a href="https://blog.johtani.info/blog/2023/12/15/introduce-orama-to-blog/">Oramaという検索エンジンでブログ検索を作ってみた</a></li>
+    
+    <li><a href="https://blog.johtani.info/blog/2021/07/01/semantic-search-in-azure-cognitive-search/">Azure Cognitive Searchの新機能、Semantic Searchを試してみた</a></li>
+    
+    <li><a href="https://blog.johtani.info/blog/2020/07/28/improve-search-no2/">検索システムを構成するパーツ(検索システムに関する妄想その2)</a></li>
+    
+  </ul>
+</div>
+
+            </div>
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/aws" title="aws">
+                            aws
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/azure-search" title="azure search">
+                            azure search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
+                            berlin buzzwords
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/bot" title="bot">
+                            bot
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera" title="cloudera">
+                            cloudera
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/cloudera-search" title="cloudera search">
+                            cloudera search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/conference" title="conference">
+                            conference
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/curator" title="curator">
+                            curator
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/dev-container" title="dev container">
+                            dev container
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                            diyキーボード
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/elastic" title="elastic">
+                            elastic
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/fluentd" title="fluentd">
+                            fluentd
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hadoop" title="hadoop">
+                            hadoop
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/hugo" title="hugo">
+                            hugo
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/java" title="java">
+                            java
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kibana" title="kibana">
+                            kibana
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/kuromoji" title="kuromoji">
+                            kuromoji
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/logstash" title="logstash">
+                            logstash
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/lucene-gosen" title="lucene-gosen">
+                            lucene-gosen
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/manifoldcf" title="manifoldcf">
+                            manifoldcf
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/marvel" title="marvel">
+                            marvel
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/misc" title="misc">
+                            misc
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/morphlines" title="morphlines">
+                            morphlines
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/music" title="music">
+                            music
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/nlp100" title="nlp100">
+                            nlp100
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/octopress" title="octopress">
+                            octopress
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/opensearch" title="opensearch">
+                            opensearch
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/paper" title="paper">
+                            paper
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/plugin" title="plugin">
+                            plugin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/python" title="python">
+                            python
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/riak" title="riak">
+                            riak
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/rust" title="rust">
+                            rust
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/rust-the-book" title="rust-the-book">
+                            rust-the-book
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/search" title="search">
+                            search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/shield" title="shield">
+                            shield
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/solr" title="solr">
+                            solr
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/visual-studio-code" title="visual studio code">
+                            visual studio code
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/watcher" title="watcher">
+                            watcher
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/wikipedia" title="wikipedia">
+                            wikipedia
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/windows" title="windows">
+                            windows
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/workplace-search" title="workplace search">
+                            workplace search
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/yokozuna" title="yokozuna">
+                            yokozuna
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/zipkin" title="zipkin">
+                            zipkin
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                            オライリー
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E3%82%AB%E3%83%B3%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9" title="カンファレンス">
+                            カンファレンス
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                            ブログ
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                            備忘録
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                            勉強会
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                            振り返り
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E6%9C%AC" title="本">
+                            本
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                            検索
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                            読書
+                        </a>
+                        
+                        
+                        
+                        
+                        
+                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                            転職
+                        </a>
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="@johtaniの日記 3rd" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+                   
+                    
+
+                    
+                    <li>
+                        <a href="https://twitter.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/johtani">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; @johtaniの日記 3rd 2024
+                    <br>
+                    <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=zhaohuabing&repo=hugo-theme-cleanwhite&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        async("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+</body>
+</html>

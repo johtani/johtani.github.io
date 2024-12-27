@@ -10,14 +10,14 @@
     <meta property="og:type" content="article">
 
     
-    <meta property="og:image" content="https://blog.johtani.info/images/header3.jpg">
-    <meta property="twitter:image" content="https://blog.johtani.info/images/header3.jpg" />
+    <meta property="og:image" content="https://blog.johtani.info//images/header3.jpg">
+    <meta property="twitter:image" content="https://blog.johtani.info//images/header3.jpg" />
     
 
     
-    <meta name="title" content="solr" />
-    <meta property="og:title" content="solr" />
-    <meta property="twitter:title" content="solr" />
+    <meta name="title" content="" />
+    <meta property="og:title" content="" />
+    <meta property="twitter:title" content="" />
     
 
     
@@ -34,7 +34,7 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>solr | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Solr | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
     <link rel="canonical" href="/tags/solr/">
 
@@ -74,17 +74,20 @@
 
 
 
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
-<script>
-var doNotTrack = false;
-if (!doNotTrack) {
-	window.dataLayer = window.dataLayer || [];
-	function gtag(){dataLayer.push(arguments);}
-	gtag('js', new Date());
-	gtag('config', 'G-ZCZYDMJX3V', { 'anonymize_ip': false });
-}
-</script>
-
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
+      <script>
+        var doNotTrack = false;
+        if ( false ) {
+          var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
+          var doNotTrack = (dnt == "1" || dnt == "yes");
+        }
+        if (!doNotTrack) {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-ZCZYDMJX3V');
+        }
+      </script>
 
 
 
@@ -201,7 +204,9 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            今日はSolr 4.0 ALPHAの興味深い機能があったので紹介です。 数日前に「Solr 4.0: Partial documents update」という記事を見つけました。 Solrには、
+            今日はSolr 4.0 ALPHAの興味深い機能があったので紹介です。 数日前に「Solr 4.0: Partial documents update」という記事を見つけました。
+Solrには、ドキュメント（RDBで言うレコード）のデータを更新したい場合には、特定のフィールドだけを更新するという機能がありませんでした。 ですので、特定の項目（例えば、priceなど）を更新したい場合、ドキュメントの全データをSolrに再度上書き登録するという処理をしなければなりませんでした。 RDBを触っていた方が、Solrを始めた場合に必ず使いづらいと思われる点だと思います。
+
        
         </div>
     </a>
@@ -222,7 +227,9 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            久々にSolrの話です。 といっても、結構前からの話でして。。。 schema.xmlのfieldTypeの設定に「autoGeneratePh
+            久々にSolrの話です。 といっても、結構前からの話でして。。。
+schema.xmlのfieldTypeの設定に「autoGeneratePhraseQueries」という属性があります。 Solr3.1で導入されました。動作に関しては関口さんのブログで説明されています。 Solr 1.4までは、Analyzerがトークンを複数返してくる場合（例：lucene-gosenで「Solr入門」という文字列を入れた場合など）にフレーズクエリとして処理していました。 Lucene 3.1.0から、この処理がデフォルトfalse（つまり、フレーズクエリにならない）という挙動になりました。（詳しくは関口さんのブログで。） ただ、Solr 3.1.0では、下位互換性を考慮して、autoGeneratePhraseQueriesの設定値はデフォルトが「true」でした。
+
        
         </div>
     </a>
@@ -243,7 +250,9 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            先日、Solr入門のサンプルschema.xmlの3.6.0対応版の作成をしていて、気になったことがあったので、 メモとして残しておきます。 S
+            先日、Solr入門のサンプルschema.xmlの3.6.0対応版の作成をしていて、気になったことがあったので、 メモとして残しておきます。
+SynonymFilterFactoryの属性「tokenizerFactory」に関連する話です。 （「Apache Solr入門」の36-37ページに記載があります。）
+
        
         </div>
     </a>
@@ -264,7 +273,8 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            先日の続きです。「Apache Solr入門」の2章から4章の説明について、Solr3.6.0で動作させる時の変更点を以下に書いていきます。 な
+            先日の続きです。「Apache Solr入門」の2章から4章の説明について、Solr3.6.0で動作させる時の変更点を以下に書いていきます。 なお、前回も説明しましたが、3.6.0からKuromojiという形態素解析器がSolrに同梱されるようになりました。 これから説明する2章の変更点の手順ですが、Kuromojiとlucene-gosenそれぞれの利用方法について説明します。 添付のschema.xmlについては、基本的にKuromojiを利用する形に変更してあります。 それに加えて、lucene-gosen用のフィールドを別途追加で定義しました。 これらのフィールド名については、次の表の用になります。 適宜、書籍のフィールド名と置き換えながら読み進めたり、試したりしてください。
+
        
         </div>
     </a>
@@ -285,7 +295,9 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            以前より、アナウンスしていた、Kuromojiという日本語形態素解析が含まれるLucene/Solr 3.6.0がリリースされました。 以下、各
+            以前より、アナウンスしていた、Kuromojiという日本語形態素解析が含まれるLucene/Solr 3.6.0がリリースされました。
+以下、各リリース内容について簡単に説明されているページへのリンクです。
+
        
         </div>
     </a>
@@ -306,7 +318,9 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            最近忘れやすいので、記録しておこうかと。 読んだスライドの簡単な内容と感想です。 ちなみに、スライドの一覧はこちらです。 ※スライドへのリンクはす
+            最近忘れやすいので、記録しておこうかと。 読んだスライドの簡単な内容と感想です。 ちなみに、スライドの一覧はこちらです。 ※スライドへのリンクはすべてPDFへのリンクになっていますので、注意が必要です。
+Solr 4 Highlights（PDF）
+
        
         </div>
     </a>
@@ -327,7 +341,8 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            Lucene/SolrのMLでSolrの管理画面を新しくするというチケットが流れていたのでちょっと触って見ました。 ほんとにちょっと触っただけ
+            Lucene/SolrのMLでSolrの管理画面を新しくするというチケットが流れていたのでちょっと触って見ました。 ほんとにちょっと触っただけですが、いくつかキャプチャ撮ってみたので、アップしときます。 ※以下ではサムネイル画像に元画像（100Kくらいの画像）へのリンクが設定されています。携帯などでは見づらいかもしれませんが、ご容赦を。
+
        
         </div>
     </a>
@@ -348,7 +363,9 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            遅くなりましたが、続きです。 さらに英語力のなさを痛感して凹んでいるところですが、何かの役に立てばと恥を晒すところです。。。 一応、訳してみたの
+            遅くなりましたが、続きです。 さらに英語力のなさを痛感して凹んでいるところですが、何かの役に立てばと恥を晒すところです。。。
+一応、訳してみたのですが、訳すのに必死になってしまい、つながりがわかっていない点もちらほら。 このあと一旦見直しつつ、再度理解する「理解編」をアップしようかと思います。 できれば、シーケンス図とかも交えつつ。（そうしないと理解ができない可能性が。。。） 前回同様、原文は最後に付加しておきます。
+
        
         </div>
     </a>
@@ -369,7 +386,8 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            ちょっと興味があるので、訳してみました。（Wikiのページはこちら） 更新されているようなので、もとの文章も残しておきます。（ページ下部の続き
+            ちょっと興味があるので、訳してみました。（Wikiのページはこちら） 更新されているようなので、もとの文章も残しておきます。（ページ下部の続きはこちら部分以降） 全部訳そうと思ったのですが、終わらなかったので、まずは前半部分です。まだ、訳しただけで理解できてない。。。 （英語力のなさをさらけ出してしまうのですが、これも修行です。。。おかしいところはツッコミを。）
+
        
         </div>
     </a>
@@ -390,7 +408,12 @@ if (!doNotTrack) {
 	
         <div class="post-content-preview">
 	
-            Solr/Lucene 3.4がリリースされました。（速報） 以下、各サイトへのリンクです。 Solrリリースのお知らせ Luceneリリースのお知らせ ちなみに、先日の
+            Solr/Lucene 3.4がリリースされました。（速報）
+以下、各サイトへのリンクです。
+Solrリリースのお知らせ
+Luceneリリースのお知らせ
+ちなみに、先日のSolr勉強会で関口さんが話されていたインデックスが壊れるバグですが、 先日のアメリカのハリケーン（Irene）で実際に電源が落ちて見つかったみたいです。
+
        
         </div>
     </a>
@@ -517,8 +540,8 @@ if (!doNotTrack) {
                
             
                
-                    <a href="/tags/azure-search" title="azure-search">
-                        azure-search
+                    <a href="/tags/azure-search" title="azure search">
+                        azure search
                     </a>
                
             
@@ -527,8 +550,8 @@ if (!doNotTrack) {
                
             
                
-                    <a href="/tags/berlin-buzzwords" title="berlin-buzzwords">
-                        berlin-buzzwords
+                    <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
+                        berlin buzzwords
                     </a>
                
             
@@ -545,8 +568,8 @@ if (!doNotTrack) {
                
             
                
-                    <a href="/tags/cloudera-search" title="cloudera-search">
-                        cloudera-search
+                    <a href="/tags/cloudera-search" title="cloudera search">
+                        cloudera search
                     </a>
                
             
@@ -567,8 +590,8 @@ if (!doNotTrack) {
                
             
                
-                    <a href="/tags/dev-container" title="dev-container">
-                        dev-container
+                    <a href="/tags/dev-container" title="dev container">
+                        dev container
                     </a>
                
             
@@ -805,8 +828,8 @@ if (!doNotTrack) {
                
             
                
-                    <a href="/tags/visual-studio-code" title="visual-studio-code">
-                        visual-studio-code
+                    <a href="/tags/visual-studio-code" title="visual studio code">
+                        visual studio code
                     </a>
                
             
@@ -831,8 +854,8 @@ if (!doNotTrack) {
                
             
                
-                    <a href="/tags/workplace-search" title="workplace-search">
-                        workplace-search
+                    <a href="/tags/workplace-search" title="workplace search">
+                        workplace search
                     </a>
                
             
