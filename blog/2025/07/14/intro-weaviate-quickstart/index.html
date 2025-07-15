@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="「IDの秘密」を読みました。(Jugemより移植)" />
-    <meta property="og:title" content="「IDの秘密」を読みました。(Jugemより移植)" />
-    <meta property="twitter:title" content="「IDの秘密」を読みました。(Jugemより移植)" />
+    <meta name="title" content="Weaviate入門（Quickstart - Go言語編）" />
+    <meta property="og:title" content="Weaviate入門（Quickstart - Go言語編）" />
+    <meta property="twitter:title" content="Weaviate入門（Quickstart - Go言語編）" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="johtani elasticsearch kibana search 検索 ">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>「IDの秘密」を読みました。(Jugemより移植) | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
+    <title>Weaviate入門（Quickstart - Go言語編） | @johtaniの日記 3rd | @johtani&#39;s blog 3rd edition </title>
 
-    <link rel="canonical" href="/blog/2012/04/30/id%E3%81%AE%E7%A7%98%E5%AF%86%E3%82%92%E8%AA%AD%E3%81%BF%E3%81%BE%E3%81%97%E3%81%9F/">
+    <link rel="canonical" href="/blog/2025/07/14/intro-weaviate-quickstart/">
 
     
     
@@ -178,12 +178,12 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                        <a class="tag" href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
-                            読書
+                        <a class="tag" href="/tags/weaviate" title="weaviate">
+                            weaviate
                         </a>
                         
                     </div>
-                    <h1>「IDの秘密」を読みました。(Jugemより移植)</h1>
+                    <h1>Weaviate入門（Quickstart - Go言語編）</h1>
                     <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by 
@@ -191,7 +191,7 @@
                             johtani
                          
                         on 
-                        Monday, April 30, 2012
+                        Monday, July 14, 2025
                         
                         
                         
@@ -219,36 +219,186 @@
                 <header>
                     <h2>目次</h2>
                 </header>
-                <nav id="TableOfContents"></nav>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#0-openaiのapiキーの取得">0 OpenAIのAPIキーの取得</a></li>
+    <li><a href="#1-weaviateデータベースの作成">1 Weaviateデータベースの作成</a></li>
+    <li><a href="#2-weaviate-clientライブラリのインストール">2 Weaviate Clientライブラリのインストール</a></li>
+    <li><a href="#3-簡単なデータの取り込み">3. 簡単なデータの取り込み</a>
+      <ul>
+        <li><a href="#クライアントの接続">クライアントの接続</a></li>
+        <li><a href="#データコレクションの作成">データコレクションの作成</a></li>
+        <li><a href="#データ登録">データ登録</a></li>
+      </ul>
+    </li>
+    <li><a href="#4-クエリ方法">4. クエリ方法</a>
+      <ul>
+        <li><a href="#ベクトル検索">ベクトル検索</a></li>
+        <li><a href="#rag">RAG</a></li>
+      </ul>
+    </li>
+    <li><a href="#まとめ">まとめ</a></li>
+    <li><a href="#最後に">最後に</a></li>
+  </ul>
+</nav>
                 
-                <p><div class="amazon-shortcode-box">
-  <div class="amazon-shortcode-image">
-    <a style="display: inline-block;" target="_blank" href="https://www.amazon.co.jp/gp/product/4621053809/?tag=johtani-22"><img border="0" src="https://m.media-amazon.com/images/I/41OwR50GQsL._SL160_.jpg" >
-    </a>
-  </div>
-  <div class="amazon-shortcode-info">
-    <p class="amazon-shortcode-title">
-      <a target="_blank" href="https://www.amazon.co.jp/gp/product/4621053809/?tag=johtani-22">
-      IDの秘密 (丸善ライブラリー―情報研シリーズ)
-      </a>
-    </p>
-  </div>
-</div>
-非常に面白く読めました。
-バーコードの話に始まり、最後はシステムで付与するIDに関する考慮点まで幅広くIDについて語られています。</p>
-<p>適度に配置されたコラムがまた面白く、ここまで書いてもいいのかな？と思いながらも楽しく読ませて頂きました。
-2次元バーコードが汚れに強いのも知らなかったし、チロルチョコの話は知らなかったし、指コレクションとか面白すぎです。
-また、JRのSuicaの導入に7年もかけている点などは、やはりすごい技術なのだなぁというため息混じりの感想です。
-それほど長い期間のテストや設計は想像がつかないです。</p>
-<p>最後の2章（７，８章）については、エンジニアの以外のシステムに関わる方やエンジニアになられたばかりの方たちにぜひ読んで欲しいと思いました。
-もちろん、エンジニアの方にも読んでほしい内容です。</p>
-<p>いくつか疑問点や気になる点もあったので。</p>
+                <p>いくつか用語も説明したので（<a href="/blog/2025/07/01/intro-weaviate/">ベクトルデータベース</a>、<a href="/blog/2025/07/04/intro-weaviate-collection/">オブジェクト、コレクション</a>、<a href="/blog/2025/07/08/intro-weaviate-modules/">モジュール</a>）、そろそろちょっと触ってみる、クイックスタートを紹介します。</p>
+<p>英語で書かれた<a href="https://docs.weaviate.io/weaviate/quickstart">Quickstart (with cloud resources) | Weaviate Documentation</a>もあるのですが、実は日本語のページが用意されてます。</p>
 <ul>
-<li>「静脈や指紋が人によって異なるって確率はどうやって決めたんだろう？」</li>
-<li>Twitterの説明文のあとにFBの画面の図番号が書いてある。</li>
-<li>日本語がデコードされたけど、QRコードの文字コードって、この中に含まれてるのかな？それとも規格で決まってるのかな？</li>
+<li><a href="https://weaviate.io/ja">Weaviate ベクトルデータベース | Weaviate</a></li>
 </ul>
-<p>最後に、<a href="http://yfrog.com/nuepmlrj">書影がNIIに合ったので撮影しました。写真へのリンク</a>です。</p>
+<p>こちらに沿って、簡単ですがクイックスタートを紹介します。</p>
+<p>日本語のクイックスタートでは、Weaviateのクラスターに対して、「Jeopardy!」のデータを登録し、VectorizerモジュールとGeneratorモジュールにOpenAIのAPIを利用して、簡単なベクトル検索とRAG（検索拡張生成）を体験できます。</p>
+<h2 id="0-openaiのapiキーの取得">0 OpenAIのAPIキーの取得</h2>
+<p>このクイックスタートではOpenAIのAPIを利用します。
+クイックスタートの「3.簡単なデータの取り込み」の「登録はこちら」リンクからOpenAIにサインアップするか、すでにOpenAIのAPIを利用されている方は、今回のためにAPIキーを生成して用意してください。</p>
+<h2 id="1-weaviateデータベースの作成">1 Weaviateデータベースの作成</h2>
+<p>マネージドサービスとして、<a href="https://docs.weaviate.io/cloud/quickstart">Weaviate Cloud</a>が用意されています。</p>
+<p>ちょっと触ってみるのにはアカウントを作成してから、Sandboxクラスターを利用するのが簡単です。アカウント作成やSandboxクラスターの作成方法は以下のドキュメントを参考にしてください。</p>
+<ul>
+<li><a href="https://docs.weaviate.io/cloud/platform/create-account">Create a user account | Weaviate Documentation</a></li>
+<li><a href="https://docs.weaviate.io/cloud/manage-clusters/create">Create a cluster | Weaviate Documentation</a></li>
+</ul>
+<p>なお、Sandboxクラスターは14日間で自動で削除されるのでそこだけ注意が必要です。
+容量の制限もあるので、大量データで利用する場合は別途、Serverlessなどを選択する必要があります。</p>
+<h2 id="2-weaviate-clientライブラリのインストール">2 Weaviate Clientライブラリのインストール</h2>
+<p>クイックスタートで選択できる言語は以下の通りです。</p>
+<ul>
+<li>Python</li>
+<li>JavaScript / TypeScript</li>
+<li>Go</li>
+<li>Java（最近クライアントが新しくなった）</li>
+</ul>
+<p>各言語向けのクライアントのインストール方法が表示されています。
+Dockerなどで環境を用意してインストールをしてもいいですし、ローカルにインストールすることもできます。</p>
+<p>私は、Pythonを利用する場合はDevContainerの環境を用意したりします。
+GoやJavaだとローカルで済ますかな？</p>
+<p>たとえば、Goのプロジェクトを作っておいて以下を実行します。</p>
+<pre tabindex="0"><code>go get github.com/weaviate/weaviate-go-client/v5
+go install
+</code></pre><h2 id="3-簡単なデータの取り込み">3. 簡単なデータの取り込み</h2>
+<h3 id="クライアントの接続">クライアントの接続</h3>
+<p>まずは、Weaviate Cloudのクラスターへの接続情報が必要にです。</p>
+<p>1.で作成したクラスターをクリックし、Cluster detailsの画面で以下の情報をコピーし、環境変数に設定します。</p>
+<ol>
+<li>Informationのセクションの「REST Endpoint」の文字列を環境変数<code>WEAVIATE_URL</code>に設定</li>
+<li>API Keysのセクションで、「+ Create API Key」ボタンをクリックし、出てきたダイアログで
+<ol>
+<li>Name：なんでもOK（例：<code>go-sample-client</code>）</li>
+<li>Role：<code>admin</code>を選択</li>
+</ol>
+</li>
+<li>生成されたAPIキーをコピーして、環境変数<code>WEAVIATE_API_KEY</code>に設定（APIキーは生成するタイミングでダウンロードもできます）。</li>
+</ol>
+<p>Weaviateにあるモジュールを経由して、OpenAIのAPIを実行するために、OpenAIのAPIキーをリクエストヘッダ経由で設定します。実際の値は<code>OPENAI_API_KEY</code>という環境変数から取得しますので、APIキーを環境変数<code>OPENAI_API_KEY</code>に設定します。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span>	<span style="color:#a6e22e">cfg</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">weaviate</span>.<span style="color:#a6e22e">Config</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Host</span>:       <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;WEAVIATE_URL&#34;</span>),
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Scheme</span>:     <span style="color:#e6db74">&#34;https&#34;</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">AuthConfig</span>: <span style="color:#a6e22e">auth</span>.<span style="color:#a6e22e">ApiKey</span>{<span style="color:#a6e22e">Value</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;WEAVIATE_API_KEY&#34;</span>)},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">Headers</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>			<span style="color:#e6db74">&#34;X-OpenAI-Api-Key&#34;</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;OPENAI_API_KEY&#34;</span>),
+</span></span><span style="display:flex;"><span>		},
+</span></span><span style="display:flex;"><span>	}
+</span></span></code></pre></div><p>クイックスタートで使用する環境変数は以上の3つ（<code>WEAVIATE_URL</code>、<code>WEAVIATE_API_KEY&quot;</code>、<code>OPENAI_API_KEY</code>）です。</p>
+<p>ここまでのプログラムも実行できるので、実行してみましょう。
+Weaviateへの接続情報に問題がなければ、「true」とだけ表示されます（現時点ではOpenAIのAPIへの接続は未確認です）。
+（このあとには、<code>// Check the connection</code>の処理の部分は変更します）</p>
+<h3 id="データコレクションの作成">データコレクションの作成</h3>
+<p>Weaviateでは、データを登録する前にコレクションを作成しておく必要があります。
+今回の処理では、<code>models.Class</code>という構造体を使ってスキーマを定義します。</p>
+<ul>
+<li>コレクションの名前（<code>Class</code>）</li>
+<li>使用するベクトライザー（<code>text2vec-openai</code>）</li>
+<li>使用するモジュール（<code>text2vec-openai</code>、<code>generative-openai</code>）</li>
+</ul>
+<p>使用するベクトライザーは、このコレクションでエンベディングのベクトル生成に利用するデフォルトのベクトライザーになります。</p>
+<p>このクイックスタートでは、プロパティについては、データ登録時に自動で設定するようにしています。プロパティ個別にベクトライザーやその他の設定を行うこともできます（<a href="https://docs.weaviate.io/weaviate/manage-collections/collection-operations#create-a-collection-and-define-properties">Basic collection operations | Weaviate Documentation</a>）。</p>
+<p>なお、今回の処理では、エラーが出力されなければ問題なくコレクションが作成されたということになります。エラー出ない場合のメッセージの処理がないためです。</p>
+<p>Weaviate Cloudのコンソールで「Collections」をクリックし、先ほど作成したクラスターを選択した後に、「Question」というコレクションが表示されているかを確認することで処理の成功を確認できます。</p>
+<h3 id="データ登録">データ登録</h3>
+<p>コレクションの作成もおわったので、Jeopardyのデータを登録します。
+処理の流れとしては次のようになっています。</p>
+<ol>
+<li>Weaviateのクライアント接続</li>
+<li>JSONファイルのダウンロードしてmapの配列に</li>
+<li>1データずつ、<code>models.Object</code>の構造体に変換</li>
+<li>ObjectsBatcher()を利用して、バッチ登録
+<ol>
+<li>Weaviateがデータを受け取って、<code>text2vec-openai</code>モジュールを使ってベクトルに変換してからベクトルインデックスに登録</li>
+<li>JSONのプロパティからWeaviateのスキーマを自動で生成してくれる</li>
+</ol>
+</li>
+</ol>
+<p>3の構造体を作るときに、JSONの文字列のデータを入れているだけで、このタイミングではベクトルは生成していません。
+4.1に書いたように、Weaviate内部でOpenAIのAPIを利用してエンベディングの生成を行います。
+ですので、この処理を実行するときにはOpenAIのAPIキーを設定しておく必要があります。</p>
+<p>コレクションの作成と同様に、エラーがなければ成功です。</p>
+<p>ちなみに、OpenAIのAPIキーを設定せずに実行すると、次のようなエラーが出ます。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">panic</span>: ([]<span style="color:#f92672">*</span><span style="color:#a6e22e">models</span>.<span style="color:#a6e22e">ErrorResponseErrorItems0</span>) <span style="color:#ae81ff">0xc000008870</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">goroutine</span> <span style="color:#ae81ff">1</span> [<span style="color:#a6e22e">running</span>]:
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">main</span>.<span style="color:#a6e22e">main</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">...</span>.<span style="color:#a6e22e">weaviate</span><span style="color:#f92672">-</span><span style="color:#a6e22e">quickstart</span><span style="color:#f92672">-</span><span style="color:#66d9ef">go</span><span style="color:#f92672">/</span><span style="color:#a6e22e">main</span>.<span style="color:#66d9ef">go</span>:<span style="color:#ae81ff">68</span> <span style="color:#f92672">+</span><span style="color:#ae81ff">0x745</span>
+</span></span></code></pre></div><p>上記のサンプルのままでは、<code>res.Result.Errosrs.Error</code>は配列のためエラーが発生してしまいました。</p>
+<p>次のように修正することで、登録時のレスポンスにエラーが含まれている場合に、エラーの内容がきちんと表示できます。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">res</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">batchRes</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">Result</span>.<span style="color:#a6e22e">Errors</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">items0</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">Result</span>.<span style="color:#a6e22e">Errors</span>.<span style="color:#a6e22e">Error</span> {
+</span></span><span style="display:flex;"><span>				println(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Error is %v&#34;</span>, <span style="color:#a6e22e">items0</span>))
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span></code></pre></div><p>APIキーの設定を忘れているとこんな感じのエラーメッセージになります。</p>
+<pre tabindex="0"><code>Error is &amp;{API Key: no api key found neither in request header: X-Openai-Api-Key nor in environment variable under OPENAI_APIKEY}
+</code></pre><p>データ登録できたかどうかは、この後のクエリで確認もできますし、先ほどのコンソールでのコレクションを見ると「10 objects」となってデータが登録されているのも分かります。</p>
+<h2 id="4-クエリ方法">4. クエリ方法</h2>
+<p>最後は検索です。
+クイックスタートでは、ベクトル検索とRAG（検索拡張生成）を試すことができます。</p>
+<h3 id="ベクトル検索">ベクトル検索</h3>
+<p>入力テキストからベクトライザーでベクトルを生成して、そのベクトルをもとにベクトルインデックスを検索する処理です。</p>
+<p>今回のクイックスタートでは、検索には次の情報が指定されています。</p>
+<ul>
+<li>検索結果に含めるプロパティ（フィールド）
+<ul>
+<li><code>[]graphql.Field</code>に指定しているもの</li>
+</ul>
+</li>
+<li>クエリ文字列
+<ul>
+<li><code>nearText</code>に調べたい文章（今回は<code>biology</code>という単語）を設定</li>
+</ul>
+</li>
+<li>検索対象のクラス名（コレクション名）
+<ul>
+<li>「Question」</li>
+</ul>
+</li>
+<li>取得する件数（最もベクトルが近いものn件）
+<ul>
+<li><code>WithLimit</code>に<code>2</code>を指定</li>
+</ul>
+</li>
+</ul>
+<p>返却される<code>result</code>に検索結果が入っています。中身はWebに掲載されています（ローカルだとインデントされてないですが）。</p>
+<h3 id="rag">RAG</h3>
+<p>ベクトル検索では、入力のテキストに近いオブジェクトを取得するだけでした。
+RAGのサンプルコードでは、ベクトル検索をして結果を取得するところまでは同じ流れですが、
+取得した後に、それぞれのオブジェクトのデータを使って文章の生成をモジュールを使用して行う処理が追加されています（<code>WithGenerativeSearch()</code>メソッド）。</p>
+<pre tabindex="0"><code>generativeSearch := graphql.NewGenerativeSearch().SingleResult(&#34;Explain {answer} as you might to a five-year-old.&#34;)
+</code></pre><p><code>{answer}</code>に、ベクトル検索の結果のオブジェクトの<code>answer</code>プロパティの文字列が入ります。
+そして、生成モジュールを通して、テキストが生成され、その結果が<code>_additional</code>の<code>generate</code>の中に帰ってきています。</p>
+<p>クライアントアプリ側では、特にOpenAIのAPIの呼び出しを行っていませんが、文字列の生成までできています。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>ということで、<a href="https://weaviate.io/ja">日本語に翻訳されたクイックスタート</a>についてGo言語のサンプルコードをもとに紹介をしました。
+数件しかデータを入れていないですが、簡単に動作を確認できるかと思います。</p>
+<p>クイックスタートはまだほんの入り口にすぎません。Weaviateでできることはほかにもあるので、ちょっとずつこれからも紹介していこうかと思います。</p>
+<h2 id="最後に">最後に</h2>
+<p>日本のコミュニティとしてConnpassにグループを作りました。</p>
+<ul>
+<li><a href="https://weaviate.connpass.com/">Weaviate JP Community - connpass</a></li>
+</ul>
+<p>どうやってイベントをやるかはまだ考え中ですが、興味がある方は登録しておいていただければと。</p>
+<p>どんな情報、どんなイベントがあれば興味をもっていただけるか？Weaviateを使ってみようと思うけど何から始めよう？など疑問に思うことがあればXやブログのコメントなどをいただければと思います。</p>
 
 
                 
@@ -257,15 +407,10 @@
                 <ul class="pager">
                     
                     <li class="previous">
-                        <a href="https://blog.johtani.info/blog/2012/04/21/heroku-jp-meetup-4%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F-herokujp/" data-toggle="tooltip" data-placement="top" title="Heroku JP Meetup ＃4に参加しました。#herokujp(Jugemより移植)">&larr;
+                        <a href="https://blog.johtani.info/blog/2025/07/08/intro-weaviate-modules/" data-toggle="tooltip" data-placement="top" title="Weaviate入門（モジュール）">&larr;
                             Previous Post</a>
                     </li>
                     
-                    
-                    <li class="next">
-                        <a href="https://blog.johtani.info/blog/2012/05/09/lucene-gosen-2-0-1%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9java7%E5%AF%BE%E5%BF%9C/" data-toggle="tooltip" data-placement="top" title="lucene-gosen 2.0.1リリース（Java7対応）(Jugemより移植)">Next
-                            Post &rarr;</a>
-                    </li>
                     
                 </ul>
 
@@ -300,6 +445,21 @@
                 <hr/>
                 
 
+<h3>See Also by Hugo</h3>
+<ul>
+ 
+ <li><a href="/blog/2025/07/08/intro-weaviate-modules/">Weaviate入門（モジュール）</a></li>
+ 
+ <li><a href="/blog/2025/07/04/intro-weaviate-collection/">Weaviate入門（オブジェクト、コレクション）</a></li>
+ 
+ <li><a href="/blog/2025/07/01/intro-weaviate/">Weaviate入門（ベクトルデータベース、ベクトル）</a></li>
+ 
+ <li><a href="/blog/2024/12/17/japanese-search-with-weaviate/">Weaviateで日本語を利用した検索という話をしました</a></li>
+ 
+ <li><a href="/blog/2023/12/08/smarthome-bot/">GoでSlackのボットを作った話</a></li>
+ 
+</ul>
+
                 <hr/>
                 
 <div class="article-widget content-widget-hr">
@@ -309,11 +469,11 @@
     
     
     
-    <li><a href="https://blog.johtani.info/blog/2020/02/10/explore-search-system/">「検索システム探訪」したいな=&gt;やりました</a></li>
+    <li><a href="https://blog.johtani.info/blog/2025/07/08/intro-weaviate-modules/">Weaviate入門（モジュール）</a></li>
     
-    <li><a href="https://blog.johtani.info/blog/2019/06/19/qr-code-with-meetup-dot-com/">勉強会の受付自作？アプリ？HTMLについて</a></li>
+    <li><a href="https://blog.johtani.info/blog/2025/07/01/intro-weaviate/">Weaviate入門（ベクトルデータベース、ベクトル）</a></li>
     
-    <li><a href="https://blog.johtani.info/blog/2011/06/29/hadoop%E3%82%92%E4%B8%AD%E5%BF%83%E3%81%A8%E3%81%97%E3%81%9F%E5%88%86%E6%95%A3%E7%92%B0%E5%A2%83%E3%81%A7%E3%81%AE%E9%96%8B%E7%99%BA%E6%96%B9%E6%B3%95%E8%AB%96%E3%83%A2%E3%83%87%E3%83%AA%E3%83%B3%E3%82%B0%E8%A8%AD%E8%A8%88%E6%89%8B%E6%B3%95%E7%AD%89%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E5%BA%A7%E8%AB%87%E4%BC%9A-%E7%AC%AC5%E5%9B%9E%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F/">Hadoopを中心とした分散環境での開発方法論・モデリング・設計手法等についての座談会(第5回）に参加しました。(Jugemより移植)</a></li>
+    <li><a href="https://blog.johtani.info/blog/2024/12/17/japanese-search-with-weaviate/">Weaviateで日本語を利用した検索という話をしました</a></li>
     
   </ul>
 </div>

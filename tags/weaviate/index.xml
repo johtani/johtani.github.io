@@ -7,7 +7,179 @@
     <description>Recent content in Weaviate on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Tue, 08 Jul 2025 08:25:32 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/weaviate/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 14 Jul 2025 09:41:28 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/weaviate/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Weaviate入門（Quickstart - Go言語編）</title>
+      <link>https://blog.johtani.info/blog/2025/07/14/intro-weaviate-quickstart/</link>
+      <pubDate>Mon, 14 Jul 2025 09:41:28 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2025/07/14/intro-weaviate-quickstart/</guid>
+      <description>&lt;p&gt;いくつか用語も説明したので（&lt;a href=&#34;https://blog.johtani.info/blog/2025/07/01/intro-weaviate/&#34;&gt;ベクトルデータベース&lt;/a&gt;、&lt;a href=&#34;https://blog.johtani.info/blog/2025/07/04/intro-weaviate-collection/&#34;&gt;オブジェクト、コレクション&lt;/a&gt;、&lt;a href=&#34;https://blog.johtani.info/blog/2025/07/08/intro-weaviate-modules/&#34;&gt;モジュール&lt;/a&gt;）、そろそろちょっと触ってみる、クイックスタートを紹介します。&lt;/p&gt;
+&lt;p&gt;英語で書かれた&lt;a href=&#34;https://docs.weaviate.io/weaviate/quickstart&#34;&gt;Quickstart (with cloud resources) | Weaviate Documentation&lt;/a&gt;もあるのですが、実は日本語のページが用意されてます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://weaviate.io/ja&#34;&gt;Weaviate ベクトルデータベース | Weaviate&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;こちらに沿って、簡単ですがクイックスタートを紹介します。&lt;/p&gt;</description>
+      <content:encoded>&lt;p&gt;いくつか用語も説明したので（&lt;a href=&#34;https://blog.johtani.info/blog/2025/07/01/intro-weaviate/&#34;&gt;ベクトルデータベース&lt;/a&gt;、&lt;a href=&#34;https://blog.johtani.info/blog/2025/07/04/intro-weaviate-collection/&#34;&gt;オブジェクト、コレクション&lt;/a&gt;、&lt;a href=&#34;https://blog.johtani.info/blog/2025/07/08/intro-weaviate-modules/&#34;&gt;モジュール&lt;/a&gt;）、そろそろちょっと触ってみる、クイックスタートを紹介します。&lt;/p&gt;
+&lt;p&gt;英語で書かれた&lt;a href=&#34;https://docs.weaviate.io/weaviate/quickstart&#34;&gt;Quickstart (with cloud resources) | Weaviate Documentation&lt;/a&gt;もあるのですが、実は日本語のページが用意されてます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://weaviate.io/ja&#34;&gt;Weaviate ベクトルデータベース | Weaviate&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;こちらに沿って、簡単ですがクイックスタートを紹介します。&lt;/p&gt;
+&lt;p&gt;日本語のクイックスタートでは、Weaviateのクラスターに対して、「Jeopardy!」のデータを登録し、VectorizerモジュールとGeneratorモジュールにOpenAIのAPIを利用して、簡単なベクトル検索とRAG（検索拡張生成）を体験できます。&lt;/p&gt;
+&lt;h2 id=&#34;0-openaiのapiキーの取得&#34;&gt;0 OpenAIのAPIキーの取得&lt;/h2&gt;
+&lt;p&gt;このクイックスタートではOpenAIのAPIを利用します。
+クイックスタートの「3.簡単なデータの取り込み」の「登録はこちら」リンクからOpenAIにサインアップするか、すでにOpenAIのAPIを利用されている方は、今回のためにAPIキーを生成して用意してください。&lt;/p&gt;
+&lt;h2 id=&#34;1-weaviateデータベースの作成&#34;&gt;1 Weaviateデータベースの作成&lt;/h2&gt;
+&lt;p&gt;マネージドサービスとして、&lt;a href=&#34;https://docs.weaviate.io/cloud/quickstart&#34;&gt;Weaviate Cloud&lt;/a&gt;が用意されています。&lt;/p&gt;
+&lt;p&gt;ちょっと触ってみるのにはアカウントを作成してから、Sandboxクラスターを利用するのが簡単です。アカウント作成やSandboxクラスターの作成方法は以下のドキュメントを参考にしてください。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.weaviate.io/cloud/platform/create-account&#34;&gt;Create a user account | Weaviate Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.weaviate.io/cloud/manage-clusters/create&#34;&gt;Create a cluster | Weaviate Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;なお、Sandboxクラスターは14日間で自動で削除されるのでそこだけ注意が必要です。
+容量の制限もあるので、大量データで利用する場合は別途、Serverlessなどを選択する必要があります。&lt;/p&gt;
+&lt;h2 id=&#34;2-weaviate-clientライブラリのインストール&#34;&gt;2 Weaviate Clientライブラリのインストール&lt;/h2&gt;
+&lt;p&gt;クイックスタートで選択できる言語は以下の通りです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Python&lt;/li&gt;
+&lt;li&gt;JavaScript / TypeScript&lt;/li&gt;
+&lt;li&gt;Go&lt;/li&gt;
+&lt;li&gt;Java（最近クライアントが新しくなった）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;各言語向けのクライアントのインストール方法が表示されています。
+Dockerなどで環境を用意してインストールをしてもいいですし、ローカルにインストールすることもできます。&lt;/p&gt;
+&lt;p&gt;私は、Pythonを利用する場合はDevContainerの環境を用意したりします。
+GoやJavaだとローカルで済ますかな？&lt;/p&gt;
+&lt;p&gt;たとえば、Goのプロジェクトを作っておいて以下を実行します。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;go get github.com/weaviate/weaviate-go-client/v5
+go install
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;3-簡単なデータの取り込み&#34;&gt;3. 簡単なデータの取り込み&lt;/h2&gt;
+&lt;h3 id=&#34;クライアントの接続&#34;&gt;クライアントの接続&lt;/h3&gt;
+&lt;p&gt;まずは、Weaviate Cloudのクラスターへの接続情報が必要にです。&lt;/p&gt;
+&lt;p&gt;1.で作成したクラスターをクリックし、Cluster detailsの画面で以下の情報をコピーし、環境変数に設定します。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Informationのセクションの「REST Endpoint」の文字列を環境変数&lt;code&gt;WEAVIATE_URL&lt;/code&gt;に設定&lt;/li&gt;
+&lt;li&gt;API Keysのセクションで、「+ Create API Key」ボタンをクリックし、出てきたダイアログで
+&lt;ol&gt;
+&lt;li&gt;Name：なんでもOK（例：&lt;code&gt;go-sample-client&lt;/code&gt;）&lt;/li&gt;
+&lt;li&gt;Role：&lt;code&gt;admin&lt;/code&gt;を選択&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;生成されたAPIキーをコピーして、環境変数&lt;code&gt;WEAVIATE_API_KEY&lt;/code&gt;に設定（APIキーは生成するタイミングでダウンロードもできます）。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Weaviateにあるモジュールを経由して、OpenAIのAPIを実行するために、OpenAIのAPIキーをリクエストヘッダ経由で設定します。実際の値は&lt;code&gt;OPENAI_API_KEY&lt;/code&gt;という環境変数から取得しますので、APIキーを環境変数&lt;code&gt;OPENAI_API_KEY&lt;/code&gt;に設定します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	&lt;span style=&#34;color:#a6e22e&#34;&gt;cfg&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;weaviate&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Config&lt;/span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;Host&lt;/span&gt;:       &lt;span style=&#34;color:#a6e22e&#34;&gt;os&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Getenv&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;WEAVIATE_URL&amp;#34;&lt;/span&gt;),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;Scheme&lt;/span&gt;:     &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;AuthConfig&lt;/span&gt;: &lt;span style=&#34;color:#a6e22e&#34;&gt;auth&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ApiKey&lt;/span&gt;{&lt;span style=&#34;color:#a6e22e&#34;&gt;Value&lt;/span&gt;: &lt;span style=&#34;color:#a6e22e&#34;&gt;os&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Getenv&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;WEAVIATE_API_KEY&amp;#34;&lt;/span&gt;)},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#a6e22e&#34;&gt;Headers&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;map&lt;/span&gt;[&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;]&lt;span style=&#34;color:#66d9ef&#34;&gt;string&lt;/span&gt;{
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;X-OpenAI-Api-Key&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#a6e22e&#34;&gt;os&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Getenv&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;OPENAI_API_KEY&amp;#34;&lt;/span&gt;),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		},
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;クイックスタートで使用する環境変数は以上の3つ（&lt;code&gt;WEAVIATE_URL&lt;/code&gt;、&lt;code&gt;WEAVIATE_API_KEY&amp;quot;&lt;/code&gt;、&lt;code&gt;OPENAI_API_KEY&lt;/code&gt;）です。&lt;/p&gt;
+&lt;p&gt;ここまでのプログラムも実行できるので、実行してみましょう。
+Weaviateへの接続情報に問題がなければ、「true」とだけ表示されます（現時点ではOpenAIのAPIへの接続は未確認です）。
+（このあとには、&lt;code&gt;// Check the connection&lt;/code&gt;の処理の部分は変更します）&lt;/p&gt;
+&lt;h3 id=&#34;データコレクションの作成&#34;&gt;データコレクションの作成&lt;/h3&gt;
+&lt;p&gt;Weaviateでは、データを登録する前にコレクションを作成しておく必要があります。
+今回の処理では、&lt;code&gt;models.Class&lt;/code&gt;という構造体を使ってスキーマを定義します。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;コレクションの名前（&lt;code&gt;Class&lt;/code&gt;）&lt;/li&gt;
+&lt;li&gt;使用するベクトライザー（&lt;code&gt;text2vec-openai&lt;/code&gt;）&lt;/li&gt;
+&lt;li&gt;使用するモジュール（&lt;code&gt;text2vec-openai&lt;/code&gt;、&lt;code&gt;generative-openai&lt;/code&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;使用するベクトライザーは、このコレクションでエンベディングのベクトル生成に利用するデフォルトのベクトライザーになります。&lt;/p&gt;
+&lt;p&gt;このクイックスタートでは、プロパティについては、データ登録時に自動で設定するようにしています。プロパティ個別にベクトライザーやその他の設定を行うこともできます（&lt;a href=&#34;https://docs.weaviate.io/weaviate/manage-collections/collection-operations#create-a-collection-and-define-properties&#34;&gt;Basic collection operations | Weaviate Documentation&lt;/a&gt;）。&lt;/p&gt;
+&lt;p&gt;なお、今回の処理では、エラーが出力されなければ問題なくコレクションが作成されたということになります。エラー出ない場合のメッセージの処理がないためです。&lt;/p&gt;
+&lt;p&gt;Weaviate Cloudのコンソールで「Collections」をクリックし、先ほど作成したクラスターを選択した後に、「Question」というコレクションが表示されているかを確認することで処理の成功を確認できます。&lt;/p&gt;
+&lt;h3 id=&#34;データ登録&#34;&gt;データ登録&lt;/h3&gt;
+&lt;p&gt;コレクションの作成もおわったので、Jeopardyのデータを登録します。
+処理の流れとしては次のようになっています。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Weaviateのクライアント接続&lt;/li&gt;
+&lt;li&gt;JSONファイルのダウンロードしてmapの配列に&lt;/li&gt;
+&lt;li&gt;1データずつ、&lt;code&gt;models.Object&lt;/code&gt;の構造体に変換&lt;/li&gt;
+&lt;li&gt;ObjectsBatcher()を利用して、バッチ登録
+&lt;ol&gt;
+&lt;li&gt;Weaviateがデータを受け取って、&lt;code&gt;text2vec-openai&lt;/code&gt;モジュールを使ってベクトルに変換してからベクトルインデックスに登録&lt;/li&gt;
+&lt;li&gt;JSONのプロパティからWeaviateのスキーマを自動で生成してくれる&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;3の構造体を作るときに、JSONの文字列のデータを入れているだけで、このタイミングではベクトルは生成していません。
+4.1に書いたように、Weaviate内部でOpenAIのAPIを利用してエンベディングの生成を行います。
+ですので、この処理を実行するときにはOpenAIのAPIキーを設定しておく必要があります。&lt;/p&gt;
+&lt;p&gt;コレクションの作成と同様に、エラーがなければ成功です。&lt;/p&gt;
+&lt;p&gt;ちなみに、OpenAIのAPIキーを設定せずに実行すると、次のようなエラーが出ます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;panic&lt;/span&gt;: ([]&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;models&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ErrorResponseErrorItems0&lt;/span&gt;) &lt;span style=&#34;color:#ae81ff&#34;&gt;0xc000008870&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;goroutine&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; [&lt;span style=&#34;color:#a6e22e&#34;&gt;running&lt;/span&gt;]:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	&lt;span style=&#34;color:#f92672&#34;&gt;...&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;weaviate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;quickstart&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;go&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;/&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;.&lt;span style=&#34;color:#66d9ef&#34;&gt;go&lt;/span&gt;:&lt;span style=&#34;color:#ae81ff&#34;&gt;68&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0x745&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;上記のサンプルのままでは、&lt;code&gt;res.Result.Errosrs.Error&lt;/code&gt;は配列のためエラーが発生してしまいました。&lt;/p&gt;
+&lt;p&gt;次のように修正することで、登録時のレスポンスにエラーが含まれている場合に、エラーの内容がきちんと表示できます。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;_&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;res&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;range&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;batchRes&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;res&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Result&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Errors&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;_&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;items0&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;range&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;res&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Result&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Errors&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Error&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;				println(&lt;span style=&#34;color:#a6e22e&#34;&gt;fmt&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Sprintf&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Error is %v&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;items0&lt;/span&gt;))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;			}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;		}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;	}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;APIキーの設定を忘れているとこんな感じのエラーメッセージになります。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Error is &amp;amp;{API Key: no api key found neither in request header: X-Openai-Api-Key nor in environment variable under OPENAI_APIKEY}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;データ登録できたかどうかは、この後のクエリで確認もできますし、先ほどのコンソールでのコレクションを見ると「10 objects」となってデータが登録されているのも分かります。&lt;/p&gt;
+&lt;h2 id=&#34;4-クエリ方法&#34;&gt;4. クエリ方法&lt;/h2&gt;
+&lt;p&gt;最後は検索です。
+クイックスタートでは、ベクトル検索とRAG（検索拡張生成）を試すことができます。&lt;/p&gt;
+&lt;h3 id=&#34;ベクトル検索&#34;&gt;ベクトル検索&lt;/h3&gt;
+&lt;p&gt;入力テキストからベクトライザーでベクトルを生成して、そのベクトルをもとにベクトルインデックスを検索する処理です。&lt;/p&gt;
+&lt;p&gt;今回のクイックスタートでは、検索には次の情報が指定されています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;検索結果に含めるプロパティ（フィールド）
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;[]graphql.Field&lt;/code&gt;に指定しているもの&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;クエリ文字列
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;nearText&lt;/code&gt;に調べたい文章（今回は&lt;code&gt;biology&lt;/code&gt;という単語）を設定&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;検索対象のクラス名（コレクション名）
+&lt;ul&gt;
+&lt;li&gt;「Question」&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;取得する件数（最もベクトルが近いものn件）
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WithLimit&lt;/code&gt;に&lt;code&gt;2&lt;/code&gt;を指定&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;返却される&lt;code&gt;result&lt;/code&gt;に検索結果が入っています。中身はWebに掲載されています（ローカルだとインデントされてないですが）。&lt;/p&gt;
+&lt;h3 id=&#34;rag&#34;&gt;RAG&lt;/h3&gt;
+&lt;p&gt;ベクトル検索では、入力のテキストに近いオブジェクトを取得するだけでした。
+RAGのサンプルコードでは、ベクトル検索をして結果を取得するところまでは同じ流れですが、
+取得した後に、それぞれのオブジェクトのデータを使って文章の生成をモジュールを使用して行う処理が追加されています（&lt;code&gt;WithGenerativeSearch()&lt;/code&gt;メソッド）。&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;generativeSearch := graphql.NewGenerativeSearch().SingleResult(&amp;#34;Explain {answer} as you might to a five-year-old.&amp;#34;)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;{answer}&lt;/code&gt;に、ベクトル検索の結果のオブジェクトの&lt;code&gt;answer&lt;/code&gt;プロパティの文字列が入ります。
+そして、生成モジュールを通して、テキストが生成され、その結果が&lt;code&gt;_additional&lt;/code&gt;の&lt;code&gt;generate&lt;/code&gt;の中に帰ってきています。&lt;/p&gt;
+&lt;p&gt;クライアントアプリ側では、特にOpenAIのAPIの呼び出しを行っていませんが、文字列の生成までできています。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;ということで、&lt;a href=&#34;https://weaviate.io/ja&#34;&gt;日本語に翻訳されたクイックスタート&lt;/a&gt;についてGo言語のサンプルコードをもとに紹介をしました。
+数件しかデータを入れていないですが、簡単に動作を確認できるかと思います。&lt;/p&gt;
+&lt;p&gt;クイックスタートはまだほんの入り口にすぎません。Weaviateでできることはほかにもあるので、ちょっとずつこれからも紹介していこうかと思います。&lt;/p&gt;
+&lt;h2 id=&#34;最後に&#34;&gt;最後に&lt;/h2&gt;
+&lt;p&gt;日本のコミュニティとしてConnpassにグループを作りました。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://weaviate.connpass.com/&#34;&gt;Weaviate JP Community - connpass&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;どうやってイベントをやるかはまだ考え中ですが、興味がある方は登録しておいていただければと。&lt;/p&gt;
+&lt;p&gt;どんな情報、どんなイベントがあれば興味をもっていただけるか？Weaviateを使ってみようと思うけど何から始めよう？など疑問に思うことがあればXやブログのコメントなどをいただければと思います。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>Weaviate入門（モジュール）</title>
       <link>https://blog.johtani.info/blog/2025/07/08/intro-weaviate-modules/</link>
