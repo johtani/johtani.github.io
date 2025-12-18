@@ -7,7 +7,169 @@
     <description>Recent content in 勉強会 on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Mon, 08 Dec 2025 14:18:59 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 18 Dec 2025 12:41:50 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Weaviateを使って個人的備忘録を作ってる</title>
+      <link>https://blog.johtani.info/blog/2025/12/18/grimoire-keeper/</link>
+      <pubDate>Thu, 18 Dec 2025 12:41:50 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2025/12/18/grimoire-keeper/</guid>
+      <description>&lt;p&gt;本記事は、&lt;a href=&#34;https://qiita.com/advent-calendar/2025/search&#34;&gt;情報検索・検索技術Advent Calendar 2025&lt;/a&gt;の19日目の記事です（今年はなんか参加者が少なくてさみしいけど、きっと検索の人たちは検索流行ってて忙しいんだなということにしておこう）。&lt;/p&gt;</description>
+      <content:encoded>&lt;p&gt;本記事は、&lt;a href=&#34;https://qiita.com/advent-calendar/2025/search&#34;&gt;情報検索・検索技術Advent Calendar 2025&lt;/a&gt;の19日目の記事です（今年はなんか参加者が少なくてさみしいけど、きっと検索の人たちは検索流行ってて忙しいんだなということにしておこう）。&lt;/p&gt;
+&lt;p&gt;こちらの&lt;a href=&#34;https://search-tech.connpass.com/event/370754/&#34;&gt;秋の検索勉強会&lt;/a&gt;で話をした内容になります。
+録画に失敗したので記事を書いておくかなと。。。&lt;/p&gt;
+&lt;p&gt;発表の資料と作ってるGitHubのリポジトリです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://noti.st/johtani/vzlnig/weaviate#s25Odsj&#34;&gt;Weaviateを使って個人的備忘録（まだ途中）&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/johtani/grimoire-keeper&#34;&gt;johtani/grimoire-keeper&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;なんで作ってるの&#34;&gt;なんで作ってるの？&lt;/h2&gt;
+&lt;p&gt;仕事柄（&lt;a href=&#34;https://blog.johtani.info/top/about/&#34;&gt;検索システムに関するコンサルなどをやっていたりします&lt;/a&gt;）、検索に関する記事をよく読んでいます。
+Xだったり、どこかのSlackだったり、Googleニュースだったりといろんなところから出てくる記事になんとなく目を通したり、仕事で調べた検索に関する各社の公式ブログや論文などにも目を通しています。&lt;/p&gt;
+&lt;p&gt;それなりの量を日々読んでいて、お客さんの話や質問で上がってくる内容に関連しそうな記事があったなぁと思うことが多々あります。
+ただ、最近読んだことは覚えていても、どの記事だったかが見つけられないことがあるんです（年齢的な問題？）。&lt;/p&gt;
+&lt;p&gt;なので、なんとなく読んで面白かった記事について、ブックマーク＋メモを残す仕組みをWeaviateを使って作ってみているという話です。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;ちなみに、コードやドキュメントはAmazon QのVS Code拡張を使いながら書いてもらっています。
+個人ツールはそれっぽい名前を付けてもらうために、作りたいものの概要を説明してから「中二病っぽい名前の候補を10個作って」とLLMにお願いして名前を付けています。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;なんでweaviate&#34;&gt;なんでWeaviate？&lt;/h2&gt;
+&lt;p&gt;ベクトル検索を主体にしたいなぁというのがあります。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;うろ覚えなのでなんとなくで検索できるようにしたい&lt;/li&gt;
+&lt;li&gt;絞り込み検索もしたい（どのサイトとかは覚えてたりする）&lt;/li&gt;
+&lt;li&gt;Weaviateを宣伝したい（&lt;a href=&#34;https://weaviate.connpass.com/&#34;&gt;Community作ろうとしてます&lt;/a&gt;）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;スライドではUIや前段のスクレイピングなどの話も記載していますが、今回のブログではWeaviateの部分を簡単に紹介する形にします。
+Weaviateに登録する前段で記事の要約をして、関連するキーワードをLLMをつかって抽出する処理を入れてあります。&lt;/p&gt;
+&lt;h3 id=&#34;スキーマの定義&#34;&gt;スキーマの定義&lt;/h3&gt;
+&lt;p&gt;Weaviateでは、コレクションに対してデータを登録すれば&lt;a href=&#34;https://docs.weaviate.io/weaviate/config-refs/collections#auto-schema&#34;&gt;自動的にデータに合わせてスキーマを定義してくれる機能&lt;/a&gt;があります。
+この場合、コレクションに作られるベクトル空間は1つとなります。&lt;/p&gt;
+&lt;p&gt;ただ、今回はベクトル空間をいくつか用意したい（タイトル、要約、自分のメモなど）と思っているので、あらかじめコレクション作成時にこちらでスキーマを指定します。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# コレクション作成&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;client&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;collections&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;create(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;GrimoireChunk&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    description&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Grimoire Keeperで管理するWebページのチャンク&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    properties&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;pageId&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;INT),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;chunkId&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;INT),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;url&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TEXT),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TEXT),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;memo&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TEXT),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;content&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TEXT),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;summary&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TEXT),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;keywords&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TEXT_ARRAY),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;createdAt&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;DATE),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Property(name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;isSummary&amp;#34;&lt;/span&gt;, data_type&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;DataType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;BOOL),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    vector_config&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Configure&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Vectors&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;text2vec_openai(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;content_vector&amp;#34;&lt;/span&gt;, source_properties&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;content&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        ),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Configure&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Vectors&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;text2vec_openai(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title_vector&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            source_properties&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;summary&amp;#34;&lt;/span&gt;],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        ),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        Configure&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Vectors&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;text2vec_openai(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            name&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;memo_vector&amp;#34;&lt;/span&gt;, source_properties&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;memo&amp;#34;&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        ),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    ],
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;a href=&#34;https://github.com/johtani/grimoire-keeper/blob/main/apps/api/src/grimoire_api/services/vectorizer.py#L185-L215&#34;&gt;GitHubのコードはこちら&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;コレクションの定義をしている部分のコードです。
+コレクションの名前（&lt;code&gt;name&lt;/code&gt;）、説明文（&lt;code&gt;description&lt;/code&gt;）、プロパティ（&lt;code&gt;properties&lt;/code&gt;：フィールド、カラムのようなもの）をまず定義しています。
+プロパティにも説明を書いた方がいいのですが、今回は記述していないです
+（ &lt;a href=&#34;https://docs.weaviate.io/agents/query&#34;&gt;Query Agent | Weaviate Documentation&lt;/a&gt;という機能も提供されており、エージェントがコレクションを検索するときのヒントになるので、コレクションやプロパティに説明を付けてあげたほうが今後の役に立つことになります）。&lt;/p&gt;
+&lt;p&gt;ここまでは、よくあるスキーマの定義になりますが、最後の&lt;code&gt;vector_config&lt;/code&gt;がこのコレクションのベクトルに関する設定になります。&lt;/p&gt;
+&lt;p&gt;今回は名前を付けたベクトル（&lt;a href=&#34;https://docs.weaviate.io/weaviate/config-refs/collections#named-vectors&#34;&gt;named vectors&lt;/a&gt;）を3つ設定しています。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;title_vector&lt;/code&gt;：タイトルと要約から生成するベクトル空間&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;content_vector&lt;/code&gt;：記事本文をチャンキングしたものから生成するベクトル空間&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;memo_vector&lt;/code&gt;：メモから生成するベクトル空間&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;すべて、入力としては&lt;code&gt;properties&lt;/code&gt;で定義したデータの型（今回はすべてテキスト）のデータになります。
+Weaviateの内部で、ベクトル化モジュールがOpenAIのembeddingモデルをAPI経由で呼び出して、テキストからベクトルに変換して保存してくれます。
+アプリとしては、タイトルや要約などはテキストとしてWeaviateにデータを登録するだけになります。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://docs.weaviate.io/weaviate/model-providers/openai/embeddings#select-a-model&#34;&gt;&lt;code&gt;model&lt;/code&gt;パラメータを設定する&lt;/a&gt;ことで、自分でモデルの選択もできますが、今回はデフォルトのモデルを使用するようにしています。&lt;/p&gt;
+&lt;h3 id=&#34;データの登録&#34;&gt;データの登録&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;collection &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; client&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;collections&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;get(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;GrimoireChunk&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; i, chunk &lt;span style=&#34;color:#f92672&#34;&gt;in&lt;/span&gt; enumerate(chunks):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    weaviate_object &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;pageId&amp;#34;&lt;/span&gt;: page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;id,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;chunkId&amp;#34;&lt;/span&gt;: i,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;url&amp;#34;&lt;/span&gt;: page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;url,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;title&amp;#34;&lt;/span&gt;: page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;title,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;memo&amp;#34;&lt;/span&gt;: page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;memo &lt;span style=&#34;color:#f92672&#34;&gt;or&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;content&amp;#34;&lt;/span&gt;: chunk,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;summary&amp;#34;&lt;/span&gt;: page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;summary &lt;span style=&#34;color:#f92672&#34;&gt;or&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;keywords&amp;#34;&lt;/span&gt;: json&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;loads(page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;keywords &lt;span style=&#34;color:#f92672&#34;&gt;or&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;[]&amp;#34;&lt;/span&gt;),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;createdAt&amp;#34;&lt;/span&gt;: (
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;created_at&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;replace(tzinfo&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;isoformat() &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Z&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;created_at&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;tzinfo &lt;span style=&#34;color:#f92672&#34;&gt;is&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;            &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; page_data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;created_at&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;isoformat()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        ),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;isSummary&amp;#34;&lt;/span&gt;: i &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    }
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    result &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; collection&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;insert(properties&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;weaviate_object)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;a href=&#34;https://github.com/johtani/grimoire-keeper/blob/main/apps/api/src/grimoire_api/services/vectorizer.py#L83-L139&#34;&gt;GitHubのコードはこちら&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;登録の処理の抜粋です。
+前処理として本文の部分（&lt;code&gt;content&lt;/code&gt;）をチャンクに分割しているので、それらを登録しています。
+それとは別に、&lt;code&gt;title_vector&lt;/code&gt;や&lt;code&gt;memo_vector&lt;/code&gt;のベクトル空間を検索した時に、不要なデータが表示されないように&lt;code&gt;isSummary&lt;/code&gt;ということで、最初のチャンクにフラグを立てて、それで絞り込めるようにしてあります。&lt;/p&gt;
+&lt;h3 id=&#34;検索処理&#34;&gt;検索処理&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                collection &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; client&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;collections&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;get(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;GrimoireChunk&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#75715e&#34;&gt;# フィルター条件構築&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                where_filter &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;_build_weaviate_filter(filters) &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; filters &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                exclude_filter &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;_build_exclude_filter(exclude_keywords) &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; exclude_keywords &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#75715e&#34;&gt;# ベクトル別フィルター追加&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                summary_filter &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; vector_name &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;content_vector&amp;#34;&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    &lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; weaviate.classes.query &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Filter
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    summary_filter &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Filter&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;by_property(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;isSummary&amp;#34;&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;equal(&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#75715e&#34;&gt;# フィルター結合&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                filters_list &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; []
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; where_filter:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    filters_list&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;append(where_filter)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; summary_filter:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    filters_list&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;append(summary_filter)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; exclude_filter:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    filters_list&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;append(exclude_filter)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                final_filter &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; len(filters_list) &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    final_filter &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; filters_list[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#66d9ef&#34;&gt;elif&lt;/span&gt; len(filters_list) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    final_filter &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Filter&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;all_of(filters_list)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#75715e&#34;&gt;# クエリ実行&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                response &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; collection&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;query&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;near_text(
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    query&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;query,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    target_vector&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;vector_name,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    limit&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;limit,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    filters&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;final_filter,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                    return_metadata&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;MetadataQuery(certainty&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;),
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                )
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#75715e&#34;&gt;# 結果変換&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;_convert_search_results_v4(response)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;a href=&#34;https://github.com/johtani/grimoire-keeper/blob/main/apps/api/src/grimoire_api/services/search_service.py#L61-L99&#34;&gt;GitHubのコードはこちら&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;検索処理です。入力されたキーワードや文章をベクトル検索するのには&lt;code&gt;near_text&lt;/code&gt;メソッドを利用します。
+&lt;code&gt;target_vector&lt;/code&gt;が検索対象となるベクトル空間の名前（例：&lt;code&gt;title_vector&lt;/code&gt;）の指定です。
+クエリ実行前にいくつかのフィルタ条件を組み立てて、条件として追加してあります（期間だったり除外するキーワードなどの条件）。&lt;/p&gt;
+&lt;p&gt;検索するときもこちらでベクトルに変換するなどの処理は行っておらず、テキストを&lt;code&gt;query&lt;/code&gt;に渡せば、よしなにWeaviate側でベクトル空間の設定をもとにエンベディングして検索をしてくれます。&lt;/p&gt;
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+&lt;p&gt;とりあえず、トラディショナルな感じのRAGのベースを自分でも試してみるかな？と思いながら作ってます。
+が、いろいろと使ってみて気づくことが多いなとなってるところです。&lt;/p&gt;
+&lt;p&gt;データはWeaviateに入れる前の時点でファイルとして保存するような作りにしているので、いろいろと改善できそうなことに手を出しながら触っていこうかなと思います（late interactionっぽいことやってみたり、チャットのUIを用意したり、チャンキングの仕組みを変えてみたり）。&lt;/p&gt;
+&lt;p&gt;なんとなく、Weaviateの使い方がこんな感じかな？というイメージを持ってもらえたら幸いです。&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>今年の輪読会で読んだ本</title>
       <link>https://blog.johtani.info/blog/2025/12/08/reading-circle/</link>
