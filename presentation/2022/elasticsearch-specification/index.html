@@ -208,24 +208,37 @@
                      data-slides-dir="/files/presentations/2022/elasticsearch-specification"
                      data-total="30">
 
-                    <div class="slide-container">
-                        <img id="slide-img" class="slide-img"
-                             src="/files/presentations/2022/elasticsearch-specification/slide-001.png"
-                             alt="ElasticsearchクライアントライブラリとSpecification - slide 1">
-                        <div class="slide-nav-overlay prev" onclick="slidePrev()">
-                            <span>&#8249;</span>
+                    
+                    <div id="slide-view-mode">
+                        <div class="slide-container">
+                            <img id="slide-img" class="slide-img"
+                                 src="/files/presentations/2022/elasticsearch-specification/slide-001.png"
+                                 alt="ElasticsearchクライアントライブラリとSpecification - slide 1">
+                            <div class="slide-nav-overlay prev" onclick="slidePrev()">
+                                <span>&#8249;</span>
+                            </div>
+                            <div class="slide-nav-overlay next" onclick="slideNext()">
+                                <span>&#8250;</span>
+                            </div>
                         </div>
-                        <div class="slide-nav-overlay next" onclick="slideNext()">
-                            <span>&#8250;</span>
+
+                        <div class="slide-controls">
+                            <button class="slide-btn" id="btn-prev" onclick="slidePrev()">&#8249; 前へ</button>
+                            <span class="slide-counter" id="slide-counter">1 / 30</span>
+                            <button class="slide-btn" id="btn-next" onclick="slideNext()">次へ &#8250;</button>
+                            <button class="slide-btn slide-btn-overview" id="btn-overview" onclick="showOverview()">&#9783; 一覧</button>
                         </div>
+                        <p class="slide-hint">キーボード: ← → またはスペース</p>
                     </div>
 
-                    <div class="slide-controls">
-                        <button class="slide-btn" id="btn-prev" onclick="slidePrev()">&#8249; 前へ</button>
-                        <span class="slide-counter" id="slide-counter">1 / 30</span>
-                        <button class="slide-btn" id="btn-next" onclick="slideNext()">次へ &#8250;</button>
+                    
+                    <div id="slide-overview-mode" style="display:none;">
+                        <div class="slide-overview-header">
+                            <span class="slide-overview-title">全スライド一覧</span>
+                            <button class="slide-btn" onclick="showViewer()">&#9783; ビューアに戻る</button>
+                        </div>
+                        <div class="slide-grid" id="slide-grid"></div>
                     </div>
-                    <p class="slide-hint">キーボード: ← → またはスペース</p>
                 </div>
 
                 <script>
@@ -238,6 +251,10 @@
                     var counter  = document.getElementById('slide-counter');
                     var btnPrev  = document.getElementById('btn-prev');
                     var btnNext  = document.getElementById('btn-next');
+                    var viewMode     = document.getElementById('slide-view-mode');
+                    var overviewMode = document.getElementById('slide-overview-mode');
+                    var grid         = document.getElementById('slide-grid');
+                    var gridBuilt    = false;
 
                     
                     
@@ -265,12 +282,74 @@
                         counter.textContent = current + ' / ' + total;
                         btnPrev.disabled = (current === 1);
                         btnNext.disabled = (current === total);
+                        history.replaceState(null, '', '#slide-' + current);
+                        updateGridActive();
                     }
+
+                    function updateGridActive() {
+                        if (!gridBuilt) return;
+                        var items = grid.querySelectorAll('.slide-grid-item');
+                        items.forEach(function (item, i) {
+                            item.classList.toggle('active', i + 1 === current);
+                        });
+                    }
+
+                    function buildGrid() {
+                        if (gridBuilt) return;
+                        for (var i = 1; i <= total; i++) {
+                            (function (n) {
+                                var item = document.createElement('div');
+                                item.className = 'slide-grid-item' + (n === current ? ' active' : '');
+
+                                var imgWrap = document.createElement('div');
+                                imgWrap.className = 'slide-grid-img-wrap';
+
+                                var imgEl = document.createElement('img');
+                                imgEl.src = slideUrl(n);
+                                imgEl.alt = 'スライド ' + n;
+                                imgEl.loading = 'lazy';
+                                imgWrap.appendChild(imgEl);
+
+                                var link = document.createElement('a');
+                                link.className = 'slide-grid-link';
+                                link.href = '#slide-' + n;
+                                link.textContent = n + ' / ' + total;
+                                link.addEventListener('click', function (e) {
+                                    e.preventDefault();
+                                    goTo(n);
+                                    showViewer();
+                                });
+
+                                item.appendChild(imgWrap);
+                                item.appendChild(link);
+                                grid.appendChild(item);
+                            })(i);
+                        }
+                        gridBuilt = true;
+                    }
+
+                    window.showOverview = function () {
+                        buildGrid();
+                        updateGridActive();
+                        viewMode.style.display = 'none';
+                        overviewMode.style.display = 'block';
+                        
+                        var activeItem = grid.querySelector('.slide-grid-item.active');
+                        if (activeItem) {
+                            activeItem.scrollIntoView({ block: 'nearest' });
+                        }
+                    };
+
+                    window.showViewer = function () {
+                        overviewMode.style.display = 'none';
+                        viewMode.style.display = 'block';
+                    };
 
                     window.slidePrev = function () { goTo(current - 1); };
                     window.slideNext = function () { goTo(current + 1); };
 
                     document.addEventListener('keydown', function (e) {
+                        if (overviewMode.style.display !== 'none') return;
                         if (e.key === 'ArrowLeft')  { goTo(current - 1); }
                         if (e.key === 'ArrowRight' || e.key === ' ') {
                             e.preventDefault();
@@ -279,7 +358,9 @@
                     });
 
                     
-                    goTo(1);
+                    var initHash = location.hash.match(/^#slide-(\d+)$/);
+                    var initSlide = initHash ? parseInt(initHash[1], 10) : 1;
+                    goTo(initSlide);
                 })();
                 </script>
                 
