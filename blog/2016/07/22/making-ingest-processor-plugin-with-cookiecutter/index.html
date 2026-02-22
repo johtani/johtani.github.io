@@ -53,7 +53,7 @@
     <link rel="stylesheet" href="/css/font-awesome.all.min.css">
 
     
-    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css"><link rel="stylesheet" href="https://blog.johtani.info/css/presentation.css">
 
     
     <script src="/js/jquery.min.js"></script>
@@ -77,7 +77,7 @@
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
       <script>
         var doNotTrack = false;
-        if ( false ) {
+        if ( true ) {
           var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
           var doNotTrack = (dnt == "1" || dnt == "yes");
         }
@@ -122,6 +122,8 @@
 		    
                         <li><a href="/top/about//">ABOUT</a></li>
                     
+                        <li><a href="/presentation//">PRESENTATIONS</a></li>
+                    
                         <li><a href="/pizza/">Pizza Search</a></li>
                     
 		            <li>
@@ -165,41 +167,14 @@
 
 
 
-
-<style type="text/css">
-    header.intro-header {
-        background-image: url('/images/header3.jpg')
-    }
-</style>
-<header class="intro-header">
+<header class="intro-header" style="background-image: url('/images/header3.jpg')">
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div class="post-heading">
-                    <div class="tags">
-                        
-                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
-                            elasticsearch
-                        </a>
-                        
-                        <a class="tag" href="/tags/plugin" title="plugin">
-                            plugin
-                        </a>
-                        
-                    </div>
-                    <h1>Lucene Kuromoji for NEologdで指定した品詞の単語を抜き出すIngest Pluginを書いてみた #elasticsearchjp</h1>
-                    <h2 class="subheading"></h2>
-                    <span class="meta">
-                        Posted by 
-                        
-                            johtani
-                         
-                        on 
-                        Friday, July 22, 2016
-                        
-                        
-                        
-                    </span>
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
+                <div class="site-heading">
+                    <h1>@johtaniの日記 3rd </h1>
+                    
+		    <span class="subheading">@johtani&#39;s blog 3rd edition</span>
                 </div>
             </div>
         </div>
@@ -212,35 +187,14 @@
 <article>
     <div class="container">
         <div class="row">
-
             
             <div class="
-                col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1
-                post-container">
-
-                
-                <header>
-                    <h2>目次</h2>
-                </header>
-                <nav id="TableOfContents">
-  <ul>
-    <li>
-      <ul>
-        <li><a href="#cookiecutterの使い方">Cookiecutterの使い方</a></li>
-        <li><a href="#プロジェクトのintellij-idea用のファイルを生成">プロジェクトのIntelliJ IDEA用のファイルを生成</a></li>
-        <li><a href="#コーディング">コーディング</a></li>
-        <li><a href="#テストのコーディング">テストのコーディング</a></li>
-        <li><a href="#テストの実行とzipの生成">テストの実行とZipの生成</a></li>
-        <li><a href="#kuromoji_pos_extractの利用方法">kuromoji_pos_extractの利用方法</a></li>
-        <li><a href="#alexのテンプレートで困った点">Alexのテンプレートで困った点</a></li>
-        <li><a href="#まとめ">まとめ</a></li>
-      </ul>
-    </li>
-    <li><a href="#参考ブログ元ネタ">参考ブログ（元ネタ？）</a></li>
-  </ul>
-</nav>
-                
+            col-lg-8 col-lg-offset-1
+            col-md-8 col-md-offset-1
+            col-sm-12
+            col-xs-12
+            post-container">
+            
                 <p>久しぶりに、技術的なブログ書いてます。</p>
 <p>Ingest Processorのプラグインを作ってみたくなったので、書いてみました。
 ただ書いてみるんじゃ3番煎じになりそうなので、<a href="https://cookiecutter.readthedocs.io/en/latest/readme.html">cookiecutter</a>を使ってみました。</p>
@@ -277,7 +231,7 @@ Elasticでは、カスタムBeatを作る時に利用する例がいつかの日
 <h4 id="ingestkuromojipartofspeechextractplugin">IngestKuromojiPartOfSpeechExtractPlugin</h4>
 <p>Pluginというクラスは、プラグインをNodeのModuleとして登録する処理を書くクラスとなります。
 生成してすぐは、次のような形になっています。（※importやクラス定義の部分は省略しています。）</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span>...
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span>...
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> Setting<span style="color:#f92672">&lt;</span>String<span style="color:#f92672">&gt;</span> YOUR_SETTING <span style="color:#f92672">=</span>
 </span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">new</span> Setting<span style="color:#f92672">&lt;&gt;</span>(<span style="color:#e6db74">&#34;ingest.kuromoji_part_of_speech_extract.setting&#34;</span>, <span style="color:#e6db74">&#34;foo&#34;</span>, (value) <span style="color:#f92672">-&gt;</span> value, Setting.<span style="color:#a6e22e">Property</span>.<span style="color:#a6e22e">NodeScope</span>);
 </span></span><span style="display:flex;"><span>
@@ -295,7 +249,7 @@ Elasticでは、カスタムBeatを作る時に利用する例がいつかの日
 最終系は<a href="https://github.com/johtani/elasticsearch-ingest-kuromoji-pos-extract">GitHubのコード</a>をご覧ください。</p>
 <h4 id="kuromojipartofspeechextractprocessor">KuromojiPartOfSpeechExtractProcessor</h4>
 <p>Processorは実際にIngest Nodeで行う処理を書くところです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String TYPE <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;kuromoji_part_of_speech_extract&#34;</span>;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">final</span> String field;
@@ -344,7 +298,7 @@ Elasticでは、カスタムBeatを作る時に利用する例がいつかの日
 </ul>
 <h4 id="kuromojipartofspeechextractprocessortests">KuromojiPartOfSpeechExtractProcessorTests</h4>
 <p>Processorクラスのテストになります。生成直後は次のような感じです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">testThatProcessorWorks</span>() <span style="color:#66d9ef">throws</span> Exception {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-Java" data-lang="Java"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">testThatProcessorWorks</span>() <span style="color:#66d9ef">throws</span> Exception {
 </span></span><span style="display:flex;"><span>    Map<span style="color:#f92672">&lt;</span>String, Object<span style="color:#f92672">&gt;</span> document <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>();
 </span></span><span style="display:flex;"><span>    document.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;source_field&#34;</span>, <span style="color:#e6db74">&#34;fancy source field content&#34;</span>);
 </span></span><span style="display:flex;"><span>    IngestDocument ingestDocument <span style="color:#f92672">=</span> RandomDocumentPicks.<span style="color:#a6e22e">randomIngestDocument</span>(random(), document);
@@ -380,7 +334,7 @@ APIを叩くときに利用するJSONの設定やアサーションは<code>src/
 </code></pre><h3 id="kuromoji_pos_extractの利用方法">kuromoji_pos_extractの利用方法</h3>
 <p>Ingest APIには便利な<a href="https://www.elastic.co/guide/en/elasticsearch/reference/master/simulate-pipeline-api.html">Simulate Pipeline API</a>があります。</p>
 <p>ということで、<a href="https://github.com/neologd/mecab-ipadic-neologd/blob/master/README.ja.md">mecab-ipadic-NEologd</a>にあったサンプルの文章を使って、使い方の説明です。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">_ingest/pipeline/_simulate</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">_ingest/pipeline/_simulate</span>
 </span></span><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;pipeline&#34;</span> : {
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;description&#34;</span> : <span style="color:#e6db74">&#34;kuromoji neologd extract test&#34;</span>,
@@ -412,7 +366,7 @@ APIを叩くときに利用するJSONの設定やアサーションは<code>src/
 </span></span><span style="display:flex;"><span>    ]
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>結果はこちら。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-JSON" data-lang="JSON"><span style="display:flex;"><span>{
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;docs&#34;</span>: [
 </span></span><span style="display:flex;"><span>    {
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;doc&#34;</span>: {
@@ -459,26 +413,9 @@ APIを叩くときに利用するJSONの設定やアサーションは<code>src/
 <li><a href="http://blog.cybozu.io/entry/2016/07/05/080000">Elasticsearch 5.0.0のIngest Node用プラグインを書いた話</a></li>
 </ul>
 
-
-                
-
-                <hr>
-                <ul class="pager">
-                    
-                    <li class="previous">
-                        <a href="https://blog.johtani.info/blog/2016/06/30/broken-something-in-this-year/" data-toggle="tooltip" data-placement="top" title="よく物が壊れる年">&larr;
-                            Previous Post</a>
-                    </li>
-                    
-                    
-                    <li class="next">
-                        <a href="https://blog.johtani.info/blog/2016/12/01/elasticsearch-5-dot-0-highlight/" data-toggle="tooltip" data-placement="top" title="Elasticsearch 5.0の便利機能紹介？">Next
-                            Post &rarr;</a>
-                    </li>
-                    
-                </ul>
-
-                
+            
+             
+            
 
 
 <div id="disqus-comment"></div>
@@ -506,500 +443,537 @@ APIを叩くときに利用するJSONの設定やアサーションは<code>src/
 
 
 
-                <hr/>
-                
-
-<h3>See Also by Hugo</h3>
-<ul>
- 
- <li><a href="/blog/2013/09/23/intro-elasticsearch-inquisitor/">elasticsearch-inquisitorプラグインの紹介</a></li>
- 
- <li><a href="/blog/2014/08/01/plugin-using-under-proxy-env/">プロキシ環境でのpluginコマンドの実行</a></li>
- 
- <li><a href="/blog/2014/03/11/es-plugin-installed-to-my-env/">いつも入れているElasticsearchのプラグイン</a></li>
- 
- <li><a href="/blog/2023/09/25/read-search-raking-guide/">機械学習による検索ランキング改善ガイドを読みました</a></li>
- 
- <li><a href="/blog/2022/07/20/querqy-architecture/">Querqyの調査（その2：アーキテクチャ）</a></li>
- 
-</ul>
-
-                <hr/>
-                
-<div class="article-widget content-widget-hr">
-  <h3>Related by prelims-cli</h3>
-  <ul>
-    
-    
-    
-    
-    <li><a href="https://blog.johtani.info/blog/2016/03/17/15th-elasticsearch-jp/">第15回Elasticsearch勉強会を開催しました。 #elasticsearchjp</a></li>
-    
-    <li><a href="https://blog.johtani.info/blog/2014/04/21/hold-on-4th-elasticsearch-jp/">第4回Elasticsearch勉強会を開催しました。#elasticsearchjp</a></li>
-    
-    <li><a href="https://blog.johtani.info/blog/2014/03/11/es-plugin-installed-to-my-env/">いつも入れているElasticsearchのプラグイン</a></li>
-    
-  </ul>
-</div>
-
+            
             </div>
             
-            <div class="
-                col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1
-                sidebar-container">
+            
 
-                
-                
-                <section>
-                    <hr class="hidden-sm hidden-xs">
-                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
-                    <div class="tags">
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/aws" title="aws">
-                            aws
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/azure-search" title="azure search">
-                            azure search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
-                            berlin buzzwords
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/bot" title="bot">
-                            bot
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/cloudera" title="cloudera">
-                            cloudera
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/cloudera-search" title="cloudera search">
-                            cloudera search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/conference" title="conference">
-                            conference
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/curator" title="curator">
-                            curator
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/dev-container" title="dev container">
-                            dev container
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
-                            diyキーボード
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/elastic" title="elastic">
-                            elastic
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/elasticsearch" title="elasticsearch">
-                            elasticsearch
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/fluentd" title="fluentd">
-                            fluentd
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/hadoop" title="hadoop">
-                            hadoop
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/hugo" title="hugo">
-                            hugo
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/java" title="java">
-                            java
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/kibana" title="kibana">
-                            kibana
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/kuromoji" title="kuromoji">
-                            kuromoji
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/logstash" title="logstash">
-                            logstash
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/lucene" title="lucene">
-                            lucene
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/lucene-gosen" title="lucene-gosen">
-                            lucene-gosen
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/manifoldcf" title="manifoldcf">
-                            manifoldcf
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/marvel" title="marvel">
-                            marvel
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/misc" title="misc">
-                            misc
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/morphlines" title="morphlines">
-                            morphlines
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/music" title="music">
-                            music
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/nlp100" title="nlp100">
-                            nlp100
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/octopress" title="octopress">
-                            octopress
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/opensearch" title="opensearch">
-                            opensearch
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/paper" title="paper">
-                            paper
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/plugin" title="plugin">
-                            plugin
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/python" title="python">
-                            python
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/riak" title="riak">
-                            riak
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/rust" title="rust">
-                            rust
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/rust-the-book" title="rust-the-book">
-                            rust-the-book
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/search" title="search">
-                            search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/shield" title="shield">
-                            shield
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/solr" title="solr">
-                            solr
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/visual-studio-code" title="visual studio code">
-                            visual studio code
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/watcher" title="watcher">
-                            watcher
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/weaviate" title="weaviate">
-                            weaviate
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/wikipedia" title="wikipedia">
-                            wikipedia
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/windows" title="windows">
-                            windows
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/workplace-search" title="workplace search">
-                            workplace search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/yokozuna" title="yokozuna">
-                            yokozuna
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/zipkin" title="zipkin">
-                            zipkin
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
-                            オライリー
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E3%82%AB%E3%83%B3%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9" title="カンファレンス">
-                            カンファレンス
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
-                            ブログ
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
-                            備忘録
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
-                            勉強会
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
-                            振り返り
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E6%9C%AC" title="本">
-                            本
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
-                            検索
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
-                            読書
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
-                            転職
-                        </a>
-                        
-                        
-                        
-                        
-                    </div>
-                </section>
-                
-
-                
-                
+<div class="
+    col-lg-3 col-lg-offset-0
+    col-md-3 col-md-offset-0
+    col-sm-12
+    col-xs-12
+    sidebar-container
+">
+    
+	
+    <section class="visible-md visible-lg">
+	
+        <div class="short-about">
+            
+            <a href="/about">
+               <img src="/images/about_me2.jpg" alt="avatar" style="cursor: pointer" />
+            </a>
+            
+            
+                <p>コワモテの検索好きエンジニアです。検索技術勉強会の運営などをやっています。Elasticsearchなど検索エンジンや検索のサービスなどに興味があります。lucene-gosenのコミッターもやっています。</p>
+            
+           
+           <ul class="list-inline">
+               
+               
+               <li>
+                   <a href="https://twitter.com/johtani">
+                       <span class="fa-stack fa-lg">
+                           <i class="fas fa-circle fa-stack-2x"></i>
+                           <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                       </span>
+                   </a>
+               </li>
+               
+               
+               
+               
+               
+               
+               <li>
+                   <a target="_blank" href="https://github.com/johtani">
+                       <span class="fa-stack fa-lg">
+                           <i class="fas fa-circle fa-stack-2x"></i>
+                           <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                       </span>
+                   </a>
+               </li>
+               
+               
+               
+               
+               <li>
+                   <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                       <span class="fa-stack fa-lg">
+                           <i class="fas fa-circle fa-stack-2x"></i>
+                           <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                       </span>
+                   </a>
+               </li>
+               
+               
+               
+            
+            
+               
+               
+               
+               
+                </ul>
             </div>
+    </section>
+	
+    
+    
+    
+    
+    <section>
+        <hr class="hidden-sm hidden-xs">
+        <h5>FEATURED TAGS</h5>
+        <div class="tags">
+            
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/aws" title="aws">
+                        aws
+                    </a>
+               
+            
+               
+                    <a href="/tags/azure-search" title="azure search">
+                        azure search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
+                        berlin buzzwords
+                    </a>
+               
+            
+               
+                    <a href="/tags/bot" title="bot">
+                        bot
+                    </a>
+               
+            
+               
+                    <a href="/tags/cloudera" title="cloudera">
+                        cloudera
+                    </a>
+               
+            
+               
+                    <a href="/tags/cloudera-search" title="cloudera search">
+                        cloudera search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/conference" title="conference">
+                        conference
+                    </a>
+               
+            
+               
+                    <a href="/tags/curator" title="curator">
+                        curator
+                    </a>
+               
+            
+               
+                    <a href="/tags/dev-container" title="dev container">
+                        dev container
+                    </a>
+               
+            
+               
+                    <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                        diyキーボード
+                    </a>
+               
+            
+               
+                    <a href="/tags/elastic" title="elastic">
+                        elastic
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/elasticsearch" title="elasticsearch">
+                        elasticsearch
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/fluentd" title="fluentd">
+                        fluentd
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/hadoop" title="hadoop">
+                        hadoop
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/hugo" title="hugo">
+                        hugo
+                    </a>
+               
+            
+               
+                    <a href="/tags/java" title="java">
+                        java
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/kibana" title="kibana">
+                        kibana
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/kuromoji" title="kuromoji">
+                        kuromoji
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/logstash" title="logstash">
+                        logstash
+                    </a>
+               
+            
+               
+                    <a href="/tags/lucene" title="lucene">
+                        lucene
+                    </a>
+               
+            
+               
+                    <a href="/tags/lucene-gosen" title="lucene-gosen">
+                        lucene-gosen
+                    </a>
+               
+            
+               
+                    <a href="/tags/manifoldcf" title="manifoldcf">
+                        manifoldcf
+                    </a>
+               
+            
+               
+                    <a href="/tags/marvel" title="marvel">
+                        marvel
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/misc" title="misc">
+                        misc
+                    </a>
+               
+            
+               
+                    <a href="/tags/morphlines" title="morphlines">
+                        morphlines
+                    </a>
+               
+            
+               
+                    <a href="/tags/music" title="music">
+                        music
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/nlp100" title="nlp100">
+                        nlp100
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/octopress" title="octopress">
+                        octopress
+                    </a>
+               
+            
+               
+                    <a href="/tags/opensearch" title="opensearch">
+                        opensearch
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/paper" title="paper">
+                        paper
+                    </a>
+               
+            
+               
+                    <a href="/tags/plugin" title="plugin">
+                        plugin
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/python" title="python">
+                        python
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/riak" title="riak">
+                        riak
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/rust" title="rust">
+                        rust
+                    </a>
+               
+            
+               
+                    <a href="/tags/rust-the-book" title="rust-the-book">
+                        rust-the-book
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/search" title="search">
+                        search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/shield" title="shield">
+                        shield
+                    </a>
+               
+            
+               
+                    <a href="/tags/solr" title="solr">
+                        solr
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/visual-studio-code" title="visual studio code">
+                        visual studio code
+                    </a>
+               
+            
+               
+                    <a href="/tags/watcher" title="watcher">
+                        watcher
+                    </a>
+               
+            
+               
+                    <a href="/tags/weaviate" title="weaviate">
+                        weaviate
+                    </a>
+               
+            
+               
+                    <a href="/tags/wikipedia" title="wikipedia">
+                        wikipedia
+                    </a>
+               
+            
+               
+                    <a href="/tags/windows" title="windows">
+                        windows
+                    </a>
+               
+            
+               
+                    <a href="/tags/workplace-search" title="workplace search">
+                        workplace search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/yokozuna" title="yokozuna">
+                        yokozuna
+                    </a>
+               
+            
+               
+                    <a href="/tags/zipkin" title="zipkin">
+                        zipkin
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                        オライリー
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E3%82%AB%E3%83%B3%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9" title="カンファレンス">
+                        カンファレンス
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                        ブログ
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                        備忘録
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                        勉強会
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                        振り返り
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/%E6%9C%AC" title="本">
+                        本
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                        検索
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                        読書
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                        転職
+                    </a>
+               
+            
+               
+            
+        </div>
+    </section>
+    
+
+    
+    
+    
+</div>
+
         </div>
     </div>
 </article>
@@ -1073,7 +1047,7 @@ APIを叩くときに利用するJSONの設定やアサーションは<code>src/
             
                 </ul>
 		<p class="copyright text-muted">
-                    Copyright &copy; @johtaniの日記 3rd 2025
+                    Copyright &copy; @johtaniの日記 3rd 2026
                     <br>
                     <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
                     <iframe

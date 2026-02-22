@@ -53,7 +53,7 @@
     <link rel="stylesheet" href="/css/font-awesome.all.min.css">
 
     
-    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css">
+    <link rel="stylesheet" href="https://blog.johtani.info/css/custom-font.css"><link rel="stylesheet" href="https://blog.johtani.info/css/amazon.css"><link rel="stylesheet" href="https://blog.johtani.info/css/presentation.css">
 
     
     <script src="/js/jquery.min.js"></script>
@@ -77,7 +77,7 @@
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZCZYDMJX3V"></script>
       <script>
         var doNotTrack = false;
-        if ( false ) {
+        if ( true ) {
           var dnt = (navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack);
           var doNotTrack = (dnt == "1" || dnt == "yes");
         }
@@ -122,6 +122,8 @@
 		    
                         <li><a href="/top/about//">ABOUT</a></li>
                     
+                        <li><a href="/presentation//">PRESENTATIONS</a></li>
+                    
                         <li><a href="/pizza/">Pizza Search</a></li>
                     
 		            <li>
@@ -165,41 +167,14 @@
 
 
 
-
-<style type="text/css">
-    header.intro-header {
-        background-image: url('/images/header3.jpg')
-    }
-</style>
-<header class="intro-header">
+<header class="intro-header" style="background-image: url('/images/header3.jpg')">
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div class="post-heading">
-                    <div class="tags">
-                        
-                        <a class="tag" href="/tags/rust" title="Rust">
-                            Rust
-                        </a>
-                        
-                        <a class="tag" href="/tags/nlp100" title="nlp100">
-                            nlp100
-                        </a>
-                        
-                    </div>
-                    <h1>第4章終了(言語処理100本ノック2020)</h1>
-                    <h2 class="subheading"></h2>
-                    <span class="meta">
-                        Posted by 
-                        
-                            johtani
-                         
-                        on 
-                        Monday, September 7, 2020
-                        
-                        
-                        
-                    </span>
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
+                <div class="site-heading">
+                    <h1>@johtaniの日記 3rd </h1>
+                    
+		    <span class="subheading">@johtani&#39;s blog 3rd edition</span>
                 </div>
             </div>
         </div>
@@ -212,32 +187,14 @@
 <article>
     <div class="container">
         <div class="row">
-
             
             <div class="
-                col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1
-                post-container">
-
-                
-                <header>
-                    <h2>目次</h2>
-                </header>
-                <nav id="TableOfContents">
-  <ul>
-    <li><a href="#第4章の概要">第4章の概要</a>
-      <ul>
-        <li><a href="#形態素解析">形態素解析</a></li>
-        <li><a href="#結果の保存">結果の保存</a></li>
-        <li><a href="#jsonの読み込み処理">JSONの読み込み処理</a></li>
-        <li><a href="#34-名詞の連接">34. 名詞の連接</a></li>
-        <li><a href="#36-頻度上位10語">36. 頻度上位10語</a></li>
-      </ul>
-    </li>
-    <li><a href="#まとめ">まとめ</a></li>
-  </ul>
-</nav>
-                
+            col-lg-8 col-lg-offset-1
+            col-md-8 col-md-offset-1
+            col-sm-12
+            col-xs-12
+            post-container">
+            
                 <p>Rustで言語処理100本ノックの第4章です。</p>
 <p>前回は<a href="/blog/2020/09/04/reboot-nlp100-ch03">こちら</a>。</p>
 <p>今回は早めに続きをやりました。
@@ -249,7 +206,7 @@
 <h3 id="形態素解析">形態素解析</h3>
 <p>もとの<code>neko.txt</code>が文章が1行ごとになっているので、そのまま1行ずつ読みならが、形態素解析していきます。読み込みの部分は3章とあまり変わらないので割愛します。
 以下は、形態素解析の処理と形態素解析結果用の構造体です。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[derive(Clone, Debug, Serialize, Deserialize)]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">#[derive(Clone, Debug, Serialize, Deserialize)]</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">Token</span> {
 </span></span><span style="display:flex;"><span>    surface: String,
 </span></span><span style="display:flex;"><span>    base: String,
@@ -264,7 +221,7 @@
 <li>品詞細分類1（pos1）</li>
 </ul>
 <p><code>derive</code>でSerialize、Deserializeを付与しているのは、形態素解析の結果をJSON文字列として保存し、あとのそれぞれの課題で読み出すためにserde_jsonを利用するためです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tokenize</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">tokenize</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> tokenizer <span style="color:#f92672">=</span> lindera::tokenizer::Tokenizer::new(<span style="color:#e6db74">&#34;normal&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>);
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> lindera_tokens <span style="color:#f92672">=</span> tokenizer.tokenize(line);
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">let</span> tokens <span style="color:#f92672">=</span> lindera_tokens
@@ -302,15 +259,15 @@
 <p>形態素解析の結果はJSONで保存しました。
 もとのファイルが1文が1行になっていたので、
 1行を読み込み、形態素解析し、それをVecで取り出して、1行1配列JSONの形で保存するようにしてあります。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">output_tokens</span>(tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>, buf: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> File) {
-</span></span><span style="display:flex;"><span>    writeln!(buf, <span style="color:#e6db74">&#34;{}&#34;</span>, serde_json::to_string(tokens).unwrap()).expect(<span style="color:#e6db74">&#34;Error during output json&#34;</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">output_tokens</span>(tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>, buf: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> File) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">writeln!</span>(buf, <span style="color:#e6db74">&#34;{}&#34;</span>, serde_json::to_string(tokens).unwrap()).expect(<span style="color:#e6db74">&#34;Error during output json&#34;</span>);
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p><code>serde_json::to_string</code>に<code>Vec&lt;Token&gt;</code>を渡しているだけですが、構造体に<code>derive</code>をつけているのでよしなにやってくれます(便利ー)。</p>
 <h3 id="jsonの読み込み処理">JSONの読み込み処理</h3>
 <p>1行1JSONの読み込み処理です。
 今回も3章のように読み込みながら、各文章ごとの形態素解析結果に対して処理を実施するために、処理を実行するための<code>trait</code>を<code>Command</code>として用意し、それぞれの問題で形態素解析結果に対して処理を書くような実装にしました。また、設問37で「猫」と共起している単語を処理するという課題があるので、文章に「猫」が入っているものだけを処理できるようにするための<code>Filter</code>も用意し、これをJSONの読み込み処理のイテレータの<code>filter</code>にわたすようにしています。
 特にフィルタリングが必要ない場合ように、<code>NonFilter</code>を予め実装済みです。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">trait</span> Command {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">trait</span> Command {
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>);
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
@@ -327,7 +284,7 @@
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">// ch04-30. 形態素解析結果の読み込み
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Command</span><span style="color:#f92672">&gt;</span>(cmd: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> T) {
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">load_json</span><span style="color:#f92672">&lt;</span>T: <span style="color:#a6e22e">Command</span><span style="color:#f92672">&gt;</span>(cmd: <span style="color:#66d9ef">&amp;</span><span style="color:#a6e22e">mut</span> T) {
 </span></span><span style="display:flex;"><span>    load_json_with_filter(cmd, <span style="color:#f92672">&amp;</span>NonFilter {});
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span>
@@ -343,12 +300,12 @@
 </span></span><span style="display:flex;"><span>        });
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p><code>output_tokens</code>では<code>serde_json::to_string</code>を呼び出してましたが、読み込みでは、<code>serde_json::from_str</code>を使うと構造体にしてくれます。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">parse_line_json</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">parse_line_json</span>(line: <span style="color:#66d9ef">&amp;</span><span style="color:#66d9ef">str</span>) -&gt; Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span> {
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> serde_json::from_str(line).unwrap();
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>あとは、設問ごとに<code>Command</code>トレイトを実装していく形です。
 たとえば、32.の動詞の原形を出力する場合は次のようになります。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ExtractVerbBase</span> {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">ExtractVerbBase</span> {
 </span></span><span style="display:flex;"><span>    out: <span style="color:#a6e22e">File</span>,
 </span></span><span style="display:flex;"><span>}
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Command <span style="color:#66d9ef">for</span> ExtractVerbBase {
@@ -357,8 +314,8 @@
 </span></span><span style="display:flex;"><span>            .iter()
 </span></span><span style="display:flex;"><span>            .filter(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> token.pos <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;動詞&#34;</span>)
 </span></span><span style="display:flex;"><span>            .for_each(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> {
-</span></span><span style="display:flex;"><span>                writeln!(self.out, <span style="color:#e6db74">&#34;{}&#34;</span>, token.base).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
-</span></span><span style="display:flex;"><span>                println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, token.base);
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">writeln!</span>(self.out, <span style="color:#e6db74">&#34;{}&#34;</span>, token.base).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, token.base);
 </span></span><span style="display:flex;"><span>            })
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
@@ -366,18 +323,18 @@
 <h3 id="34-名詞の連接">34. 名詞の連接</h3>
 <p>「名詞の連接（連続して出現する名詞）を最長一致で抽出せよ．」という課題だったのですが、最初は読み間違えて、名詞の連接の最も長いものだけを出力するようにしてました。。。
 やっぱり、出力結果とかのサンプルは用意しといてほしいなぁ。。。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Command <span style="color:#66d9ef">for</span> ExtractMaxConjunctionNoun {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">impl</span> Command <span style="color:#66d9ef">for</span> ExtractMaxConjunctionNoun {
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">execute</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self, tokens: <span style="color:#66d9ef">&amp;</span>Vec<span style="color:#f92672">&lt;</span>Token<span style="color:#f92672">&gt;</span>) {
-</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> nouns <span style="color:#f92672">=</span> vec![];
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> nouns <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec!</span>[];
 </span></span><span style="display:flex;"><span>        <span style="color:#75715e">// TODO 参照保持でどうにかしたいけどなぁ。
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        tokens.iter().map(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> token.clone()).for_each(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> {
+</span></span></span><span style="display:flex;"><span>        tokens.iter().map(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> token.clone()).for_each(<span style="color:#f92672">|</span>token<span style="color:#f92672">|</span> {
 </span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> token.pos <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;名詞&#34;</span> {
 </span></span><span style="display:flex;"><span>                nouns.push(token);
 </span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">else</span> {
 </span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> nouns.len() <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span> {
 </span></span><span style="display:flex;"><span>                    self.buffer.push(nouns.clone());
 </span></span><span style="display:flex;"><span>                }
-</span></span><span style="display:flex;"><span>                nouns <span style="color:#f92672">=</span> vec![]
+</span></span><span style="display:flex;"><span>                nouns <span style="color:#f92672">=</span> <span style="color:#a6e22e">vec!</span>[]
 </span></span><span style="display:flex;"><span>            }
 </span></span><span style="display:flex;"><span>        });
 </span></span><span style="display:flex;"><span>    }
@@ -390,13 +347,13 @@
 その生成したVecに値でソートし、その後Iteratorから最初の10件を取得して表示する方法にしました。</p>
 <p>ソートして取り出すという処理がついでにかかっています。。。
 <a href="https://doc.rust-lang.org/std/collections/struct.BinaryHeap.html">BinaryHeap</a>がなにか使えそうな気もしたのですが、いい方法が思いつきませんでした。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">print_top10</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self) {
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span>    <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">print_top10</span>(<span style="color:#f92672">&amp;</span><span style="color:#66d9ef">mut</span> self) {
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> key_values: Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span>
 </span></span><span style="display:flex;"><span>            self.terms_count.iter().collect::<span style="color:#f92672">&lt;</span>Vec<span style="color:#f92672">&lt;</span>(<span style="color:#f92672">&amp;</span>String, <span style="color:#f92672">&amp;</span><span style="color:#66d9ef">u32</span>)<span style="color:#f92672">&gt;&gt;</span>();
 </span></span><span style="display:flex;"><span>        key_values.sort_by(<span style="color:#f92672">|</span>x, y<span style="color:#f92672">|</span> y.<span style="color:#ae81ff">1.</span>cmp(<span style="color:#f92672">&amp;</span>x.<span style="color:#ae81ff">1</span>));
 </span></span><span style="display:flex;"><span>        key_values.iter().take(<span style="color:#ae81ff">10</span>).for_each(<span style="color:#f92672">|</span>(key, value)<span style="color:#f92672">|</span> {
-</span></span><span style="display:flex;"><span>            writeln!(<span style="color:#f92672">&amp;</span>self.out, <span style="color:#e6db74">&#34;{}, {}&#34;</span>, key, value).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
-</span></span><span style="display:flex;"><span>            println!(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">, </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, key, value);
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">writeln!</span>(<span style="color:#f92672">&amp;</span>self.out, <span style="color:#e6db74">&#34;{}, {}&#34;</span>, key, value).expect(<span style="color:#e6db74">&#34;Error during writeln&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">println!</span>(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{}</span><span style="color:#e6db74">, </span><span style="color:#e6db74">{}</span><span style="color:#e6db74">&#34;</span>, key, value);
 </span></span><span style="display:flex;"><span>        });
 </span></span><span style="display:flex;"><span>    }
 </span></span></code></pre></div><h2 id="まとめ">まとめ</h2>
@@ -405,26 +362,9 @@
 Kibana/Esに食わせて見てみるのもありかなぁ?</p>
 <p>次は係り受け解析です。Rustで使えるライブラリとかあるかなぁ?</p>
 
-
-                
-
-                <hr>
-                <ul class="pager">
-                    
-                    <li class="previous">
-                        <a href="https://blog.johtani.info/blog/2020/09/04/reboot-nlp100-ch03/" data-toggle="tooltip" data-placement="top" title="第3章終了(言語処理100本ノック2020)">&larr;
-                            Previous Post</a>
-                    </li>
-                    
-                    
-                    <li class="next">
-                        <a href="https://blog.johtani.info/blog/2020/09/07/intro-metered-rs/" data-toggle="tooltip" data-placement="top" title="meteredクレートの紹介">Next
-                            Post &rarr;</a>
-                    </li>
-                    
-                </ul>
-
-                
+            
+             
+            
 
 
 <div id="disqus-comment"></div>
@@ -452,500 +392,537 @@ Kibana/Esに食わせて見てみるのもありかなぁ?</p>
 
 
 
-                <hr/>
-                
-
-<h3>See Also by Hugo</h3>
-<ul>
- 
- <li><a href="/blog/2020/09/04/reboot-nlp100-ch03/">第3章終了(言語処理100本ノック2020)</a></li>
- 
- <li><a href="/blog/2020/05/08/rebootnlp100-ch02-10to11/">第2章の10から11まで(言語処理100本ノック2020)</a></li>
- 
- <li><a href="/blog/2020/05/08/reboot-nlp100-finish-ch01/">第1章の08から09まで(言語処理100本ノック2020)</a></li>
- 
- <li><a href="/blog/2020/04/09/reboot-nlp100-ch01-03to05/">第1章の03から06まで(言語処理100本ノック2020)</a></li>
- 
- <li><a href="/blog/2020/09/07/intro-metered-rs/">meteredクレートの紹介</a></li>
- 
-</ul>
-
-                <hr/>
-                
-<div class="article-widget content-widget-hr">
-  <h3>Related by prelims-cli</h3>
-  <ul>
-    
-    
-    
-    
-    <li><a href="https://blog.johtani.info/blog/2020/09/04/reboot-nlp100-ch03/">第3章終了(言語処理100本ノック2020)</a></li>
-    
-    <li><a href="https://blog.johtani.info/blog/2020/05/14/chap9-rust-the-book/">Rust the book - 第9章</a></li>
-    
-    <li><a href="https://blog.johtani.info/blog/2020/04/09/reboot-nlp100-ch01-03to05/">第1章の03から06まで(言語処理100本ノック2020)</a></li>
-    
-  </ul>
-</div>
-
+            
             </div>
             
-            <div class="
-                col-lg-8 col-lg-offset-2
-                col-md-10 col-md-offset-1
-                sidebar-container">
+            
 
-                
-                
-                <section>
-                    <hr class="hidden-sm hidden-xs">
-                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
-                    <div class="tags">
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/aws" title="aws">
-                            aws
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/azure-search" title="azure search">
-                            azure search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
-                            berlin buzzwords
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/bot" title="bot">
-                            bot
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/cloudera" title="cloudera">
-                            cloudera
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/cloudera-search" title="cloudera search">
-                            cloudera search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/conference" title="conference">
-                            conference
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/curator" title="curator">
-                            curator
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/dev-container" title="dev container">
-                            dev container
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
-                            diyキーボード
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/elastic" title="elastic">
-                            elastic
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/elasticsearch" title="elasticsearch">
-                            elasticsearch
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/fluentd" title="fluentd">
-                            fluentd
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/hadoop" title="hadoop">
-                            hadoop
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/hugo" title="hugo">
-                            hugo
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/java" title="java">
-                            java
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/kibana" title="kibana">
-                            kibana
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/kuromoji" title="kuromoji">
-                            kuromoji
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/logstash" title="logstash">
-                            logstash
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/lucene" title="lucene">
-                            lucene
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/lucene-gosen" title="lucene-gosen">
-                            lucene-gosen
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/manifoldcf" title="manifoldcf">
-                            manifoldcf
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/marvel" title="marvel">
-                            marvel
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/misc" title="misc">
-                            misc
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/morphlines" title="morphlines">
-                            morphlines
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/music" title="music">
-                            music
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/nlp100" title="nlp100">
-                            nlp100
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/octopress" title="octopress">
-                            octopress
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/opensearch" title="opensearch">
-                            opensearch
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/paper" title="paper">
-                            paper
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/plugin" title="plugin">
-                            plugin
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/python" title="python">
-                            python
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/riak" title="riak">
-                            riak
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/rust" title="rust">
-                            rust
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/rust-the-book" title="rust-the-book">
-                            rust-the-book
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/search" title="search">
-                            search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/shield" title="shield">
-                            shield
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/solr" title="solr">
-                            solr
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/visual-studio-code" title="visual studio code">
-                            visual studio code
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/watcher" title="watcher">
-                            watcher
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/weaviate" title="weaviate">
-                            weaviate
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/wikipedia" title="wikipedia">
-                            wikipedia
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/windows" title="windows">
-                            windows
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/workplace-search" title="workplace search">
-                            workplace search
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/yokozuna" title="yokozuna">
-                            yokozuna
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/zipkin" title="zipkin">
-                            zipkin
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
-                            オライリー
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E3%82%AB%E3%83%B3%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9" title="カンファレンス">
-                            カンファレンス
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
-                            ブログ
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
-                            備忘録
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
-                            勉強会
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
-                            振り返り
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E6%9C%AC" title="本">
-                            本
-                        </a>
-                        
-                        
-                        
-                        <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
-                            検索
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
-                            読書
-                        </a>
-                        
-                        
-                        
-                        
-                        
-                        <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
-                            転職
-                        </a>
-                        
-                        
-                        
-                        
-                    </div>
-                </section>
-                
-
-                
-                
+<div class="
+    col-lg-3 col-lg-offset-0
+    col-md-3 col-md-offset-0
+    col-sm-12
+    col-xs-12
+    sidebar-container
+">
+    
+	
+    <section class="visible-md visible-lg">
+	
+        <div class="short-about">
+            
+            <a href="/about">
+               <img src="/images/about_me2.jpg" alt="avatar" style="cursor: pointer" />
+            </a>
+            
+            
+                <p>コワモテの検索好きエンジニアです。検索技術勉強会の運営などをやっています。Elasticsearchなど検索エンジンや検索のサービスなどに興味があります。lucene-gosenのコミッターもやっています。</p>
+            
+           
+           <ul class="list-inline">
+               
+               
+               <li>
+                   <a href="https://twitter.com/johtani">
+                       <span class="fa-stack fa-lg">
+                           <i class="fas fa-circle fa-stack-2x"></i>
+                           <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                       </span>
+                   </a>
+               </li>
+               
+               
+               
+               
+               
+               
+               <li>
+                   <a target="_blank" href="https://github.com/johtani">
+                       <span class="fa-stack fa-lg">
+                           <i class="fas fa-circle fa-stack-2x"></i>
+                           <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                       </span>
+                   </a>
+               </li>
+               
+               
+               
+               
+               <li>
+                   <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                       <span class="fa-stack fa-lg">
+                           <i class="fas fa-circle fa-stack-2x"></i>
+                           <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
+                       </span>
+                   </a>
+               </li>
+               
+               
+               
+            
+            
+               
+               
+               
+               
+                </ul>
             </div>
+    </section>
+	
+    
+    
+    
+    
+    <section>
+        <hr class="hidden-sm hidden-xs">
+        <h5>FEATURED TAGS</h5>
+        <div class="tags">
+            
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/aws" title="aws">
+                        aws
+                    </a>
+               
+            
+               
+                    <a href="/tags/azure-search" title="azure search">
+                        azure search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/berlin-buzzwords" title="berlin buzzwords">
+                        berlin buzzwords
+                    </a>
+               
+            
+               
+                    <a href="/tags/bot" title="bot">
+                        bot
+                    </a>
+               
+            
+               
+                    <a href="/tags/cloudera" title="cloudera">
+                        cloudera
+                    </a>
+               
+            
+               
+                    <a href="/tags/cloudera-search" title="cloudera search">
+                        cloudera search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/conference" title="conference">
+                        conference
+                    </a>
+               
+            
+               
+                    <a href="/tags/curator" title="curator">
+                        curator
+                    </a>
+               
+            
+               
+                    <a href="/tags/dev-container" title="dev container">
+                        dev container
+                    </a>
+               
+            
+               
+                    <a href="/tags/diy%E3%82%AD%E3%83%BC%E3%83%9C%E3%83%BC%E3%83%89" title="diyキーボード">
+                        diyキーボード
+                    </a>
+               
+            
+               
+                    <a href="/tags/elastic" title="elastic">
+                        elastic
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/elasticsearch" title="elasticsearch">
+                        elasticsearch
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/fluentd" title="fluentd">
+                        fluentd
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/hadoop" title="hadoop">
+                        hadoop
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/hugo" title="hugo">
+                        hugo
+                    </a>
+               
+            
+               
+                    <a href="/tags/java" title="java">
+                        java
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/kibana" title="kibana">
+                        kibana
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/kuromoji" title="kuromoji">
+                        kuromoji
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/logstash" title="logstash">
+                        logstash
+                    </a>
+               
+            
+               
+                    <a href="/tags/lucene" title="lucene">
+                        lucene
+                    </a>
+               
+            
+               
+                    <a href="/tags/lucene-gosen" title="lucene-gosen">
+                        lucene-gosen
+                    </a>
+               
+            
+               
+                    <a href="/tags/manifoldcf" title="manifoldcf">
+                        manifoldcf
+                    </a>
+               
+            
+               
+                    <a href="/tags/marvel" title="marvel">
+                        marvel
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/misc" title="misc">
+                        misc
+                    </a>
+               
+            
+               
+                    <a href="/tags/morphlines" title="morphlines">
+                        morphlines
+                    </a>
+               
+            
+               
+                    <a href="/tags/music" title="music">
+                        music
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/nlp100" title="nlp100">
+                        nlp100
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/octopress" title="octopress">
+                        octopress
+                    </a>
+               
+            
+               
+                    <a href="/tags/opensearch" title="opensearch">
+                        opensearch
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/paper" title="paper">
+                        paper
+                    </a>
+               
+            
+               
+                    <a href="/tags/plugin" title="plugin">
+                        plugin
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/python" title="python">
+                        python
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/riak" title="riak">
+                        riak
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/rust" title="rust">
+                        rust
+                    </a>
+               
+            
+               
+                    <a href="/tags/rust-the-book" title="rust-the-book">
+                        rust-the-book
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/search" title="search">
+                        search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/shield" title="shield">
+                        shield
+                    </a>
+               
+            
+               
+                    <a href="/tags/solr" title="solr">
+                        solr
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/visual-studio-code" title="visual studio code">
+                        visual studio code
+                    </a>
+               
+            
+               
+                    <a href="/tags/watcher" title="watcher">
+                        watcher
+                    </a>
+               
+            
+               
+                    <a href="/tags/weaviate" title="weaviate">
+                        weaviate
+                    </a>
+               
+            
+               
+                    <a href="/tags/wikipedia" title="wikipedia">
+                        wikipedia
+                    </a>
+               
+            
+               
+                    <a href="/tags/windows" title="windows">
+                        windows
+                    </a>
+               
+            
+               
+                    <a href="/tags/workplace-search" title="workplace search">
+                        workplace search
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/yokozuna" title="yokozuna">
+                        yokozuna
+                    </a>
+               
+            
+               
+                    <a href="/tags/zipkin" title="zipkin">
+                        zipkin
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/%E3%82%AA%E3%83%A9%E3%82%A4%E3%83%AA%E3%83%BC" title="オライリー">
+                        オライリー
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E3%82%AB%E3%83%B3%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9" title="カンファレンス">
+                        カンファレンス
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/%E3%83%96%E3%83%AD%E3%82%B0" title="ブログ">
+                        ブログ
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E5%82%99%E5%BF%98%E9%8C%B2" title="備忘録">
+                        備忘録
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E5%8B%89%E5%BC%B7%E4%BC%9A" title="勉強会">
+                        勉強会
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/%E6%8C%AF%E3%82%8A%E8%BF%94%E3%82%8A" title="振り返り">
+                        振り返り
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/%E6%9C%AC" title="本">
+                        本
+                    </a>
+               
+            
+               
+                    <a href="/tags/%E6%A4%9C%E7%B4%A2" title="検索">
+                        検索
+                    </a>
+               
+            
+               
+            
+               
+            
+               
+            
+               
+                    <a href="/tags/%E8%AA%AD%E6%9B%B8" title="読書">
+                        読書
+                    </a>
+               
+            
+               
+            
+               
+                    <a href="/tags/%E8%BB%A2%E8%81%B7" title="転職">
+                        転職
+                    </a>
+               
+            
+               
+            
+        </div>
+    </section>
+    
+
+    
+    
+    
+</div>
+
         </div>
     </div>
 </article>
@@ -1019,7 +996,7 @@ Kibana/Esに食わせて見てみるのもありかなぁ?</p>
             
                 </ul>
 		<p class="copyright text-muted">
-                    Copyright &copy; @johtaniの日記 3rd 2025
+                    Copyright &copy; @johtaniの日記 3rd 2026
                     <br>
                     <a href="https://themes.gohugo.io/hugo-theme-cleanwhite">CleanWhite Hugo Theme</a> by <a href="https://zhaohuabing.com">Huabing</a> |
                     <iframe
