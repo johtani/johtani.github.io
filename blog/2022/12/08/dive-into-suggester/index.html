@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     
+    <script>
+    (function() {
+        
+        
+        const autoTheme = false;
+        if (autoTheme) {
+            document.documentElement.setAttribute('data-auto-theme', 'true');
+        }
+
+        const theme = localStorage.getItem('cleanwhite-theme') ||
+                      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+    })();
+    </script>
+
+    
     <meta property="og:site_name" content="@johtaniの日記 3rd">
     <meta property="og:type" content="article">
 
@@ -26,6 +42,8 @@
     <meta property="twitter:description" content="johtaniの日記です。技術とか、他愛のないことを書き連ねていくブログです。 | johtani&#39;s blog site that includes topics, e.g. technical, life, hobby, etc." />
     
 
+    <meta property="og:url" content="http://localhost:1313/blog/2022/12/08/dive-into-suggester/" />
+
     
     <meta property="twitter:card" content="summary" />
     
@@ -39,19 +57,24 @@
     <link rel="canonical" href="/blog/2022/12/08/dive-into-suggester/">
 
     
-    
+
     
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 
     
-    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.css">
 
     
-    <link rel="stylesheet" href="/css/zanshang.css">
+    <link rel="stylesheet" href="/css/theme-variables.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.min.css">
 
     
     <link rel="stylesheet" href="/css/font-awesome.all.min.css">
 
+    
+    
     
     <link rel="stylesheet" href="http://localhost:1313/css/custom-font.css"><link rel="stylesheet" href="http://localhost:1313/css/amazon.css"><link rel="stylesheet" href="http://localhost:1313/css/presentation.css">
 
@@ -92,7 +115,6 @@
 
 
 
-
 <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
 
     <div class="container-fluid">
@@ -118,7 +140,7 @@
                     
                         
                     
-                    
+
 		    
                         <li><a href="/top/about//">ABOUT</a></li>
                     
@@ -129,6 +151,42 @@
 		            <li>
                         <a href="/search"><i class="fa fa-search"></i></a>
 		           </li>
+                    
+		            <li>
+                        <a href="#" id="theme-toggle" title="Toggle dark mode" style="opacity: 0;">
+                            <i class="fa fa-moon"></i>
+                            <i class="fa fa-sun" style="display: none;"></i>
+                        </a>
+		           </li>
+                    <script>
+                    (function() {
+                        
+                        var theme = localStorage.getItem('cleanwhite-theme') ||
+                                      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                        var toggleBtn = document.getElementById('theme-toggle');
+                        if (toggleBtn) {
+                            var moonIcon = toggleBtn.querySelector('.fa-moon');
+                            var sunIcon = toggleBtn.querySelector('.fa-sun');
+
+                            if (theme === 'dark') {
+                                if (moonIcon) moonIcon.style.display = 'none';
+                                if (sunIcon) sunIcon.style.display = 'inline';
+                                toggleBtn.setAttribute('title', 'Switch to light mode');
+                            } else {
+                                if (moonIcon) moonIcon.style.display = 'inline';
+                                if (sunIcon) sunIcon.style.display = 'none';
+                                toggleBtn.setAttribute('title', 'Switch to dark mode');
+                            }
+
+                            
+                            requestAnimationFrame(function() {
+                                toggleBtn.style.transition = 'opacity 0.2s ease';
+                                toggleBtn.style.opacity = '1';
+                            });
+                        }
+                    })();
+                    </script>
+                    
                 </ul>
             </div>
         </div>
@@ -163,18 +221,62 @@
             $navbar.className += " in";
         }
     }
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        var navLinks = document.querySelectorAll('.navbar-collapse a');
+        navLinks.forEach(function(link) {
+            link.addEventListener('click', function() {
+                if ($navbar.className.indexOf('in') > 0) {
+                    
+                    $navbar.className = " ";
+                    setTimeout(function(){
+                        if($navbar.className.indexOf('in') < 0) {
+                            $collapse.style.height = "0px"
+                        }
+                    },400)
+                }
+            });
+        });
+    });
 </script>
 
 
 
-<header class="intro-header" style="background-image: url('/images/header3.jpg')">
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/images/header3.jpg')
+    }
+</style>
+<header class="intro-header">
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
-                <div class="site-heading">
-                    <h1>@johtaniの日記 3rd </h1>
-                    
-		    <span class="subheading">@johtani&#39;s blog 3rd edition</span>
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/elasticsearch" title="elasticsearch">
+                            elasticsearch
+                        </a>
+                        
+                        <a class="tag" href="/tags/lucene" title="lucene">
+                            lucene
+                        </a>
+                        
+                    </div>
+                    <h1>Suggesterの仕組み（JapaneseCompletionAnalyzerその3）</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by 
+                        
+                            johtani
+                         
+                        on 
+                        Thursday, December 8, 2022
+                        
+                        
+                    </span>
                 </div>
             </div>
         </div>
@@ -187,14 +289,28 @@
 <article>
     <div class="container">
         <div class="row">
+
             
             <div class="
-            col-lg-8 col-lg-offset-1
-            col-md-8 col-md-offset-1
-            col-sm-12
-            col-xs-12
-            post-container">
-            
+                col-lg-8 col-lg-offset-1
+                col-md-8 col-md-offset-1
+                col-sm-12
+                col-xs-12
+                post-container">
+
+                
+                <header>
+                    <h2>目次</h2>
+                </header>
+                <nav id="TableOfContents">
+  <ul>
+    <li><a href="#データ構造">データ構造</a></li>
+    <li><a href="#lookup">lookup</a></li>
+    <li><a href="#残課題">残課題</a></li>
+    <li><a href="#まとめ">まとめ</a></li>
+  </ul>
+</nav>
+                
                 <p>本記事は<a href="https://adventar.org/calendars/7389">情報検索・検索技術 Advent Calendar 2022</a>の9日目の記事です。</p>
 <p>だいぶ間が空いてしまいましたが、日本語のオートコンプリートに関する記事の続きです。
 前回は<a href="/blog/2022/08/10/jp-auto-completion-2">ローマ字入力のゆれと読み（JapaneseCompletionAnalyzerその2）</a>として、いくつかの例をもとにどんなデータが入っているとどんな出力が出てくるのか？気を付ける点は？といったことを見てみました。</p>
@@ -212,9 +328,26 @@
 <h2 id="まとめ">まとめ</h2>
 <p>すごく簡単で、</p>
 
-            
-             
-            
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="http://localhost:1313/blog/2022/08/10/jp-auto-completion-2/" data-toggle="tooltip" data-placement="top" title="ローマ字入力のゆれと読み（JapaneseCompletionAnalyzerその2）">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                    <li class="next">
+                        <a href="http://localhost:1313/blog/2022/12/09/open-search-serverless/" data-toggle="tooltip" data-placement="top" title="ElasticsearchのアーキテクチャとStateless / Serverless">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+
+                
 
 
 <div id="disqus-comment"></div>
@@ -242,9 +375,27 @@
 
 
 
-            
+                <hr/>
+                
+
+<h3>See Also by Hugo</h3>
+<ul>
+ 
+ <li><a href="/blog/2024/07/24/derived-field-type-in-opensearch/">OpenSearchのderivedフィールドタイプについて</a></li>
+ 
+ <li><a href="/blog/2023/12/15/introduce-orama-to-blog/">Oramaという検索エンジンでブログ検索を作ってみた</a></li>
+ 
+ <li><a href="/blog/2022/08/10/jp-auto-completion-2/">ローマ字入力のゆれと読み（JapaneseCompletionAnalyzerその2）</a></li>
+ 
+ <li><a href="/blog/2022/08/09/japanese-auto-completion/">日本語用オートコンプリートのためのAnalyzer</a></li>
+ 
+ <li><a href="/blog/2024/12/27/about-retriever/">ElasticsearchのRetrieverについて調べたので雑にメモ</a></li>
+ 
+</ul>
+
+                <hr/>
+                
             </div>
-            
             
 
 <div class="
@@ -827,6 +978,7 @@
     
     
     
+    
 </div>
 
         </div>
@@ -920,7 +1072,7 @@
 
 
 <script>
-    function async(u, c) {
+    function loadAsync(u, c) {
       var d = document, t = 'script',
           o = d.createElement(t),
           s = d.getElementsByTagName(t)[0];
@@ -938,7 +1090,7 @@
 <script>
     
     if($('#tag_cloud').length !== 0){
-        async("/js/jquery.tagcloud.js",function(){
+        loadAsync("/js/jquery.tagcloud.js",function(){
             $.fn.tagcloud.defaults = {
                 
                 color: {start: '#bbbbee', end: '#0085a1'},
@@ -950,11 +1102,50 @@
 
 
 <script>
-    async("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+    (function() {
+        function updateTagcloudColors() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const startColor = isDark ? '#808080' : '#bbbbee';
+            if($('#tag_cloud').length !== 0 && $.fn.tagcloud) {
+                $.fn.tagcloud.defaults = {
+                    color: {start: startColor, end: '#0085a1'},
+                };
+                $('#tag_cloud a').tagcloud();
+            }
+        }
+
+        
+        $(document).ready(function() {
+            updateTagcloudColors();
+        });
+
+        
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'data-theme') {
+                    updateTagcloudColors();
+                }
+            });
+        });
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme']
+        });
+    })();
+</script>
+
+
+<script>
+    loadAsync("https://cdn.jsdelivr.net/npm/fastclick@1.0.6/lib/fastclick.min.js", function(){
         var $nav = document.querySelector("nav");
         if($nav) FastClick.attach($nav);
     })
 </script>
+
+
+<script src="/js/theme-toggle.js"></script>
+
 
 
 
