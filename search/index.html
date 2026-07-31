@@ -294,6 +294,7 @@ sidebar-container
 <div class="post-list" id="search-hits"></div>
 </div>
 
+<script src="/js/search-security.js"></script>
 <script>
 const client = algoliasearch('IFYKYNKGFQ', '8448a96b2452f59d6c2c5e98627d4e26');
 const search = instantsearch({
@@ -302,39 +303,41 @@ const search = instantsearch({
   insights: true
 });
 
-const hitTemplate = function(hit) {
+const { getSafeRelativeUrl } = window.searchSecurity;
 
-
-  let date = '';
-  if (hit.date) {
-    date = moment.unix(hit.date).format('MMM D, YYYY');
+function renderSearchAttribute(hit, attribute, components) {
+  if (hit._snippetResult?.[attribute]) {
+    return components.Snippet({ hit, attribute });
   }
-  let url = `${hit.url}`;
-  const title = hit._highlightResult.title.value;
-
-  let content = "" ; 
-  if (hit._highlightResult.content){
-      content = hit._highlightResult.content.value;
+  if (hit._highlightResult?.[attribute]) {
+    return components.Highlight({ hit, attribute });
   }
-  else{
-      content = hit.summary;
-  }
+  return hit[attribute] || '';
+}
 
-  let tags = "";
-  if (hit.tags){
-    hit.tags.sort().forEach(element => {
-      tags += '<span class="hit_tag">' + element + '</span>'
-    });
-  }
+const hitTemplate = function(hit, { html, components }) {
+  const date = hit.date ? moment.unix(hit.date).format('MMM D, YYYY') : '';
+  const url = getSafeRelativeUrl(hit.url, window.location.origin);
+  const title = renderSearchAttribute(hit, 'title', components);
+  const contentAttribute = hit._snippetResult?.content || hit._highlightResult?.content
+    ? 'content'
+    : 'summary';
+  const content = renderSearchAttribute(hit, contentAttribute, components);
+  const tags = Array.isArray(hit.tags) ? [...hit.tags].sort() : [];
+  const linkedTitle = url
+    ? html`<a class="post-link" href="${url}">${title}</a>`
+    : html`<span class="post-link">${title}</span>`;
 
-  return `
+  return html`
     <div class="post-item">
-      <h3><a class="post-link" href="${url}">${title}</a></h3>
+      <h3>${linkedTitle}</h3>
       <span class="post-meta">${date}</span>
-      <span class="post-meta">${tags}</span>
+      <span class="post-meta">
+        ${tags.map((tag) => html`<span class="hit_tag">${tag}</span>`)}
+      </span>
       <div class="post-snippet">${content}</div>
     </div>
-    <hr/>
+    <hr />
   `;
 }
 
@@ -374,14 +377,19 @@ search.addWidget(
     attribute: 'tags',
     templates: {
       item(item, { html }) {
-        const { url, label, count, isRefined } = item;
-        return `
-          <label class="ais-RefinementList-label" >
-            <input type="checkbox" class="ais-RefinementList-checkbox" value="${label}" ${isRefined ? "checked" : ""}>
+        const { label, count, isRefined } = item;
+        return html`
+          <label class="ais-RefinementList-label">
+            <input
+              type="checkbox"
+              class="ais-RefinementList-checkbox"
+              value="${label}"
+              checked="${isRefined}"
+            />
             <span class="ais-RefinementList-labelText">${label}</span>
             <span class="ais-RefinementList-count"> (${count})</span>
           </label>
-          `;
+        `;
       },
     },
   })
