@@ -7,7 +7,69 @@
     <description>Recent content in Conference on @johtaniの日記 3rd</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>ja</language>
-    <lastBuildDate>Wed, 21 Jun 2023 01:30:45 +0900</lastBuildDate><atom:link href="https://blog.johtani.info/tags/conference/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 04 Aug 2026 07:54:42 +0000</lastBuildDate><atom:link href="https://blog.johtani.info/tags/conference/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>カンファレンスの録画をGemini Notebookを使ってチェックする</title>
+      <link>https://blog.johtani.info/blog/2026/08/04/check-conference-recordings-with-notebook/</link>
+      <pubDate>Tue, 04 Aug 2026 07:54:42 +0000</pubDate>
+      
+      <guid>https://blog.johtani.info/blog/2026/08/04/check-conference-recordings-with-notebook/</guid>
+      <description>&lt;p&gt;6月の話だったのですが、今年も&lt;a href=&#34;https://2026.berlinbuzzwords.de/&#34;&gt;Berlin Buzzwords&lt;/a&gt;にオンラインで参加していました。
+検索に関する話題が多めの毎年ベルリンで開催されているカンファレンスです。&lt;/p&gt;</description>
+      <content:encoded>&lt;p&gt;6月の話だったのですが、今年も&lt;a href=&#34;https://2026.berlinbuzzwords.de/&#34;&gt;Berlin Buzzwords&lt;/a&gt;にオンラインで参加していました。
+検索に関する話題が多めの毎年ベルリンで開催されているカンファレンスです。&lt;/p&gt;
+&lt;p&gt;カンファレンスが終わってすぐに、録画が&lt;a href=&#34;https://www.youtube.com/playlist?list=PLq-odUc2x7i82TFm2NLewyoGOsHRkBLsq&#34;&gt;YouTubeにプレイリスト&lt;/a&gt;としてアップもされています。
+うれしいことに、トラックが複数あるため参加中にすべてのセッションを聞けるわけではありません。&lt;/p&gt;
+&lt;p&gt;ただ、録画すべてを見るのも大変です。
+カンファレンスのページにセッション概要やタイトルも掲載されていますが、どのセッションが自分の興味に合いそうか？を探すのもある程度大変ですよね。
+とくにBerlin Buzzwordsは検索だけではなく、そのほかの技術に関する話題もありセッション数が多いです。&lt;/p&gt;
+&lt;p&gt;ですので今年は、YouTubeのプレイリストをもとに、Gemini Notebook（旧NotebookLM）を利用してYouTubeの録画をもとに一覧を作ってみました。
+実際に作ったリストは検索技術勉強会でも紹介しているSlackにも投稿したのですが、こんな感じで作ったというのを来年の自分のために残しておきます。&lt;/p&gt;
+&lt;p&gt;検索に関するSlackへのリンクはこちら。&lt;/p&gt;
+&lt;p&gt;{{ &lt;tweet user=&#34;takuya_b&#34; id=&#34;1377219737457860610&#34;&gt; }}&lt;/p&gt;
+&lt;h2 id=&#34;作業手順&#34;&gt;作業手順&lt;/h2&gt;
+&lt;p&gt;作業手順といっても簡単です。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;YouTubeのプレイリストから、各セッションの録画へのリンクの一覧を作る&lt;/li&gt;
+&lt;li&gt;リンクの一覧をGemini Notebookのソースに入力&lt;/li&gt;
+&lt;li&gt;一覧からプロンプトで資料を作ってもらう&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;という指示で出来上がったのが、次のようなMarkdownの資料です。
+最初の2行のリンクや動画へのリンクは個別に修正したりしてますが、メモの中身はこの作業で出来上がったものです。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://gist.github.com/johtani/a94942bde22bd6d1f48ff8ac6c896858&#34;&gt;Berlin Buzzwords 2026メモ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;リンクの一覧&#34;&gt;リンクの一覧&lt;/h3&gt;
+&lt;p&gt;最初はプレイリストのリンクを1つだけ渡して指示を出してみたのですが、どうやら個別の動画ではなくプレイリストにあるタイトルだけをもとに概要などを作るようでした。
+なので、実際に話した内容とはすこし異なるものが出てきました。
+プレイリストからURLの一覧を作るのは手でやってもいいですし、スクリプトを組んだりもできるかなと。&lt;/p&gt;
+&lt;h3 id=&#34;ソースの入力&#34;&gt;ソースの入力&lt;/h3&gt;
+&lt;p&gt;Gemini Notebookのソースには、1で作ったURLを改行区切り下リストを渡すだけでOKです。
+Gemini Notebookの左側にソースとしてYouTubeのアイコンで始まるセッションがならびます。
+次のプロンプトを実行するタイミングでは、すべて選択した状態にしておきます。&lt;/p&gt;
+&lt;h3 id=&#34;プロンプト&#34;&gt;プロンプト&lt;/h3&gt;
+&lt;p&gt;最後は次のようなプロンプトを使いました。Berlin Buzzwordsでは検索以外のトピックもあるので、判別できるような指示を入れてあります。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;それぞれの動画に関して解説を作ってください。5行程度の説明文と10個程度のトピックとなるキーワードをお願いします。出力形式はMarkdownで、それぞれの動画へのリンクもつけてください。少なくとも検索関するトピックかどうかがわかるようにキーワードを必ず付与するようにしてください。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;これで先ほどのMarkdownの説明が出来上がりです。
+これをもとに、気になるセッションから録画を見ていくことができて便利でした。
+Gemini NotebookからYouTubeのリンクもたどれますし。&lt;/p&gt;
+&lt;h2 id=&#34;gemini-notebookで作る便利な点&#34;&gt;Gemini Notebookで作る便利な点&lt;/h2&gt;
+&lt;p&gt;さらに、Gemini Notebookを使っていて便利だったのは、この後セッションを見ながら、個別のセッションについて質問したりもできる点です。
+見ているセッションだけをソースでチェックを入れた状態で質問をしていくと、どんなことをしゃべっているのか？という深堀もできます。&lt;/p&gt;
+&lt;h2 id=&#34;おまけ&#34;&gt;おまけ&lt;/h2&gt;
+&lt;p&gt;Berlin Buzzwords以外にも海外で検索に関連するカンファレンスの動画がアップされています。
+海外の企業がどんな検索で困っているのか？今どんなことがはやっているのか？というのをチェックするのに便利です。
+ということで、5月に開催されていた&lt;a href=&#34;https://archive.haystackconf.com/2026/&#34;&gt;Haystack US 2026&lt;/a&gt;やBerlin Buzzwordsと同じ週に開催されていた&lt;a href=&#34;https://mices.co/&#34;&gt;MICES 2026&lt;/a&gt;についてもメモを作っていたので、こちらもリンクを置いておきます。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://gist.github.com/johtani/ce2237a3dfab7071280d6b619bd463c3&#34;&gt;Haystack US 2026のメモ&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://gist.github.com/johtani/2519cb35e96800653004f9b70a05d54c&#34;&gt;MICES 2026のセッションのYouTubeをもとにざっくりまとめてもらった&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ほかにもこんなカンファレンスがあるよ、こんな録画があったよなどあれば、共有してもらえると嬉しいです！&lt;/p&gt;
+</content:encoded>
+    </item>
+    
     <item>
       <title>今年もオンラインでBerlin Buzzwordsに参加した</title>
       <link>https://blog.johtani.info/blog/2023/06/21/attend-berlin-buzzwords-2023/</link>
@@ -165,7 +227,7 @@ Kibanaが使いやすくなってるのがわかるセッションで面白か�
 &lt;h2 id=&#34;面白かったセッション&#34;&gt;面白かったセッション&lt;/h2&gt;
 &lt;h3 id=&#34;the-future-of-lucenes-mmapdirectory-why-use-it-and-whats-coming-with-java-19-and-later&#34;&gt;The future of Lucene&amp;rsquo;s MMapDirectory: Why use it and what&amp;rsquo;s coming with Java 19 and later?&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ： &lt;a href=&#34;https://pretalx.com/bbuzz22/talk/WYC9ZB/&#34;&gt;The future of Lucene&amp;rsquo;s MMapDirectory： Why use it and what&amp;rsquo;s coming with Java 19 and later? ：： Berlin Buzzwords 2022 &lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ： &lt;a href=&#34;https://pretalx.com/bbuzz22/talk/WYC9ZB/&#34;&gt;The future of Lucene&amp;rsquo;s MMapDirectory： Why use it and what&amp;rsquo;s coming with Java 19 and later? ： Berlin Buzzwords 2022 &lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=hgF0jNxKrrg&#34;&gt;Uwe Schindler – The future of Lucene&amp;rsquo;s MMapDirectory： Why use it &amp;amp; what&amp;rsquo;s coming with Java19 &amp;amp; later - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;毎年恒例になってる気も？
@@ -173,7 +235,7 @@ Kibanaが使いやすくなってるのがわかるセッションで面白か�
 使えるようにするから、テストしてみて！という感じで終わっていますｗ&lt;/p&gt;
 &lt;h3 id=&#34;scaling-an-online-search-engine-to-thousands-of-physical-stores&#34;&gt;Scaling an online search engine to thousands of physical stores&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/BRRB7M/&#34;&gt;Scaling an online search engine to thousands of physical stores ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/BRRB7M/&#34;&gt;Scaling an online search engine to thousands of physical stores ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=3M_rQvoCcAg&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=24&#34;&gt;Aline Paponaud – Scaling an online search engine to thousands of physical stores - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;数千の実店舗の商品をオンラインで検索できるようにしつつ、オンラインのマーケットプレイスのような検索も一緒にできるようにしたというお話でした。
@@ -182,7 +244,7 @@ Kibanaが使いやすくなってるのがわかるセッションで面白か�
 実際に検索したときに、実店舗のデータがどんな感じで結果として表示されたりするのか？といった点はわからなかったので、そのあたりの話をもうちょっと聞いてみたかったなぁ。&lt;/p&gt;
 &lt;h3 id=&#34;offline-ranking-validation---predicting-ab-test-results&#34;&gt;Offline Ranking Validation - Predicting A/B Test Results&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/NEQRBP/&#34;&gt;Offline Ranking Validation - Predicting A/B Test Results ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/NEQRBP/&#34;&gt;Offline Ranking Validation - Predicting A/B Test Results ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=Gk5IQidyJTQ&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=5&#34;&gt;Andrea Schütt &amp;amp; Yunus Lutz – Offline Ranking Validation - Predicting A/B Test Results - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;otto.deというECサイトでのランキングをどうやって改善していくか？という話。
@@ -192,7 +254,7 @@ Kibanaが使いやすくなってるのがわかるセッションで面白か�
 いくつかわからない単語も出てきたので、誰か詳しい人教えて！&lt;/p&gt;
 &lt;h3 id=&#34;ai-powered-semantic-search-a-story-of-broken-promises&#34;&gt;AI-powered Semantic Search; A story of broken promises?&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/7TYXQN/&#34;&gt;AI-powered Semantic Search; A story of broken promises? ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/7TYXQN/&#34;&gt;AI-powered Semantic Search; A story of broken promises? ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=7ozfzKLTFV4&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=18&#34;&gt;Jo Kristian Bergum – AI-powered Semantic Search; A story of broken promises? - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Vespaの開発にかかわってる方の、Semantic Searchに関する話。
@@ -204,7 +266,7 @@ LtRってこんなもの、そのあとに出てきたLLM（Large Language Model
 BEIRの論文は時間を見つけて読んでみないとな。&lt;/p&gt;
 &lt;h3 id=&#34;hybrid-search--sum-of-its-parts&#34;&gt;Hybrid search &amp;gt; sum of its parts?&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ： &lt;a href=&#34;https://pretalx.com/bbuzz22/talk/YEHRTE/&#34;&gt;Hybrid search &amp;gt; sum of its parts? ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ： &lt;a href=&#34;https://pretalx.com/bbuzz22/talk/YEHRTE/&#34;&gt;Hybrid search &amp;gt; sum of its parts? ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=R5BLbnXPR5c&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=10&#34;&gt;Lester Solbakken – Hybrid search： Greater than the sum of its parts? - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;こちらもVespaの人の話。
@@ -214,14 +276,14 @@ BEIRの論文は時間を見つけて読んでみないとな。&lt;/p&gt;
 Vespaも触ってみたいなぁ。&lt;/p&gt;
 &lt;h3 id=&#34;the-life-of-a-search-engine-administrator&#34;&gt;The life of a search engine administrator&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/P9ZFJL/&#34;&gt;The life of a search engine administrator ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/P9ZFJL/&#34;&gt;The life of a search engine administrator ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=MAYH4qG-b0w&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=27&#34;&gt;Lucian Precup &amp;amp; Vincent Bréhin – The life of a search engine administrator - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;検索システムの管理者ってどんなことやるの？それにはどんなことができるツールがあるといいの？という話です。
 まぁ、ツールについてはこの会社の人たちのツールの宣伝なのですが、検索システムを作って育てていくのにどんなことを考えたりするのか？という参考になるかなぁと。&lt;/p&gt;
 &lt;h3 id=&#34;should-we-stop-using-distance-in-our-location-based-data-recommendation-models&#34;&gt;Should we stop using distance in our location-based data recommendation models?&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/S9EVEB/&#34;&gt;Should we stop using distance in our location-based data recommendation models? ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/S9EVEB/&#34;&gt;Should we stop using distance in our location-based data recommendation models? ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=I5Ks0fpUItk&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=46&#34;&gt;Charlie Davies – Should we stop using distance in our location-based data recommendation models? - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;&lt;a href=&#34;https://traveltime.com/&#34;&gt;TravelTime&lt;/a&gt;という会社を立ち上げた人の話。
@@ -234,7 +296,7 @@ Vespaも触ってみたいなぁ。&lt;/p&gt;
 残念ながら具体的にどうやって作っているのか？というのはなかったですが、観点がおもしろかったです。&lt;/p&gt;
 &lt;h3 id=&#34;word2vec-model-to-generate-synonyms-on-the-fly-in-apache-lucene&#34;&gt;Word2Vec model to generate synonyms on the fly in Apache Lucene&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/UYZAUX/&#34;&gt;Word2Vec model to generate synonyms on the fly in Apache Lucene ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/UYZAUX/&#34;&gt;Word2Vec model to generate synonyms on the fly in Apache Lucene ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=rKYJQhZxQFQ&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=54&#34;&gt;Daniele Antuzi &amp;amp; Ilaria Petreti – Word2Vec model to generate synonyms on the fly in Apache Lucene - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Word2Vecのモデルを使った、Apache LuceneのSynonym Filterを開発中だよという話
@@ -245,7 +307,7 @@ DeepLearning4Jを使ってみたが、遅くて使えなかったんだけど、
 ルールベースの類義語ではないので、調整するのはどうやるのかなぁ、学習用のコーパスをいい感じにするとかなのかな？とか、気になるところです。&lt;/p&gt;
 &lt;h3 id=&#34;nrtsearch-yelps-fast-scalable-and-cost-effective-open-source-search-engine&#34;&gt;NrtSearch: Yelp’s fast, scalable, and cost-effective open source search engine&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/ZUNELS/&#34;&gt;NrtSearch： Yelp’s fast, scalable, and cost-effective open source search engine ：： Berlin Buzzwords 2022 ：： pretalx&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;セッションページ：&lt;a href=&#34;https://pretalx.com/bbuzz22/talk/ZUNELS/&#34;&gt;NrtSearch： Yelp’s fast, scalable, and cost-effective open source search engine ： Berlin Buzzwords 2022 ： pretalx&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;動画：&lt;a href=&#34;https://www.youtube.com/watch?v=ydrsVKrclGY&amp;amp;list=PLq-odUc2x7i8eaYHVXSOadHrVE9tEU2QR&amp;amp;index=40&#34;&gt;Umesh Dangat – NrtSearch： Yelp’s fast, scalable, and cost-effective open source search engine - YouTube&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;YelpがLuceneベースで開発をしているNrtSearchというOSSの話です。

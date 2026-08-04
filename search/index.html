@@ -264,7 +264,6 @@
         
 <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.20.0/dist/algoliasearch-lite.umd.js" integrity="sha256-DABVk+hYj0mdUzo+7ViJC6cwLahQIejFvC+my2M/wfM=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.60.0/dist/instantsearch.production.min.js" integrity="sha256-9242vN47QUX50UG5Gf5XDO1YREWCEJRyXHofh5fsl24=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/reset-min.css" integrity="sha256-2AeJLzExpZvqLUxMfcs+4DWcMwNfpnjUeAAvEtPr0wU=" crossorigin="anonymous">
 
 
@@ -304,6 +303,16 @@ const search = instantsearch({
 });
 
 const { getSafeRelativeUrl } = window.searchSecurity;
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+  year: 'numeric',
+});
+
+function formatUnixDate(timestamp) {
+  return dateFormatter.format(new Date(timestamp * 1000));
+}
 
 function renderSearchAttribute(hit, attribute, components) {
   if (hit._snippetResult?.[attribute]) {
@@ -316,7 +325,7 @@ function renderSearchAttribute(hit, attribute, components) {
 }
 
 const hitTemplate = function(hit, { html, components }) {
-  const date = hit.date ? moment.unix(hit.date).format('MMM D, YYYY') : '';
+  const date = hit.date ? formatUnixDate(hit.date) : '';
   const url = getSafeRelativeUrl(hit.url, window.location.origin);
   const title = renderSearchAttribute(hit, 'title', components);
   const contentAttribute = hit._snippetResult?.content || hit._highlightResult?.content
@@ -532,7 +541,7 @@ search.start();
                     
                     
                     <li>
-                        <a target="_blank" href="https://github.com/johtani">
+                        <a target="_blank" rel="noopener noreferrer" href="https://github.com/johtani">
                             <span class="fa-stack fa-lg">
                                 <i class="fas fa-circle fa-stack-2x"></i>
                                 <i class="fab fa-github fa-stack-1x fa-inverse"></i>
@@ -544,7 +553,7 @@ search.start();
                     
                     
                     <li>
-                        <a target="_blank" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
+                        <a target="_blank" rel="noopener noreferrer" href="https://www.linkedin.com/in//jun-ohtani-254a634a">
                             <span class="fa-stack fa-lg">
                                 <i class="fas fa-circle fa-stack-2x"></i>
                                 <i class="fab fa-linkedin fa-stack-1x fa-inverse"></i>
